@@ -1,0 +1,7 @@
+language: python
+python:
+- 3
+install:
+- conda env create --file=environment.yml
+- source activate DeepTreeAttention
+env: TRAVIS=true

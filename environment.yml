@@ -1,0 +1,24 @@
+name: DeepTreeAttention
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - tensorflow > 2.0
+  - sphinx
+  - recommonmark
+  - pyyaml
+  - pytest
+  - numpydoc
+  - h5py
+  - numpy
+  - pillow
+  - pip
+  - matplotlib
+  - sphinx_rtd_theme
+  - pandas
+  - twine
+  - psutil
+  - pip:
+    - opencv-python
+    - sphinx-markdown-tables
+    - bumpversion
