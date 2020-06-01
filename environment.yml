@@ -3,7 +3,7 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - tensorflow > 2.0
+  - tensorflow
   - sphinx
   - recommonmark
   - pyyaml
@@ -17,7 +17,7 @@ dependencies:
   - sphinx_rtd_theme
   - pandas
   - twine
-  - psutil
+  - yapf
   - pip:
     - opencv-python
     - sphinx-markdown-tables
