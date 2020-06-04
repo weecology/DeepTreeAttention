@@ -142,7 +142,7 @@ def submodule_consensus(spatial_layers, spectral_layers, weighted=True):
     
     return x
 
-def model(height=48, width=11, depth=11, classes=2):
+def model(height=11, width=11, depth=48, classes=2):
     """
     """
     input_shape = (height, width, depth)
@@ -155,7 +155,7 @@ def model(height=48, width=11, depth=11, classes=2):
     spectral_layers = spectral_network(inputs)
     
     #Still need to learn weights
-    outputs = submodule_consensus(spatial_layers, spectral_layers, weighted=False)
+    outputs = submodule_consensus(spatial_layers, spectral_layers, weighted=True)
     
     model = Model(inputs=inputs, outputs=outputs, name="DeepTreeAttention")
 
