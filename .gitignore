@@ -2,3 +2,4 @@
 project.wpr
 project.wpu
 models/
+__pycache__
