@@ -3,7 +3,7 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - tensorflow == 2.0.0
+  - tensorflow
   - sphinx
   - recommonmark
   - pyyaml

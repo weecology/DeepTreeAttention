@@ -1,4 +1,5 @@
 # DeepTreeAttention
+[![Build Status](https://travis-ci.org/weecology/https://travis-ci.org/weecology/DeepTreeAttention.svg?branch=master)](https://travis-ci.org/weecology/DeepTreeAttention)
 
 Implementation of Hang et al. 2020 "Hyperspectral Image Classification with Attention Aided CNNs" for tree species prediction 
 
