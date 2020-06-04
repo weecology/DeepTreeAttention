@@ -10,7 +10,7 @@ before_install:
 install:
 - conda env create --file=environment.yml
 - source activate DeepTreeAttention
-- pip install DeepTreeAttention
+- pip install .
 
 script:
 - pytest
