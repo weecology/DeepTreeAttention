@@ -4,8 +4,7 @@ python:
 install:
 - conda env create --file=environment.yml
 - source activate DeepTreeAttention
-env: TRAVIS=true
 - pip install DeepTreeAttention
 
 script:
-- pytest 
+- pytest
