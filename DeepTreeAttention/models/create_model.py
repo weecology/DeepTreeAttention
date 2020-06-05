@@ -21,6 +21,7 @@ def conv_module(x, K, kX=3, kY=3, chanDim=-1, padding="same", maxpool=False):
     return x
 
 
+#Still to do once attention layers are created
 def concat_attention(conv_layers, attention_layers):
     """
     Element-wise multiplication and padding
@@ -154,7 +155,7 @@ def model(height=11, width=11, depth=48, classes=2):
     #spectral network
     spectral_layers = spectral_network(inputs)
     
-    #Still need to learn weights
+    #Learn weighted average
     outputs = submodule_consensus(spatial_layers, spectral_layers, weighted=True)
     
     model = Model(inputs=inputs, outputs=outputs, name="DeepTreeAttention")

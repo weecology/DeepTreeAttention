@@ -1,0 +1,10 @@
+callbacks:
+    snapshots_path: /../models/
+    project_name: tf_retinanet
+
+train:
+  epochs: 50
+  steps_per_epoch: 10000
+  lr: .0001
+  workers: 1
+  gpu: 0

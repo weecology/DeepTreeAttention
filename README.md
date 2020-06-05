@@ -7,6 +7,10 @@ Implementation of Hang et al. 2020 "Hyperspectral Image Classification with Atte
 
 ![](www/model.png)
 
+## Config file
+
+See conf/config.yml for training parameters.
+
 # Status and Roadmap
 
 - [x] Model Skeleton with CNNs
