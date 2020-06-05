@@ -1,5 +1,5 @@
 .DS_Store
 project.wpr
 project.wpu
-models/*.h5
+*.h5
 __pycache__
