@@ -13,11 +13,12 @@ See conf/config.yml for training parameters.
 
 # Status and Roadmap
 
-- [x] Model Skeleton with CNNs
+- [x] Model skeleton with CNNs
+- [ ] tf.keras sequence data generators
 - [ ] Add attention layers
-- [ ] Data Generator
 - [ ] Recreate Houston 2018 Results
-- [ ] Customize for tree species prediction
+- [ ] tf.data + tfrecords input pipeline
+- [ ] Multi-gpu
 
 # Citation
 
