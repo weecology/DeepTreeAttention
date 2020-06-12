@@ -14,10 +14,10 @@ See conf/config.yml for training parameters.
 # Status and Roadmap
 
 - [x] Model skeleton with CNNs
-- [ ] tf.keras sequence data generators
+- [ ] tf.data data generators for semantic segmentation of input raster
 - [ ] Add attention layers
 - [ ] Recreate Houston 2018 Results
-- [ ] tf.data + tfrecords input pipeline
+- [ ] tf.data generators for variable sized (?) pre-cropped images
 - [ ] Multi-gpu
 
 # Citation
