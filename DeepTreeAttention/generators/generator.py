@@ -23,10 +23,12 @@ def get_classes(annotation_csv):
     
     return label
     
-def train_generator(annotation_csv, batch_size, shuffle=True):
-    """tf.data genertor to iterate through rasters given a set of annotation labels
+def crop_generator(annotation_csv, height, width, batch_size, shuffle=True):
+    """tf.data genertor to iterate through a set of already cropped images and produce a set of annotation labels
     Args:
         file_list: a list of .tif raster paths
+        height: int of one side of the crop size
+        width: into of one side of the crop size
         annotation_csv: a .csv file with columns "path", "label"
     """
     #Read annotation csv
@@ -57,7 +59,7 @@ def train_generator(annotation_csv, batch_size, shuffle=True):
                 labels.append(label_dict[label])
             
             #yield as numpy arrays
-            data = np.asarray(data).reshape(-1,32,32,1)
+            data = np.asarray(data).reshape(-1,height,width,1)
             labels = np.asarray(labels)       
             i=+1             
             
