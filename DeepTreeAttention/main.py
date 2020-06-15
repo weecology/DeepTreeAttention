@@ -1,6 +1,7 @@
 #Wrapper class for DeepTreeAttention
 """Wrap generate data, create, train and predict into a single set of class commands"""
 from models import create_model
+from generators.make_dataset import training_dataset
 from tensorflow.keras.models import load_model
 
 class AttentionModel():
@@ -24,7 +25,7 @@ class AttentionModel():
             self.model.load_weights(weights)
             
     def train(self):
-        pass
+        
     
     def predict(self):
         pass
