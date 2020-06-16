@@ -2,7 +2,7 @@ name: DeepTreeAttention
 channels:
   - conda-forge
 dependencies:
-  - tensorflow > 2.0
+  - tensorflow == 2.0
   - sphinx
   - recommonmark
   - pyyaml
