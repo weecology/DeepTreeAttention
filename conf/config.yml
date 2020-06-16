@@ -1,9 +1,21 @@
+train:
+    sensor_path: "/orange/ewhite/b.weinstein/..." #path to sensor data
+    ground_truth_path: "/orange/ewhite/b.weinstein/..." #path to ground truth class raster
+    crop_height: 11
+    crop_width: 11
+    sensor_channels: 48
+    epochs: 1
+    learning_rate: .001
+    gpu: 0
+    batch_size: 10
+    steps: None # Mostly for testing purposes, steps = 1 would train on just one batch. Set to None for main environment.
+
 callbacks:
     snapshots_path: /../models/
     project_name: DeepTreeAttention
+    
+#All the above parameters apply to evaluation except for paths, leave blank to ignore.
+evaluation:
+    sensor_path:
+    ground_truth_path: 
 
-train:
-  epochs: 1
-  steps_per_epoch: 1 # only honored if trained using keras-sequence generator
-  learning_rate: .001
-  gpu: 0

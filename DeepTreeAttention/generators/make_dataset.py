@@ -36,7 +36,7 @@ def tf_data_generator(sensor_path, ground_truth_path, crop_height=11,crop_width=
         for data, label in zipped_data:
             yield data, label
 
-def training_dataset(sensor_path, ground_truth_path, crop_height=11,crop_width=11, sensor_channels=48, batch_size=1):
+def tf_dataset(sensor_path, ground_truth_path, crop_height=11,crop_width=11, sensor_channels=48, batch_size=1):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
         sensor_list: file path to sensor data .tif
@@ -47,7 +47,7 @@ def training_dataset(sensor_path, ground_truth_path, crop_height=11,crop_width=1
     
     #Get data from generator
     dataset = tf.data.Dataset.from_generator(tf_data_generator,args= [sensor_path, ground_truth_path, crop_height, crop_width, sensor_channels],output_types = (tf.float32, tf.uint8),
-                                             output_shapes = ((crop_width,crop_height,sensor_channels), (None)))
+                                             output_shapes = ((crop_width,crop_height,sensor_channels), (1)))
 
     #batch
     dataset = dataset.shuffle(buffer_size = 100)    

@@ -55,9 +55,9 @@ def test_tf_data_generator(training_raster, ground_truth_raster):
         i+=1
         if i >=5: break 
     
-def test_training_dataset(training_raster, ground_truth_raster):
+def test_tf_dataset(training_raster, ground_truth_raster):
 
-    dataset = make_dataset.training_dataset(
+    dataset = make_dataset.tf_dataset(
         sensor_path=training_raster,
         ground_truth_path=ground_truth_raster,
         crop_height=11,

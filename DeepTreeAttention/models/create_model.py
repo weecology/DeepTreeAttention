@@ -6,7 +6,6 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras import layers
 
-
 def conv_module(x, K, kX=3, kY=3, chanDim=-1, padding="same", maxpool=False):
     """
     Basic convolutional block with batch norm and optional max pooling
@@ -72,7 +71,8 @@ def spatial_network(x, attention=False, classes=2):
     x = conv_and_attention_submodel(x, K=128, submodel="spatial", attention=attention, maxpool=True)
 
     #This is still unclear, is it flatten and dense or just dense?
-    x = layers.Dense(classes, activation="softmax")(x)
+    x = layers.Flatten()(x)
+    x = layers.Dense(classes, activation="softmax",name="spatial_softmax")(x)
 
     return x
 
@@ -92,7 +92,8 @@ def spectral_network(x, attention=False, classes=2):
     x = conv_and_attention_submodel(x, K=128, submodel="spectral", attention=attention, maxpool=True)
 
     #This is still unclear, is it flatten and dense or just dense?
-    x = layers.Dense(classes, activation="softmax")(x)
+    x = layers.Flatten()(x)
+    x = layers.Dense(classes, activation="softmax", name="spectral_softmax")(x)
 
     return x
 
@@ -133,20 +134,20 @@ class WeightedSum(layers.Layer):
     def compute_output_shape(self, input_shape):
         return input_shape[0]
     
-def submodule_consensus(spatial_layers, spectral_layers, weighted=True):
+def submodule_consensus(spatial_layers, spectral_layers, weighted_sum=True):
     """Learned weighted sum among layers"""
     
-    if weighted:
+    if weighted_sum:
         x = WeightedSum()([spatial_layers, spectral_layers])
     else:
         x = layers.Average()([spatial_layers, spectral_layers])
     
     return x
 
-def model(height=11, width=11, depth=48, classes=2):
+def model(height=11, width=11, channels=48, classes=2, weighted_sum=True):
     """
     """
-    input_shape = (height, width, depth)
+    input_shape = (height, width, channels)
     inputs = layers.Input(shape=input_shape)
 
     #spatial subnetwork
@@ -156,8 +157,10 @@ def model(height=11, width=11, depth=48, classes=2):
     spectral_layers = spectral_network(inputs)
     
     #Learn weighted average
-    outputs = submodule_consensus(spatial_layers, spectral_layers, weighted=True)
+    outputs = submodule_consensus(spatial_layers, spectral_layers, weighted_sum=weighted_sum)
     
+    #outputs = layers.Average()([spatial_layers, spectral_layers])
+        
     model = Model(inputs=inputs, outputs=outputs, name="DeepTreeAttention")
 
     return model
