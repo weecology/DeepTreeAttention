@@ -46,12 +46,12 @@ def ground_truth_raster(tmp_path):
 
 def test_tf_data_generator(training_raster, ground_truth_raster):
     #Tensorflow encodes string as b bytes
-    iterator = make_dataset.tf_data_generator(training_raster.encode(), ground_truth_raster.encode(),crop_height=11,crop_width=11, sensor_channels=4)
+    iterator = make_dataset.tf_data_generator(training_raster.encode(), ground_truth_raster.encode(),crop_height=11,crop_width=11, sensor_channels=4, classes=20)
     
     i = 0
     for data, labels in iterator:
         assert data.shape == (11,11,4)
-        assert labels.shape == (1,)
+        assert labels.shape == (20,)
         i+=1
         if i >=5: break 
     
@@ -63,7 +63,8 @@ def test_tf_dataset(training_raster, ground_truth_raster):
         crop_height=11,
         crop_width=11,
         sensor_channels=4,
-        batch_size=10
+        batch_size=10,
+        classes=20
         )
     
     for data, label in dataset.take(1):  # only take first element of dataset
@@ -71,7 +72,7 @@ def test_tf_dataset(training_raster, ground_truth_raster):
         numpy_labels = label.numpy()
         
     assert numpy_data.shape == (10,11,11,4)
-    assert numpy_labels.shape == (10,1)
+    assert numpy_labels.shape == (10,20)
     
     
     

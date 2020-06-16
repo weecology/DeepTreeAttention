@@ -4,6 +4,7 @@ import os
 import rasterio
 import numpy as np
 from DeepTreeAttention import main
+from DeepTreeAttention.generators.make_dataset import tf_dataset
 
 @pytest.fixture()
 def training_raster(tmp_path):
@@ -53,24 +54,32 @@ def test_config(training_raster, ground_truth_raster):
     train_config["crop_height"] = 11
     train_config["crop_width"] = 11
     train_config["sensor_channels"] = 4
+        
+    #evaluation
+    eval_config = { }
+    eval_config["sensor_path"] = training_raster
+    eval_config["ground_truth_path"] = ground_truth_raster
     
     config["train"] = train_config
+    config["evaluation"] = eval_config
     
     return config
     
 def test_AttentionModel(test_config):
+
     #Create class
-    mod = main.AttentionModel()    
+    mod = main.AttentionModel()      
+    
     #Replace config for testing env
     for key, value in test_config.items():
         for nested_key, nested_value in value.items():
             mod.config[key][nested_key] = nested_value
     
-    assert os.path.exists(mod.config["train"]["sensor_path"])
-
-    #Create
-    mod.create(classes=20, weighted_sum=False)
-
+    assert os.path.exists(mod.config["train"]["sensor_path"])  
+    
+    #Create model
+    mod.create(weighted_sum=False)
+    
     #initial weights
     initial_weight = mod.model.layers[1].get_weights()
     
@@ -81,8 +90,64 @@ def test_AttentionModel(test_config):
     
     #assert training took place
     assert not np.array_equal(final_weight,initial_weight)
+
+def test_predict(test_config):
+    #Create class
+    mod = main.AttentionModel()    
     
+    #Replace config for testing env
+    for key, value in test_config.items():
+        for nested_key, nested_value in value.items():
+            mod.config[key][nested_key] = nested_value
     
+    assert os.path.exists(mod.config["evaluation"]["sensor_path"])
+
+    #Create
+    mod.create(weighted_sum=False)
+    
+    #Mock a testing set
+    testing_set = tf_dataset(
+        sensor_path = mod.config["evaluation"]["sensor_path"],
+        ground_truth_path = mod.config["evaluation"]["ground_truth_path"],
+        crop_height = mod.config['train']["crop_height"],
+        crop_width = mod.config['train']["crop_width"],            
+        sensor_channels = mod.config["train"]["sensor_channels"],
+        batch_size = mod.config["train"]["batch_size"],
+        repeat=False,
+        classes=mod.config["train"]["classes"]
+    )
+        
+    result = mod.model.predict(testing_set, steps=1)
+    
+    assert result.shape == (mod.config["train"]["batch_size"], mod.config["train"]["classes"])
+
+def test_evaluate(test_config):
+    #Create class
+    mod = main.AttentionModel()    
+    
+    #Replace config for testing env
+    for key, value in test_config.items():
+        for nested_key, nested_value in value.items():
+            mod.config[key][nested_key] = nested_value
+    
+    assert os.path.exists(mod.config["evaluation"]["sensor_path"])
+
+    #Create
+    mod.create(weighted_sum=False)
+    
+    #Mock a testing set
+    testing_set = tf_dataset(
+        sensor_path = mod.config["evaluation"]["sensor_path"],
+        ground_truth_path = mod.config["evaluation"]["ground_truth_path"],
+        crop_height = mod.config['train']["crop_height"],
+        crop_width = mod.config['train']["crop_width"],            
+        sensor_channels = mod.config["train"]["sensor_channels"],
+        batch_size = mod.config["train"]["batch_size"],
+        repeat=False
+    )
+        
+    result = mod.evaluate(testing_set,steps=5)
+    print(result)
     
     
     

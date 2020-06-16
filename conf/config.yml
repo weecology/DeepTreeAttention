@@ -1,4 +1,5 @@
 train:
+    classes: 20
     sensor_path: "/orange/ewhite/b.weinstein/..." #path to sensor data
     ground_truth_path: "/orange/ewhite/b.weinstein/..." #path to ground truth class raster
     crop_height: 11

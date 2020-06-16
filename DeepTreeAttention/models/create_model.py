@@ -6,6 +6,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras import layers
 
+
 def conv_module(x, K, kX=3, kY=3, chanDim=-1, padding="same", maxpool=False):
     """
     Basic convolutional block with batch norm and optional max pooling
@@ -16,7 +17,7 @@ def conv_module(x, K, kX=3, kY=3, chanDim=-1, padding="same", maxpool=False):
     x = layers.Activation("relu")(x)
     if maxpool:
         x = layers.MaxPool2D()(x)
-        
+
     return x
 
 
@@ -65,14 +66,22 @@ def spatial_network(x, attention=False, classes=2):
     x = conv_and_attention_submodel(x, K=32, submodel="spatial", attention=attention)
 
     #Second submodel is 64 filters - 2nd gets maxpool
-    x = conv_and_attention_submodel(x, K=64, submodel="spatial", attention=attention, maxpool=True)
+    x = conv_and_attention_submodel(x,
+                                    K=64,
+                                    submodel="spatial",
+                                    attention=attention,
+                                    maxpool=True)
 
     #Third submodel is 128 filters - 3rd gets maxpool
-    x = conv_and_attention_submodel(x, K=128, submodel="spatial", attention=attention, maxpool=True)
+    x = conv_and_attention_submodel(x,
+                                    K=128,
+                                    submodel="spatial",
+                                    attention=attention,
+                                    maxpool=True)
 
     #This is still unclear, is it flatten and dense or just dense?
     x = layers.Flatten()(x)
-    x = layers.Dense(classes, activation="softmax",name="spatial_softmax")(x)
+    x = layers.Dense(classes, activation="softmax", name="spatial_softmax")(x)
 
     return x
 
@@ -86,10 +95,18 @@ def spectral_network(x, attention=False, classes=2):
     x = conv_and_attention_submodel(x, K=32, submodel="spectral", attention=attention)
 
     #Second submodel is 64 filters
-    x = conv_and_attention_submodel(x, K=64, submodel="spectral", attention=attention, maxpool=True)
+    x = conv_and_attention_submodel(x,
+                                    K=64,
+                                    submodel="spectral",
+                                    attention=attention,
+                                    maxpool=True)
 
     #Third submodel is 128 filters
-    x = conv_and_attention_submodel(x, K=128, submodel="spectral", attention=attention, maxpool=True)
+    x = conv_and_attention_submodel(x,
+                                    K=128,
+                                    submodel="spectral",
+                                    attention=attention,
+                                    maxpool=True)
 
     #This is still unclear, is it flatten and dense or just dense?
     x = layers.Flatten()(x)
@@ -111,10 +128,14 @@ def spatial_attention(x):
 
 
 def _weighted_sum(x):
-    return tf.keras.backend.sum(x[0] * tf.keras.backend.expand_dims(x[1], -1), axis=1, keepdims=True)
+    return tf.keras.backend.sum(x[0] * tf.keras.backend.expand_dims(x[1], -1),
+                                axis=1,
+                                keepdims=True)
+
 
 class WeightedSum(layers.Layer):
     """A custom keras layer to learn a weighted sum of tensors"""
+
     def __init__(self, **kwargs):
         super(WeightedSum, self).__init__(**kwargs)
 
@@ -127,22 +148,24 @@ class WeightedSum(layers.Layer):
             trainable=True,
         )
         super(WeightedSum, self).build(input_shape)
-        
+
     def call(self, model_outputs):
         return self.a * model_outputs[0] + (1 - self.a) * model_outputs[1]
 
     def compute_output_shape(self, input_shape):
         return input_shape[0]
-    
+
+
 def submodule_consensus(spatial_layers, spectral_layers, weighted_sum=True):
     """Learned weighted sum among layers"""
-    
+
     if weighted_sum:
         x = WeightedSum()([spatial_layers, spectral_layers])
     else:
         x = layers.Average()([spatial_layers, spectral_layers])
-    
+
     return x
+
 
 def model(height=11, width=11, channels=48, classes=2, weighted_sum=True):
     """
@@ -151,16 +174,18 @@ def model(height=11, width=11, channels=48, classes=2, weighted_sum=True):
     inputs = layers.Input(shape=input_shape)
 
     #spatial subnetwork
-    spatial_layers = spatial_network(inputs)
+    spatial_layers = spatial_network(inputs, classes=classes)
 
     #spectral network
-    spectral_layers = spectral_network(inputs)
-    
+    spectral_layers = spectral_network(inputs, classes=classes)
+
     #Learn weighted average
-    outputs = submodule_consensus(spatial_layers, spectral_layers, weighted_sum=weighted_sum)
-    
+    outputs = submodule_consensus(spatial_layers,
+                                  spectral_layers,
+                                  weighted_sum=weighted_sum)
+
     #outputs = layers.Average()([spatial_layers, spectral_layers])
-        
+
     model = Model(inputs=inputs, outputs=outputs, name="DeepTreeAttention")
 
     return model

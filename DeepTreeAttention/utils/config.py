@@ -3,6 +3,7 @@ Config processing module. Inspired from https://github.com/fizyr/tf-retinanet/bl
 """
 import yaml
 
+
 def parse_yaml(path):
     """ Parse a YAML config file to a dictionary.
     """
@@ -11,4 +12,4 @@ def parse_yaml(path):
             config = yaml.safe_load(stream)
             return config
         except yaml.YAMLError as exc:
-            raise(exc)
+            raise (exc)
