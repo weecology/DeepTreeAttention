@@ -70,7 +70,7 @@ def tf_dataset(sensor_path,
         output_shapes=((crop_width, crop_height, sensor_channels), (classes)))
 
     #batch
-    dataset = dataset.shuffle(buffer_size=100)
+    dataset = dataset.shuffle(buffer_size=10)
     dataset = dataset.batch(batch_size=batch_size)
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
     if repeat:
