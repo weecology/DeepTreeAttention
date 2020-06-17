@@ -110,7 +110,7 @@ def test_predict(test_config):
     mod.create()
     mod.read_data()
     
-    result = mod.model.predict(self.testing_set, steps=1)
+    result = mod.model.predict(steps=1)
     
     assert result.shape == (mod.config["train"]["batch_size"], mod.config["train"]["classes"])
 
@@ -129,7 +129,7 @@ def test_evaluate(test_config):
     mod.create()
     mod.read_data()
         
-    result = mod.evaluate(self.testing_set,steps=5)
+    result = mod.evaluate(steps=2)
     print(result)
     
     

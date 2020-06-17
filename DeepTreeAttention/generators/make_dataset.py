@@ -31,6 +31,7 @@ def tf_data_generator(sensor_path,
     label_array = _read_raster(ground_truth_path.decode())
 
     sensor_patches = extract_patches(sensor_array, crop_width, crop_height)
+    print("patches extracted, reshaping")
     sensor_patches = tf.reshape(sensor_patches,
                                 [-1, crop_width, crop_height, sensor_channels])
 
@@ -70,7 +71,7 @@ def tf_dataset(sensor_path,
         output_shapes=((crop_width, crop_height, sensor_channels), (classes)))
 
     #batch
-    dataset = dataset.shuffle(buffer_size=10)
+    dataset = dataset.shuffle(buffer_size=100)
     dataset = dataset.batch(batch_size=batch_size)
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
     if repeat:

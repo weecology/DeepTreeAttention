@@ -52,6 +52,7 @@ class AttentionModel():
                            metrics=metric_list)
 
     def read_data(self):
+        
         #Create training tf.data
         self.training_set = tf_dataset(
             sensor_path=self.config["train"]["sensor_path"],
@@ -77,6 +78,7 @@ class AttentionModel():
             self.testing_set = None
             
     def train(self):
+        """Train a model"""
         
         self.model.fit(self.training_set,
                        epochs=self.config["train"]["epochs"],
@@ -95,7 +97,7 @@ class AttentionModel():
             results: a dictionary of metrics
         """
         if tf_dataset:
-            result = self.model.evaluate(x=tf_dataset, steps=1)
+            result = self.model.evaluate(x=tf_dataset, steps=steps)
         else:
             if self.testing_set is None:
                 raise IOError(
