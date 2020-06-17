@@ -61,7 +61,8 @@ class AttentionModel():
             crop_width=self.config['train']["crop_width"],
             sensor_channels=self.config["train"]["sensor_channels"],
             batch_size=self.config["train"]["batch_size"],
-            classes=self.config["train"]["classes"])
+            classes=self.config["train"]["classes"],
+        repeat=False)
 
         if self.config["evaluation"]["sensor_path"] is not None:
             self.testing_set = tf_dataset(
