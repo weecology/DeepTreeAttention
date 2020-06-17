@@ -51,8 +51,7 @@ class AttentionModel():
                                lr=float(self.config['train']['learning_rate'])),
                            metrics=metric_list)
 
-    def train(self):
-
+    def read_data(self):
         #Create training tf.data
         self.training_set = tf_dataset(
             sensor_path=self.config["train"]["sensor_path"],
@@ -76,6 +75,8 @@ class AttentionModel():
                 repeat=False)
         else:
             self.testing_set = None
+            
+    def train(self):
         
         self.model.fit(self.training_set,
                        epochs=self.config["train"]["epochs"],

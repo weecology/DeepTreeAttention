@@ -79,6 +79,7 @@ def test_AttentionModel(test_config):
     
     #Create model
     mod.create()
+    mod.read_data()
     
     mod.config["evaluation"]["sensor_path"] = None
     mod.config["evaluation"]["ground_truth_path"] = None
@@ -107,20 +108,9 @@ def test_predict(test_config):
 
     #Create
     mod.create()
+    mod.read_data()
     
-    #Mock a testing set
-    testing_set = tf_dataset(
-        sensor_path = mod.config["evaluation"]["sensor_path"],
-        ground_truth_path = mod.config["evaluation"]["ground_truth_path"],
-        crop_height = mod.config['train']["crop_height"],
-        crop_width = mod.config['train']["crop_width"],            
-        sensor_channels = mod.config["train"]["sensor_channels"],
-        batch_size = mod.config["train"]["batch_size"],
-        repeat=False,
-        classes=mod.config["train"]["classes"]
-    )
-        
-    result = mod.model.predict(testing_set, steps=1)
+    result = mod.model.predict(self.testing_set, steps=1)
     
     assert result.shape == (mod.config["train"]["batch_size"], mod.config["train"]["classes"])
 
@@ -137,19 +127,9 @@ def test_evaluate(test_config):
 
     #Create
     mod.create()
-    
-    #Mock a testing set
-    testing_set = tf_dataset(
-        sensor_path = mod.config["evaluation"]["sensor_path"],
-        ground_truth_path = mod.config["evaluation"]["ground_truth_path"],
-        crop_height = mod.config['train']["crop_height"],
-        crop_width = mod.config['train']["crop_width"],            
-        sensor_channels = mod.config["train"]["sensor_channels"],
-        batch_size = mod.config["train"]["batch_size"],
-        repeat=False
-    )
+    mod.read_data()
         
-    result = mod.evaluate(testing_set,steps=5)
+    result = mod.evaluate(self.testing_set,steps=5)
     print(result)
     
     
