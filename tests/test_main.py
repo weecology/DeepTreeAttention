@@ -78,7 +78,10 @@ def test_AttentionModel(test_config):
     assert os.path.exists(mod.config["train"]["sensor_path"])  
     
     #Create model
-    mod.create(weighted_sum=False)
+    mod.create()
+    
+    mod.config["evaluation"]["sensor_path"] = None
+    mod.config["evaluation"]["ground_truth_path"] = None
     
     #initial weights
     initial_weight = mod.model.layers[1].get_weights()
@@ -103,7 +106,7 @@ def test_predict(test_config):
     assert os.path.exists(mod.config["evaluation"]["sensor_path"])
 
     #Create
-    mod.create(weighted_sum=False)
+    mod.create()
     
     #Mock a testing set
     testing_set = tf_dataset(
@@ -133,7 +136,7 @@ def test_evaluate(test_config):
     assert os.path.exists(mod.config["evaluation"]["sensor_path"])
 
     #Create
-    mod.create(weighted_sum=False)
+    mod.create()
     
     #Mock a testing set
     testing_set = tf_dataset(

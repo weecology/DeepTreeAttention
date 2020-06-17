@@ -9,7 +9,7 @@ train:
     learning_rate: .001
     gpu: 0
     batch_size: 10
-    steps: None # Mostly for testing purposes, steps = 1 would train on just one batch. Set to None for main environment.
+    weighted_sum: False
 
 callbacks:
     snapshots_path: /../models/

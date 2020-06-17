@@ -28,14 +28,14 @@ class AttentionModel():
         self.testing_set = None
         self.training_set = None
 
-    def create(self, weights=None, weighted_sum=True):
+    def create(self, weights=None):
         """weights: a saved model weights from previous run"""
         #Infer classes
         self.model = create_model.model(classes=self.config["train"]["classes"],
                                         height=self.config["train"]["crop_height"],
                                         width=self.config["train"]["crop_width"],
                                         channels=self.config["train"]["sensor_channels"],
-                                        weighted_sum=weighted_sum)
+                                        weighted_sum=self.config["train"]["weighted_sum"])
 
         if weights:
             self.model.load_weights(weights)

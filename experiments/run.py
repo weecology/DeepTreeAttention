@@ -6,6 +6,7 @@ experiment = Experiment(project_name="deeptreeattention", workspace="bw4sz")
 
 #Create a class and run
 model = AttentionModel()
+model.create()
 
 #Log config
 experiment.log_parameters(model.config)
