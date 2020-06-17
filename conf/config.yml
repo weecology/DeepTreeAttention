@@ -10,6 +10,7 @@ train:
     gpu: 0
     batch_size: 10
     weighted_sum: False
+    steps: None # Mostly for testing purposes, steps = 1 would train on just one batch. Set to None for main environment to iterate over full data.
 
 callbacks:
     snapshots_path: /../models/
