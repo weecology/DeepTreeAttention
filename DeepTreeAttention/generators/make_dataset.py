@@ -53,7 +53,8 @@ def tf_dataset(sensor_path,
                sensor_channels=48,
                batch_size=1,
                classes=20,
-               repeat=True):
+               repeat=True,
+               shuffle=True):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
         sensor_list: file path to sensor data .tif
@@ -71,7 +72,8 @@ def tf_dataset(sensor_path,
         output_shapes=((crop_width, crop_height, sensor_channels), (classes)))
 
     #batch
-    dataset = dataset.shuffle(buffer_size=100)
+    if shuffle:
+        dataset = dataset.shuffle(buffer_size=10)
     dataset = dataset.batch(batch_size=batch_size)
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
     if repeat:

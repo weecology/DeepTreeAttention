@@ -10,8 +10,9 @@ train:
     gpu: 0
     batch_size: 1
     weighted_sum: False
-    # Mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
+    # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
     steps: 
+    shuffle: True
 
 callbacks:
     snapshots_path: /../models/

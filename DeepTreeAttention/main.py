@@ -55,25 +55,28 @@ class AttentionModel():
         
         #Create training tf.data
         self.training_set = tf_dataset(
-            sensor_path=self.config["train"]["sensor_path"],
-            ground_truth_path=self.config["train"]["ground_truth_path"],
+        sensor_path=self.config["train"]["sensor_path"],
+        ground_truth_path=self.config["train"]["ground_truth_path"],
+        crop_height=self.config['train']["crop_height"],
+        crop_width=self.config['train']["crop_width"],
+        sensor_channels=self.config["train"]["sensor_channels"],
+        batch_size=self.config["train"]["batch_size"],
+        classes=self.config["train"]["classes"],
+        repeat=False,
+        shuffle=self.config["train"]["shuffle"])
+
+        if self.config["evaluation"]["sensor_path"] is not None:
+            self.testing_set = tf_dataset(
+            sensor_path=self.config["evaluation"]["sensor_path"],
+            ground_truth_path=self.config["evaluation"]["ground_truth_path"],
             crop_height=self.config['train']["crop_height"],
             crop_width=self.config['train']["crop_width"],
             sensor_channels=self.config["train"]["sensor_channels"],
             batch_size=self.config["train"]["batch_size"],
             classes=self.config["train"]["classes"],
-        repeat=False)
-
-        if self.config["evaluation"]["sensor_path"] is not None:
-            self.testing_set = tf_dataset(
-                sensor_path=self.config["evaluation"]["sensor_path"],
-                ground_truth_path=self.config["evaluation"]["ground_truth_path"],
-                crop_height=self.config['train']["crop_height"],
-                crop_width=self.config['train']["crop_width"],
-                sensor_channels=self.config["train"]["sensor_channels"],
-                batch_size=self.config["train"]["batch_size"],
-                classes=self.config["train"]["classes"],
-                repeat=False)
+            repeat=False,
+            shuffle=self.config["train"]["shuffle"])
+            
         else:
             self.testing_set = None
             
@@ -82,8 +85,7 @@ class AttentionModel():
         
         self.model.fit(self.training_set,
                        epochs=self.config["train"]["epochs"],
-                       steps_per_epoch=self.config["train"]["steps"],
-                       validation_data=self.testing_set)
+                       steps_per_epoch=self.config["train"]["steps"])
 
     def predict(self):
         pass

@@ -54,6 +54,7 @@ def test_config(training_raster, ground_truth_raster):
     train_config["crop_height"] = 11
     train_config["crop_width"] = 11
     train_config["sensor_channels"] = 4
+    train_config["shuffle"] = False
         
     #evaluation
     eval_config = { }
@@ -110,7 +111,7 @@ def test_predict(test_config):
     mod.create()
     mod.read_data()
     
-    result = mod.model.predict(steps=1)
+    result = mod.model.predict(mod.testing_set, steps=1)
     
     assert result.shape == (mod.config["train"]["batch_size"], mod.config["train"]["classes"])
 
