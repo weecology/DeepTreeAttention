@@ -62,7 +62,6 @@ class AttentionModel():
             sensor_channels=self.config["train"]["sensor_channels"],
             batch_size=self.config["train"]["batch_size"],
             classes=self.config["train"]["classes"])
-        
 
         if self.config["evaluation"]["sensor_path"] is not None:
             self.testing_set = tf_dataset(
@@ -72,13 +71,15 @@ class AttentionModel():
                 crop_width=self.config['train']["crop_width"],
                 sensor_channels=self.config["train"]["sensor_channels"],
                 batch_size=self.config["train"]["batch_size"],
-                classes=self.config["train"]["classes"])
+                classes=self.config["train"]["classes"],
+                repeat=False)
         else:
             self.testing_set = None
-
+        
         self.model.fit(self.training_set,
                        epochs=self.config["train"]["epochs"],
-                       steps_per_epoch=self.config["train"]["steps"])
+                       steps_per_epoch=self.config["train"]["steps"],
+                       validation_data=self.testing_set)
 
     def predict(self):
         pass
