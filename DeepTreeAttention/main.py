@@ -88,6 +88,8 @@ class AttentionModel():
         Args: 
             tf_dataset: Optional a tf.dataset that yields data and labels, see make_dataset.py 
             steps: Optional, how many calls of the genertor to evaluate. None will evaluate until exhausted
+        Returns:
+            results: a dictionary of metrics
         """
         if tf_dataset:
             result = self.model.evaluate(x=tf_dataset, steps=1)
@@ -98,5 +100,7 @@ class AttentionModel():
                 )
 
             result = self.model.evaluate(self.testing_set, steps=steps)
-
+            
+        result = dict(zip(self.model.metrics_names, result))            
+        
         return result
