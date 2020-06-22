@@ -1,5 +1,4 @@
 #test make_dataset
-
 from DeepTreeAttention.generators import make_dataset
 
 import tensorflow as tf
@@ -67,7 +66,7 @@ def test_tf_dataset(training_raster, ground_truth_raster):
         classes=20
         )
     
-    for data, label in dataset.take(1):  # only take first element of dataset
+    for data, label in dataset.take(2):  # only take first element of dataset
         numpy_data = data.numpy()
         numpy_labels = label.numpy()
         

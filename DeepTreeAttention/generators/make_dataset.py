@@ -2,7 +2,7 @@
 import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
 import rasterio
-
+import numpy as np
 from DeepTreeAttention.generators.extract_patches import extract_patches
 
 def _read_raster(path):
@@ -17,7 +17,7 @@ def _read_raster(path):
 
     return src
 
-
+#I think this being called on a per batch basis, running patches, it should be wrapped in tf.records
 def tf_data_generator(sensor_path,
                       ground_truth_path,
                       crop_height=11,
@@ -30,6 +30,10 @@ def tf_data_generator(sensor_path,
     sensor_array = _read_raster(sensor_path.decode())
     label_array = _read_raster(ground_truth_path.decode())
 
+    #channels last from rasterio to tensorflow
+    sensor_array = np.moveaxis(sensor_array,-1,0)
+    sensor_array = np.moveaxis(sensor_array,-1,0)
+    
     sensor_patches = extract_patches(sensor_array, crop_width, crop_height)
     print("patches extracted, reshaping")
     sensor_patches = tf.reshape(sensor_patches,
