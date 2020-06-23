@@ -13,6 +13,7 @@ See conf/config.yml for training parameters.
 
 # Organization
 
+```
 ├── conf                   # Config files for model training and evaluation
 ├── data                   #  Location to place data for model reading. Most data is too large to be in version control, see below
 ├── DeepTreeAttention                   # Source files
@@ -24,6 +25,7 @@ See conf/config.yml for training parameters.
 ├── LICENSE
 └── README.md
 └── environment.yml # Conda Environment for model training and tests
+```
 
 # Roadmap
 
