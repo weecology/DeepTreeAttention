@@ -59,7 +59,7 @@ def test_select_crops(ground_truth_raster, training_raster):
     
 def test_tf_data_generator(training_raster, ground_truth_raster):
     #Tensorflow encodes string as b bytes
-    iterator = make_dataset.tf_data_generator(training_raster.encode(), ground_truth_raster.encode(),crop_height=11,crop_width=11, sensor_channels=4, classes=20)
+    iterator = make_dataset.tf_data_generator(training_raster.encode(), ground_truth_raster.encode(),size=11, classes=20)
     
     i = 0
     for data, labels in iterator:
@@ -71,11 +71,9 @@ def test_tf_data_generator(training_raster, ground_truth_raster):
 def test_tf_dataset(training_raster, ground_truth_raster):
 
     dataset = make_dataset.tf_dataset(
-        sensor_path=training_raster,
-        ground_truth_path=ground_truth_raster,
-        crop_height=11,
-        crop_width=11,
-        sensor_channels=4,
+        sensor_path=training_raster.encode(),
+        ground_truth_path=ground_truth_raster.encode(),
+        size=11,
         batch_size=10,
         classes=20
         )

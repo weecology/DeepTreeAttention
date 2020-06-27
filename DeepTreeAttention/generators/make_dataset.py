@@ -87,25 +87,17 @@ def select_crops(infile, coordinates, size=5):
     
 def tf_data_generator(sensor_path,
                       ground_truth_path,
-                      crop_height=11,
-                      crop_width=11,
-                      sensor_channels=48,
+                      size=11,
                       classes=20):
     """Yield one instance of data with one hot labels"""
 
-    #read
-    sensor_array = _read_raster(sensor_path)
-    sensor_data = sensor_array.read()
-    label_array = _read_raster(ground_truth_path)
+    #turn ground truth into a dataframe of coords
+    results = get_coordinates(ground_truth_path.decode())
+    coordinates = zip(results.easting, results.northing)
+    sensor_patches = select_crops(sensor_path.decode(), coordinates, size=size)
     
-    #Get value and coordinates of each label pixel
-    labels, coordinates =  get_coordinates(row, col, label_array.transform)
-    
-    #Loop through coordinate list and crop sensor data    
-    sensor_patches = select_crops(coordinates, sensor_array.transform, crop_height=crop_height, crop_width=crop_width)
-
     #Turn data labels into one-hot
-    label_onehot = to_categorical(labels, num_classes=classes)
+    label_onehot = to_categorical(results.label.values, num_classes=classes)
     zipped_data = zip(sensor_patches, label_onehot)
 
     while True:
@@ -114,9 +106,7 @@ def tf_data_generator(sensor_path,
 
 def tf_dataset(sensor_path,
                ground_truth_path,
-               crop_height=11,
-               crop_width=11,
-               sensor_channels=48,
+               size=11,
                batch_size=1,
                classes=20,
                repeat=True,
@@ -133,9 +123,9 @@ def tf_dataset(sensor_path,
     #Get data from generator
     dataset = tf.data.Dataset.from_generator(
         tf_data_generator,
-        args=[sensor_path, ground_truth_path, crop_height, crop_width, sensor_channels],
+        args=[sensor_path, ground_truth_path, size,classes],
         output_types=(tf.float32, tf.uint8),
-        output_shapes=((crop_width, crop_height, sensor_channels), (classes)))
+        output_shapes=((size, size, None), (classes)))
 
     #batch
     if shuffle:
