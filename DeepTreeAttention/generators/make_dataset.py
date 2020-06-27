@@ -1,9 +1,9 @@
 #### tf.data input pipeline ###
+import numpy as np
+import rasterio
 import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
-import rasterio
-import numpy as np
-from DeepTreeAttention.generators.extract_patches import extract_patches
+import pandas as pd
 
 def _read_raster(path):
     """Read a hyperspetral raster .tif 
@@ -17,7 +17,74 @@ def _read_raster(path):
 
     return src
 
-#I think this being called on a per batch basis, running patches, it should be wrapped in tf.records
+def get_coordinates(fname):   
+    """Read raster and convert into a zipped list of values and coordinates
+    Args:
+        fname: path to raster on file
+    Returns:
+        results: a zipped list that yields values, coordinates in a tuple
+        """
+    with rasterio.open(fname) as r:
+        T0 = r.transform  # upper-left pixel corner affine transform
+        A = r.read()  # pixel values
+    
+    # All rows and columns
+    cols, rows = np.meshgrid(np.arange(A.shape[2]), np.arange(A.shape[1]))
+    
+    # Function to convert pixel row/column index (from 0) to easting/northing at centre
+    rc2en = lambda r, c: (c, r) * T0
+    
+    # All eastings and northings (there is probably a faster way to do this)
+    eastings, northings = np.vectorize(rc2en, otypes=[np.float, np.float])(rows, cols)
+    
+    results = pd.DataFrame({"label":A.flatten(),"easting":eastings.flatten(),"northing":northings.flatten()})
+    
+    return results
+
+def pad(array, target_shape):
+    result = np.zeros(target_shape)
+    result[:array.shape[0],:array.shape[1]] = array
+    
+    return result
+
+def select_crops(infile, coordinates, size=5):
+    """Generate a square window crop centered on a geographic location
+    Args:
+        infile: path to raster
+        coordinates: a tuple of (easting, northing)
+        size: number of pixels to buffer (expressed as a diameter, not a radius). 
+    Returns:
+        crop: a numpy array of cropped values of size (2*crop_height + 1, 2*crop_width+1)
+    """
+    # Open the raster
+    crops = []
+    with rasterio.open(infile) as dataset:
+    
+        # Loop through your list of coords
+        for i, (lon, lat) in enumerate(coordinates):
+    
+            # Get pixel coordinates from map coordinates
+            py, px = dataset.index(lon, lat)
+            print('Pixel Y, X coords: {}, {}'.format(py, px))
+    
+            # Build an NxN window
+            window = rasterio.windows.Window(px - size//2, py - size//2, size, size)
+            print(window)
+    
+            # Read the data in the window
+            # clip is a nbands * size * size numpy array
+            crop = dataset.read(window=window)    
+            crop = np.rollaxis(crop, 0, 3)
+            
+            #zero pad on border
+            padded_crop = pad(crop, target_shape=(size,size,crop.shape[2]))
+            
+            crops.append(padded_crop)
+            
+    return crops
+            
+            
+    
 def tf_data_generator(sensor_path,
                       ground_truth_path,
                       crop_height=11,
@@ -26,24 +93,19 @@ def tf_data_generator(sensor_path,
                       classes=20):
     """Yield one instance of data with one hot labels"""
 
-    #read and extract patches
-    sensor_array = _read_raster(sensor_path.decode())
-    label_array = _read_raster(ground_truth_path.decode())
-
-    #channels last from rasterio to tensorflow
-    sensor_array = np.moveaxis(sensor_array,-1,0)
-    sensor_array = np.moveaxis(sensor_array,-1,0)
+    #read
+    sensor_array = _read_raster(sensor_path)
+    sensor_data = sensor_array.read()
+    label_array = _read_raster(ground_truth_path)
     
-    sensor_patches = extract_patches(sensor_array, crop_width, crop_height)
-    print("patches extracted, reshaping")
-    sensor_patches = tf.reshape(sensor_patches,
-                                [-1, crop_width, crop_height, sensor_channels])
-
-    label_patches = extract_patches(label_array, 1, 1)
-    label_patches = tf.reshape(label_patches, [-1, 1])
+    #Get value and coordinates of each label pixel
+    labels, coordinates =  get_coordinates(row, col, label_array.transform)
+    
+    #Loop through coordinate list and crop sensor data    
+    sensor_patches = select_crops(coordinates, sensor_array.transform, crop_height=crop_height, crop_width=crop_width)
 
     #Turn data labels into one-hot
-    label_onehot = to_categorical(label_patches, num_classes=classes)
+    label_onehot = to_categorical(labels, num_classes=classes)
     zipped_data = zip(sensor_patches, label_onehot)
 
     while True:

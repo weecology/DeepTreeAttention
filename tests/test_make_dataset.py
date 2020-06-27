@@ -11,7 +11,7 @@ import pytest
 def training_raster(tmp_path):
     fn = os.path.join(tmp_path,"training.tif")
     #Create a raster that looks data
-    arr = np.random.rand(4, 601,2369).astype(np.float)
+    arr = np.random.rand(4, 25,25).astype(np.float)
     
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
@@ -30,7 +30,7 @@ def training_raster(tmp_path):
 def ground_truth_raster(tmp_path):
     fn = os.path.join(tmp_path,"ground_truth.tif")
     #Create a raster that looks data (smaller)
-    arr = np.random.randint(20,size=(1, 601,2369)).astype(np.uint8)
+    arr = np.random.randint(20,size=(1, 50,50)).astype(np.uint8)
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
                                 height = arr.shape[1], width = arr.shape[2],
@@ -43,6 +43,20 @@ def ground_truth_raster(tmp_path):
 
     return fn
 
+def test_get_coordinates(ground_truth_raster):
+    results = make_dataset.get_coordinates(ground_truth_raster)
+    
+    #assert every pixel has a label
+    assert results.shape[0] == 50 * 50
+
+def test_select_crops(ground_truth_raster, training_raster):
+    
+    results = make_dataset.get_coordinates(ground_truth_raster)
+    coordinates = zip(results.easting, results.northing)
+    crops = make_dataset.select_crops(training_raster, coordinates, size=5)
+    
+    assert all([x.shape == (5,5,4) for x in crops])
+    
 def test_tf_data_generator(training_raster, ground_truth_raster):
     #Tensorflow encodes string as b bytes
     iterator = make_dataset.tf_data_generator(training_raster.encode(), ground_truth_raster.encode(),crop_height=11,crop_width=11, sensor_channels=4, classes=20)
