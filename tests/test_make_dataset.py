@@ -18,7 +18,7 @@ def training_raster(tmp_path):
                                 height = arr.shape[1], width = arr.shape[2],
                                 count=arr.shape[0], dtype=str(arr.dtype),
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
-                                transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, 4768, 1202))
+                                transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, arr.shape[1], arr.shape[2]))
     
     new_dataset.write(arr)
     new_dataset.close()
@@ -36,7 +36,7 @@ def ground_truth_raster(tmp_path):
                                 height = arr.shape[1], width = arr.shape[2],
                                 count=arr.shape[0], dtype=str(arr.dtype),
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
-                                transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, 4768, 1202))
+                                transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, arr.shape[1], arr.shape[2]))
     
     new_dataset.write(arr)
     new_dataset.close()
@@ -56,6 +56,7 @@ def test_select_crops(ground_truth_raster, training_raster):
     crops = make_dataset.select_crops(training_raster, coordinates, size=5)
     
     assert all([x.shape == (5,5,4) for x in crops])
+    assert all([x.sum()> 0 for x in crops])
     
 def test_tf_data_generator(training_raster, ground_truth_raster):
     #Tensorflow encodes string as b bytes

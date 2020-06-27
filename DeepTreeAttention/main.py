@@ -30,10 +30,8 @@ class AttentionModel():
 
     def create(self, weights=None):
         """weights: a saved model weights from previous run"""
-        #Infer classes
         self.model = create_model.model(classes=self.config["train"]["classes"],
-                                        height=self.config["train"]["crop_height"],
-                                        width=self.config["train"]["crop_width"],
+                                        height=self.config["train"]["crop_size"],
                                         channels=self.config["train"]["sensor_channels"],
                                         weighted_sum=self.config["train"]["weighted_sum"])
 
@@ -57,9 +55,7 @@ class AttentionModel():
         self.training_set = tf_dataset(
         sensor_path=self.config["train"]["sensor_path"],
         ground_truth_path=self.config["train"]["ground_truth_path"],
-        crop_height=self.config['train']["crop_height"],
-        crop_width=self.config['train']["crop_width"],
-        sensor_channels=self.config["train"]["sensor_channels"],
+        size=self.config['train']["crop_size"],
         batch_size=self.config["train"]["batch_size"],
         classes=self.config["train"]["classes"],
         repeat=False,
@@ -67,15 +63,13 @@ class AttentionModel():
 
         if self.config["evaluation"]["sensor_path"] is not None:
             self.testing_set = tf_dataset(
-            sensor_path=self.config["evaluation"]["sensor_path"],
-            ground_truth_path=self.config["evaluation"]["ground_truth_path"],
-            crop_height=self.config['train']["crop_height"],
-            crop_width=self.config['train']["crop_width"],
-            sensor_channels=self.config["train"]["sensor_channels"],
-            batch_size=self.config["train"]["batch_size"],
-            classes=self.config["train"]["classes"],
-            repeat=False,
-            shuffle=self.config["train"]["shuffle"])
+            sensor_path = self.config["evaluation"]["sensor_path"],
+            ground_truth_path = self.config["evaluation"]["ground_truth_path"],
+            size = self.config['train']["crop_size"],
+            batch_size = self.config["train"]["batch_size"],
+            classes = self.config["train"]["classes"],
+            repeat = False,
+            shuffle = self.config["train"]["shuffle"])
             
         else:
             self.testing_set = None

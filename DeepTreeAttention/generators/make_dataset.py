@@ -61,15 +61,14 @@ def select_crops(infile, coordinates, size=5):
     with rasterio.open(infile) as dataset:
     
         # Loop through your list of coords
-        for i, (lon, lat) in enumerate(coordinates):
+        for i, (x, y) in enumerate(coordinates):
     
             # Get pixel coordinates from map coordinates
-            py, px = dataset.index(lon, lat)
+            py, px = dataset.index(x, y)
             print('Pixel Y, X coords: {}, {}'.format(py, px))
     
             # Build an NxN window
             window = rasterio.windows.Window(px - size//2, py - size//2, size, size)
-            print(window)
     
             # Read the data in the window
             # clip is a nbands * size * size numpy array

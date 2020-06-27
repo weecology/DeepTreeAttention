@@ -10,14 +10,14 @@ from DeepTreeAttention.generators.make_dataset import tf_dataset
 def training_raster(tmp_path):
     fn = os.path.join(tmp_path,"training.tif")
     #Create a raster that looks data
-    arr = np.random.rand(4, 601,2369).astype(np.float)
+    arr = np.random.rand(4, 25,25).astype(np.float)
     
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
                                 height = arr.shape[1], width = arr.shape[2],
                                 count=arr.shape[0], dtype=str(arr.dtype),
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
-                                transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, 4768, 1202))
+                                transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, arr.shape[1], arr.shape[2]))
     
     new_dataset.write(arr)
     new_dataset.close()
@@ -29,13 +29,13 @@ def training_raster(tmp_path):
 def ground_truth_raster(tmp_path):
     fn = os.path.join(tmp_path,"ground_truth.tif")
     #Create a raster that looks data (smaller)
-    arr = np.random.randint(20,size=(1, 601,2369)).astype(np.uint8)
+    arr = np.random.randint(20,size=(1, 50,50)).astype(np.uint8)
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
                                 height = arr.shape[1], width = arr.shape[2],
                                 count=arr.shape[0], dtype=str(arr.dtype),
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
-                                transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, 4768, 1202))
+                                transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, arr.shape[1], arr.shape[2]))
     
     new_dataset.write(arr)
     new_dataset.close()
