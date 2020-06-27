@@ -65,7 +65,6 @@ def select_crops(infile, coordinates, size=5):
     
             # Get pixel coordinates from map coordinates
             py, px = dataset.index(x, y)
-            print('Pixel Y, X coords: {}, {}'.format(py, px))
     
             # Build an NxN window
             window = rasterio.windows.Window(px - size//2, py - size//2, size, size)
@@ -92,8 +91,11 @@ def tf_data_generator(sensor_path,
 
     #turn ground truth into a dataframe of coords
     results = get_coordinates(ground_truth_path.decode())
+    print("There are {} label pixels".format(results.shape[0]))
+    
     coordinates = zip(results.easting, results.northing)
     sensor_patches = select_crops(sensor_path.decode(), coordinates, size=size)
+    print("Finished cropping {} sensor images".format(len(sensor_patches)))
     
     #Turn data labels into one-hot
     label_onehot = to_categorical(results.label.values, num_classes=classes)
