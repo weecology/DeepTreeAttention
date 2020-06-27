@@ -13,6 +13,7 @@ See conf/config.yml for training parameters.
 
 # Organization
 
+```
 ├── conf                   # Config files for model training and evaluation
 ├── data                   #  Location to place data for model reading. Most data is too large to be in version control, see below
 ├── DeepTreeAttention                   # Source files
@@ -24,6 +25,7 @@ See conf/config.yml for training parameters.
 ├── LICENSE
 └── README.md
 └── environment.yml # Conda Environment for model training and tests
+```
 
 # Roadmap
 
@@ -43,7 +45,14 @@ Major milestones will be listed below, but for fine-grained information on code,
 
 ## Data
 
-* The Houston 2018 IEEE competition data can be downloaded [here](https://hyperspectral.ee.uh.edu/?page_id=1075) and should be placed in data/raw. This folder is not under version control
+* The Houston 2018 IEEE competition data can be downloaded [here](https://hyperspectral.ee.uh.edu/?page_id=1075) and should be placed in data/raw. This folder is not under version control. To process the sensor data into same extent as the ground truth labels run from top dir:
+
+```
+python crop_Houston2018.py
+```
+
+Which will save the crop in data/processed.
+
 
 # Citation
 

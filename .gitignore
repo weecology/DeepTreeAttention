@@ -3,3 +3,5 @@ project.wpr
 project.wpu
 *.h5
 __pycache__
+data/raw/
+data/processed/
