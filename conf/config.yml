@@ -4,7 +4,7 @@ train:
     ground_truth_path: /orange/ewhite/b.weinstein/Houston2018/2018IEEE_Contest/Phase2/TrainingGT/2018_IEEE_GRSS_DFC_GT_TR.tif #path to ground truth class raster
     crop_height: 11
     crop_width: 11
-    sensor_channels: 48
+    sensor_channels: 50
     epochs: 1
     learning_rate: .001
     gpu: 0
