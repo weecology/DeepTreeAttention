@@ -103,7 +103,7 @@ def generate(sensor_path,
         print("Finished cropping {} sensor images".format(len(sensor_patches)))       
         
         filename = "{}/{}_{}.tfrecord".format(savedir,basename,counter)
-        create_tfrecords.write_tfrecord(filename, sensor_patches, results.label.values)
+        create_tfrecords.write_tfrecord(filename, sensor_patches, results.label.values, classes)
         filenames.append(filename)
         counter +=1
     
@@ -121,8 +121,8 @@ def tf_dataset(tfrecords,
         dataset: a tf.data dataset yielding crops and labels
         """
 
-    dataset = tf.data.TFRecordDataset(filepath)
-
+    dataset = tf.data.TFRecordDataset(tfrecords)
+    dataset = dataset.map(create_tfrecords._parse_fn)
     #batch
     if shuffle:
         dataset = dataset.shuffle(buffer_size=10)

@@ -1,5 +1,5 @@
 #test make_dataset
-from DeepTreeAttention.generators import make_dataset
+from DeepTreeAttention.generators import make_dataset, create_tfrecords
 
 import tensorflow as tf
 import numpy as np
@@ -45,7 +45,7 @@ def ground_truth_raster(tmp_path):
 
 @pytest.fixture()
 def tfrecords(training_raster, ground_truth_raster,tmpdir):
-    tfrecords = make_dataset.generate(sensor_path, ground_truth_path,savedir=tmp_dir)
+    tfrecords = make_dataset.generate(training_raster, ground_truth_raster,savedir=tmpdir)
     return tfrecords
 
 def test_get_coordinates(ground_truth_raster):
@@ -55,7 +55,6 @@ def test_get_coordinates(ground_truth_raster):
     assert results.shape[0] == 50 * 50
 
 def test_select_crops(ground_truth_raster, training_raster):
-    
     results = make_dataset.get_coordinates(ground_truth_raster)
     coordinates = zip(results.easting, results.northing)
     crops = make_dataset.select_crops(training_raster, coordinates, size=5)
@@ -68,11 +67,11 @@ def test_generate(training_raster, ground_truth_raster,tmpdir):
     
     for path in tfrecords:
         assert os.path.exists(path)
-    
+            
 def test_tf_dataset(tfrecords):
     #Tensorflow encodes string as b bytes
-    dataset = make_dataset.tf_dataset(tfrecords, batch_size=10)
-
+    dataset = make_dataset.tf_dataset(tfrecords, batch_size=10, shuffle=False,repeat=False)
+        
     for data, label in dataset.take(2):  # only take first element of dataset
         numpy_data = data.numpy()
         numpy_labels = label.numpy()
