@@ -1,21 +1,11 @@
 #### tf.data input pipeline ###
 import numpy as np
+import os
 import rasterio
 import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
 import pandas as pd
-
-def _read_raster(path):
-    """Read a hyperspetral raster .tif 
-    Args:
-        path: a path to a .tif hyperspectral raster
-    Returns:
-        src: a numpy array of height x width x channels
-        """
-    r = rasterio.open(path)
-    src = r.read()
-
-    return src
+from .import create_tfrecords
 
 def get_coordinates(fname):   
     """Read raster and convert into a zipped list of values and coordinates
@@ -80,53 +70,58 @@ def select_crops(infile, coordinates, size=5):
             crops.append(padded_crop)
             
     return crops
-            
-            
-    
-def tf_data_generator(sensor_path,
+
+def generate(sensor_path,
                       ground_truth_path,
                       size=11,
-                      classes=20):
-    """Yield one instance of data with one hot labels"""
+                      chunk_size = 500,
+                      classes=20,
+                      savedir="."):
+    """Yield one instance of data with one hot labels
+    Args:
+        chunk_size: number of images per tfrecord
+        size: N x N image size
+        savedir: directory to save tfrecords
+    Returns:
+        filename: tfrecords path
+    """
 
     #turn ground truth into a dataframe of coords
-    results = get_coordinates(ground_truth_path.decode())
+    results = get_coordinates(ground_truth_path)
     print("There are {} label pixels".format(results.shape[0]))
     
-    coordinates = zip(results.easting, results.northing)
-    sensor_patches = select_crops(sensor_path.decode(), coordinates, size=size)
-    print("Finished cropping {} sensor images".format(len(sensor_patches)))
+    #Create groups of 100 to save to tfrecords
+    results["chunk"] = np.arange(len(results)) // chunk_size
+    counter = 0
+    basename = os.path.splitext(os.path.basename(sensor_path))[0]
+    filenames = []
+    for g, df in results.groupby("chunk"):
+        print(df.shape)
+        coordinates = zip(df.easting, df.northing)    
+        #Crop
+        sensor_patches = select_crops(sensor_path, coordinates, size=size)
+        print("Finished cropping {} sensor images".format(len(sensor_patches)))       
+        
+        filename = "{}/{}_{}.tfrecord".format(savedir,basename,counter)
+        create_tfrecords.write_tfrecord(filename, sensor_patches, results.label.values)
+        filenames.append(filename)
+        counter +=1
     
-    #Turn data labels into one-hot
-    label_onehot = to_categorical(results.label.values, num_classes=classes)
-    zipped_data = zip(sensor_patches, label_onehot)
-
-    while True:
-        for data, label in zipped_data:
-            yield data, label
-
-def tf_dataset(sensor_path,
-               ground_truth_path,
-               size=11,
+    return filenames
+    
+def tf_dataset(tfrecords,
                batch_size=1,
-               classes=20,
                repeat=True,
                shuffle=True):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
-        sensor_list: file path to sensor data .tif
-        ground_truth_path: file path to ground truth data .tif
+        tfrecords: path to tfrecords, see generate.py
         repeat: Should the dataset repeat infinitely (e.g. training)
     Returns:
         dataset: a tf.data dataset yielding crops and labels
         """
 
-    #Get data from generator
-    dataset = tf.data.Dataset.from_generator(
-        tf_data_generator,
-        args=[sensor_path, ground_truth_path, size,classes],
-        output_types=(tf.float32, tf.uint8),
-        output_shapes=((size, size, None), (classes)))
+    dataset = tf.data.TFRecordDataset(filepath)
 
     #batch
     if shuffle:

@@ -43,6 +43,11 @@ def ground_truth_raster(tmp_path):
 
     return fn
 
+@pytest.fixture()
+def tfrecords(training_raster, ground_truth_raster,tmpdir):
+    tfrecords = make_dataset.generate(sensor_path, ground_truth_path,savedir=tmp_dir)
+    return tfrecords
+
 def test_get_coordinates(ground_truth_raster):
     results = make_dataset.get_coordinates(ground_truth_raster)
     
@@ -57,34 +62,25 @@ def test_select_crops(ground_truth_raster, training_raster):
     
     assert all([x.shape == (5,5,4) for x in crops])
     assert all([x.sum()> 0 for x in crops])
-    
-def test_tf_data_generator(training_raster, ground_truth_raster):
-    #Tensorflow encodes string as b bytes
-    iterator = make_dataset.tf_data_generator(training_raster.encode(), ground_truth_raster.encode(),size=11, classes=20)
-    
-    i = 0
-    for data, labels in iterator:
-        assert data.shape == (11,11,4)
-        assert labels.shape == (20,)
-        i+=1
-        if i >=5: break 
-    
-def test_tf_dataset(training_raster, ground_truth_raster):
 
-    dataset = make_dataset.tf_dataset(
-        sensor_path=training_raster.encode(),
-        ground_truth_path=ground_truth_raster.encode(),
-        size=11,
-        batch_size=10,
-        classes=20
-        )
+def test_generate(training_raster, ground_truth_raster,tmpdir):
+    tfrecords = make_dataset.generate(training_raster, ground_truth_raster, savedir=tmpdir)
     
+    for path in tfrecords:
+        assert os.path.exists(path)
+    
+def test_tf_dataset(tfrecords):
+    #Tensorflow encodes string as b bytes
+    dataset = make_dataset.tf_dataset(tfrecords, batch_size=10)
+
     for data, label in dataset.take(2):  # only take first element of dataset
         numpy_data = data.numpy()
         numpy_labels = label.numpy()
         
     assert numpy_data.shape == (10,11,11,4)
     assert numpy_labels.shape == (10,20)
+    
+
     
     
     
