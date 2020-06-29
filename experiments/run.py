@@ -8,13 +8,6 @@ experiment = Experiment(project_name="deeptreeattention", workspace="bw4sz")
 model = AttentionModel()
 model.create()
 model.read_data()
-
-#How big is the data
-counter = 0 
-for data, label in model.testing_set:
-    print(data.shape)
-    counter+=1
-    
     
 #Log config
 experiment.log_parameters(model.config)

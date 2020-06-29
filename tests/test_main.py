@@ -47,7 +47,7 @@ def ground_truth_raster(tmp_path):
 def tfrecords(training_raster, ground_truth_raster,tmpdir):
     tfrecords = make_dataset.generate(training_raster, ground_truth_raster,savedir=tmpdir)
     
-    return tfrecords
+    return os.path.dirname(tfrecords[0])
 
 @pytest.fixture()
 def test_config(tfrecords):
