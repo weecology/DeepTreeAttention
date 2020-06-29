@@ -136,7 +136,7 @@ def tf_dataset(tfrecords,
         """
 
     dataset = tf.data.TFRecordDataset(tfrecords)
-    dataset = dataset.map(create_tfrecords._parse_fn)
+    dataset = dataset.map(create_tfrecords._parse_fn,num_parallel_calls=tf.data.experimental.AUTOTUNE)
     #batch
     if shuffle:
         dataset = dataset.shuffle(buffer_size=10)
