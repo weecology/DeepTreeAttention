@@ -52,21 +52,21 @@ class AttentionModel():
 
     def read_data(self):
         
-        train_records = glob.glob(self.config["train"]["tfrecords"] + "*.tfrecord")
+        self.train_records = glob.glob(os.path.join(self.config["train"]["tfrecords"], "*.tfrecord"))
         
         #Create training tf.data
         self.training_set = tf_dataset(
-        tfrecords=train_records,
+        tfrecords=self.train_records,
         batch_size=self.config["train"]["batch_size"],
         repeat=False,
         shuffle=self.config["train"]["shuffle"])
 
         if self.config["evaluation"]["tfrecords"] is not None:
             
-            test_records = glob.glob(self.config["evaluation"]["tfrecords"] + "*.tfrecord")
+            self.test_records = glob.glob(os.path.join(self.config["evaluation"]["tfrecords"], "*.tfrecord"))
             
             self.testing_set = tf_dataset(
-                tfrecords = test_records, 
+                tfrecords = self.test_records, 
                 batch_size = self.config["train"]["batch_size"],
                 repeat = False,
                 shuffle = self.config["train"]["shuffle"])
