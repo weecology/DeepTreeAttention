@@ -6,7 +6,7 @@ experiment = Experiment(project_name="deeptreeattention", workspace="bw4sz")
 
 #Create a class and run
 model = AttentionModel()
-model.create()
+model.create(name="single_conv")
 model.read_data()
     
 #Log config

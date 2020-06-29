@@ -8,9 +8,8 @@ from tensorflow.keras import metrics
 
 #Local Modules
 from DeepTreeAttention.utils.config import parse_yaml
-from DeepTreeAttention.models import create_model
+from DeepTreeAttention.models import Hang2020
 from DeepTreeAttention.generators.make_dataset import tf_dataset
-
 
 class AttentionModel():
     """The main class holding train, predict and evaluate methods"""
@@ -28,14 +27,30 @@ class AttentionModel():
         #Holders
         self.testing_set = None
         self.training_set = None
+    
+    def get_model(self, name): 
+        classes=self.config["train"]["classes"]
+        height=self.config["train"]["crop_size"]
+        width=self.config["train"]["crop_size"]
+        channels=self.config["train"]["sensor_channels"]
+        
+        if name == "Hang2020":
+            weighted_sum=self.config["train"]["weighted_sum"]            
+            return Hang2020.create_model(height, width,channels, classes, weighted_sum)
+        
+        elif name == "single_conv":
+            return single_conv.create_model(height, width, channels, classes)
+        else:
+            raise ValueError("Unknown model name {}",format(name))
 
-    def create(self, weights=None):
-        """weights: a saved model weights from previous run"""
-        self.model = create_model.model(classes=self.config["train"]["classes"],
-                                        height=self.config["train"]["crop_size"],
-                                        channels=self.config["train"]["sensor_channels"],
-                                        weighted_sum=self.config["train"]["weighted_sum"])
-
+    def create(self, name="Hang2020",weights=None):
+        """Load a model
+            Args:
+                weights: a saved model weights from previous run
+                name: a model name from DeepTreeAttention.models
+            """
+        self.model = self.get_model(name)
+        
         if weights:
             self.model.load_weights(weights)
 
@@ -81,8 +96,18 @@ class AttentionModel():
                        epochs=self.config["train"]["epochs"],
                        steps_per_epoch=self.config["train"]["steps"])
 
-    def predict(self):
-        pass
+    def predict(self, tfrecords, batch_size=1):
+            predict_records = glob.glob(os.path.join(self.config["evaluation"]["tfrecords"], "*.tfrecord"))
+            
+            prediction_set = tf_dataset(
+                tfrecords = predict_records, 
+                batch_size = batch_size,
+                repeat = False,
+                shuffle = False)
+        
+            predictions = self.model.predict(prediction_set)
+        
+            return predictions
 
     def evaluate(self, tf_dataset=None, steps=None):
         """Evaluate metrics on testing data. Defaults to reading from config.yml evaluation sensor path

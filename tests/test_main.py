@@ -97,7 +97,7 @@ def test_AttentionModel(test_config):
     
     #assert training took place
     assert not np.array_equal(final_weight,initial_weight)
-
+    
 def test_predict(test_config):
     #Create class
     mod = main.AttentionModel()    

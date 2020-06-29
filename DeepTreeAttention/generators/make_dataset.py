@@ -139,7 +139,7 @@ def tf_dataset(tfrecords,
     dataset = dataset.map(create_tfrecords._parse_fn,num_parallel_calls=tf.data.experimental.AUTOTUNE)
     #batch
     if shuffle:
-        dataset = dataset.shuffle(buffer_size=10)
+        dataset = dataset.shuffle(buffer_size=tf.data.experimental.AUTOTUNE)
     dataset = dataset.batch(batch_size=batch_size)
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
     if repeat:
