@@ -1,11 +1,13 @@
 #### tf.data input pipeline ###
+from dask.distributed import wait        
 import numpy as np
 import os
+import pandas as pd
 import rasterio
 import tensorflow as tf
-from tensorflow.keras.utils import to_categorical
-import pandas as pd
+
 from .import create_tfrecords
+from DeepTreeAttention.utils.start_cluster import start
 
 def get_coordinates(fname):   
     """Read raster and convert into a zipped list of values and coordinates
@@ -71,40 +73,53 @@ def select_crops(infile, coordinates, size=5):
             
     return crops
 
+def _record_wrapper_(results, sensor_path, coordinates, size, classes, filename):
+    sensor_patches = select_crops(sensor_path, coordinates, size=size)
+    create_tfrecords.write_tfrecord(filename, sensor_patches, results.label.values, classes)
+    
+    return filename
+
 def generate(sensor_path,
                       ground_truth_path,
                       size=11,
                       chunk_size = 500,
                       classes=20,
-                      savedir="."):
+                      savedir=".",
+                      use_dask=False,
+                      client=None):
     """Yield one instance of data with one hot labels
     Args:
         chunk_size: number of images per tfrecord
         size: N x N image size
         savedir: directory to save tfrecords
+        use_dask: optional dask client to parallelize computation
     Returns:
         filename: tfrecords path
     """
-
     #turn ground truth into a dataframe of coords
     results = get_coordinates(ground_truth_path)
     print("There are {} label pixels".format(results.shape[0]))
     
-    #Create groups of 100 to save to tfrecords
+    #Create chunks to write
     results["chunk"] = np.arange(len(results)) // chunk_size
-    counter = 0
     basename = os.path.splitext(os.path.basename(sensor_path))[0]
-    filenames = []
-    for g, df in results.groupby("chunk"):
-        coordinates = zip(df.easting, df.northing)    
-        #Crop
-        sensor_patches = select_crops(sensor_path, coordinates, size=size)
-        print("Finished cropping {} sensor images".format(len(sensor_patches)))       
-        
-        filename = "{}/{}_{}.tfrecord".format(savedir,basename,counter)
-        create_tfrecords.write_tfrecord(filename, sensor_patches, results.label.values, classes)
-        filenames.append(filename)
-        counter +=1
+    filenames = []    
+    if use_dask:
+        if client is None:
+            raise ValueError("use_dask is {} but no client specified".format(use_dask))
+        for g, df in results.groupby("chunk"):
+            coordinates = zip(df.easting,df.northing)            
+            filename = "{}/{}_{}.tfrecord".format(savedir,basename,g)  
+            fn = client.submit(_record_wrapper_, df, sensor_path, coordinates, size, classes, filename)
+            filenames.append(fn)
+        wait(filenames)
+        filenames = [x.result() for x in filenames]
+    else:
+        for g, df in results.groupby("chunk"):
+            filename = "{}/{}_{}.tfrecord".format(savedir,basename,g)     
+            coordinates = zip(df.easting,df.northing)
+            fn = _record_wrapper_(df, sensor_path, coordinates, size, classes, filename)
+            filenames.append(fn)
     
     return filenames
     

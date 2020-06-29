@@ -1,6 +1,6 @@
 #test make_dataset
 from DeepTreeAttention.generators import make_dataset, create_tfrecords
-
+from distributed import Client
 import tensorflow as tf
 import numpy as np
 import rasterio
@@ -62,11 +62,17 @@ def test_select_crops(ground_truth_raster, training_raster):
     assert all([x.shape == (5,5,4) for x in crops])
     assert all([x.sum()> 0 for x in crops])
 
-def test_generate(training_raster, ground_truth_raster,tmpdir):
-    tfrecords = make_dataset.generate(training_raster, ground_truth_raster, savedir=tmpdir)
+@pytest.mark.parametrize("use_dask",[False,True])
+def test_generate(training_raster, ground_truth_raster,tmpdir, use_dask):
+    if use_dask:
+        client = Client()
+    else:
+        client = None
+    tfrecords = make_dataset.generate(training_raster, ground_truth_raster, savedir=tmpdir, use_dask=use_dask, client=client)
     
     for path in tfrecords:
         assert os.path.exists(path)
+        os.remove(path)
             
 def test_tf_dataset(tfrecords):
     #Tensorflow encodes string as b bytes
