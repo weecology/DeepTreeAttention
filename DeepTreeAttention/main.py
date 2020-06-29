@@ -50,26 +50,19 @@ class AttentionModel():
                            metrics=metric_list)
 
     def read_data(self):
-        
         #Create training tf.data
         self.training_set = tf_dataset(
-        sensor_path=self.config["train"]["sensor_path"],
-        ground_truth_path=self.config["train"]["ground_truth_path"],
-        size=self.config['train']["crop_size"],
+        tfrecords=self.config["train"]["tfrecords"],
         batch_size=self.config["train"]["batch_size"],
-        classes=self.config["train"]["classes"],
         repeat=False,
         shuffle=self.config["train"]["shuffle"])
 
-        if self.config["evaluation"]["sensor_path"] is not None:
+        if self.config["evaluation"]["tfrecords"] is not None:
             self.testing_set = tf_dataset(
-            sensor_path = self.config["evaluation"]["sensor_path"],
-            ground_truth_path = self.config["evaluation"]["ground_truth_path"],
-            size = self.config['train']["crop_size"],
-            batch_size = self.config["train"]["batch_size"],
-            classes = self.config["train"]["classes"],
-            repeat = False,
-            shuffle = self.config["train"]["shuffle"])
+                tfrecords = self.config["evaluation"]["tfrecords"], 
+                batch_size = self.config["train"]["batch_size"],
+                repeat = False,
+                shuffle = self.config["train"]["shuffle"])
             
         else:
             self.testing_set = None

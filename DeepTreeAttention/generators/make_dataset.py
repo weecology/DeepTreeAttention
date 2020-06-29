@@ -96,7 +96,6 @@ def generate(sensor_path,
     basename = os.path.splitext(os.path.basename(sensor_path))[0]
     filenames = []
     for g, df in results.groupby("chunk"):
-        print(df.shape)
         coordinates = zip(df.easting, df.northing)    
         #Crop
         sensor_patches = select_crops(sensor_path, coordinates, size=size)

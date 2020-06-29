@@ -15,7 +15,6 @@ def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 def create_tf_example(image, label, classes):
-    print("Classes : {}".format(classes))
     """Generate one record"""
     rows = image.shape[0]
     cols = image.shape[1]
@@ -55,7 +54,7 @@ def _parse_fn(tfrecord):
     label = tf.cast(example['label'], tf.int64)
     
     # Load image from file, what dtype?
-    image = tf.io.decode_raw(example['image/data'], tf.int64)
+    image = tf.io.decode_raw(example['image/data'], tf.float64)
     image_shape = tf.stack([height, width, depth])
     
     # Reshape to known shape

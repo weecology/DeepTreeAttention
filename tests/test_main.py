@@ -4,7 +4,7 @@ import os
 import rasterio
 import numpy as np
 from DeepTreeAttention import main
-from DeepTreeAttention.generators.make_dataset import tf_dataset
+from DeepTreeAttention.generators import make_dataset
 
 @pytest.fixture()
 def training_raster(tmp_path):
@@ -30,6 +30,7 @@ def ground_truth_raster(tmp_path):
     fn = os.path.join(tmp_path,"ground_truth.tif")
     #Create a raster that looks data (smaller)
     arr = np.random.randint(20,size=(1, 50,50)).astype(np.uint8)
+    
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
                                 height = arr.shape[1], width = arr.shape[2],
@@ -43,23 +44,26 @@ def ground_truth_raster(tmp_path):
     return fn
 
 @pytest.fixture()
-def test_config(training_raster, ground_truth_raster):
+def tfrecords(training_raster, ground_truth_raster,tmpdir):
+    tfrecords = make_dataset.generate(training_raster, ground_truth_raster,savedir=tmpdir)
+    
+    return tfrecords
+
+@pytest.fixture()
+def test_config(tfrecords):
     config = {}
     train_config = { }
-    train_config["sensor_path"] = training_raster
-    train_config["ground_truth_path"] = ground_truth_raster
+    train_config["tfrecords"] = tfrecords
     train_config["batch_size"] = 10
     train_config["epochs"] = 1
     train_config["steps"] = 2
-    train_config["crop_height"] = 11
-    train_config["crop_width"] = 11
+    train_config["crop_size"] = 11
     train_config["sensor_channels"] = 4
     train_config["shuffle"] = False
         
     #evaluation
     eval_config = { }
-    eval_config["sensor_path"] = training_raster
-    eval_config["ground_truth_path"] = ground_truth_raster
+    eval_config["tfrecords"] = tfrecords
     
     config["train"] = train_config
     config["evaluation"] = eval_config
@@ -105,8 +109,6 @@ def test_predict(test_config):
         for nested_key, nested_value in value.items():
             mod.config[key][nested_key] = nested_value
     
-    assert os.path.exists(mod.config["evaluation"]["sensor_path"])
-
     #Create
     mod.create()
     mod.read_data()
@@ -124,8 +126,6 @@ def test_evaluate(test_config):
         for nested_key, nested_value in value.items():
             mod.config[key][nested_key] = nested_value
     
-    assert os.path.exists(mod.config["evaluation"]["sensor_path"])
-
     #Create
     mod.create()
     mod.read_data()

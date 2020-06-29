@@ -21,4 +21,6 @@ export LD_LIBRARY_PATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention/lib/:
 cd /home/b.weinstein/DeepTreeAttention/
 
 #comet debug
+#Generate only once
+python experiments/generate.py
 python experiments/run.py
