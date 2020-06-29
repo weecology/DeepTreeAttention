@@ -2,6 +2,7 @@ train:
     classes: 20
     sensor_path: data/raw/20170218_UH_CASI_S4_NAD83.pix  #path to sensor data
     ground_truth_path: data/raw/2018_IEEE_GRSS_DFC_GT_TR.tif #path to ground truth class raster
+    tfrecords: data/processed/ # Note this is not under version control, see generate.py to create locally.
     crop_size: 11
     sensor_channels: 48
     epochs: 1
