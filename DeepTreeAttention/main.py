@@ -1,6 +1,7 @@
 #Wrapper class for DeepTreeAttention
 """Wrap generate data, create, train and predict into a single set of class commands"""
 import os
+import glob
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras import metrics
@@ -50,16 +51,22 @@ class AttentionModel():
                            metrics=metric_list)
 
     def read_data(self):
+        
+        train_records = glob.glob(self.config["train"]["tfrecords"] + "*.tfrecord")
+        
         #Create training tf.data
         self.training_set = tf_dataset(
-        tfrecords=self.config["train"]["tfrecords"],
+        tfrecords=train_records,
         batch_size=self.config["train"]["batch_size"],
         repeat=False,
         shuffle=self.config["train"]["shuffle"])
 
         if self.config["evaluation"]["tfrecords"] is not None:
+            
+            test_records = glob.glob(self.config["evaluation"]["tfrecords"] + "*.tfrecord")
+            
             self.testing_set = tf_dataset(
-                tfrecords = self.config["evaluation"]["tfrecords"], 
+                tfrecords = test_records, 
                 batch_size = self.config["train"]["batch_size"],
                 repeat = False,
                 shuffle = self.config["train"]["shuffle"])
