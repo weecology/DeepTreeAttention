@@ -79,9 +79,7 @@ def test_AttentionModel(test_config):
     for key, value in test_config.items():
         for nested_key, nested_value in value.items():
             mod.config[key][nested_key] = nested_value
-    
-    assert os.path.exists(mod.config["train"]["sensor_path"])  
-    
+        
     #Create model
     mod.create()
     mod.read_data()
