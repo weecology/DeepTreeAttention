@@ -8,7 +8,7 @@ from tensorflow.keras import metrics
 
 #Local Modules
 from DeepTreeAttention.utils.config import parse_yaml
-from DeepTreeAttention.models import Hang2020
+from DeepTreeAttention.models import Hang2020, single_conv
 from DeepTreeAttention.generators.make_dataset import tf_dataset
 
 class AttentionModel():
