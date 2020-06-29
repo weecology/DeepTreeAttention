@@ -2,6 +2,7 @@
 from DeepTreeAttention.main import AttentionModel
 from DeepTreeAttention import __file__ as ROOT
 from DeepTreeAttention.generators import make_dataset
+from DeepTreeAttention.utils.start_cluster import start
 import os
 
 att = AttentionModel()
