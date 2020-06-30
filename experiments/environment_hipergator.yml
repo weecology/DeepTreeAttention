@@ -22,3 +22,6 @@ dependencies:
     - sphinx-markdown-tables
     - bumpversion
     - comet_ml
+    - dask
+    - distributed
+    - dask_jobqueue
