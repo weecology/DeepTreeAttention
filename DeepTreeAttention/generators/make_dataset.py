@@ -47,9 +47,13 @@ def select_crops(infile, coordinates, size=5):
         size: number of pixels to buffer (expressed as a diameter, not a radius). 
     Returns:
         crop: a numpy array of cropped values of size (2*crop_height + 1, 2*crop_width+1)
+        raster_rows: numpy row index
+        raster_cols: numpy col index
     """
     # Open the raster
     crops = []
+    raster_rows = [ ]
+    raster_cols = [ ]
     with rasterio.open(infile) as dataset:
     
         # Loop through your list of coords
@@ -57,7 +61,11 @@ def select_crops(infile, coordinates, size=5):
     
             # Get pixel coordinates from map coordinates
             py, px = dataset.index(x, y)
-    
+            
+            #Add to index unsure of x,y order! #TODO https://rasterio.readthedocs.io/en/latest/api/rasterio.io.html#rasterio.io.BufferedDatasetWriter.index
+            raster_rows.append(py)
+            raster_cols.append(px)
+                        
             # Build an NxN window
             window = rasterio.windows.Window(px - size//2, py - size//2, size, size)
     
@@ -71,11 +79,26 @@ def select_crops(infile, coordinates, size=5):
             
             crops.append(padded_crop)
             
-    return crops
+    return crops, raster_rows, raster_cols
 
-def _record_wrapper_(results, sensor_path, coordinates, size, classes, filename):
-    sensor_patches = select_crops(sensor_path, coordinates, size=size)
-    create_tfrecords.write_tfrecord(filename, sensor_patches, results.label.values, classes)
+def _record_wrapper_(results, sensor_path, coordinates, size, classes, filename, train, x=None, y=None):
+    """A wrapper for writing the correct type of tfrecord (train=True or False)"""
+    sensor_patches, x, y = select_crops(sensor_path, coordinates, size=size)
+    if train:
+        create_tfrecords.write_tfrecord(
+            filename=filename,
+            images=sensor_patches,
+            labels=results.label.values,
+            classes=classes,
+            train=train)
+    else:
+        create_tfrecords.write_tfrecord(
+            filename=filename,
+            images=sensor_patches,
+            x=x,
+            y=y,
+            classes=classes,
+            train=train)        
     
     return filename
 
@@ -86,13 +109,15 @@ def generate(sensor_path,
                       classes=20,
                       savedir=".",
                       use_dask=False,
-                      client=None):
+                      client=None,
+                      train=True):
     """Yield one instance of data with one hot labels
     Args:
         chunk_size: number of images per tfrecord
         size: N x N image size
         savedir: directory to save tfrecords
         use_dask: optional dask client to parallelize computation
+        train: generate training records with labels (True) or prediction records with indices (False)
     Returns:
         filename: tfrecords path
     """
@@ -104,47 +129,73 @@ def generate(sensor_path,
     results["chunk"] = np.arange(len(results)) // chunk_size
     basename = os.path.splitext(os.path.basename(sensor_path))[0]
     filenames = []    
+
     if use_dask:
         if client is None:
             raise ValueError("use_dask is {} but no client specified".format(use_dask))
+        
         for g, df in results.groupby("chunk"):
             coordinates = zip(df.easting,df.northing)            
             filename = "{}/{}_{}.tfrecord".format(savedir,basename,g)  
-            fn = client.submit(_record_wrapper_, df, sensor_path, coordinates, size, classes, filename)
+            #Submit to dask client
+            fn = client.submit(_record_wrapper_,
+                               results=df,
+                               sensor_path=sensor_path,
+                               coordinates=coordinates,
+                               size=size,
+                               classes=classes,
+                               filename=filename,
+                               train=train)
             filenames.append(fn)
         wait(filenames)
         filenames = [x.result() for x in filenames]
+        
     else:
         for g, df in results.groupby("chunk"):
             filename = "{}/{}_{}.tfrecord".format(savedir,basename,g)     
             coordinates = zip(df.easting,df.northing)
-            fn = _record_wrapper_(df, sensor_path, coordinates, size, classes, filename)
+            
+            #Write record
+            fn = _record_wrapper_(
+                results=df,
+                sensor_path=sensor_path,
+                coordinates=coordinates,
+                size=size,
+                classes=classes,
+                filename=filename,
+                train=train)
             filenames.append(fn)
     
     return filenames
     
 def tf_dataset(tfrecords,
-               batch_size=1,
+               batch_size=2,
                repeat=True,
-               shuffle=True):
+               shuffle=True,
+               train=True):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
         tfrecords: path to tfrecords, see generate.py
         repeat: Should the dataset repeat infinitely (e.g. training)
+        train: training mode -> records include training labels
     Returns:
-        dataset: a tf.data dataset yielding crops and labels
+        dataset: a tf.data dataset yielding crops and labels for train: True, crops and raster indices for train: False
         """
 
     AUTO = tf.data.experimental.AUTOTUNE
     ignore_order = tf.data.Options()
     ignore_order.experimental_deterministic = False
     
-    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=5)
+    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=10)
     dataset = dataset.with_options(ignore_order)
-    
+    dataset = tf.data.TFRecordDataset(tfrecords)
+        
     if shuffle:    
         dataset = dataset.shuffle(buffer_size=AUTO)
-    dataset = dataset.map(create_tfrecords._parse_fn,num_parallel_calls=AUTO)
+    if train:
+        dataset = dataset.map(create_tfrecords._train_parse_)
+    else:
+        dataset = dataset.map(create_tfrecords._predict_parse_)
     #batch
     dataset = dataset.batch(batch_size=batch_size)
     dataset = dataset.prefetch(buffer_size=AUTO)

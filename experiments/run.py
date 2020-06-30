@@ -10,7 +10,8 @@ model.create(name="single_conv")
 model.read_data()
     
 #Log config
-experiment.log_parameters(model.config)
+experiment.log_parameters(model.config["train"])
+
 model.train()
 results = model.evaluate()
 experiment.log_metrics(results)
