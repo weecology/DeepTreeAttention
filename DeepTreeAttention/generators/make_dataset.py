@@ -29,7 +29,7 @@ def get_coordinates(fname):
     # All eastings and northings (there is probably a faster way to do this)
     eastings, northings = np.vectorize(rc2en, otypes=[np.float, np.float])(rows, cols)
     
-    results = pd.DataFrame({"label":A.flatten(),"easting":eastings.flatten(),"northing":northings.flatten()})
+    results = pd.DataFrame({"easting":eastings.flatten(),"northing":northings.flatten()})
     
     return results
 
@@ -39,7 +39,7 @@ def pad(array, target_shape):
     
     return result
 
-def select_crops(infile, coordinates, size=5):
+def select_training_crops(infile, coordinates, size=5):
     """Generate a square window crop centered on a geographic location
     Args:
         infile: path to raster
@@ -81,17 +81,57 @@ def select_crops(infile, coordinates, size=5):
             
     return crops, raster_rows, raster_cols
 
-def _record_wrapper_(results, sensor_path, coordinates, size, classes, filename, train, x=None, y=None):
+def select_prediction_crops(infile, index_iterable, size=5):
+    """Generate a square window crop centered on a geographic location
+    Args:
+        index_iterable: a zipped (x,y) tuple of indices to process
+        size: number of pixels to buffer (expressed as a diameter, not a radius). 
+    Returns:
+        crop: a numpy array of cropped values of size (2*crop_height + 1, 2*crop_width+1)
+        raster_rows: numpy row index
+        raster_cols: numpy col index
+    """
+    # Open the raster
+    crops = []
+    raster_rows = [ ]
+    raster_cols = [ ]
+    
+    with rasterio.open(infile) as dataset:
+    
+        # Loop through your list of coords
+        for x, y in index_iterable:
+            
+            raster_rows.append(x)
+            raster_cols.append(y)
+                        
+            # Build an NxN window
+            window = rasterio.windows.Window(x - size//2, y - size//2, size, size)
+    
+            # Read the data in the window
+            # clip is a nbands * size * size numpy array
+            crop = dataset.read(window=window)    
+            crop = np.rollaxis(crop, 0, 3)
+            
+            #zero pad on border
+            padded_crop = pad(crop, target_shape=(size,size,crop.shape[2]))
+            
+            crops.append(padded_crop)
+            
+    return crops, raster_rows, raster_cols
+
+def _record_wrapper_(sensor_path, size, classes, filename, train, coordinates=None, index_iterable=None, labels=None):
     """A wrapper for writing the correct type of tfrecord (train=True or False)"""
-    sensor_patches, x, y = select_crops(sensor_path, coordinates, size=size)
+    
     if train:
+        sensor_patches, x, y = select_training_crops(sensor_path, coordinates, size=size)        
         create_tfrecords.write_tfrecord(
             filename=filename,
             images=sensor_patches,
-            labels=results.label.values,
+            labels=labels,
             classes=classes,
             train=train)
     else:
+        sensor_patches, x, y = select_prediction_crops(infile=sensor_path, index_iterable=index_iterable, size=size)        
         create_tfrecords.write_tfrecord(
             filename=filename,
             images=sensor_patches,
@@ -102,27 +142,98 @@ def _record_wrapper_(results, sensor_path, coordinates, size, classes, filename,
     
     return filename
 
-def generate(sensor_path,
+def generate_training(sensor_path,
                       ground_truth_path,
                       size=11,
                       chunk_size = 500,
                       classes=20,
                       savedir=".",
                       use_dask=False,
-                      client=None,
-                      train=True):
+                      client=None):
     """Yield one instance of data with one hot labels
     Args:
         chunk_size: number of images per tfrecord
         size: N x N image size
         savedir: directory to save tfrecords
         use_dask: optional dask client to parallelize computation
-        train: generate training records with labels (True) or prediction records with indices (False)
     Returns:
         filename: tfrecords path
     """
     #turn ground truth into a dataframe of coords
     results = get_coordinates(ground_truth_path)
+    
+    with rasterio.open(ground_truth_path) as r:
+        A = r.read()  # pixel values
+        
+    labels = A.flatten()
+
+    if not len(labels) == results.shape[0]:
+        raise ValueError("Only a 1D layer allowed as ground truth, the number of labels {} and coordinates {} differ".format(
+            len(labels),len(results.shape[0])))
+
+    #Create chunks to write
+    results["chunk"] = np.arange(len(results)) // chunk_size
+    basename = os.path.splitext(os.path.basename(sensor_path))[0]
+    filenames = []    
+
+    if use_dask:
+        if client is None:
+            raise ValueError("use_dask is {} but no client specified".format(use_dask))
+
+        for g, df in results.groupby("chunk"):
+            coordinates = zip(df.easting,df.northing)            
+            filename = "{}/{}_{}.tfrecord".format(savedir,basename,g)  
+            #Submit to dask client
+            fn = client.submit(_record_wrapper_,
+                               labels=labels,
+                               sensor_path=sensor_path,
+                               coordinates=coordinates,
+                               size=size,
+                               classes=classes,
+                               filename=filename,
+                               train=True)
+            filenames.append(fn)
+        wait(filenames)
+        filenames = [x.result() for x in filenames]
+
+    else:
+        for g, df in results.groupby("chunk"):
+            filename = "{}/{}_{}.tfrecord".format(savedir,basename,g)     
+            coordinates = zip(df.easting,df.northing)
+
+            #Write record
+            fn = _record_wrapper_(
+                labels=labels,
+                sensor_path=sensor_path,
+                coordinates=coordinates,
+                size=size,
+                classes=classes,
+                filename=filename,
+                train=True)
+            filenames.append(fn)
+
+    return filenames
+
+def generate_prediction(sensor_path,
+                      size=11,
+                      chunk_size = 500,
+                      classes=20,
+                      savedir=".",
+                      use_dask=False,
+                      client=None):
+    """Yield one instance of data with raster indices
+    Args:
+        chunk_size: number of images per tfrecord
+        size: N x N image size
+        savedir: directory to save tfrecords
+        use_dask: optional dask client to parallelize computation
+    Returns:
+        filename: tfrecords path
+    """
+    with rasterio.open(sensor_path) as src:
+        cols, rows = np.meshgrid(np.arange(src.shape[1]), np.arange(src.shape[0]))
+        results = pd.DataFrame({"rows":np.ravel(rows),"cols":np.ravel(cols)})
+    #turn ground truth into a dataframe of coords
     print("There are {} label pixels".format(results.shape[0]))
     
     #Create chunks to write
@@ -135,17 +246,16 @@ def generate(sensor_path,
             raise ValueError("use_dask is {} but no client specified".format(use_dask))
         
         for g, df in results.groupby("chunk"):
-            coordinates = zip(df.easting,df.northing)            
+            coordinates = zip(df.rows,df.cols)            
             filename = "{}/{}_{}.tfrecord".format(savedir,basename,g)  
             #Submit to dask client
             fn = client.submit(_record_wrapper_,
-                               results=df,
                                sensor_path=sensor_path,
-                               coordinates=coordinates,
+                               index_iterable=coordinates,
                                size=size,
                                classes=classes,
                                filename=filename,
-                               train=train)
+                               train=False)
             filenames.append(fn)
         wait(filenames)
         filenames = [x.result() for x in filenames]
@@ -153,17 +263,16 @@ def generate(sensor_path,
     else:
         for g, df in results.groupby("chunk"):
             filename = "{}/{}_{}.tfrecord".format(savedir,basename,g)     
-            coordinates = zip(df.easting,df.northing)
+            coordinates = zip(df.rows,df.cols)
             
             #Write record
             fn = _record_wrapper_(
-                results=df,
                 sensor_path=sensor_path,
-                coordinates=coordinates,
+                index_iterable=coordinates,
                 size=size,
                 classes=classes,
                 filename=filename,
-                train=train)
+                train=False)
             filenames.append(fn)
     
     return filenames

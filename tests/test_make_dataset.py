@@ -46,12 +46,12 @@ def ground_truth_raster(tmp_path):
 
 @pytest.fixture()
 def train_tfrecords(training_raster, ground_truth_raster,tmpdir):
-    tfrecords = make_dataset.generate(training_raster, ground_truth_raster,savedir=tmpdir, train=True, chunk_size=2)
+    tfrecords = make_dataset.generate_training(training_raster, ground_truth_raster,savedir=tmpdir, chunk_size=100)
     return tfrecords
 
 @pytest.fixture()
 def predict_tfrecords(training_raster, ground_truth_raster,tmpdir):
-    tfrecords = make_dataset.generate(training_raster, ground_truth_raster,savedir=tmpdir, train=False, chunk_size=2)
+    tfrecords = make_dataset.generate_prediction(sensor_path=training_raster, savedir=tmpdir,chunk_size=100)
     return tfrecords
 
 def test_get_coordinates(ground_truth_raster):
@@ -60,28 +60,39 @@ def test_get_coordinates(ground_truth_raster):
     #assert every pixel has a label
     assert results.shape[0] == 50 * 50
 
-def test_select_crops(ground_truth_raster, training_raster):
+def test_select_training_crops(ground_truth_raster, training_raster):
     results = make_dataset.get_coordinates(ground_truth_raster)
     coordinates = zip(results.easting, results.northing)
-    crops, x, y = make_dataset.select_crops(training_raster, coordinates, size=5)
+    crops, x, y = make_dataset.select_training_crops(training_raster, coordinates, size=5)
     
     assert all([x.shape == (5,5,4) for x in crops])
     assert all([x.sum()> 0 for x in crops])
     assert results.shape[0] == len(crops)
 
 @pytest.mark.parametrize("use_dask",[False,True])
-@pytest.mark.parametrize("train",[False,True])
-def test_generate(training_raster, ground_truth_raster,tmpdir, use_dask, train):
+def test_generate_training(training_raster, ground_truth_raster,tmpdir, use_dask):
     if use_dask:
         client = Client()
     else:
         client = None
-    tfrecords = make_dataset.generate(training_raster, ground_truth_raster, savedir=tmpdir, use_dask=use_dask, client=client, train=train)
+    tfrecords = make_dataset.generate_training(training_raster, ground_truth_raster, savedir=tmpdir, use_dask=use_dask, client=client)
     
     for path in tfrecords:
         assert os.path.exists(path)
         os.remove(path)
-            
+
+@pytest.mark.parametrize("use_dask",[False,True])
+def test_generate_prediction(training_raster,tmpdir, use_dask):
+    if use_dask:
+        client = Client()
+    else:
+        client = None
+    tfrecords = make_dataset.generate_prediction(training_raster, savedir=tmpdir, use_dask=use_dask, client=client)
+    
+    for path in tfrecords:
+        assert os.path.exists(path)
+        os.remove(path)
+        
 def test_tf_dataset_train(train_tfrecords):
     print(train_tfrecords)
     #Tensorflow encodes string as b bytes
@@ -92,7 +103,6 @@ def test_tf_dataset_train(train_tfrecords):
         numpy_data = data.numpy()
         numpy_labels = label.numpy()
         counter+=data.shape[0]
-        print(counter)
     
     #one epoch should be every pixel in the raster
     assert counter == 50 * 50
@@ -102,13 +112,13 @@ def test_tf_dataset_train(train_tfrecords):
 def test_tf_dataset_predict(predict_tfrecords):
     #Tensorflow encodes string as b bytes
     dataset = make_dataset.tf_dataset(predict_tfrecords, batch_size=10, shuffle=False,repeat=False, train=False)
-        
-    for data, x, y in dataset.take(-1):  # only take first element of dataset
+    
+    counter =0
+    for data, x, y in dataset:  # only take first element of dataset
         numpy_data = data.numpy()
         x = x.numpy()
         y = y.numpy()
-        
-    assert numpy_data.shape == (10,11,11,4)
-    df = pd.DataFrame({"x":x,"y":y})    
-    assert df.shape == (10,2)
+        counter+=data.shape[0]
+    
+    assert counter == 25 * 25
     

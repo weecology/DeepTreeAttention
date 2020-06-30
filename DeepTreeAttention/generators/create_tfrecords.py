@@ -61,7 +61,7 @@ def create_prediction_record(image, classes, x, y):
             'image/depth': _int64_feature(depth),
             'classes': _int64_feature(classes),
             'x': _int64_feature(x),
-            'y': _int64_feature(x),            
+            'y': _int64_feature(y),            
         }))
 
     # Serialize to string and write to file
@@ -134,6 +134,6 @@ def _predict_parse_(tfrecord):
     loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
         
     raster_rows = tf.cast(example['x'], tf.int64)
-    raster_cols = tf.cast(example['x'], tf.int64)
+    raster_cols = tf.cast(example['y'], tf.int64)
     
     return loaded_image, raster_rows, raster_cols

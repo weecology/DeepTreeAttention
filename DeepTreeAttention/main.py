@@ -2,6 +2,8 @@
 """Wrap generate data, create, train and predict into a single set of class commands"""
 import os
 import glob
+import pandas as pd
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras import metrics
@@ -97,17 +99,35 @@ class AttentionModel():
                        steps_per_epoch=self.config["train"]["steps"])
 
     def predict(self, tfrecords, batch_size=1):
-            predict_records = glob.glob(os.path.join(self.config["evaluation"]["tfrecords"], "*.tfrecord"))
-            
-            prediction_set = tf_dataset(
-                tfrecords = predict_records, 
-                batch_size = batch_size,
-                repeat = False,
-                shuffle = False)
+        """Predicted a set of tfrecords and create a raster image"""
+        prediction_set = tf_dataset(
+            tfrecords = tfrecords, 
+            batch_size = batch_size,
+            repeat = False,
+            shuffle = False,
+            train=False)
         
-            predictions = self.model.predict(prediction_set)
+        predictions = []
+        row_list = []
+        col_list = []
+        for image, x,y in prediction_set:
+            softmax = self.model.predict(image)
+            for row, col, i in zip(x.numpy(), y.numpy(), softmax):
+                label = np.argmax(i)
+                predictions.append(label)
+                row_list.append(row)
+                col_list.append(col)                
+
+        results = pd.DataFrame({"label":label,"row":row_list,"col":col_list})
+        results = results.sort_values(by=["row","col"])
         
-            return predictions
+        #Create image
+        rowIDs = results['row']
+        colIDs = results['col']            
+        predicted_raster = np.zeros((rowIDs.max()+1,colIDs.max()+1))
+        predicted_raster[rowIDs, colIDs] = results["label"]
+        
+        return predicted_raster
 
     def evaluate(self, tf_dataset=None, steps=None):
         """Evaluate metrics on testing data. Defaults to reading from config.yml evaluation sensor path
