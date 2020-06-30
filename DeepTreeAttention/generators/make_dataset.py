@@ -135,13 +135,19 @@ def tf_dataset(tfrecords,
         dataset: a tf.data dataset yielding crops and labels
         """
 
-    dataset = tf.data.TFRecordDataset(tfrecords)
-    dataset = dataset.map(create_tfrecords._parse_fn,num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    AUTO = tf.data.experimental.AUTOTUNE
+    ignore_order = tf.data.Options()
+    ignore_order.experimental_deterministic = False
+    
+    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=5)
+    dataset = dataset.with_options(ignore_order)
+    
+    if shuffle:    
+        dataset = dataset.shuffle(buffer_size=AUTO)
+    dataset = dataset.map(create_tfrecords._parse_fn,num_parallel_calls=AUTO)
     #batch
-    if shuffle:
-        dataset = dataset.shuffle(buffer_size=tf.data.experimental.AUTOTUNE)
     dataset = dataset.batch(batch_size=batch_size)
-    dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+    dataset = dataset.prefetch(buffer_size=AUTO)
     if repeat:
         dataset = dataset.repeat()
 
