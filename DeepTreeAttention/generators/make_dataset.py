@@ -266,7 +266,6 @@ def generate_prediction(sensor_path,
     
 def tf_dataset(tfrecords,
                batch_size=2,
-               repeat=True,
                shuffle=True,
                train=True):
     """Create a tf.data dataset that yields sensor data and ground truth
@@ -285,8 +284,8 @@ def tf_dataset(tfrecords,
     dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=5)
     dataset = dataset.with_options(ignore_order)
         
-    #if shuffle:    
-        #dataset = dataset.shuffle(buffer_size=AUTO)
+    if shuffle:    
+        dataset = dataset.shuffle(buffer_size=batch_size*5)
     if train:
         dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls= AUTO)
     else:
@@ -294,7 +293,5 @@ def tf_dataset(tfrecords,
     #batch
     dataset = dataset.batch(batch_size=batch_size)
     dataset = dataset.prefetch(buffer_size=AUTO)
-    if repeat:
-        dataset = dataset.repeat()
 
     return dataset

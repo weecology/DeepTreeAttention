@@ -112,7 +112,7 @@ def test_generate_prediction(training_raster,tmpdir, use_dask):
 def test_tf_dataset_train(train_tfrecords):
     print(train_tfrecords)
     #Tensorflow encodes string as b bytes
-    dataset = make_dataset.tf_dataset(train_tfrecords, batch_size=5, shuffle=False,repeat=False)
+    dataset = make_dataset.tf_dataset(train_tfrecords, batch_size=5, shuffle=False)
     
     counter=0
     for data, label in dataset:  # only take first element of dataset
@@ -127,7 +127,7 @@ def test_tf_dataset_train(train_tfrecords):
     
 def test_tf_dataset_predict(predict_tfrecords):
     #Tensorflow encodes string as b bytes
-    dataset = make_dataset.tf_dataset(predict_tfrecords, batch_size=10, shuffle=False,repeat=False, train=False)
+    dataset = make_dataset.tf_dataset(predict_tfrecords, batch_size=10, shuffle=False, train=False)
     
     counter =0
     for data, x, y in dataset:  # only take first element of dataset
