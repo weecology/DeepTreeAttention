@@ -271,7 +271,6 @@ def tf_dataset(tfrecords,
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
         tfrecords: path to tfrecords, see generate.py
-        repeat: Should the dataset repeat infinitely (e.g. training)
         train: training mode -> records include training labels
     Returns:
         dataset: a tf.data dataset yielding crops and labels for train: True, crops and raster indices for train: False
