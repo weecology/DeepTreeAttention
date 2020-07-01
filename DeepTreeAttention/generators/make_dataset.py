@@ -281,15 +281,15 @@ def tf_dataset(tfrecords,
     ignore_order = tf.data.Options()
     ignore_order.experimental_deterministic = False
     
-    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=5)
+    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=AUTO)
     dataset = dataset.with_options(ignore_order)
         
     if shuffle:    
         dataset = dataset.shuffle(buffer_size=batch_size*5)
     if train:
-        dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls= AUTO)
+        dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls=100)
     else:
-        dataset = dataset.map(create_tfrecords._predict_parse_, num_parallel_calls= AUTO)
+        dataset = dataset.map(create_tfrecords._predict_parse_, num_parallel_calls=100)
     #batch
     dataset = dataset.batch(batch_size=batch_size)
     dataset = dataset.prefetch(buffer_size=AUTO)
