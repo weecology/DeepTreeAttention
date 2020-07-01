@@ -287,9 +287,9 @@ def tf_dataset(tfrecords,
     if shuffle:    
         dataset = dataset.shuffle(buffer_size=batch_size*5)
     if train:
-        dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls=100)
+        dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls=200)
     else:
-        dataset = dataset.map(create_tfrecords._predict_parse_, num_parallel_calls=100)
+        dataset = dataset.map(create_tfrecords._predict_parse_, num_parallel_calls=200)
     #batch
     dataset = dataset.batch(batch_size=batch_size)
     dataset = dataset.prefetch(buffer_size=AUTO)
