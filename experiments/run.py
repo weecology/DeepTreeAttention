@@ -9,7 +9,7 @@ experiment = Experiment(project_name="deeptreeattention", workspace="bw4sz")
 
 #timestamp
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-comet_experiment.log_parameter("timestamp",timestamp)
+experiment.log_parameter("timestamp",timestamp)
 
 #Create a class and run
 model = AttentionModel()
