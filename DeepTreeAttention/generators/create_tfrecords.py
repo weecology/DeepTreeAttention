@@ -85,7 +85,10 @@ def _train_parse_(tfrecord):
     height = tf.cast(example['image/height'], tf.int64)
     width = tf.cast(example['image/width'], tf.int64)
     depth = tf.cast(example['image/depth'], tf.int64)
+    
+    #recast
     label = tf.cast(example['label'], tf.uint16)
+    label = tf.cast(example['label'], tf.uint8)
     
     # Load image from file
     image = tf.io.decode_raw(example['image/data'], tf.uint16)
@@ -93,6 +96,7 @@ def _train_parse_(tfrecord):
     
     # Reshape to known shape
     loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
+    loaded_image = tf.cast(loaded_image, dtype=tf.float32)
     
     #one hot
     one_hot_labels = tf.one_hot(label, classes)
@@ -120,7 +124,6 @@ def _predict_parse_(tfrecord):
 
     # Load one example and parse
     example = tf.io.parse_single_example(tfrecord, features)
-    classes = tf.cast(example['classes'], tf.int32)     
 
     height = tf.cast(example['image/height'], tf.int64)
     width = tf.cast(example['image/width'], tf.int64)
@@ -132,6 +135,7 @@ def _predict_parse_(tfrecord):
     
     # Reshape to known shape
     loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
+    loaded_image = tf.cast(loaded_image, dtype=tf.float32)
         
     raster_rows = tf.cast(example['x'], tf.int64)
     raster_cols = tf.cast(example['y'], tf.int64)

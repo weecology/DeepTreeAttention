@@ -28,7 +28,7 @@ def training_raster(tmp_path):
 def predict_raster(tmp_path):
     fn = os.path.join(tmp_path,"training.tif")
     #Create a raster that looks data
-    arr = np.random.rand(4, 10,10).astype(np.float)
+    arr = np.random.rand(4, 10,10).astype(np.uint16)
     
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
@@ -46,7 +46,7 @@ def predict_raster(tmp_path):
 def ground_truth_raster(tmp_path):
     fn = os.path.join(tmp_path,"ground_truth.tif")
     #Create a raster that looks data (smaller)
-    arr = np.random.randint(20,size=(1, 50,50)).astype(np.uint8)
+    arr = np.random.randint(20,size=(1, 50,50)).astype("uint16")
     
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
