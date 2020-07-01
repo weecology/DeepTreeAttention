@@ -5,6 +5,7 @@ import rasterio
 import numpy as np
 from DeepTreeAttention import main
 from DeepTreeAttention.generators import make_dataset
+from matplotlib.pyplot import imshow
 
 @pytest.fixture()
 def training_raster(tmp_path):
@@ -141,7 +142,7 @@ def test_predict(test_config, predict_tfrecords):
     
     #Equals size of the input raster
     assert predicted_raster.shape == (10,10)
-
+    
 def test_evaluate(test_config):
     #Create class
     mod = main.AttentionModel()    
