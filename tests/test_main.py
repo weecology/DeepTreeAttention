@@ -24,6 +24,23 @@ def training_raster(tmp_path):
 
     return fn
 
+@pytest.fixture()
+def predict_raster(tmp_path):
+    fn = os.path.join(tmp_path,"training.tif")
+    #Create a raster that looks data
+    arr = np.random.rand(4, 10,10).astype(np.float)
+    
+    #hard coded from Houston 2018 ground truth
+    new_dataset = rasterio.open(fn, 'w', driver='GTiff',
+                                height = arr.shape[1], width = arr.shape[2],
+                                count=arr.shape[0], dtype=str(arr.dtype),
+                                crs=rasterio.crs.CRS.from_epsg("26915"),
+                                transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, arr.shape[1], arr.shape[2]))
+    
+    new_dataset.write(arr)
+    new_dataset.close()
+
+    return fn
 
 @pytest.fixture()
 def ground_truth_raster(tmp_path):
@@ -45,9 +62,14 @@ def ground_truth_raster(tmp_path):
 
 @pytest.fixture()
 def tfrecords(training_raster, ground_truth_raster,tmpdir):
-    tfrecords = make_dataset.generate(training_raster, ground_truth_raster,savedir=tmpdir)
+    tfrecords = make_dataset.generate_training(training_raster, ground_truth_raster,savedir=tmpdir)
     
     return os.path.dirname(tfrecords[0])
+
+@pytest.fixture()
+def predict_tfrecords(predict_raster,tmpdir):
+    tfrecords = make_dataset.generate_prediction(predict_raster, savedir=tmpdir, chunk_size=100)
+    return tfrecords
 
 @pytest.fixture()
 def test_config(tfrecords):
@@ -98,7 +120,7 @@ def test_AttentionModel(test_config):
     #assert training took place
     assert not np.array_equal(final_weight,initial_weight)
     
-def test_predict(test_config):
+def test_predict(test_config, predict_tfrecords):
     #Create class
     mod = main.AttentionModel()    
     
@@ -110,10 +132,10 @@ def test_predict(test_config):
     #Create
     mod.create()
     mod.read_data()
+    predicted_raster = mod.predict(predict_tfrecords)
     
-    result = mod.model.predict(mod.testing_set, steps=1)
-    
-    assert result.shape == (mod.config["train"]["batch_size"], mod.config["train"]["classes"])
+    #Equals size of the input raster
+    assert predicted_raster.shape == (10,10)
 
 def test_evaluate(test_config):
     #Create class
