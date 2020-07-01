@@ -34,7 +34,4 @@ def resample(path, upscale_factor=2):
     filename = "{}/{}_resampled.tif".format(savedir, basename)
     
     with rasterio.open(filename, "w", **metadata) as dest:
-        data.write(img)
-        
-    new_dataset.write(arr)
-    new_dataset.close()        
+        dest.write(data)

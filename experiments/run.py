@@ -12,6 +12,7 @@ model.read_data()
     
 #Log config
 experiment.log_parameters(model.config["train"])
+experiment.log_parameter("Training Batch Size", model.config["train"]["batch_size"])
 
 model.train()
 results = model.evaluate()
