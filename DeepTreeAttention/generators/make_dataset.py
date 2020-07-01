@@ -27,7 +27,7 @@ def get_coordinates(fname):
     rc2en = lambda r, c: (c, r) * T0
     
     # All eastings and northings (there is probably a faster way to do this)
-    eastings, northings = np.vectorize(rc2en, otypes=[np.float, np.float])(rows, cols)
+    eastings, northings = np.vectorize(rc2en, otypes=[np.float, np.float])(cols, rows)
     
     results = pd.DataFrame({"easting":eastings.flatten(),"northing":northings.flatten()})
     
