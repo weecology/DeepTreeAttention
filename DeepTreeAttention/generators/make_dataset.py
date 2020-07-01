@@ -115,6 +115,8 @@ def _record_wrapper_(sensor_path, size, classes, filename, train, coordinates=No
     """A wrapper for writing the correct type of tfrecord (train=True or False)"""
     
     if train:
+        if labels is None:
+            raise ValueError("Missing labels but training mode set to True")
         sensor_patches, x, y = select_training_crops(sensor_path, coordinates, size=size)        
         create_tfrecords.write_tfrecord(
             filename=filename,
@@ -153,6 +155,7 @@ def generate_training(sensor_path,
     """
     #turn ground truth into a dataframe of coords
     results = get_coordinates(ground_truth_path)
+    print("There are {} label pixels in the labeled ground truth".format(results.shape[0]))
 
     #Create chunks to write
     results["chunk"] = np.arange(len(results)) // chunk_size
@@ -216,8 +219,9 @@ def generate_prediction(sensor_path,
     with rasterio.open(sensor_path) as src:
         cols, rows = np.meshgrid(np.arange(src.shape[1]), np.arange(src.shape[0]))
         results = pd.DataFrame({"rows":np.ravel(rows),"cols":np.ravel(cols)})
+    
     #turn ground truth into a dataframe of coords
-    print("There are {} label pixels".format(results.shape[0]))
+    print("There are {} sensor pixels in the prediction data".format(results.shape[0]))
     
     #Create chunks to write
     results["chunk"] = np.arange(len(results)) // chunk_size

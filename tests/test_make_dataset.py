@@ -50,11 +50,12 @@ def ground_truth_raster(tmp_path):
 
 @pytest.fixture()
 def train_tfrecords(training_raster, ground_truth_raster,tmpdir):
-    tfrecords = make_dataset.generate_training(training_raster, ground_truth_raster,savedir=tmpdir, chunk_size=100)
+    client = Client()
+    tfrecords = make_dataset.generate_training(training_raster, ground_truth_raster,savedir=tmpdir, chunk_size=100, use_dask=True, client=client)
     return tfrecords
 
 @pytest.fixture()
-def predict_tfrecords(training_raster, ground_truth_raster,tmpdir):
+def predict_tfrecords(training_raster,tmpdir):
     tfrecords = make_dataset.generate_prediction(sensor_path=training_raster, savedir=tmpdir,chunk_size=100)
     return tfrecords
 
@@ -101,8 +102,9 @@ def test_generate_prediction(training_raster,tmpdir, use_dask):
         client = Client()
     else:
         client = None
-    tfrecords = make_dataset.generate_prediction(training_raster, savedir=tmpdir, use_dask=use_dask, client=client)
     
+    tfrecords = make_dataset.generate_prediction(training_raster, savedir=tmpdir, use_dask=use_dask, client=client)
+        
     for path in tfrecords:
         assert os.path.exists(path)
         os.remove(path)

@@ -6,7 +6,7 @@ dependencies:
   - sphinx
   - recommonmark
   - pyyaml
-  - pytest
+  - pytest > 5.0
   - numpydoc
   - h5py
   - numpy

@@ -91,8 +91,9 @@ def test_config(tfrecords):
     config["evaluation"] = eval_config
     
     return config
-    
-def test_AttentionModel(test_config):
+
+@pytest.mark.parametrize("validation_split",[False, True])
+def test_AttentionModel(test_config,validation_split):
 
     #Create class
     mod = main.AttentionModel()      
@@ -104,7 +105,7 @@ def test_AttentionModel(test_config):
         
     #Create model
     mod.create()
-    mod.read_data()
+    mod.read_data(validation_split=validation_split)
     
     mod.config["evaluation"]["sensor_path"] = None
     mod.config["evaluation"]["ground_truth_path"] = None
@@ -120,6 +121,10 @@ def test_AttentionModel(test_config):
     #assert training took place
     assert not np.array_equal(final_weight,initial_weight)
     
+    #assert val acc exists if split
+    if validation_split:
+        assert "val_acc" in list(mod.model.history.history.keys()) 
+        
 def test_predict(test_config, predict_tfrecords):
     #Create class
     mod = main.AttentionModel()    
@@ -150,7 +155,8 @@ def test_evaluate(test_config):
     mod.create()
     mod.read_data()
         
-    result = mod.evaluate(steps=2)
+    result = mod.evaluate(mod.train_split, steps=2)
+    assert "acc" in list(result.keys())
     print(result)
     
     

@@ -67,36 +67,45 @@ class AttentionModel():
                                lr=float(self.config['train']['learning_rate'])),
                            metrics=metric_list)
 
-    def read_data(self):
+    def read_data(self, validation_split=False):
+        """Read tfrecord into datasets from config
+            Args:
+                validation_split: True -> split tfrecords into train test. This overrides the evaluation config!
+            """
         
         self.train_records = glob.glob(os.path.join(self.config["train"]["tfrecords"], "*.tfrecord"))
-        
+                
         #Create training tf.data
         self.training_set = tf_dataset(
         tfrecords=self.train_records,
         batch_size=self.config["train"]["batch_size"],
         repeat=False,
         shuffle=self.config["train"]["shuffle"])
-
-        if self.config["evaluation"]["tfrecords"] is not None:
-            
-            self.test_records = glob.glob(os.path.join(self.config["evaluation"]["tfrecords"], "*.tfrecord"))
-            
-            self.testing_set = tf_dataset(
-                tfrecords = self.test_records, 
-                batch_size = self.config["train"]["batch_size"],
-                repeat = False,
-                shuffle = self.config["train"]["shuffle"])
-            
-        else:
-            self.testing_set = None
-            
-    def train(self):
-        """Train a model"""
         
-        self.model.fit(self.training_set,
-                       epochs=self.config["train"]["epochs"],
-                       steps_per_epoch=self.config["train"]["steps"])
+        if validation_split:
+            train_count = int(len(self.train_records ) * 0.9)
+            self.train_split = self.training_set.take(train_count)
+            self.val_split = self.training_set.skip(train_count)
+        else:
+            self.train_split = self.training_set
+            self.val_split = None     
+            
+            if self.config["evaluation"]["tfrecords"] is not None:
+                self.test_records = glob.glob(os.path.join(self.config["evaluation"]["tfrecords"], "*.tfrecord"))
+                self.val_split = tf_dataset(
+                    tfrecords = self.test_records, 
+                    batch_size = self.config["train"]["batch_size"],
+                    repeat = False,
+                    shuffle = self.config["train"]["shuffle"])
+
+    def train(self):
+        """Train a model"""       
+        self.model.fit(
+            self.train_split,
+            epochs=self.config["train"]["epochs"],
+            steps_per_epoch=self.config["train"]["steps"],
+            validation_data=self.val_split
+        )
 
     def predict(self, tfrecords, batch_size=1):
         """Predicted a set of tfrecords and create a raster image"""
