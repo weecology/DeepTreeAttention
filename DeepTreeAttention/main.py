@@ -79,7 +79,6 @@ class AttentionModel():
         self.training_set = tf_dataset(
         tfrecords=self.train_records,
         batch_size=self.config["train"]["batch_size"],
-        repeat=False,
         shuffle=self.config["train"]["shuffle"])
         
         if validation_split:
@@ -95,7 +94,6 @@ class AttentionModel():
                 self.val_split = tf_dataset(
                     tfrecords = self.test_records, 
                     batch_size = self.config["train"]["batch_size"],
-                    repeat = False,
                     shuffle = self.config["train"]["shuffle"])
 
     def train(self):
@@ -112,7 +110,6 @@ class AttentionModel():
         prediction_set = tf_dataset(
             tfrecords = tfrecords, 
             batch_size = batch_size,
-            repeat = False,
             shuffle = False,
             train=False)
         
