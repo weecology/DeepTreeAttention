@@ -1,5 +1,6 @@
 #Experiment
 import glob
+import os
 from comet_ml import Experiment
 from DeepTreeAttention.main import AttentionModel
 from DeepTreeAttention.visualization.visualize import discrete_cmap
