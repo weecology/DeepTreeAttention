@@ -1,4 +1,5 @@
 #Experiment
+import glob
 from matplotlib.pyplot import imshow
 from comet_ml import Experiment
 from DeepTreeAttention.main import AttentionModel
@@ -16,7 +17,8 @@ experiment.log_parameter("Training Batch Size", model.config["train"]["batch_siz
 
 model.train()
 
-predicted_raster = model.predict("/orange/ewhite/b.weinstein/Houston2018/tfrecords/predict/", batch_size=128)
+predict_tfrecords = glob.glob("/orange/ewhite/b.weinstein/Houston2018/tfrecords/predict/*.tfrecord")
+predicted_raster = model.predict(predict_tfrecords, batch_size=128)
 fig = imshow(predicted_raster)
 experiment.log_figure(figure=fig,figure_name="Predicted Raster")
 
