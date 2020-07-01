@@ -297,7 +297,6 @@ def tf_dataset(tfrecords,
     
     dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=5)
     dataset = dataset.with_options(ignore_order)
-    dataset = tf.data.TFRecordDataset(tfrecords)
         
     if shuffle:    
         dataset = dataset.shuffle(buffer_size=AUTO)
