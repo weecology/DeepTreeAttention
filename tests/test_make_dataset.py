@@ -16,12 +16,12 @@ def training_raster(tmp_path):
     arr = np.arange(25 * 25).reshape((25,25))
     arr = np.dstack([arr]*4)
     arr = np.rollaxis(arr, 2,0)
-    arr = arr.astype(float)
+    arr = arr.astype("uint16")
     
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
                                 height = arr.shape[1], width = arr.shape[2],
-                                count=arr.shape[0], dtype=str(arr.dtype),
+                                count=arr.shape[0], dtype="uint16",
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
                                 transform=rasterio.transform.from_origin(272056.0, 3289689.0, 1, 1))
     
@@ -35,11 +35,11 @@ def training_raster(tmp_path):
 def ground_truth_raster(tmp_path):
     fn = os.path.join(tmp_path,"ground_truth.tif")
     #Create a raster that looks data (smaller)
-    arr = np.random.randint(20,size=(1, 50,50)).astype(np.uint8)
+    arr = np.random.randint(20,size=(1, 50,50)).astype(np.uint16)
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
                                 height = arr.shape[1], width = arr.shape[2],
-                                count=arr.shape[0], dtype=str(arr.dtype),
+                                count=arr.shape[0], dtype="uint16",
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
                                 transform=rasterio.transform.from_origin(272056.0, 3289689.0, 0.5, 0.5))
     

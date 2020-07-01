@@ -10,12 +10,12 @@ from DeepTreeAttention.generators import make_dataset
 def training_raster(tmp_path):
     fn = os.path.join(tmp_path,"training.tif")
     #Create a raster that looks data
-    arr = np.random.rand(4, 25,25).astype(np.float)
+    arr = np.random.rand(4, 25,25).astype("uint16")
     
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
                                 height = arr.shape[1], width = arr.shape[2],
-                                count=arr.shape[0], dtype=str(arr.dtype),
+                                count=arr.shape[0], dtype="uint16",
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
                                 transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, arr.shape[1], arr.shape[2]))
     
@@ -33,7 +33,7 @@ def predict_raster(tmp_path):
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
                                 height = arr.shape[1], width = arr.shape[2],
-                                count=arr.shape[0], dtype=str(arr.dtype),
+                                count=arr.shape[0], dtype="uint16",
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
                                 transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, arr.shape[1], arr.shape[2]))
     
@@ -51,7 +51,7 @@ def ground_truth_raster(tmp_path):
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
                                 height = arr.shape[1], width = arr.shape[2],
-                                count=arr.shape[0], dtype=str(arr.dtype),
+                                count=arr.shape[0], dtype="uint16",
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
                                 transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, arr.shape[1], arr.shape[2]))
     

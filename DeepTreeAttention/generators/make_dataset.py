@@ -285,8 +285,8 @@ def tf_dataset(tfrecords,
     dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=5)
     dataset = dataset.with_options(ignore_order)
         
-    if shuffle:    
-        dataset = dataset.shuffle(buffer_size=AUTO)
+    #if shuffle:    
+        #dataset = dataset.shuffle(buffer_size=AUTO)
     if train:
         dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls= AUTO)
     else:

@@ -15,7 +15,7 @@ bounds = ground_truth_src.bounds
 sensor_src = rasterio.open(sensor_path)
 out_img, out_transform = mask(dataset=sensor_src, shapes=[box(*bounds)], crop=True)
 #Select first 48 bands as channels
-out_img = out_img[0:48,:,:]
+out_img = out_img[:48,:,:]
 
 # Copy the metadata and write
 out_meta = sensor_src.meta.copy()

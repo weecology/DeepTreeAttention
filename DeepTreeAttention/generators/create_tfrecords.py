@@ -85,10 +85,10 @@ def _train_parse_(tfrecord):
     height = tf.cast(example['image/height'], tf.int64)
     width = tf.cast(example['image/width'], tf.int64)
     depth = tf.cast(example['image/depth'], tf.int64)
-    label = tf.cast(example['label'], tf.int64)
+    label = tf.cast(example['label'], tf.uint16)
     
     # Load image from file
-    image = tf.io.decode_raw(example['image/data'], tf.float64)
+    image = tf.io.decode_raw(example['image/data'], tf.uint16)
     image_shape = tf.stack([height, width, depth])
     
     # Reshape to known shape
@@ -127,7 +127,7 @@ def _predict_parse_(tfrecord):
     depth = tf.cast(example['image/depth'], tf.int64)
     
     # Load image from file
-    image = tf.io.decode_raw(example['image/data'], tf.float64)
+    image = tf.io.decode_raw(example['image/data'], tf.uint16)
     image_shape = tf.stack([height, width, depth])
     
     # Reshape to known shape
