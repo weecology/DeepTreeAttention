@@ -11,15 +11,19 @@ import pandas as pd
 @pytest.fixture()
 def training_raster(tmp_path):
     fn = os.path.join(tmp_path,"training.tif")
-    #Create a raster that looks data
-    arr = np.random.rand(4, 25,25).astype(np.float)
+    
+    #Create a raster that looks data, index order to help id
+    arr = np.arange(25 * 25).reshape((25,25))
+    arr = np.dstack([arr]*4)
+    arr = np.rollaxis(arr, 2,0)
+    arr = arr.astype(float)
     
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
                                 height = arr.shape[1], width = arr.shape[2],
                                 count=arr.shape[0], dtype=str(arr.dtype),
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
-                                transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, arr.shape[1], arr.shape[2]))
+                                transform=rasterio.transform.from_origin(272056.0, 3289689.0, 1, 1))
     
     new_dataset.write(arr)
     new_dataset.close()
@@ -37,7 +41,7 @@ def ground_truth_raster(tmp_path):
                                 height = arr.shape[1], width = arr.shape[2],
                                 count=arr.shape[0], dtype=str(arr.dtype),
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
-                                transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, arr.shape[1], arr.shape[2]))
+                                transform=rasterio.transform.from_origin(272056.0, 3289689.0, 0.5, 0.5))
     
     new_dataset.write(arr)
     new_dataset.close()
@@ -59,6 +63,12 @@ def test_get_coordinates(ground_truth_raster):
     
     #assert every pixel has a label
     assert results.shape[0] == 50 * 50
+    
+    src = rasterio.open(ground_truth_raster)
+    A = src.read()
+    
+    results.iloc[0].label == A[0,0,0]
+    results.iloc[1].label == A[0,1,0]
 
 def test_select_training_crops(ground_truth_raster, training_raster):
     results = make_dataset.get_coordinates(ground_truth_raster)
@@ -68,7 +78,11 @@ def test_select_training_crops(ground_truth_raster, training_raster):
     assert all([x.shape == (5,5,4) for x in crops])
     assert all([x.sum()> 0 for x in crops])
     assert results.shape[0] == len(crops)
-
+    
+    #should be approxiately in the top corner, allow for pixel rounding. The sensor raster is filled with index values
+    target = np.array( [ [0, 0, 0,0,0], [0, 0, 0,0,0] , [0,0,0,1,2] , [0,0,25,26,27],[0,0,50,51,52]])
+    np.testing.assert_almost_equal(crops[0][:,:,0],target)
+    
 @pytest.mark.parametrize("use_dask",[False,True])
 def test_generate_training(training_raster, ground_truth_raster,tmpdir, use_dask):
     if use_dask:

@@ -16,9 +16,9 @@ def get_coordinates(fname):
     Returns:
         results: a zipped list that yields values, coordinates in a tuple
         """
-    with rasterio.open(fname) as r:
-        T0 = r.transform  # upper-left pixel corner affine transform
-        A = r.read()  # pixel values
+    src = rasterio.open(fname)
+    T0 = src.transform  # upper-left pixel corner affine transform
+    A = src.read()  # pixel values
     
     # All rows and columns
     cols, rows = np.meshgrid(np.arange(A.shape[2]), np.arange(A.shape[1]))
@@ -29,20 +29,20 @@ def get_coordinates(fname):
     # All eastings and northings (there is probably a faster way to do this)
     eastings, northings = np.vectorize(rc2en, otypes=[np.float, np.float])(cols, rows)
     
-    results = pd.DataFrame({"easting":eastings.flatten(),"northing":northings.flatten()})
+    #get values at each position to be absolutely sure they are the same
+    labels=[]
+    for x,y, in zip(eastings.flatten(), northings.flatten()):
+        for val in src.sample([(x, y)]):
+            labels.append(val[0])
+        
+    results = pd.DataFrame({"label":labels,"easting":eastings.flatten(),"northing":northings.flatten()})
     
     return results
-
-def pad(array, target_shape):
-    result = np.zeros(target_shape)
-    result[:array.shape[0],:array.shape[1]] = array
-    
-    return result
 
 def select_training_crops(infile, coordinates, size=5):
     """Generate a square window crop centered on a geographic location
     Args:
-        infile: path to raster
+        infile: path to sensor data
         coordinates: a tuple of (easting, northing)
         size: number of pixels to buffer (expressed as a diameter, not a radius). 
     Returns:
@@ -55,12 +55,11 @@ def select_training_crops(infile, coordinates, size=5):
     raster_rows = [ ]
     raster_cols = [ ]
     with rasterio.open(infile) as dataset:
-    
         # Loop through your list of coords
         for i, (x, y) in enumerate(coordinates):
     
             # Get pixel coordinates from map coordinates
-            py, px = dataset.index(x, y)
+            py, px = dataset.index(x=x, y=y)
             
             #Add to index unsure of x,y order! #TODO https://rasterio.readthedocs.io/en/latest/api/rasterio.io.html#rasterio.io.BufferedDatasetWriter.index
             raster_rows.append(py)
@@ -71,13 +70,10 @@ def select_training_crops(infile, coordinates, size=5):
     
             # Read the data in the window
             # clip is a nbands * size * size numpy array
-            crop = dataset.read(window=window)    
+            crop = dataset.read(window=window, boundless=True)    
             crop = np.rollaxis(crop, 0, 3)
-            
-            #zero pad on border
-            padded_crop = pad(crop, target_shape=(size,size,crop.shape[2]))
-            
-            crops.append(padded_crop)
+                        
+            crops.append(crop)
             
     return crops, raster_rows, raster_cols
 
@@ -109,13 +105,9 @@ def select_prediction_crops(infile, index_iterable, size=5):
     
             # Read the data in the window
             # clip is a nbands * size * size numpy array
-            crop = dataset.read(window=window)    
-            crop = np.rollaxis(crop, 0, 3)
-            
-            #zero pad on border
-            padded_crop = pad(crop, target_shape=(size,size,crop.shape[2]))
-            
-            crops.append(padded_crop)
+            crop = dataset.read(window=window, boundless=True)    
+            crop = np.rollaxis(crop, 0, 3)            
+            crops.append(crop)
             
     return crops, raster_rows, raster_cols
 
@@ -161,15 +153,6 @@ def generate_training(sensor_path,
     """
     #turn ground truth into a dataframe of coords
     results = get_coordinates(ground_truth_path)
-    
-    with rasterio.open(ground_truth_path) as r:
-        A = r.read()  # pixel values
-        
-    labels = A.flatten()
-
-    if not len(labels) == results.shape[0]:
-        raise ValueError("Only a 1D layer allowed as ground truth, the number of labels {} and coordinates {} differ".format(
-            len(labels),len(results.shape[0])))
 
     #Create chunks to write
     results["chunk"] = np.arange(len(results)) // chunk_size
@@ -181,7 +164,7 @@ def generate_training(sensor_path,
             raise ValueError("use_dask is {} but no client specified".format(use_dask))
 
         for g, df in results.groupby("chunk"):
-            coordinates = zip(df.easting,df.northing)            
+            coordinates = zip(df.easting, df.northing)            
             filename = "{}/{}_{}.tfrecord".format(savedir,basename,g)  
             #Submit to dask client
             fn = client.submit(_record_wrapper_,
@@ -199,7 +182,7 @@ def generate_training(sensor_path,
     else:
         for g, df in results.groupby("chunk"):
             filename = "{}/{}_{}.tfrecord".format(savedir,basename,g)     
-            coordinates = zip(df.easting,df.northing)
+            coordinates = zip(df.easting, df.northing)
 
             #Write record
             fn = _record_wrapper_(

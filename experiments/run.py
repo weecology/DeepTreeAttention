@@ -15,8 +15,6 @@ experiment.log_parameters(model.config["train"])
 experiment.log_parameter("Training Batch Size", model.config["train"]["batch_size"])
 
 model.train()
-results = model.evaluate()
-experiment.log_metrics(results)
 
 predicted_raster = model.predict("/orange/ewhite/b.weinstein/Houston2018/tfrecords/predict/", batch_size=128)
 fig = imshow(predicted_raster)
