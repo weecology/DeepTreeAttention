@@ -25,10 +25,9 @@ model.train()
 
 predict_tfrecords = glob.glob("/orange/ewhite/b.weinstein/Houston2018/tfrecords/predict/*.tfrecord")
 predicted_raster = model.predict(predict_tfrecords, batch_size=128)
-experiment.log_image(predicted_raster, "Direct logged prediction")
 
 save_dir = "{}/{}".format("/orange/ewhite/b.weinstein/Houston2018/snapshots/",timestamp)
-os.makedir(save_dir)
+os.mkdir(save_dir)
 prediction_path = "{}/predicted_raster.png".format(save_dir)
 
 #Save color map
