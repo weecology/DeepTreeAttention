@@ -25,3 +25,4 @@ dependencies:
     - dask
     - distributed
     - dask_jobqueue
+    - bokeh

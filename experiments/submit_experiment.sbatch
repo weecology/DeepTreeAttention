@@ -22,5 +22,5 @@ cd /home/b.weinstein/DeepTreeAttention/
 
 #comet debug
 #Generate only once
-#python experiments/generate.py
+python experiments/generate.py
 python experiments/run.py

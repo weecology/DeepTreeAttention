@@ -8,7 +8,7 @@ import os
 att = AttentionModel()
 
 #get root dir full path
-client = start(cpus=30, mem_size="10GB")
+client = start(cpus=50, mem_size="10GB")
 train_tfrecords = make_dataset.generate_training(att.config["train"]["sensor_path"], att.config["train"]["ground_truth_path"], savedir=att.config["train"]["tfrecords"],use_dask=True,client=client, chunk_size=5000)
 print("Created {} training records:{}...".format(len(train_tfrecords),train_tfrecords[0:3]))
 
