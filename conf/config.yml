@@ -5,7 +5,7 @@ train:
     tfrecords: /orange/ewhite/b.weinstein/Houston2018/tfrecords/train/ # Note this is not under version control, see generate.py to create locally.
     crop_size: 11
     sensor_channels: 48
-    epochs: 10
+    epochs: 1
     learning_rate: .001
     gpu: 0
     batch_size: 200

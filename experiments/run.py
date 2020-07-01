@@ -3,6 +3,7 @@ import glob
 from comet_ml import Experiment
 from DeepTreeAttention.main import AttentionModel
 from DeepTreeAttention.visualization.visualize import discrete_cmap
+from datetime import datetime
 
 experiment = Experiment(project_name="deeptreeattention", workspace="bw4sz")
 
