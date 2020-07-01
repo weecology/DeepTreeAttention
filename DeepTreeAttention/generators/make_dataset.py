@@ -168,7 +168,7 @@ def generate_training(sensor_path,
             filename = "{}/{}_{}.tfrecord".format(savedir,basename,g)  
             #Submit to dask client
             fn = client.submit(_record_wrapper_,
-                               labels=labels,
+                               labels=df.label.values,
                                sensor_path=sensor_path,
                                coordinates=coordinates,
                                size=size,
@@ -186,7 +186,7 @@ def generate_training(sensor_path,
 
             #Write record
             fn = _record_wrapper_(
-                labels=labels,
+                labels=df.label.values,
                 sensor_path=sensor_path,
                 coordinates=coordinates,
                 size=size,
