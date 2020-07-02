@@ -70,8 +70,11 @@ def select_training_crops(infile, coordinates, size=5):
     
             # Read the data in the window
             # clip is a nbands * size * size numpy array
-            crop = dataset.read(window=window, boundless=True)    
+            crop = dataset.read(window=window, boundless=True, fill_value=9999)    
             crop = np.rollaxis(crop, 0, 3)
+            
+            if all(np.unique(crop)  == [9999]):
+                raise ValueError("Crop has no data. Coordinate x: {x}, Coordinate y: {y}, row: {py}, col {px}, windows {window}".format(x=x,y=y,py=py,px=px, window=window))
                         
             crops.append(crop)
             
@@ -101,12 +104,16 @@ def select_prediction_crops(infile, index_iterable, size=5):
             raster_cols.append(y)
                         
             # Build an NxN window
-            window = rasterio.windows.Window(x - size//2, y - size//2, size, size)
+            window = rasterio.windows.Window(y - size//2, x - size//2, size, size)
     
             # Read the data in the window
             # clip is a nbands * size * size numpy array
-            crop = dataset.read(window=window, boundless=True)    
-            crop = np.rollaxis(crop, 0, 3)            
+            crop = dataset.read(window=window, boundless=True, fill_value=9999)    
+            crop = np.rollaxis(crop, 0, 3)          
+            
+            if all(np.unique(crop)  == [9999]):
+                raise ValueError("Crop has no data. Coordinate x: {x}, Coordinate y: {y}: windows {window}".format(x=x,y=y, window=window))
+                        
             crops.append(crop)
             
     return crops, raster_rows, raster_cols
@@ -169,6 +176,7 @@ def generate_training(sensor_path,
         for g, df in results.groupby("chunk"):
             coordinates = zip(df.easting, df.northing)            
             filename = "{}/{}_{}.tfrecord".format(savedir,basename,g)  
+            
             #Submit to dask client
             fn = client.submit(_record_wrapper_,
                                labels=df.label.values,

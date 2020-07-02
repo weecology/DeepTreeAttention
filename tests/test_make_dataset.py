@@ -23,7 +23,7 @@ def training_raster(tmp_path):
                                 height = arr.shape[1], width = arr.shape[2],
                                 count=arr.shape[0], dtype="uint16",
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
-                                transform=rasterio.transform.from_origin(272056.0, 3289689.0, 1, 1))
+                                transform=rasterio.transform.from_origin(272056.0, 3289689.0, 1, -1))
     
     new_dataset.write(arr)
     new_dataset.close()
@@ -41,7 +41,7 @@ def ground_truth_raster(tmp_path):
                                 height = arr.shape[1], width = arr.shape[2],
                                 count=arr.shape[0], dtype="uint16",
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
-                                transform=rasterio.transform.from_origin(272056.0, 3289689.0, 0.5, 0.5))
+                                transform=rasterio.transform.from_origin(272056.0, 3289689.0, 0.5, -0.5))
     
     new_dataset.write(arr)
     new_dataset.close()
@@ -81,7 +81,8 @@ def test_select_training_crops(ground_truth_raster, training_raster):
     assert results.shape[0] == len(crops)
     
     #should be approxiately in the top corner, allow for pixel rounding. The sensor raster is filled with index values
-    target = np.array( [ [0, 0, 0,0,0], [0, 0, 0,0,0] , [0,0,0,1,2] , [0,0,25,26,27],[0,0,50,51,52]])
+    target = np.array( [ [9999, 9999, 9999,9999,9999], [9999, 9999, 9999,9999,9999] ,
+                         [9999,9999,0,1,2] , [9999,9999,25,26,27],[9999,9999,50,51,52]])
     np.testing.assert_almost_equal(crops[0][:,:,0],target)
     
 @pytest.mark.parametrize("use_dask",[False,True])
