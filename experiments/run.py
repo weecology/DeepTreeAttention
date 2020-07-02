@@ -32,7 +32,7 @@ os.mkdir(save_dir)
 prediction_path = "{}/predicted_raster.png".format(save_dir)
 
 #Save color map
-plt.imsave(prediction_path, predicted_raster, cmap=discrete_cmap(20))
+plt.imsave(prediction_path, predicted_raster, cmap=discrete_cmap(20, base_cmap="jet"))
 experiment.log_image("Colored Prediction", prediction_path)
 
 #Save model
