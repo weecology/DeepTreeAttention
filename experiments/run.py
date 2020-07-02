@@ -27,8 +27,6 @@ model.train()
 predict_tfrecords = glob.glob("/orange/ewhite/b.weinstein/Houston2018/tfrecords/predict/*.tfrecord")
 predicted_raster = model.predict(predict_tfrecords, batch_size=200)
 
-print("Unique classes in array: {}".format(np.unique(predicted_raster)))
-
 fig = plt.hist(predicted_raster)
 experiment.log_figure(fig)
 
@@ -39,8 +37,8 @@ prediction_path = "{}/predicted_raster.png".format(save_dir)
 experiment.log_image(name="Prediction", image_data=predicted_raster)
 
 #Save color map
-plt.imsave(prediction_path, predicted_raster, cmap=discrete_cmap(20, base_cmap="jet"))
-experiment.log_image(name="Colored Prediction", image_data=prediction_path)
+plt.imsave(fname=prediction_path, arr=predicted_raster, cmap=discrete_cmap(20, base_cmap="jet"))
+experiment.log_image(name="Colored Prediction", prediction_path)
 
 #Save model
 model.model.save("{}/{}.h5".format(save_dir,timestamp))
