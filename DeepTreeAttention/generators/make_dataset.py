@@ -73,8 +73,9 @@ def select_training_crops(infile, coordinates, size=5):
             crop = dataset.read(window=window, boundless=True, fill_value=9999)    
             crop = np.rollaxis(crop, 0, 3)
             
-            if all(np.unique(crop)  == [9999]):
-                raise ValueError("Crop has no data. Coordinate x: {x}, Coordinate y: {y}, row: {py}, col {px}, windows {window}".format(x=x,y=y,py=py,px=px, window=window))
+            ##needs to be revisted
+            #if all(np.unique(crop)  == [9999]):
+                #raise ValueError("Crop has no data. Coordinate x: {x}, Coordinate y: {y}, row: {py}, col {px}, windows {window}".format(x=x,y=y,py=py,px=px, window=window))
                         
             crops.append(crop)
             
@@ -111,8 +112,8 @@ def select_prediction_crops(infile, index_iterable, size=5):
             crop = dataset.read(window=window, boundless=True, fill_value=9999)    
             crop = np.rollaxis(crop, 0, 3)          
             
-            if all(np.unique(crop)  == [9999]):
-                raise ValueError("Crop has no data. Coordinate x: {x}, Coordinate y: {y}: windows {window}".format(x=x,y=y, window=window))
+            #if all(np.unique(crop)  == [9999]):
+                #raise ValueError("Crop has no data. Coordinate x: {x}, Coordinate y: {y}: windows {window}".format(x=x,y=y, window=window))
                         
             crops.append(crop)
             
