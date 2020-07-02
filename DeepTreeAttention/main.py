@@ -117,8 +117,8 @@ class AttentionModel():
         row_list = []
         col_list = []
         for image, x,y in prediction_set:
-            softmax = self.model.predict(image)
-            for row, col, i in zip(x.numpy(), y.numpy(), softmax):
+            softmax = self.model.predict_on_batch(image)
+            for row, col, i in zip(x.numpy(), y.numpy(), softmax.numpy()):
                 label = np.argmax(i)
                 predictions.append(label)
                 row_list.append(row)
@@ -127,13 +127,7 @@ class AttentionModel():
         results = pd.DataFrame({"label":label,"row":row_list,"col":col_list})
         results = results.sort_values(by=["row","col"])
         
-        #Create image
-        rowIDs = results['row']
-        colIDs = results['col']            
-        predicted_raster = np.zeros((rowIDs.max()+1,colIDs.max()+1))
-        predicted_raster[rowIDs, colIDs] = results["label"]
-        
-        return predicted_raster
+        return results
 
     def evaluate(self, tf_dataset=None, steps=None):
         """Evaluate metrics on testing data. Defaults to reading from config.yml evaluation sensor path

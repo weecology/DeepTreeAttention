@@ -112,29 +112,31 @@ def test_generate_prediction(training_raster,tmpdir, use_dask):
 def test_tf_dataset_train(train_tfrecords):
     print(train_tfrecords)
     #Tensorflow encodes string as b bytes
-    dataset = make_dataset.tf_dataset(train_tfrecords, batch_size=5, shuffle=False)
+    dataset = make_dataset.tf_dataset(train_tfrecords, batch_size=6, shuffle=False)
     
     counter=0
     for data, label in dataset:  # only take first element of dataset
         numpy_data = data.numpy()
+        assert not numpy_data.sum() == 0
         numpy_labels = label.numpy()
         counter+=data.shape[0]
     
     #one epoch should be every pixel in the raster
     assert counter == 50 * 50
-    assert numpy_data.shape == (5,11,11,4)
-    assert numpy_labels.shape == (5,20)
+   
     
 def test_tf_dataset_predict(predict_tfrecords):
     #Tensorflow encodes string as b bytes
-    dataset = make_dataset.tf_dataset(predict_tfrecords, batch_size=10, shuffle=False, train=False)
+    dataset = make_dataset.tf_dataset(predict_tfrecords, batch_size=20, shuffle=False, train=False)
     
     counter =0
     for data, x, y in dataset:  # only take first element of dataset
         numpy_data = data.numpy()
+        assert not numpy_data.sum() == 0        
         x = x.numpy()
         y = y.numpy()
         counter+=data.shape[0]
     
     assert counter == 25 * 25
+    
     

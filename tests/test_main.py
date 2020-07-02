@@ -6,19 +6,47 @@ import numpy as np
 from DeepTreeAttention import main
 from DeepTreeAttention.generators import make_dataset
 from matplotlib.pyplot import imshow
+from DeepTreeAttention.visualization import visualize
 
 @pytest.fixture()
 def training_raster(tmp_path):
     fn = os.path.join(tmp_path,"training.tif")
-    #Create a raster that looks data
-    arr = np.random.rand(4, 25,25).astype("uint16")
+    
+    #Create a raster that looks data, index order to help id
+    arr = np.arange(25 * 25).reshape((25,25))
+    arr = np.dstack([arr]*4)
+    arr = np.rollaxis(arr, 2,0)
+    arr = arr.astype("uint16")
     
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
                                 height = arr.shape[1], width = arr.shape[2],
                                 count=arr.shape[0], dtype="uint16",
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
-                                transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, arr.shape[1], arr.shape[2]))
+                                transform=rasterio.transform.from_origin(272056.0, 3289689.0, 1, 1))
+    
+    new_dataset.write(arr)
+    new_dataset.close()
+
+    return fn
+
+
+@pytest.fixture()
+def predict_raster(tmp_path):
+    fn = os.path.join(tmp_path,"predict.tif")
+    
+    #Create a raster that looks data, index order to help id
+    arr = np.arange(10 * 10).reshape((10,10))
+    arr = np.dstack([arr]*4)
+    arr = np.rollaxis(arr, 2,0)
+    arr = arr.astype("uint16")
+    
+    #hard coded from Houston 2018 ground truth
+    new_dataset = rasterio.open(fn, 'w', driver='GTiff',
+                                height = arr.shape[1], width = arr.shape[2],
+                                count=arr.shape[0], dtype="uint16",
+                                crs=rasterio.crs.CRS.from_epsg("26915"),
+                                transform=rasterio.transform.from_origin(272056.0, 3289689.0, 1, 1))
     
     new_dataset.write(arr)
     new_dataset.close()
@@ -26,17 +54,16 @@ def training_raster(tmp_path):
     return fn
 
 @pytest.fixture()
-def predict_raster(tmp_path):
-    fn = os.path.join(tmp_path,"training.tif")
-    #Create a raster that looks data
-    arr = np.random.rand(4, 10,10).astype(np.uint16)
-    
+def ground_truth_raster(tmp_path):
+    fn = os.path.join(tmp_path,"ground_truth.tif")
+    #Create a raster that looks data (smaller)
+    arr = np.random.randint(20,size=(1, 50,50)).astype(np.uint16)
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
                                 height = arr.shape[1], width = arr.shape[2],
                                 count=arr.shape[0], dtype="uint16",
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
-                                transform=rasterio.transform.from_bounds(272056.0, 3289689.0, 274440.0, 3290290.0, arr.shape[1], arr.shape[2]))
+                                transform=rasterio.transform.from_origin(272056.0, 3289689.0, 0.5, 0.5))
     
     new_dataset.write(arr)
     new_dataset.close()
@@ -138,8 +165,8 @@ def test_predict(test_config, predict_tfrecords):
     #Create
     mod.create()
     mod.read_data()
-    predicted_raster = mod.predict(predict_tfrecords)
-    
+    results = mod.predict(predict_tfrecords, batch_size=2)
+    predicted_raster = visualize.create_raster(results)
     #Equals size of the input raster
     assert predicted_raster.shape == (10,10)
     

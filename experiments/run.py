@@ -3,7 +3,7 @@ import glob
 import os
 from comet_ml import Experiment
 from DeepTreeAttention.main import AttentionModel
-from DeepTreeAttention.visualization.visualize import discrete_cmap
+from DeepTreeAttention.visualization import visualize
 from datetime import datetime
 import matplotlib.pyplot as plt
 
@@ -24,16 +24,15 @@ experiment.log_parameter("Training Batch Size", model.config["train"]["batch_siz
 
 model.train()
 
+#Predicted raster
 predict_tfrecords = glob.glob("/orange/ewhite/b.weinstein/Houston2018/tfrecords/predict/*.tfrecord")
-predicted_raster = model.predict(predict_tfrecords, batch_size=200)
-
-fig = plt.hist(predicted_raster)
-experiment.log_figure(fig)
+results = model.predict(predict_tfrecords, batch_size=200)
+predicted_raster = visualize.create_raster(results)
 
 save_dir = "{}/{}".format("/orange/ewhite/b.weinstein/Houston2018/snapshots/",timestamp)
 os.mkdir(save_dir)
 prediction_path = "{}/predicted_raster.png".format(save_dir)
-experiment.log_image(name="Prediction", image_data=predicted_raster, image_colormap=discrete_cmap(20, base_cmap="jet"))
+experiment.log_image(name="Prediction", image_data=predicted_raster, image_colormap=visualize.discrete_cmap(20, base_cmap="jet"))
 
 #Save model
 model.model.save("{}/{}.h5".format(save_dir,timestamp))
