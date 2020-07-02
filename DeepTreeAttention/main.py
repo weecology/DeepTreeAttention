@@ -24,7 +24,7 @@ class AttentionModel():
         """
         self.config = parse_yaml(config)
         if saved_model:
-            load_model(saved_model)
+            self.model = load_model(saved_model)
 
         #Holders
         self.testing_set = None
@@ -117,14 +117,14 @@ class AttentionModel():
         row_list = []
         col_list = []
         for image, x,y in prediction_set:
-            softmax = self.model.predict_on_batch(image)
+            softmax_batch = self.model.predict_on_batch(image)
             for row, col, i in zip(x.numpy(), y.numpy(), softmax.numpy()):
                 label = np.argmax(i)
                 predictions.append(label)
                 row_list.append(row)
                 col_list.append(col)                
 
-        results = pd.DataFrame({"label":label,"row":row_list,"col":col_list})
+        results = pd.DataFrame({"label":predictions,"row":row_list,"col":col_list})
         results = results.sort_values(by=["row","col"])
         
         return results
