@@ -33,12 +33,7 @@ experiment.log_figure(fig)
 save_dir = "{}/{}".format("/orange/ewhite/b.weinstein/Houston2018/snapshots/",timestamp)
 os.mkdir(save_dir)
 prediction_path = "{}/predicted_raster.png".format(save_dir)
-
-experiment.log_image(name="Prediction", image_data=predicted_raster)
-
-#Save color map
-plt.imsave(fname=prediction_path, arr=predicted_raster, cmap=discrete_cmap(20, base_cmap="jet"))
-experiment.log_image(name="Colored Prediction", prediction_path)
+experiment.log_image(name="Prediction", image_data=predicted_raster, image_colormap=discrete_cmap(20, base_cmap="jet"))
 
 #Save model
 model.model.save("{}/{}.h5".format(save_dir,timestamp))
