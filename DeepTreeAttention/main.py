@@ -118,7 +118,7 @@ class AttentionModel():
         col_list = []
         for image, x,y in prediction_set:
             softmax_batch = self.model.predict_on_batch(image)
-            for row, col, i in zip(x.numpy(), y.numpy(), softmax.numpy()):
+            for row, col, i in zip(x.numpy(), y.numpy(), softmax):
                 label = np.argmax(i)
                 predictions.append(label)
                 row_list.append(row)
