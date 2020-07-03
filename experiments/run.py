@@ -29,7 +29,8 @@ model.train()
 
 ##Evaluate
 #Evaluation scores, see config.yml for tfrecords path
-y_pred, y_true = model.evaluate()
+train_records = glob.glob(model.config["train"]["tfrecords"] + "*.tfrecords")
+y_pred, y_true = model.evaluate(train_records)
 
 #F1 scores
 micro, macro, weighted= metrics.f1_scores(y_true, y_pred)
