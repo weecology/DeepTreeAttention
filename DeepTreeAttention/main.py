@@ -117,12 +117,15 @@ class AttentionModel():
         row_list = []
         col_list = []
         for image, x,y in prediction_set:
-            softmax_batch = self.model.predict_on_batch(image)
-            for row, col, i in zip(x.numpy(), y.numpy(), softmax_batch):
-                label = np.argmax(i)
-                predictions.append(label)
-                row_list.append(row)
-                col_list.append(col)                
+            try:
+                softmax_batch = self.model.predict_on_batch(image)
+                for row, col, i in zip(x.numpy(), y.numpy(), softmax_batch):
+                    label = np.argmax(i)
+                    predictions.append(label)
+                    row_list.append(row)
+                    col_list.append(col) 
+            except tf.errors.OutOfRangeError:
+                print("Completed {} predictions".format(len(predictions)))
 
         results = pd.DataFrame({"label":predictions,"row":row_list,"col":col_list})
         results = results.sort_values(by=["row","col"])
@@ -143,19 +146,16 @@ class AttentionModel():
             shuffle = False,
             train=True)
         
-        print("Predicting tfdataset")
-        predictions = self.model.predict(evaluation_set)
-        predicted_classes = np.argmax(predictions,axis=1)
-        
-        
         #gather y_true
-        print("Gathering labels")
-        y_true = [ ]
+        labels = []
+        predictions = []
         for image, label in evaluation_set:
             try:
-                for i in label.numpy():
-                    y_true.append(label)
+                softmax_batch = self.model.predict_on_batch(image)
+                for label, i in zip(label.numpy(), softmax_batch):
+                    predictions.append(np.argmax(i))
+                    labels.append(label)
             except tf.errors.OutOfRangeError:
-                print("End of dataset")
+                print("Completed {} predictions".format(len(predictions)))
         
-        return predicted_classes, y_true
+        return predictions, labels
