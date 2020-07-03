@@ -143,10 +143,13 @@ class AttentionModel():
             shuffle = False,
             train=True)
         
+        print("Predicting tfdataset")
         predictions = self.model.predict(evaluation_set)
         predicted_classes = np.argmax(predictions,axis=1)
         
+        
         #gather y_true
+        print("Gathering labels")
         y_true = [ ]
         for image, label in evaluation_set:
             try:
