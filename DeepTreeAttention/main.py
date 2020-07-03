@@ -153,6 +153,6 @@ class AttentionModel():
                 for i in label.numpy():
                     y_true.append(label)
             except tf.errors.OutOfRangeError:
-                pass
+                print("End of dataset")
         
         return predicted_classes, y_true
