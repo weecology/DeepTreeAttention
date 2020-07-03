@@ -8,9 +8,9 @@ def f1_scores(y_true,y_pred):
     y_pred = tf.cast(y_pred, tf.float64)
     
     for i, axis in enumerate([None, 0]):
-        TP = tf.count_nonzero(y_pred * y_true, axis=axis)
-        FP = tf.count_nonzero(y_pred * (y_true - 1), axis=axis)
-        FN = tf.count_nonzero((y_pred - 1) * y_true, axis=axis)
+        TP = tf.math.count_nonzero(y_pred * y_true, axis=axis)
+        FP = tf.math.count_nonzero(y_pred * (y_true - 1), axis=axis)
+        FN = tf.math.count_nonzero((y_pred - 1) * y_true, axis=axis)
     
         precision = TP / (TP + FP)
         recall = TP / (TP + FN)
@@ -26,5 +26,4 @@ def f1_scores(y_true,y_pred):
     micro, macro, weighted = f1s
     
 def confusion(y_true, y_pred, num_classes):
-    confusion = tf.confusion_matrix(labels=y_true, predictions=y_pred, num_classes=num_classes)
-    
+    confusion = tf.math.confusion_matrix(labels=y_true, predictions=y_pred, num_classes=num_classes)

@@ -7,6 +7,7 @@ from DeepTreeAttention import main
 from DeepTreeAttention.generators import make_dataset
 from matplotlib.pyplot import imshow
 from DeepTreeAttention.visualization import visualize
+from DeepTreeAttention.utils import metrics
 
 @pytest.fixture()
 def ground_truth_raster(tmp_path):
@@ -170,6 +171,8 @@ def test_evaluate(test_config):
     
     assert len(y_pred) == len(y_true)
 
+    f1s = metrics.f1_scores(y_true, y_pred)
     
+    confusion_matrix = metrics.confusion(y_true, y_pred, num_classes=20)
     
     
