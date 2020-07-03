@@ -25,5 +25,7 @@ def f1_scores(y_true,y_pred):
     
     micro, macro, weighted = f1s
     
+    return f1s
+    
 def confusion(y_true, y_pred, num_classes):
     confusion = tf.math.confusion_matrix(labels=y_true, predictions=y_pred, num_classes=num_classes)
