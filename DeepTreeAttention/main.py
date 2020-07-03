@@ -141,7 +141,7 @@ class AttentionModel():
             tfrecords = tfrecords, 
             batch_size = batch_size,
             shuffle = False,
-            train=False)
+            train=True)
         
         predictions = self.model.predict(evaluation_set)
         predicted_classes = np.argmax(predictions,axis=1)
@@ -150,7 +150,8 @@ class AttentionModel():
         y_true = [ ]
         for image, label in evaluation_set:
             try:
-                y_true.append(label)
+                for i in label.numpy():
+                    y_true.append(label)
             except tf.errors.OutOfRangeError:
                 pass
         

@@ -166,9 +166,10 @@ def test_evaluate(test_config):
     mod.create()
     mod.read_data()
         
-    result = mod.evaluate(mod.train_split, steps=2)
-    assert "acc" in list(result.keys())
-    print(result)
+    y_pred, y_true = mod.evaluate(mod.train_records)
+    
+    assert len(y_pred) == len(y_true)
+
     
     
     
