@@ -67,7 +67,7 @@ class_labels = {
 }
 
 confusion_matrix = metrics.confusion(y_true, y_pred, num_classes=model.config["train"]["classes"])
-experiment.log_confusion_matrix(matrix=confusion_matrix, labels=list(class_labels.values()))
+experiment.log_confusion_matrix(y_true, y_pred, labels=list(class_labels.values()))
 
 ##Predict##
 predict_tfrecords = glob.glob("/orange/ewhite/b.weinstein/Houston2018/tfrecords/predict/*.tfrecord")
