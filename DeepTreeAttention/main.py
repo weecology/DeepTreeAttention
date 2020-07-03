@@ -58,7 +58,7 @@ class AttentionModel():
 
         #metrics
         metric_list = [
-            metrics.TopKCategoricalAccuracy(k=5, name="top_k"),
+            metrics.TopKCategoricalAccuracy(k=2, name="top_k"),
             metrics.Accuracy(name="acc")]
         
         #compile
@@ -129,24 +129,26 @@ class AttentionModel():
         
         return results
 
-    def evaluate(self, tf_dataset=None, steps=None):
-        """Evaluate metrics on testing data. Defaults to reading from config.yml evaluation sensor path
+    def evaluate(self, tf_dataset=None, batch_size=2):
+        """Evaluate metrics on held out training data. Defaults to reading from config.yml evaluation sensor path
         Args: 
             tf_dataset: Optional a tf.dataset that yields data and labels, see make_dataset.py 
             steps: Optional, how many calls of the genertor to evaluate. None will evaluate until exhausted
         Returns:
             results: a dictionary of metrics
         """
-        if tf_dataset:
-            result = self.model.evaluate(x=tf_dataset, steps=steps)
-        else:
-            if self.testing_set is None:
-                raise IOError(
-                    "Testing set is not specified and config.yml has no evaluation: sensor path set"
-                )
-
-            result = self.model.evaluate(self.testing_set, steps=steps)
-            
-        result = dict(zip(self.model.metrics_names, result))            
+        evaluation_set = tf_dataset(
+            tfrecords = tfrecords, 
+            batch_size = batch_size,
+            shuffle = False,
+            train=False)
         
-        return result
+        predictions = self.model.predict(evaluation_set)
+        predicted_classes = np.argmax(predictions,axis=1)
+        
+        #gather y_true
+        y_true = [ ]
+        for image, label in evaluation_set:
+            y_true.append(label)
+        
+        return predicted_classes, y_true

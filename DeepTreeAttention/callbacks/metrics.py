@@ -1,23 +1,26 @@
-import numpy as np
-from keras.callbacks import Callback
-from sklearn.metrics import  f1_score, precision_score, recall_score
+import tensorflow as tf
 
-class Metrics(Callback):
-    def on_train_begin(self, logs={}):
-        self.val_f1s = []
-        self.val_recalls = []
-        self.val_precisions = []
+def f1_scores(y_true,y_pred):
+    """Calculate micro, macro and weighted f1 scores"""
+    f1s = [0, 0, 0]
     
-    def on_epoch_end(self, epoch, logs={}):
-        val_predict = (np.asarray(self.model.predict(self.model.validation_data[0]))).round()
-        val_targ = self.model.validation_data[1]
-        _val_f1 = f1_score(val_targ, val_predict)
-        _val_recall = recall_score(val_targ, val_predict)
-        _val_precision = precision_score(val_targ, val_predict)
-        self.val_f1s.append(_val_f1)
-        self.val_recalls.append(_val_recall)
-        self.val_precisions.append(_val_precision)
-        print("— val_fscore: {} — val_precision: {} — val_recall {}".format(_val_f1, _val_precision, _val_recall)
-        return
+    y_true = tf.cast(y_true, tf.float64)
+    y_pred = tf.cast(y_pred, tf.float64)
     
-    metrics = Metrics()
+    for i, axis in enumerate([None, 0]):
+        TP = tf.count_nonzero(y_pred * y_true, axis=axis)
+        FP = tf.count_nonzero(y_pred * (y_true - 1), axis=axis)
+        FN = tf.count_nonzero((y_pred - 1) * y_true, axis=axis)
+    
+        precision = TP / (TP + FP)
+        recall = TP / (TP + FN)
+        f1 = 2 * precision * recall / (precision + recall)
+    
+        f1s[i] = tf.reduce_mean(f1)
+    
+    weights = tf.reduce_sum(y_true, axis=0)
+    weights /= tf.reduce_sum(weights)
+    
+    f1s[2] = tf.reduce_sum(f1 * weights)
+    
+    micro, macro, weighted = f1s

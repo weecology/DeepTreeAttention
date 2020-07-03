@@ -300,6 +300,6 @@ def tf_dataset(tfrecords,
         dataset = dataset.map(create_tfrecords._predict_parse_, num_parallel_calls=100)
     #batch
     dataset = dataset.batch(batch_size=batch_size)
-    dataset = dataset.prefetch(buffer_size=AUTO)
+    dataset = dataset.prefetch(buffer_size=1000)
 
     return dataset
