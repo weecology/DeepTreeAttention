@@ -129,7 +129,7 @@ class AttentionModel():
         
         return results
 
-    def evaluate(self, tf_dataset=None, batch_size=2):
+    def evaluate(self, tfrecords, batch_size=2):
         """Evaluate metrics on held out training data. Defaults to reading from config.yml evaluation sensor path
         Args: 
             tf_dataset: Optional a tf.dataset that yields data and labels, see make_dataset.py 
