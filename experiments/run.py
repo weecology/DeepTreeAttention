@@ -32,7 +32,7 @@ print("Training Complete")
 ##Evaluate
 #Evaluation scores, see config.yml for tfrecords path
 train_records = glob.glob(model.config["train"]["tfrecords"] + "*.tfrecords")
-y_pred, y_true = model.evaluate(train_records, batch_size=200)
+y_pred, y_true = model.evaluate(model.train_records, batch_size=200)
 
 print("get f1scores")
 #F1 scores
