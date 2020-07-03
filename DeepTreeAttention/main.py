@@ -149,6 +149,9 @@ class AttentionModel():
         #gather y_true
         y_true = [ ]
         for image, label in evaluation_set:
-            y_true.append(label)
+            try:
+                y_true.append(label)
+            except tf.errors.OutOfRangeError:
+                pass
         
         return predicted_classes, y_true
