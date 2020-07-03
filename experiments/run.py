@@ -32,6 +32,7 @@ model.train()
 train_records = glob.glob(model.config["train"]["tfrecords"] + "*.tfrecords")
 y_pred, y_true = model.evaluate(train_records)
 
+print("get f1scores")
 #F1 scores
 micro, macro, weighted= metrics.f1_scores(y_true, y_pred)
 experiment.log_metric("MicroF1",micro)
