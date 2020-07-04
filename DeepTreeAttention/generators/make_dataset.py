@@ -164,7 +164,10 @@ def generate_training(sensor_path,
     #turn ground truth into a dataframe of coords
     results = get_coordinates(ground_truth_path)
     print("There are {} label pixels in the labeled ground truth".format(results.shape[0]))
-
+    
+    #Remove unclassified pixels? 
+    results = results[~(results.label == 0)]
+    
     #Create chunks to write
     results["chunk"] = np.arange(len(results)) // chunk_size
     basename = os.path.splitext(os.path.basename(sensor_path))[0]
