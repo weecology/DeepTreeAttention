@@ -29,13 +29,16 @@ def get_coordinates(fname):
     # All eastings and northings (there is probably a faster way to do this)
     eastings, northings = np.vectorize(rc2en, otypes=[np.float, np.float])(cols, rows)
     
+    eastings = eastings.flatten()
+    northings = northings.flatten()
+    
     #get values at each position to be absolutely sure they are the same
-    labels=[]
-    for x,y, in zip(eastings.flatten(), northings.flatten()):
-        for val in src.sample([(x, y)]):
-            labels.append(val[0])
+    labels = []
+    for x, y in zip(eastings,northings):
+        row, col = src.index(x,y)
+        labels.append(A[0, row,col])
         
-    results = pd.DataFrame({"label":labels,"easting":eastings.flatten(),"northing":northings.flatten()})
+    results = pd.DataFrame({"label":labels,"easting":eastings,"northing":northings})
     
     return results
 
@@ -54,6 +57,7 @@ def select_training_crops(infile, coordinates, size=5):
     crops = []
     raster_rows = [ ]
     raster_cols = [ ]
+    
     with rasterio.open(infile) as dataset:
         # Loop through your list of coords
         for i, (x, y) in enumerate(coordinates):
