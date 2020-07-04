@@ -70,7 +70,7 @@ class_labels = {
     20 : "Stadium seat"
 }
 
-experiment.log_confusion_matrix(y_true = y_true, y_predicted = y_pred, labels=list(class_labels.values()), title="Confusion Matrix")
+experiment.log_confusion_matrix(y_true = y_true, y_predicted = y_pred, title="Confusion Matrix")
 
 ##Predict##
 predict_tfrecords = glob.glob("/orange/ewhite/b.weinstein/Houston2018/tfrecords/predict/*.tfrecord")
