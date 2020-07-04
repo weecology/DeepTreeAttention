@@ -47,7 +47,6 @@ experiment.log_metric("WeightedF1", weighted)
 
 #Confusion matrix
 class_labels = {
-    0 : "Unclassified",
     1 : "Healthy grass",
     2 : "Stressed grass",
     3 : "Artificial turf",
