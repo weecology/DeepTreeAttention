@@ -70,7 +70,6 @@ class_labels = {
     20 : "Stadium seat"
 }
 
-confusion_matrix = metrics.confusion(y_true, y_pred, num_classes=model.config["train"]["classes"])
 experiment.log_confusion_matrix(y_true = y_true, y_predicted = y_pred, labels=list(class_labels.values()), title="Confusion Matrix")
 
 ##Predict##
