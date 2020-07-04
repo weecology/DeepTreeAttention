@@ -153,8 +153,8 @@ class AttentionModel():
             try:
                 softmax_batch = self.model.predict_on_batch(image)
                 for label, i in zip(label.numpy(), softmax_batch):
-                    predictions.append(np.argmax(i))
-                    labels.append(np.argmax(label))
+                    predictions.append(i)
+                    labels.append(label)
             except tf.errors.OutOfRangeError:
                 print("Completed {} predictions".format(len(predictions)))
         

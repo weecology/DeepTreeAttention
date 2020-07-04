@@ -36,7 +36,9 @@ y_pred, y_true = model.evaluate(model.train_records, batch_size=200)
 
 print("get f1scores")
 #F1 scores
-micro, macro, weighted= metrics.f1_scores(y_true, y_pred)
+y_true_integer = np.argmax(y_true)
+y_pred_integer = np.argmax(y_pred)
+micro, macro, weighted= metrics.f1_scores(y_true_integer, y_pred_integer)
 experiment.log_metric("MicroF1",micro)
 experiment.log_metric("MacroF1",macro)
 experiment.log_metric("WeightedF1", weighted)
@@ -67,10 +69,11 @@ class_labels = {
 }
 
 confusion_matrix = metrics.confusion(y_true, y_pred, num_classes=model.config["train"]["classes"])
-experiment.log_confusion_matrix(y_true, y_pred, labels=list(class_labels.values()))
+experiment.log_confusion_matrix(y_true = y_true, y_predicted = y_pred, labels=list(class_labels.values()), title="Confusion Matrix")
 
 ##Predict##
 predict_tfrecords = glob.glob("/orange/ewhite/b.weinstein/Houston2018/tfrecords/predict/*.tfrecord")
+
 #Predicted raster
 results = model.predict(predict_tfrecords, batch_size=200)
 predicted_raster = visualize.create_raster(results)
