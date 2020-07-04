@@ -169,7 +169,7 @@ def test_evaluate(test_config):
         
     y_pred, y_true = mod.evaluate(mod.train_records)
     
-    assert len(y_pred) == len(y_true)
+    assert y_pred.shape == y_true.shape
 
     #F1 requires integer, not softmax
     y_true_integer = np.argmax(y_true, axis=1)

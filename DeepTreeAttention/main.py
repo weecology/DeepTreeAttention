@@ -152,10 +152,14 @@ class AttentionModel():
         for image, label in evaluation_set:
             try:
                 softmax_batch = self.model.predict_on_batch(image)
-                for label, i in zip(label.numpy(), softmax_batch):
-                    predictions.append(i)
-                    labels.append(label)
+                one_hot_label = label.numpy()
+                predictions.append(softmax_batch)
+                labels.append(label)
             except tf.errors.OutOfRangeError:
                 print("Completed {} predictions".format(len(predictions)))
+        
+        #Create numpy arrays of batches
+        predictions = np.vstack(predictions)
+        labels = np.vstack(labels)
         
         return predictions, labels

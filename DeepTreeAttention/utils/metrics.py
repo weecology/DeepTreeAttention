@@ -29,3 +29,4 @@ def f1_scores(y_true,y_pred):
     
 def confusion(y_true, y_pred, num_classes):
     confusion = tf.math.confusion_matrix(labels=y_true, predictions=y_pred, num_classes=num_classes)
+    return confusion
