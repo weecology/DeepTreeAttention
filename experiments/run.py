@@ -37,8 +37,9 @@ y_pred, y_true = model.evaluate(model.train_records, batch_size=200)
 
 print("get f1scores")
 #F1 scores
-y_true_integer = np.argmax(y_true)
-y_pred_integer = np.argmax(y_pred)
+y_true_integer = np.argmax(y_true,axis=1)
+y_pred_integer = np.argmax(y_pred,axis=1)
+
 micro, macro, weighted= metrics.f1_scores(y_true_integer, y_pred_integer)
 experiment.log_metric("MicroF1",micro)
 experiment.log_metric("MacroF1",macro)

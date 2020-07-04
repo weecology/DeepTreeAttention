@@ -172,8 +172,8 @@ def test_evaluate(test_config):
     assert len(y_pred) == len(y_true)
 
     #F1 requires integer, not softmax
-    y_true_integer = np.argmax(y_true)
-    y_pred_integer = np.argmax(y_pred)
+    y_true_integer = np.argmax(y_true, axis=1)
+    y_pred_integer = np.argmax(y_pred, axis=1)
     f1s = metrics.f1_scores(y_true_integer, y_pred_integer)
     
     confusion_matrix = metrics.confusion(y_true_integer, y_pred_integer, num_classes=20)
