@@ -35,7 +35,7 @@ def get_coordinates(fname):
     #get values at each position to be absolutely sure they are the same
     labels = []
     for x, y in zip(eastings,northings):
-        for label in src.sample([x,y]):
+        for label in src.sample([(x,y)]):
             labels.append(label)
         
     results = pd.DataFrame({"label":labels,"easting":eastings,"northing":northings})
