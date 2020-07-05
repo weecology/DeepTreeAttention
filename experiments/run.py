@@ -3,6 +3,7 @@ import glob
 import numpy as np
 import os
 from comet_ml import Experiment
+from tensorflow.keras import metrics as keras_metrics
 from DeepTreeAttention.main import AttentionModel
 from DeepTreeAttention.utils import metrics
 from DeepTreeAttention.visualization import visualize
@@ -34,6 +35,11 @@ print("Training Complete")
 #Evaluation scores, see config.yml for tfrecords path
 train_records = glob.glob(model.config["train"]["tfrecords"] + "*.tfrecords")
 y_pred, y_true = model.evaluate(model.train_records, batch_size=200)
+
+#Evaluation accuracy
+acc = keras_metrics.Accuracy()
+eval_acc = acc.update_state(y_true, y_pred)
+experiment.log_metric("Evaluation Accuracy",eval_acc)
 
 print("get f1scores")
 #F1 scores
