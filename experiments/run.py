@@ -37,8 +37,8 @@ train_records = glob.glob(model.config["train"]["tfrecords"] + "*.tfrecords")
 y_pred, y_true = model.evaluate(model.train_records, batch_size=200)
 
 #Evaluation accuracy
-acc = keras_metrics.Accuracy()
-eval_acc = acc.update_state(y_true, y_pred)
+eval_acc = keras_metrics.Accuracy()
+eval_acc.update_state(y_true, y_pred)
 experiment.log_metric("Evaluation Accuracy",eval_acc.result().numpy())
 
 print("get f1scores")
