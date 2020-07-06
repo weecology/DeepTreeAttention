@@ -169,11 +169,11 @@ def test_evaluate(test_config):
     mod.read_data()
         
     #Method 1, class eval method
-    y_pred, y_true = mod.evaluate(mod.train_records)
+    y_pred, y_true = mod.evaluate(mod.train_split)
     y_true_integer = np.argmax(y_true, axis=1)
     y_pred_integer = np.argmax(y_pred, axis=1)
     
-    test_acc = keras_metrics.Accuracy()
+    test_acc = keras_metrics.CategoricalAccuracy()
     test_acc.update_state(y_true=y_true, y_pred = y_pred)
     method1_eval_accuracy = test_acc.result().numpy()
     
