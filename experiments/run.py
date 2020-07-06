@@ -35,6 +35,11 @@ print("Training Complete")
 #Evaluation scores, see config.yml for tfrecords path
 y_pred, y_true = model.evaluate(model.train_records, batch_size=200)
 
+#Evaluation accuracy
+eval_acc = keras_metrics.CategoricalAccuracy()
+eval_acc.update_state(y_true, y_pred)
+experiment.log_metric("Evaluation Accuracy",eval_acc.result().numpy())
+
 print("get f1scores")
 #F1 scores
 y_true_integer = np.argmax(y_true,axis=1)
