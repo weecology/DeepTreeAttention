@@ -8,6 +8,7 @@ from DeepTreeAttention.generators import make_dataset
 from matplotlib.pyplot import imshow
 from DeepTreeAttention.visualization import visualize
 from DeepTreeAttention.utils import metrics
+from tensorflow.keras import metrics as keras_metrics
 
 @pytest.fixture()
 def ground_truth_raster(tmp_path):
@@ -167,16 +168,27 @@ def test_evaluate(test_config):
     mod.create()
     mod.read_data()
         
+    #Method 1, class eval method
     y_pred, y_true = mod.evaluate(mod.train_records)
+    y_true_integer = np.argmax(y_true, axis=1)
+    y_pred_integer = np.argmax(y_pred, axis=1)
+    
+    test_acc = keras_metrics.Accuracy()
+    test_acc.update_state(y_true=y_true, y_pred = y_pred)
+    method1_eval_accuracy = test_acc.result().numpy()
     
     assert y_pred.shape == y_true.shape
 
+    #Method 2, keras eval method
+    metric_list = mod.model.evaluate(mod.train_split)
+    metric_dict = {}
+    for index, value in enumerate(metric_list):
+        metric_dict[mod.model.metrics_names[index]] = value
+    
+    assert method1_eval_accuracy == metric_dict["acc"]   
+    
     #F1 requires integer, not softmax
     y_true_integer = np.argmax(y_true, axis=1)
     y_pred_integer = np.argmax(y_pred, axis=1)
-    f1s = metrics.f1_scores(y_true_integer, y_pred_integer)
-    
-    confusion_matrix = metrics.confusion(y_true_integer, y_pred_integer, num_classes=20)
-    assert confusion_matrix.shape == (20,20)
-    
+    f1s = metrics.f1_scores( y_true_integer, y_pred_integer)    
     

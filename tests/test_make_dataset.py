@@ -13,7 +13,7 @@ def training_raster(tmp_path):
     fn = os.path.join(tmp_path,"training.tif")
     
     #Create a raster that looks data, index order to help id
-    arr = np.arange(25 * 25).reshape((25,25))
+    arr = np.arange(25 * 50).reshape((25,50))
     arr = np.dstack([arr]*4)
     arr = np.rollaxis(arr, 2,0)
     arr = arr.astype("uint16")
@@ -34,7 +34,7 @@ def training_raster(tmp_path):
 def ground_truth_raster(tmp_path):
     fn = os.path.join(tmp_path,"ground_truth.tif")
     #Create a raster that looks data (smaller)
-    arr = np.random.randint(1, 21,size=(1, 50,50)).astype(np.uint16)
+    arr = np.random.randint(1, 21,size=(1, 50,100)).astype(np.uint16)
     
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
@@ -63,7 +63,9 @@ def test_get_coordinates(ground_truth_raster):
     results = make_dataset.get_coordinates(ground_truth_raster)
     
     #assert every pixel has a label
-    assert results.shape[0] == 50 * 50
+    assert results.shape[0] == 50 * 100
+    assert len(results.easting.unique()) == 100 
+    assert len(results.northing.unique()) == 50 
     
     src = rasterio.open(ground_truth_raster)
     A = src.read()
@@ -82,7 +84,7 @@ def test_select_training_crops(ground_truth_raster, training_raster):
     
     #should be approxiately in the top corner, allow for pixel rounding. The sensor raster is filled with index values
     target = np.array( [ [9999, 9999, 9999,9999,9999], [9999, 9999, 9999,9999,9999] ,
-                         [9999,9999,0,1,2] , [9999,9999,25,26,27],[9999,9999,50,51,52]])
+                         [9999,9999,0,1,2] , [9999,9999,50,51,52],[9999,9999,100,101,102]])
     np.testing.assert_almost_equal(crops[0][:,:,0],target)
     
 @pytest.mark.parametrize("use_dask",[False,True])
@@ -123,7 +125,7 @@ def test_tf_dataset_train(train_tfrecords):
         counter+=data.shape[0]
     
     #one epoch should be every pixel in the raster
-    assert counter == 50 * 50
+    assert counter == 50 * 100
    
     
 def test_tf_dataset_predict(predict_tfrecords):
@@ -138,6 +140,6 @@ def test_tf_dataset_predict(predict_tfrecords):
         y = y.numpy()
         counter+=data.shape[0]
     
-    assert counter == 25 * 25
+    assert counter == 25 * 50
     
     

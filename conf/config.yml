@@ -6,7 +6,7 @@ train:
     crop_size: 11
     sensor_channels: 48
     epochs: 200
-    learning_rate: .001
+    learning_rate: .00001
     gpu: 0
     batch_size: 200
     weighted_sum: False

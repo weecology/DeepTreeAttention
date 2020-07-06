@@ -59,7 +59,7 @@ class AttentionModel():
         #metrics
         metric_list = [
             metrics.TopKCategoricalAccuracy(k=2, name="top_k"),
-            metrics.Accuracy(name="acc")]
+            metrics.CategoricalAccuracy(name="acc")]
         
         #compile
         self.model.compile(loss="categorical_crossentropy",

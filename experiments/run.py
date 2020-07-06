@@ -1,14 +1,14 @@
 #Experiment
+from comet_ml import Experiment
 import glob
 import numpy as np
 import os
-from comet_ml import Experiment
-from tensorflow.keras import metrics as keras_metrics
+from datetime import datetime
 from DeepTreeAttention.main import AttentionModel
 from DeepTreeAttention.utils import metrics
 from DeepTreeAttention.visualization import visualize
-from datetime import datetime
 import matplotlib.pyplot as plt
+from tensorflow.keras import metrics as keras_metrics
 
 experiment = Experiment(project_name="deeptreeattention", workspace="bw4sz")
 
@@ -33,7 +33,6 @@ print("Training Complete")
 
 ##Evaluate
 #Evaluation scores, see config.yml for tfrecords path
-train_records = glob.glob(model.config["train"]["tfrecords"] + "*.tfrecords")
 y_pred, y_true = model.evaluate(model.train_records, batch_size=200)
 
 #Evaluation accuracy
