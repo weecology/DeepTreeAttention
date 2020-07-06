@@ -24,7 +24,7 @@ class AttentionModel():
         """
         self.config = parse_yaml(config)
         if saved_model:
-            load_model(saved_model)
+            self.model = load_model(saved_model)
 
         #Holders
         self.testing_set = None
@@ -58,8 +58,8 @@ class AttentionModel():
 
         #metrics
         metric_list = [
-            metrics.TopKCategoricalAccuracy(k=5, name="top_k"),
-            metrics.Accuracy(name="acc")]
+            metrics.TopKCategoricalAccuracy(k=2, name="top_k"),
+            metrics.CategoricalAccuracy(name="acc")]
         
         #compile
         self.model.compile(loss="categorical_crossentropy",
@@ -117,42 +117,49 @@ class AttentionModel():
         row_list = []
         col_list = []
         for image, x,y in prediction_set:
-            softmax = self.model.predict(image)
-            for row, col, i in zip(x.numpy(), y.numpy(), softmax):
-                label = np.argmax(i)
-                predictions.append(label)
-                row_list.append(row)
-                col_list.append(col)                
+            try:
+                softmax_batch = self.model.predict_on_batch(image)
+                for row, col, i in zip(x.numpy(), y.numpy(), softmax_batch):
+                    label = np.argmax(i)
+                    predictions.append(label)
+                    row_list.append(row)
+                    col_list.append(col) 
+            except tf.errors.OutOfRangeError:
+                print("Completed {} predictions".format(len(predictions)))
 
-        results = pd.DataFrame({"label":label,"row":row_list,"col":col_list})
+        results = pd.DataFrame({"label":predictions,"row":row_list,"col":col_list})
         results = results.sort_values(by=["row","col"])
         
-        #Create image
-        rowIDs = results['row']
-        colIDs = results['col']            
-        predicted_raster = np.zeros((rowIDs.max()+1,colIDs.max()+1))
-        predicted_raster[rowIDs, colIDs] = results["label"]
-        
-        return predicted_raster
+        return results
 
-    def evaluate(self, tf_dataset=None, steps=None):
-        """Evaluate metrics on testing data. Defaults to reading from config.yml evaluation sensor path
+    def evaluate(self, tfrecords, batch_size=2):
+        """Evaluate metrics on held out training data. Defaults to reading from config.yml evaluation sensor path
         Args: 
             tf_dataset: Optional a tf.dataset that yields data and labels, see make_dataset.py 
             steps: Optional, how many calls of the genertor to evaluate. None will evaluate until exhausted
         Returns:
             results: a dictionary of metrics
         """
-        if tf_dataset:
-            result = self.model.evaluate(x=tf_dataset, steps=steps)
-        else:
-            if self.testing_set is None:
-                raise IOError(
-                    "Testing set is not specified and config.yml has no evaluation: sensor path set"
-                )
-
-            result = self.model.evaluate(self.testing_set, steps=steps)
-            
-        result = dict(zip(self.model.metrics_names, result))            
+        evaluation_set = tf_dataset(
+            tfrecords = tfrecords, 
+            batch_size = batch_size,
+            shuffle = False,
+            train=True)
         
-        return result
+        #gather y_true
+        labels = []
+        predictions = []
+        for image, label in evaluation_set:
+            try:
+                softmax_batch = self.model.predict_on_batch(image)
+                one_hot_label = label.numpy()
+                predictions.append(softmax_batch)
+                labels.append(label)
+            except tf.errors.OutOfRangeError:
+                print("Completed {} predictions".format(len(predictions)))
+        
+        #Create numpy arrays of batches
+        predictions = np.vstack(predictions)
+        labels = np.vstack(labels)
+        
+        return predictions, labels

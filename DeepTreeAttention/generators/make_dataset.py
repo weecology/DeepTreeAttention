@@ -27,15 +27,18 @@ def get_coordinates(fname):
     rc2en = lambda r, c: (c, r) * T0
     
     # All eastings and northings (there is probably a faster way to do this)
-    eastings, northings = np.vectorize(rc2en, otypes=[np.float, np.float])(cols, rows)
+    eastings, northings = np.vectorize(rc2en, otypes=[np.float, np.float])(rows, cols)
+    
+    eastings = eastings.flatten()
+    northings = northings.flatten()
     
     #get values at each position to be absolutely sure they are the same
-    labels=[]
-    for x,y, in zip(eastings.flatten(), northings.flatten()):
-        for val in src.sample([(x, y)]):
-            labels.append(val[0])
+    labels = []
+    for x, y in zip(eastings,northings):
+        for label in src.sample([(x,y)]):
+            labels.append(label[0])
         
-    results = pd.DataFrame({"label":labels,"easting":eastings.flatten(),"northing":northings.flatten()})
+    results = pd.DataFrame({"label":labels,"easting":eastings,"northing":northings})
     
     return results
 
@@ -54,6 +57,7 @@ def select_training_crops(infile, coordinates, size=5):
     crops = []
     raster_rows = [ ]
     raster_cols = [ ]
+    
     with rasterio.open(infile) as dataset:
         # Loop through your list of coords
         for i, (x, y) in enumerate(coordinates):
@@ -70,8 +74,12 @@ def select_training_crops(infile, coordinates, size=5):
     
             # Read the data in the window
             # clip is a nbands * size * size numpy array
-            crop = dataset.read(window=window, boundless=True)    
+            crop = dataset.read(window=window, boundless=True, fill_value=9999)    
             crop = np.rollaxis(crop, 0, 3)
+            
+            ##needs to be revisted
+            #if all(np.unique(crop)  == [9999]):
+                #raise ValueError("Crop has no data. Coordinate x: {x}, Coordinate y: {y}, row: {py}, col {px}, windows {window}".format(x=x,y=y,py=py,px=px, window=window))
                         
             crops.append(crop)
             
@@ -101,12 +109,16 @@ def select_prediction_crops(infile, index_iterable, size=5):
             raster_cols.append(y)
                         
             # Build an NxN window
-            window = rasterio.windows.Window(x - size//2, y - size//2, size, size)
+            window = rasterio.windows.Window(y - size//2, x - size//2, size, size)
     
             # Read the data in the window
             # clip is a nbands * size * size numpy array
-            crop = dataset.read(window=window, boundless=True)    
-            crop = np.rollaxis(crop, 0, 3)            
+            crop = dataset.read(window=window, boundless=True, fill_value=9999)    
+            crop = np.rollaxis(crop, 0, 3)          
+            
+            #if all(np.unique(crop)  == [9999]):
+                #raise ValueError("Crop has no data. Coordinate x: {x}, Coordinate y: {y}: windows {window}".format(x=x,y=y, window=window))
+                        
             crops.append(crop)
             
     return crops, raster_rows, raster_cols
@@ -156,7 +168,10 @@ def generate_training(sensor_path,
     #turn ground truth into a dataframe of coords
     results = get_coordinates(ground_truth_path)
     print("There are {} label pixels in the labeled ground truth".format(results.shape[0]))
-
+    
+    #Remove unclassified pixels? 
+    results = results[~(results.label == 0)]
+    
     #Create chunks to write
     results["chunk"] = np.arange(len(results)) // chunk_size
     basename = os.path.splitext(os.path.basename(sensor_path))[0]
@@ -169,6 +184,7 @@ def generate_training(sensor_path,
         for g, df in results.groupby("chunk"):
             coordinates = zip(df.easting, df.northing)            
             filename = "{}/{}_{}.tfrecord".format(savedir,basename,g)  
+            
             #Submit to dask client
             fn = client.submit(_record_wrapper_,
                                labels=df.label.values,
@@ -280,7 +296,7 @@ def tf_dataset(tfrecords,
     ignore_order = tf.data.Options()
     ignore_order.experimental_deterministic = False
     
-    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=AUTO)
+    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=20)
     dataset = dataset.with_options(ignore_order)
         
     if shuffle:    
@@ -291,6 +307,6 @@ def tf_dataset(tfrecords,
         dataset = dataset.map(create_tfrecords._predict_parse_, num_parallel_calls=100)
     #batch
     dataset = dataset.batch(batch_size=batch_size)
-    dataset = dataset.prefetch(buffer_size=AUTO)
+    dataset = dataset.prefetch(buffer_size=1000)
 
     return dataset

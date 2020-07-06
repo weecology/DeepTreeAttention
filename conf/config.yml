@@ -5,14 +5,14 @@ train:
     tfrecords: /orange/ewhite/b.weinstein/Houston2018/tfrecords/train/ # Note this is not under version control, see generate.py to create locally.
     crop_size: 11
     sensor_channels: 48
-    epochs: 3
-    learning_rate: .001
+    epochs: 200
+    learning_rate: .00001
     gpu: 0
     batch_size: 200
     weighted_sum: False
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
     steps:
-    shuffle: False
+    shuffle: True
 
 callbacks:
     snapshots_path: /../models/
