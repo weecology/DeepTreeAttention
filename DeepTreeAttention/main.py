@@ -137,7 +137,7 @@ class AttentionModel():
         
         return results
 
-    def evaluate(self, tfrecords, batch_size=2):
+    def evaluate(self, tf_dataset, batch_size=2):
         """Evaluate metrics on held out training data. Defaults to reading from config.yml evaluation sensor path
         Args: 
             tf_dataset: Optional a tf.dataset that yields data and labels, see make_dataset.py 
@@ -145,16 +145,11 @@ class AttentionModel():
         Returns:
             results: a dictionary of metrics
         """
-        evaluation_set = tf_dataset(
-            tfrecords = tfrecords, 
-            batch_size = batch_size,
-            shuffle = False,
-            train=True)
         
         #gather y_true
         labels = []
         predictions = []
-        for image, label in evaluation_set:
+        for image, label in tf_dataset:
             try:
                 softmax_batch = self.model.predict_on_batch(image)
                 one_hot_label = label.numpy()

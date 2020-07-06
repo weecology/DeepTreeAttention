@@ -33,7 +33,7 @@ print("Training Complete")
 
 ##Evaluate
 #Evaluation scores, see config.yml for tfrecords path
-y_pred, y_true = model.evaluate(model.train_records, batch_size=200)
+y_pred, y_true = model.evaluate(model.val_split, batch_size=200)
 
 #Evaluation accuracy
 eval_acc = keras_metrics.CategoricalAccuracy()
@@ -48,7 +48,6 @@ y_pred_integer = np.argmax(y_pred,axis=1)
 micro, macro, weighted= metrics.f1_scores(y_true_integer, y_pred_integer)
 experiment.log_metric("MicroF1",micro)
 experiment.log_metric("MacroF1",macro)
-experiment.log_metric("WeightedF1", weighted)
 
 #Confusion matrix
 class_labels = {
