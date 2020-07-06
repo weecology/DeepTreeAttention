@@ -1,7 +1,7 @@
 #Create spectral - spatial fusion model
 from .layers import *
 
-def create_model(height=11, width=11, channels=48, classes=2, weighted_sum=True):
+def create_model(height=11, width=11, channels=48, classes=2, weighted_sum=False):
     """
     """
     input_shape = (height, width, channels)
