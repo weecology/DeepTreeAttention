@@ -1,31 +1,23 @@
 import tensorflow as tf
+from sklearn.metrics import f1_score
 
 def f1_scores(y_true,y_pred):
-    """Calculate micro, macro and weighted f1 scores"""
-    f1s = [0, 0, 0]
+    """Calculate micro, macro and weighted f1 scores
+    Args:
+        y_true: one_hot ground truth labels
+        y_pred: softmax classes 
+    Returns:
+        macro: macro average fscore
+        micro: micro averge fscore
+    """
+    #F1 scores
+    y_true_integer = np.argmax(y_true,axis=1)
+    y_pred_integer = np.argmax(y_pred,axis=1)
     
-    y_true = tf.cast(y_true, tf.float64)
-    y_pred = tf.cast(y_pred, tf.float64)
+    macro = f1_score(y_true_integer, y_pred_integer, average='macro')
+    micro = f1_score(y_true_integer, y_pred_integer, average='micro')
     
-    for i, axis in enumerate([None, 0]):
-        TP = tf.math.count_nonzero(y_pred * y_true, axis=axis)
-        FP = tf.math.count_nonzero(y_pred * (y_true - 1), axis=axis)
-        FN = tf.math.count_nonzero((y_pred - 1) * y_true, axis=axis)
-    
-        precision = TP / (TP + FP)
-        recall = TP / (TP + FN)
-        f1 = 2 * precision * recall / (precision + recall)
-    
-        f1s[i] = tf.reduce_mean(f1)
-    
-    weights = tf.reduce_sum(y_true, axis=0)
-    weights /= tf.reduce_sum(weights)
-    
-    f1s[2] = tf.reduce_sum(f1 * weights)
-    
-    micro, macro, weighted = f1s
-    
-    return f1s
+    return macro, micro
     
 def confusion(y_true, y_pred, num_classes):
     confusion = tf.math.confusion_matrix(labels=y_true, predictions=y_pred, num_classes=num_classes)
