@@ -19,7 +19,7 @@ experiment.log_parameter("timestamp",timestamp)
 #Create a class and run
 model = AttentionModel()
 model.create(name="single_conv")
-model.read_data()
+model.read_data(validation_split=True)
     
 #Log config
 experiment.log_parameters(model.config["train"])

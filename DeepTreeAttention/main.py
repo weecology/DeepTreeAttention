@@ -12,6 +12,7 @@ from tensorflow.keras import metrics
 from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.models import Hang2020, single_conv
 from DeepTreeAttention.generators.make_dataset import tf_dataset
+from DeepTreeAttention.callbacks import callbacks
 
 class AttentionModel():
     """The main class holding train, predict and evaluate methods"""
@@ -98,11 +99,15 @@ class AttentionModel():
 
     def train(self):
         """Train a model"""       
+        
+        callback_list = callbacks.create()
+        
         self.model.fit(
             self.train_split,
             epochs=self.config["train"]["epochs"],
             steps_per_epoch=self.config["train"]["steps"],
-            validation_data=self.val_split
+            validation_data=self.val_split,
+            callbacks=callback_list
         )
 
     def predict(self, tfrecords, batch_size=1):
