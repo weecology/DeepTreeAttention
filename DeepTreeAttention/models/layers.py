@@ -20,111 +20,112 @@ def conv_module(x, K, kX=3, kY=3, chanDim=-1, padding="same", maxpool=False):
     return x
 
 
-#Still to do once attention layers are created
-def concat_attention(conv_layers, attention_layers):
+def spatial_network(x, classes=2):
     """
-    Element-wise multiplication and padding
-    """
-
-    return concat_layers
-
-
-def conv_and_attention_submodel(x, K, submodel, attention=True, maxpool=False):
-    """Perform a set of convultions and attention and concat
+    Learn spatial features with alternating convolutional and attention pooling layers
     Args:
-        x: functional keras model layers
-        K: convolutional filters
-        submodel: either "spectral" or "spatial" to get the right attention layer
-        maxpool: whether convolutional layers have a maxpool layer
+        x: keras.model object
+        classes: number of label classes
     Returns:
-        x: functional keras model layers
-    """
-
-    #Layers are a convoultional layer, an attention pooling layer and a concat
-    x = conv_module(x, K, maxpool=maxpool)
-    #add attention
-    if attention:
-        if submodel == "spectral":
-            attention_layers = spectral_attention(x)
-        elif submodel == "spatial":
-            attention_layers = spatial_attention(x)
-        else:
-            raise ValueError("submodel must be either 'spectral' or 'spatial'")
-
-        #combine
-        x = concat_attention(x, attention_layers)
-
-    return x
-
-
-def spatial_network(x, attention=False, classes=2):
-    """
-    Learn spatial features with convolutional and attention pooling layers
+        x: keras model object
+        attention_outputs: list of the 3 attention softmax classification probabilities
     """
     #First submodel is 32 filters
-    x = conv_and_attention_submodel(x, K=32, submodel="spatial", attention=attention)
+    x = conv_module(x, K=32,maxpool=False)
 
+    #Weak attention
+    x, attention_1 = spatial_attention(filters=32, classes=classes, x=x)
+    
     #Second submodel is 64 filters - 2nd gets maxpool
-    x = conv_and_attention_submodel(x,
-                                    K=64,
-                                    submodel="spatial",
-                                    attention=attention,
-                                    maxpool=True)
+    x = conv_module(x, K=64, maxpool=True)
+    
+    #Weak Attention
+    x, attention_2 = spatial_attention(filters=64, classes=classes, x=x)
 
     #Third submodel is 128 filters - 3rd gets maxpool
-    x = conv_and_attention_submodel(x,
-                                    K=128,
-                                    submodel="spatial",
-                                    attention=attention,
-                                    maxpool=True)
+    x = conv_module(x, K=128, maxpool=True)
 
-    #This is still unclear, is it flatten and dense or just dense?
+    #Weak Attention
+    x, attention_3 = spatial_attention(filters=128, classes=classes, x=x)
+    
     x = layers.Flatten()(x)
     x = layers.Dense(classes, activation="softmax", name="spatial_softmax")(x)
-
+    
+    #return x, [attention_1, attention_2, attention_3]
     return x
 
 
-def spectral_network(x, attention=False, classes=2):
+def spectral_network(x, classes=2):
     """
     Learn cross band spectral features with a set of convolutions and spectral pooling attention layers
     """
 
     #First submodel is 32 filter
-    x = conv_and_attention_submodel(x, K=32, submodel="spectral", attention=attention)
+    x = conv_module(x, K=32, maxpool=False)
 
     #Second submodel is 64 filters
-    x = conv_and_attention_submodel(x,
-                                    K=64,
-                                    submodel="spectral",
-                                    attention=attention,
-                                    maxpool=True)
+    x = conv_module(x, K=64, maxpool=True)
 
     #Third submodel is 128 filters
-    x = conv_and_attention_submodel(x,
-                                    K=128,
-                                    submodel="spectral",
-                                    attention=attention,
-                                    maxpool=True)
+    x = conv_module(x, K=128, maxpool=True)
 
-    #This is still unclear, is it flatten and dense or just dense?
     x = layers.Flatten()(x)
     x = layers.Dense(classes, activation="softmax", name="spectral_softmax")(x)
 
     return x
 
 
-def spectral_attention(x):
+def spectral_attention(filters,x):
     """
     """
     return x
 
 
-def spatial_attention(x):
+def spatial_attention(filters, classes, x):
     """
+    Spatial attention layers channel pool the feature maps and apply weak attention
+    Args:
+        filters: Number of incoming conv filters from main convolution blocks
+        classes: Number of classes for one-hot softmax layers
+        x: keras.model object
+    Returns:
+        x: keras.model object
+        output: softmax attention layer
     """
-    return x
+    #Channel pool
+    attention_layers = layers.Conv2D(1, (1,1),activation="relu")(x)
+    
+    # Weak Attention with adaptive kernel size based on size of incoming feature map
+    if filters == 32:
+        kernel_size = 7
+    elif filters == 64:
+        kernel_size = 5
+    elif filters == 128:
+        kernel_size = 3
+    else:
+        raise ValueError("Unknown incoming kernel size {} for attention layers".format(kernel_size))
+    
+    attention_layers = layers.Conv2D(1, (kernel_size,kernel_size), padding="SAME", activation="relu")(attention_layers)
+    attention_layers = layers.Conv2D(1, (kernel_size,kernel_size), padding="SAME", activation="sigmoid")(attention_layers)
+    
+    #Elementwise multiplication of attention with incoming feature map
+    combined_layer = layers.Multiply()([x, attention_layers])
+    
+    #Add a classfication branch with max pool based on size of the layer
+    if filters == 32:
+        pool_size = (4,4)
+    elif filters == 64:
+        pool_size = (2,2)
+    elif filters == 128:
+        pool_size = (1,1)
+    else:
+        raise ValueError("Unknown filter size for max pooling")
 
+    class_pool = layers.MaxPool2D(pool_size)(combined_layer)
+    class_pool = layers.Flatten()(class_pool)
+    output = layers.Dense(classes, activation="softmax", name="spatial_attention_softmax")(class_pool)
+        
+    return combined_layer, output
 
 def _weighted_sum(x):
     return tf.keras.backend.sum(x[0] * tf.keras.backend.expand_dims(x[1], -1),
