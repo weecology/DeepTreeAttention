@@ -62,24 +62,68 @@ def spectral_network(x, classes=2):
 
     #First submodel is 32 filter
     x = conv_module(x, K=32, maxpool=False)
+    x, attention_1 = spectral_attention(filters=32, classes=classes, x=x)
 
     #Second submodel is 64 filters
     x = conv_module(x, K=64, maxpool=True)
-
+    x, attention_2 = spectral_attention(filters=64, classes=classes, x=x)
+    
     #Third submodel is 128 filters
     x = conv_module(x, K=128, maxpool=True)
-
+    x, attention_3 = spectral_attention(filters=128, classes=classes, x=x)
+    
     x = layers.Flatten()(x)
     x = layers.Dense(classes, activation="softmax", name="spectral_softmax")(x)
 
     return x
 
 
-def spectral_attention(filters,x):
+def spectral_attention(filters,classes, x):
     """
+    Spectral attention layers: pool the feature maps and apply weak attention with a softmax multi-head output
+    Args:
+        filters: Number of incoming conv filters from main convolution blocks
+        classes: Number of classes for one-hot softmax layers
+        x: keras.model object
+    Returns:
+        x: keras.model object
+        output: softmax attention layer
     """
-    return x
+    #Global average pool
+    attention_layers = layers.GlobalAveragePooling2D()(x)
+    attention_layers = layers.Reshape((1,1,filters))(attention_layers)
+    
+    # Weak Attention with adaptive filter size based on depth of incoming feature map
+    if filters == 32:
+        kernel_size = 3
+    elif filters == 64:
+        kernel_size = 5
+    elif filters == 128:
+        kernel_size = 7
+    else:
+        raise ValueError("Unknown incoming kernel size {} for attention layers".format(kernel_size))
+    
+    attention_layers = layers.Conv2D(1, (kernel_size,kernel_size), padding="SAME", activation="relu")(attention_layers)
+    attention_layers = layers.Conv2D(1, (kernel_size,kernel_size), padding="SAME", activation="sigmoid")(attention_layers)
 
+    #Elementwise multiplication of attention with incoming feature map
+    combined_layer = layers.Multiply()([x, attention_layers])
+    
+    #Add a classfication branch with max pool based on size of the layer
+    if filters == 32:
+        pool_size = (4,4)
+    elif filters == 64:
+        pool_size = (2,2)
+    elif filters == 128:
+        pool_size = (1,1)
+    else:
+        raise ValueError("Unknown filter size for max pooling")
+
+    class_pool = layers.MaxPool2D(pool_size)(combined_layer)
+    class_pool = layers.Flatten()(class_pool)
+    output = layers.Dense(classes, activation="softmax", name="spatial_attention_softmax")(class_pool)
+        
+    return combined_layer, output
 
 def spatial_attention(filters, classes, x):
     """
