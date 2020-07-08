@@ -170,8 +170,6 @@ def test_evaluate(test_config):
         
     #Method 1, class eval method
     y_pred, y_true = mod.evaluate(mod.train_split)
-    y_true_integer = np.argmax(y_true, axis=1)
-    y_pred_integer = np.argmax(y_pred, axis=1)
     
     test_acc = keras_metrics.CategoricalAccuracy()
     test_acc.update_state(y_true=y_true, y_pred = y_pred)
@@ -188,7 +186,5 @@ def test_evaluate(test_config):
     assert method1_eval_accuracy == metric_dict["acc"]   
     
     #F1 requires integer, not softmax
-    y_true_integer = np.argmax(y_true, axis=1)
-    y_pred_integer = np.argmax(y_pred, axis=1)
-    f1s = metrics.f1_scores( y_true_integer, y_pred_integer)    
+    f1s = metrics.f1_scores( y_true, y_pred)    
     

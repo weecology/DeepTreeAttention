@@ -73,7 +73,6 @@ class AttentionModel():
             Args:
                 validation_split: True -> split tfrecords into train test. This overrides the evaluation config!
             """
-        
         self.train_records = glob.glob(os.path.join(self.config["train"]["tfrecords"], "*.tfrecord"))
                 
         #Create training tf.data
@@ -145,7 +144,6 @@ class AttentionModel():
         Returns:
             results: a dictionary of metrics
         """
-        
         #gather y_true
         labels = []
         predictions = []

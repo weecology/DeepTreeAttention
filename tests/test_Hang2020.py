@@ -17,3 +17,7 @@ def test_model(image, classes):
     model = create_model(classes=classes)
     prediction = model.predict(image)
     prediction.shape == (1, classes)
+
+def test_multiply_broadcast():
+    model = create_model(classes=20)
+    
