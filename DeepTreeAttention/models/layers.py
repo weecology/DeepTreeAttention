@@ -59,7 +59,6 @@ def spectral_network(x, classes=2):
     """
     Learn cross band spectral features with a set of convolutions and spectral pooling attention layers
     """
-
     #First submodel is 32 filter
     x = conv_module(x, K=32, maxpool=False)
     x, attention_1 = spectral_attention(filters=32, classes=classes, x=x)
@@ -103,11 +102,13 @@ def spectral_attention(filters,classes, x):
     else:
         raise ValueError("Unknown incoming kernel size {} for attention layers".format(kernel_size))
     
-    attention_layers = layers.Conv2D(1, (kernel_size,kernel_size), padding="SAME", activation="relu")(attention_layers)
-    attention_layers = layers.Conv2D(1, (kernel_size,kernel_size), padding="SAME", activation="sigmoid")(attention_layers)
+    attention_layers = layers.Conv2D(filters, (kernel_size,kernel_size), padding="SAME", activation="relu")(attention_layers)
+    attention_layers = layers.Conv2D(filters, (kernel_size,kernel_size), padding="SAME", activation="sigmoid")(attention_layers)
 
-    #Elementwise multiplication of attention with incoming feature map
-    combined_layer = layers.Multiply()([x, attention_layers])
+    #Elementwise multiplication of attention with incoming feature map, expand among spatial dimension in 2D
+    attention_expansion = tf.keras.backend.repeat_elements(x=attention_layers,rep=x.shape[1],axis = 1)
+    attention_expansion = tf.keras.backend.repeat_elements(x=attention_expansion,rep=x.shape[1],axis = 2)
+    combined_layer = layers.Multiply()([x, attention_expansion])
     
     #Add a classfication branch with max pool based on size of the layer
     if filters == 32:
@@ -152,8 +153,9 @@ def spatial_attention(filters, classes, x):
     attention_layers = layers.Conv2D(1, (kernel_size,kernel_size), padding="SAME", activation="relu")(attention_layers)
     attention_layers = layers.Conv2D(1, (kernel_size,kernel_size), padding="SAME", activation="sigmoid")(attention_layers)
     
-    #Elementwise multiplication of attention with incoming feature map
-    combined_layer = layers.Multiply()([x, attention_layers])
+    #Elementwise multiplication of attention with incoming feature map, copied along depth axis
+    attention_expansion = tf.keras.backend.repeat_elements(x=attention_layers,rep=x.shape[3],axis = 3)
+    combined_layer = layers.Multiply()([x, attention_expansion])
     
     #Add a classfication branch with max pool based on size of the layer
     if filters == 32:
