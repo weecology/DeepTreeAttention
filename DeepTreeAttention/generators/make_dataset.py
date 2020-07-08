@@ -297,8 +297,8 @@ def tf_dataset(tfrecords,
     #ignore_order.experimental_deterministic = False
     
     dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=20)
-    dataset = dataset.with_options(ignore_order)
-        
+    #dataset = dataset.with_options(ignore_order)
+    
     if shuffle:    
         dataset = dataset.shuffle(buffer_size=batch_size*5)
     if train:
@@ -312,6 +312,6 @@ def tf_dataset(tfrecords,
     else:
         dataset = dataset.batch(batch_size=batch_size)
 
-    dataset = dataset.prefetch(buffer_size=500)
+    dataset = dataset.prefetch(buffer_size=5)
 
     return dataset
