@@ -107,7 +107,6 @@ class AttentionModel():
             steps_per_epoch=self.config["train"]["steps"],
             validation_data=self.val_split,
             callbacks=callback_list,
-            steps_per_epoch=1000
         )
 
     def predict(self, tfrecords, batch_size=1):
