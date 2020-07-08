@@ -102,7 +102,7 @@ class AttentionModel():
         callback_list = callbacks.create()
         
         self.model.fit(
-            self.train_split.repeat(),
+            self.train_split,
             epochs=self.config["train"]["epochs"],
             steps_per_epoch=self.config["train"]["steps"],
             validation_data=self.val_split,

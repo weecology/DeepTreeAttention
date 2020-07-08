@@ -11,8 +11,8 @@ train:
     batch_size: 173
     weighted_sum: False
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
-    steps: 5835
-    shuffle: True
+    steps: 10
+    shuffle: False
 
 callbacks:
     snapshots_path: /../models/

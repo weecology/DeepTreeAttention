@@ -293,8 +293,8 @@ def tf_dataset(tfrecords,
         """
 
     AUTO = tf.data.experimental.AUTOTUNE
-    ignore_order = tf.data.Options()
-    ignore_order.experimental_deterministic = False
+    #ignore_order = tf.data.Options()
+    #ignore_order.experimental_deterministic = False
     
     dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=20)
     dataset = dataset.with_options(ignore_order)
@@ -308,10 +308,10 @@ def tf_dataset(tfrecords,
     
     #batch and drop remainder
     if train:
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
+        dataset = dataset.repeat().batch(batch_size=batch_size)
     else:
         dataset = dataset.batch(batch_size=batch_size)
 
-    dataset = dataset.prefetch(buffer_size=AUTO)
+    dataset = dataset.prefetch(buffer_size=500)
 
     return dataset
