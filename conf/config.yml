@@ -24,3 +24,4 @@ evaluation:
     tfrecords:
     sensor_path:
     ground_truth_path:
+    steps:

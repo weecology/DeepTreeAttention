@@ -32,14 +32,15 @@ class AttentionModel():
         self.training_set = None
     
     def get_model(self, name): 
-        classes=self.config["train"]["classes"]
-        height=self.config["train"]["crop_size"]
-        width=self.config["train"]["crop_size"]
-        channels=self.config["train"]["sensor_channels"]
+        #Define shape
+        classes = self.config["train"]["classes"]
+        height = self.config["train"]["crop_size"]
+        width = self.config["train"]["crop_size"]
+        channels = self.config["train"]["sensor_channels"]
         
         if name == "Hang2020":
             weighted_sum=self.config["train"]["weighted_sum"]            
-            return Hang2020.create_model(height, width,channels, classes, weighted_sum)
+            return Hang2020.create_model(height, width, channels, classes, weighted_sum)
         
         elif name == "single_conv":
             return single_conv.create_model(height, width, channels, classes)
@@ -74,21 +75,35 @@ class AttentionModel():
                 validation_split: True -> split tfrecords into train test. This overrides the evaluation config!
             """
         self.train_records = glob.glob(os.path.join(self.config["train"]["tfrecords"], "*.tfrecord"))
-                
-        #Create training tf.data
-        self.training_set = tf_dataset(
-        tfrecords=self.train_records,
-        batch_size=self.config["train"]["batch_size"],
-        shuffle=self.config["train"]["shuffle"])
         
         if validation_split:
-            train_count = int(len(self.train_records ) * 0.9)
-            self.train_split = self.training_set.take(train_count)
-            self.val_split = self.training_set.skip(train_count)
-        else:
-            self.train_split = self.training_set
-            self.val_split = None     
+            print("Splitting training set into train-test")
+            train_df = pd.Series(self.train_records)
+            self.train_split_records = train_df.sample(frac=0.9).values
+            self.test_split_records = train_df[~(train_df.isin(self.train_split_records))].values
             
+            #Create training tf.data
+            self.train_split = tf_dataset(
+                tfrecords=self.train_split_records,
+                batch_size=self.config["train"]["batch_size"],
+                shuffle=self.config["train"]["shuffle"]
+            )
+            #Create testing tf.data
+            self.val_split = tf_dataset(
+                tfrecords=  self.test_split_records,
+                batch_size=self.config["train"]["batch_size"],
+                shuffle=self.config["train"]["shuffle"]
+            )            
+        else:
+            #Create training tf.data
+            self.train_split = tf_dataset(
+                tfrecords=self.train_records,
+                batch_size=self.config["train"]["batch_size"],
+                shuffle=self.config["train"]["shuffle"]
+            )
+            
+            #honor config if validation not set
+            self.val_split = None     
             if self.config["evaluation"]["tfrecords"] is not None:
                 self.test_records = glob.glob(os.path.join(self.config["evaluation"]["tfrecords"], "*.tfrecord"))
                 self.val_split = tf_dataset(
@@ -104,7 +119,6 @@ class AttentionModel():
         self.model.fit(
             self.train_split,
             epochs=self.config["train"]["epochs"],
-            steps_per_epoch=self.config["train"]["steps"],
             validation_data=self.val_split,
             callbacks=callback_list,
         )
@@ -136,7 +150,7 @@ class AttentionModel():
         
         return results
 
-    def evaluate(self, tf_dataset, batch_size=2):
+    def evaluate(self, tf_dataset):
         """Evaluate metrics on held out training data. Defaults to reading from config.yml evaluation sensor path
         Args: 
             tf_dataset: Optional a tf.dataset that yields data and labels, see make_dataset.py 
@@ -147,8 +161,11 @@ class AttentionModel():
         #gather y_true
         labels = []
         predictions = []
+        counter = 0
         for image, label in tf_dataset:
             try:
+                counter+=1
+                print(counter)
                 softmax_batch = self.model.predict_on_batch(image)
                 one_hot_label = label.numpy()
                 predictions.append(softmax_batch)

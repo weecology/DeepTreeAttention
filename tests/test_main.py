@@ -14,7 +14,7 @@ from tensorflow.keras import metrics as keras_metrics
 def ground_truth_raster(tmp_path):
     fn = os.path.join(tmp_path,"ground_truth.tif")
     #Create a raster that looks data (smaller)
-    arr = np.random.randint(1,21,size=(1, 50,50)).astype(np.uint16)
+    arr = np.random.randint(1,21,size=(1, 30,30)).astype(np.uint16)
     
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
@@ -33,7 +33,7 @@ def training_raster(tmp_path):
     fn = os.path.join(tmp_path,"training.tif")
     
     #Create a raster that looks data, index order to help id
-    arr = np.arange(25 * 25).reshape((25,25))
+    arr = np.arange(15 * 15).reshape((15,15))
     arr = np.dstack([arr]*4)
     arr = np.rollaxis(arr, 2,0)
     arr = arr.astype("uint16")
@@ -55,7 +55,7 @@ def predict_raster(tmp_path):
     fn = os.path.join(tmp_path,"training.tif")
     
     #Create a raster that looks data, index order to help id
-    arr = np.arange(10 * 20).reshape((10,20))
+    arr = np.arange(12 * 15).reshape((12,15))
     arr = np.dstack([arr]*4)
     arr = np.rollaxis(arr, 2,0)
     arr = arr.astype("uint16")
@@ -74,13 +74,13 @@ def predict_raster(tmp_path):
 
 @pytest.fixture()
 def tfrecords(training_raster, ground_truth_raster,tmpdir):
-    tfrecords = make_dataset.generate_training(training_raster, ground_truth_raster,savedir=tmpdir)
+    tfrecords = make_dataset.generate_training(training_raster, ground_truth_raster, size=5, savedir=tmpdir,chunk_size=100)
     
     return os.path.dirname(tfrecords[0])
 
 @pytest.fixture()
 def predict_tfrecords(predict_raster,tmpdir):
-    tfrecords = make_dataset.generate_prediction(predict_raster, savedir=tmpdir, chunk_size=100)
+    tfrecords = make_dataset.generate_prediction(predict_raster, savedir=tmpdir, size=5, chunk_size=100)
     return tfrecords
 
 @pytest.fixture()
@@ -88,16 +88,17 @@ def test_config(tfrecords):
     config = {}
     train_config = { }
     train_config["tfrecords"] = tfrecords
-    train_config["batch_size"] = 10
+    train_config["batch_size"] = 32
     train_config["epochs"] = 1
     train_config["steps"] = 2
-    train_config["crop_size"] = 11
+    train_config["crop_size"] = 5
     train_config["sensor_channels"] = 4
     train_config["shuffle"] = False
         
     #evaluation
     eval_config = { }
     eval_config["tfrecords"] = tfrecords
+    eval_config["steps"] = 2
     
     config["train"] = train_config
     config["evaluation"] = eval_config
@@ -118,12 +119,23 @@ def test_AttentionModel(test_config,validation_split):
     #Create model
     mod.create()
     mod.read_data(validation_split=validation_split)
-    
-    mod.config["evaluation"]["sensor_path"] = None
-    mod.config["evaluation"]["ground_truth_path"] = None
-    
+        
     #initial weights
     initial_weight = mod.model.layers[1].get_weights()
+    
+    #How many batches
+    if validation_split:
+        train_counter =0
+        for data, label in mod.train_split:
+            print(data.shape)        
+            train_counter+=data.shape[0]
+                
+        test_counter =0
+        for data, label in mod.val_split:
+            print(data.shape)        
+            test_counter+=data.shape[0]
+        
+        assert train_counter > test_counter
     
     #train
     mod.train()
@@ -153,7 +165,7 @@ def test_predict(test_config, predict_tfrecords):
     predicted_raster = visualize.create_raster(results)
     
     #Equals size of the input raster
-    assert predicted_raster.shape == (10,20)
+    assert predicted_raster.shape == (12,15)
     
 def test_evaluate(test_config):
     #Create class
@@ -166,10 +178,13 @@ def test_evaluate(test_config):
     
     #Create
     mod.create()
-    mod.read_data()
-        
+    mod.read_data(validation_split=True)
+    
     #Method 1, class eval method
-    y_pred, y_true = mod.evaluate(mod.train_split)
+    print("Before evaluation")
+    y_pred, y_true = mod.evaluate(mod.val_split)
+    
+    print("evaluated")
     
     test_acc = keras_metrics.CategoricalAccuracy()
     test_acc.update_state(y_true=y_true, y_pred = y_pred)
@@ -178,7 +193,7 @@ def test_evaluate(test_config):
     assert y_pred.shape == y_true.shape
 
     #Method 2, keras eval method
-    metric_list = mod.model.evaluate(mod.train_split)
+    metric_list = mod.model.evaluate(mod.val_split)
     metric_dict = {}
     for index, value in enumerate(metric_list):
         metric_dict[mod.model.metrics_names[index]] = value

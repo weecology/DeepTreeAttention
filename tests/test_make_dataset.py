@@ -118,15 +118,20 @@ def test_tf_dataset_train(train_tfrecords):
     dataset = make_dataset.tf_dataset(train_tfrecords, batch_size=6, shuffle=False)
     
     counter=0
-    for data, label in dataset:  # only take first element of dataset
+    for data, label in dataset.take(2):  # turn off repeat
         numpy_data = data.numpy()
+        assert numpy_data.shape[0] == 6
         assert not numpy_data.sum() == 0
-        numpy_labels = label.numpy()
-        counter+=data.shape[0]
     
+    #full dataset
+    dataset = make_dataset.tf_dataset(train_tfrecords, batch_size=6, shuffle=False)
+    
+    counter=0
+    for data, label in dataset:  # turn off repeat
+        counter+=data.shape[0]
+        
     #one epoch should be every pixel in the raster
     assert counter == 50 * 100
-   
     
 def test_tf_dataset_predict(predict_tfrecords):
     #Tensorflow encodes string as b bytes

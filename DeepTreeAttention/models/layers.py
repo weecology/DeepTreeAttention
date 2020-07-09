@@ -106,9 +106,7 @@ def spectral_attention(filters,classes, x):
     attention_layers = layers.Conv2D(filters, (kernel_size,kernel_size), padding="SAME", activation="sigmoid")(attention_layers)
 
     #Elementwise multiplication of attention with incoming feature map, expand among spatial dimension in 2D
-    attention_expansion = tf.keras.backend.repeat_elements(x=attention_layers,rep=x.shape[1],axis = 1)
-    attention_expansion = tf.keras.backend.repeat_elements(x=attention_expansion,rep=x.shape[1],axis = 2)
-    combined_layer = layers.Multiply()([x, attention_expansion])
+    attention_layers = layers.Multiply()([x, attention_layers])
     
     #Add a classfication branch with max pool based on size of the layer
     if filters == 32:
@@ -120,11 +118,11 @@ def spectral_attention(filters,classes, x):
     else:
         raise ValueError("Unknown filter size for max pooling")
 
-    class_pool = layers.MaxPool2D(pool_size)(combined_layer)
+    class_pool = layers.MaxPool2D(pool_size)(attention_layers)
     class_pool = layers.Flatten()(class_pool)
     output = layers.Dense(classes, activation="softmax", name="spatial_attention_softmax")(class_pool)
         
-    return combined_layer, output
+    return attention_layers, output
 
 def spatial_attention(filters, classes, x):
     """
@@ -153,10 +151,6 @@ def spatial_attention(filters, classes, x):
     attention_layers = layers.Conv2D(1, (kernel_size,kernel_size), padding="SAME", activation="relu")(attention_layers)
     attention_layers = layers.Conv2D(1, (kernel_size,kernel_size), padding="SAME", activation="sigmoid")(attention_layers)
     
-    #Elementwise multiplication of attention with incoming feature map, copied along depth axis
-    attention_expansion = tf.keras.backend.repeat_elements(x=attention_layers,rep=x.shape[3],axis = 3)
-    combined_layer = layers.Multiply()([x, attention_expansion])
-    
     #Add a classfication branch with max pool based on size of the layer
     if filters == 32:
         pool_size = (4,4)
@@ -167,11 +161,11 @@ def spatial_attention(filters, classes, x):
     else:
         raise ValueError("Unknown filter size for max pooling")
 
-    class_pool = layers.MaxPool2D(pool_size)(combined_layer)
+    class_pool = layers.MaxPool2D(pool_size)(attention_layers)
     class_pool = layers.Flatten()(class_pool)
     output = layers.Dense(classes, activation="softmax", name="spatial_attention_softmax")(class_pool)
         
-    return combined_layer, output
+    return attention_layers, output
 
 def _weighted_sum(x):
     return tf.keras.backend.sum(x[0] * tf.keras.backend.expand_dims(x[1], -1),
