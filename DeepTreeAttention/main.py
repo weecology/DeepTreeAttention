@@ -79,7 +79,8 @@ class AttentionModel():
         if validation_split:
             print("Splitting training set into train-test")
             train_df = pd.Series(self.train_records)
-            self.train_split_records = train_df.sample(frac=0.9).values
+            #Sample with set seed to make it the same between runs
+            self.train_split_records = train_df.sample(frac=0.9,random_state=1).values
             self.test_split_records = train_df[~(train_df.isin(self.train_split_records))].values
             
             #Create training tf.data

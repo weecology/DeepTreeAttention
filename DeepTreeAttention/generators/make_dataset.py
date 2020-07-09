@@ -297,7 +297,7 @@ def tf_dataset(tfrecords,
     #ignore_order = tf.data.Options()
     #ignore_order.experimental_deterministic = False
     
-    dataset = tf.data.TFRecordDataset(tfrecords)
+    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=100)
     #dataset = dataset.with_options(ignore_order)
     
     if shuffle:    

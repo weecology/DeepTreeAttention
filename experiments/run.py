@@ -31,7 +31,7 @@ model.train()
 
 ##Evaluate
 #Evaluation scores, see config.yml for tfrecords path
-y_pred, y_true = model.evaluate(model.val_split, batch_size=200)
+y_pred, y_true = model.evaluate(model.val_split)
 
 #Evaluation accuracy
 eval_acc = keras_metrics.CategoricalAccuracy()
