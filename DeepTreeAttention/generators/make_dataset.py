@@ -251,6 +251,7 @@ def generate_prediction(sensor_path,
         for g, df in results.groupby("chunk"):
             coordinates = zip(df.rows,df.cols)            
             filename = "{}/{}_{}.tfrecord".format(savedir,basename,g)  
+            
             #Submit to dask client
             fn = client.submit(_record_wrapper_,
                                sensor_path=sensor_path,
@@ -302,9 +303,9 @@ def tf_dataset(tfrecords,
     if shuffle:    
         dataset = dataset.shuffle(buffer_size=batch_size*5)
     if train:
-        dataset = dataset.map(create_tfrecords._train_parse_)
+        dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls=100)
     else:
-        dataset = dataset.map(create_tfrecords._predict_parse_)
+        dataset = dataset.map(create_tfrecords._predict_parse_, num_parallel_calls=100)
     
     dataset = dataset.batch(batch_size=batch_size)
 
