@@ -8,10 +8,10 @@ train:
     epochs: 50
     learning_rate: .001
     gpu: 0
-    batch_size: 173
+    batch_size: 256
     weighted_sum: False
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
-    steps: 10
+    steps:
     shuffle: False
 
 callbacks:
