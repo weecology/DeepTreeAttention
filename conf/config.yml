@@ -12,7 +12,7 @@ train:
     weighted_sum: False
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
     steps:
-    shuffle: False
+    shuffle: True
 
 callbacks:
     snapshots_path: /../models/

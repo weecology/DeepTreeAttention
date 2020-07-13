@@ -139,14 +139,17 @@ class AttentionModel():
         for image, x,y in prediction_set:
             try:
                 softmax_batch = self.model.predict_on_batch(image)
-                for row, col, i in zip(x.numpy(), y.numpy(), softmax_batch):
-                    label = np.argmax(i)
-                    predictions.append(label)
-                    row_list.append(row)
-                    col_list.append(col) 
+                row_list.append(x.numpy())
+                col_list.append(y.numpy())
+                predictions.append(softmax_batch)
             except tf.errors.OutOfRangeError:
                 print("Completed {} predictions".format(len(predictions)))
-
+       
+        #stack
+        predictions = np.vstack(predictions)
+        row_list = np.vstack(row_list)
+        col_list = np.vstack(col_list)
+                
         results = pd.DataFrame({"label":predictions,"row":row_list,"col":col_list})
         results = results.sort_values(by=["row","col"])
         
