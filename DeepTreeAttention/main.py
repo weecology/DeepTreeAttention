@@ -41,8 +41,7 @@ class AttentionModel():
         if name == "Hang2020":
             weighted_sum=self.config["train"]["weighted_sum"]            
             #Store intermediary layers for subtraining
-            self.inputs, self.outputs = Hang2020.create_model(height, width, channels, classes, weighted_sum)
-            return tf.keras.Model(inputs=inputs, outputs=outputs, name="DeepTreeAttention")
+            return Hang2020.create_model(height, width, channels, classes, weighted_sum)
             
         elif name == "single_conv":
             return single_conv.create_model(height, width, channels, classes)
@@ -70,14 +69,6 @@ class AttentionModel():
                            optimizer=tf.keras.optimizers.Adam(
                                lr=float(self.config['train']['learning_rate'])),
                            metrics=metric_list)
-        
-        #optional create submodels
-        if submodel == "spatial":
-            pass
-        if submodel == "spectral":
-            pass
-        else:
-            raise ValueError("Only spatial or spectral submodels")
 
     def read_data(self, validation_split=False):
         """Read tfrecord into datasets from config
@@ -133,12 +124,6 @@ class AttentionModel():
             validation_data=self.val_split,
             callbacks=callback_list,
         )
-    if submodel == "spatial":
-        pass
-    if submodel == "spectral":
-        pass
-    else:
-        raise ValueError("submodel must be 'spatial' or 'spectral'")
     
     def predict(self, tfrecords, batch_size=1):
         """Predicted a set of tfrecords and create a raster image"""
