@@ -21,6 +21,4 @@ def create_model(height=11, width=11, channels=48, classes=2, weighted_sum=False
     #Output layers
     outputs = combined_output
     
-    model = Model(inputs=inputs, outputs=outputs, name="DeepTreeAttention")
-
-    return model
+    return inputs, outputs

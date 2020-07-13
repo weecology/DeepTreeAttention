@@ -28,7 +28,7 @@ def resample(path, upscale_factor=2):
                 int(dataset.height * upscale_factor),
                 int(dataset.width * upscale_factor)
             ),
-            resampling=Resampling.bilinear
+            resampling=Resampling.nearest
         )
     
         # scale image transform
