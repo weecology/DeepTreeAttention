@@ -74,7 +74,11 @@ experiment.log_confusion_matrix(y_true = y_true, y_predicted = y_pred, labels=li
 #Predict
 predict_tfrecords = glob.glob("/orange/ewhite/b.weinstein/Houston2018/tfrecords/predict/*.tfrecord")
 results = model.predict(predict_tfrecords, batch_size=256)
+#predicted classes
+print(results.label.unique())
+
 predicted_raster = visualize.create_raster(results)
+print(np.unique(predicted_raster))
 experiment.log_image(name="Prediction", image_data=predicted_raster, image_colormap=visualize.discrete_cmap(20, base_cmap="jet"))
 
 #Save as tif for resampling
