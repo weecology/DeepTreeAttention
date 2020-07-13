@@ -9,6 +9,10 @@ def create_tif(source_tif, filename, numpy_array):
         #write new dataset
         metadata = src.meta.copy()  
     
+    metadata.update({
+        'count': 1,
+    })    
+    
     with rasterio.open(filename, "w", **metadata) as dest:
         dest.write(numpy_array)    
     
