@@ -10,6 +10,7 @@ def create_raster(results):
     colIDs = results['col']            
     predicted_raster = np.zeros((rowIDs.max()+1,colIDs.max()+1))
     predicted_raster[rowIDs, colIDs] = results["label"]
+    predicted_raster = predicted_raster.astype("uint16")
     
     return predicted_raster
 
