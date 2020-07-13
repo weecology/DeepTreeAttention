@@ -12,8 +12,11 @@ from tensorflow.keras import metrics as keras_metrics
 
 experiment = Experiment(project_name="deeptreeattention", workspace="bw4sz")
 
-#timestamp
+#Create output folder
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+save_dir = "{}/{}".format("/orange/ewhite/b.weinstein/Houston2018/snapshots/",timestamp)
+os.mkdir(save_dir)
+
 experiment.log_parameter("timestamp",timestamp)
 
 #Create a class and run
@@ -68,21 +71,18 @@ class_labels = {
 
 experiment.log_confusion_matrix(y_true = y_true, y_predicted = y_pred, labels=list(class_labels.values()), title="Confusion Matrix")
 
-##Predict##
+#Predict
 predict_tfrecords = glob.glob("/orange/ewhite/b.weinstein/Houston2018/tfrecords/predict/*.tfrecord")
-
-#Predicted raster
-results = model.predict(predict_tfrecords, batch_size=200)
+results = model.predict(predict_tfrecords, batch_size=256)
 predicted_raster = visualize.create_raster(results)
-
-save_dir = "{}/{}".format("/orange/ewhite/b.weinstein/Houston2018/snapshots/",timestamp)
-os.mkdir(save_dir)
-prediction_path = "{}/predicted_raster.png".format(save_dir)
 experiment.log_image(name="Prediction", image_data=predicted_raster, image_colormap=visualize.discrete_cmap(20, base_cmap="jet"))
+
+#Save as tif for resampling
+prediction_path = os.path.join(save_dir,"prediction.tif")
+resample.create_tif("/home/b.weinstein/DeepTreeAttention/data/processed/20170218_UH_CASI_S4_NAD83.tif", filename=prediction_path, numpy_array=predicted_raster)
+filename = resample.resample(prediction_path)
+experiment.log_image(name="Resampled Prediction", path=filename, image_colormap=visualize.discrete_cmap(20, base_cmap="jet"))
 
 #Save model
 model.model.save("{}/{}.h5".format(save_dir,timestamp))
 
-#Predict full training raster for upsampling
-filename = resample.resample(prediction_path)
-experiment.log_image(name="Resampled Prediction", path=filename, image_colormap=visualize.discrete_cmap(20, base_cmap="jet"))

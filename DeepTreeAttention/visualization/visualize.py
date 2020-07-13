@@ -12,6 +12,7 @@ def create_raster(results):
     predicted_raster[rowIDs, colIDs] = results["label"]
     
     return predicted_raster
+
 def discrete_cmap(N, base_cmap=None):
     """Create an N-bin discrete colormap from the specified input map"""
 

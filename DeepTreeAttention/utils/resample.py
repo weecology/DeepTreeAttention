@@ -2,6 +2,16 @@
 import rasterio
 from rasterio.enums import Resampling
 
+def create_tif(source_tif, filename, numpy_array):
+    """Create a tif file with metadata from numpy array"""
+    
+    with rasterio.open(source_tif) as src:
+        #write new dataset
+        metadata = src.meta.copy()  
+    
+    with rasterio.open(filename, "w", **metadata) as dest:
+        dest.write(numpy_array)    
+    
 def resample(path, upscale_factor=2):    
     """Resample resolution of .tif and return filename"""
     with rasterio.open(path) as dataset:

@@ -19,7 +19,6 @@ callbacks:
     project_name: DeepTreeAttention
 
 #All the above parameters apply to evaluation except for paths, leave blank to ignore.
-#!!!Test data is not yet available, predict itself for the moment to get things running!!!
 evaluation:
     tfrecords:
     sensor_path:
