@@ -4,6 +4,7 @@ from rasterio.mask import mask
 import geopandas as gpd
 from shapely.geometry import box
 
+#Crop to ground truth
 sensor_path = "data/raw/20170218_UH_CASI_S4_NAD83.pix"
 ground_truth_path = "data/raw/2018_IEEE_GRSS_DFC_GT_TR.tif"
 destination_path = "data/processed/20170218_UH_CASI_S4_NAD83.tif"
@@ -28,3 +29,26 @@ out_meta.update({"driver": "GTiff",
 with rasterio.open(destination_path, "w", **out_meta) as dest:
     dest.write(out_img)
     
+####
+#Don't crop, just grab bands
+####
+destination_path = "data/processed/20170218_UH_CASI_S4_NAD83.tif"
+
+ground_truth_src = rasterio.open(ground_truth_path)
+bounds = ground_truth_src.bounds
+
+#Read sensor data and crop
+sensor_src = rasterio.open(sensor_path)
+out_img = sensor_src.read()
+
+#Select first 48 bands as channels
+out_img = out_img[:48,:,:]
+
+# Copy the metadata and write
+out_meta = sensor_src.meta.copy()
+out_meta.update({"driver": "GTiff",
+                 "count": out_img.shape[0]})
+
+with rasterio.open(destination_path, "w", **out_meta) as dest:
+    dest.write(out_img)
+

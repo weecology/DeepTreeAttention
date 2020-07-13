@@ -203,3 +203,36 @@ def test_evaluate(test_config):
     #F1 requires integer, not softmax
     f1s = metrics.f1_scores( y_true, y_pred)    
     
+def test_validation_order(test_config):
+    """Test that calls to model.read_data() produce identical data when shuffle is false"""
+    test_config["train"]["shuffle"] = False
+    
+    #Create class
+    mod = main.AttentionModel()      
+    
+    #Replace config for testing env
+    for key, value in test_config.items():
+        for nested_key, nested_value in value.items():
+            mod.config[key][nested_key] = nested_value
+        
+    #Create model
+    mod.create()
+    mod.read_data(validation_split=True)    
+    
+    first_sample = []
+    for image, label in mod.val_split:
+        first_sample.append(label)
+    
+    first_sample = np.vstack(first_sample)
+    
+    #Second call
+    mod.read_data(validation_split=True)    
+    
+    second_sample = []
+    for image, label in mod.val_split:
+        second_sample.append(label)
+    
+    second_sample = np.vstack(second_sample)    
+
+    assert np.array_equal(first_sample, second_sample)
+        

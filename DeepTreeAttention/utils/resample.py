@@ -2,9 +2,8 @@
 import rasterio
 from rasterio.enums import Resampling
 
-def resample(path, upscale_factor=2):
-    upscale_factor = upscale_factor
-    
+def resample(path, upscale_factor=2):    
+    """Resample resolution of .tif and return filename"""
     with rasterio.open(path) as dataset:
     
         # resample data to target shape
@@ -35,3 +34,5 @@ def resample(path, upscale_factor=2):
     
     with rasterio.open(filename, "w", **metadata) as dest:
         dest.write(data)
+            
+    return filename

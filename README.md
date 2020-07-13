@@ -57,6 +57,19 @@ python crop_Houston2018.py
 
 Which will save the crop in data/processed.
 
+## Workflow
+
+This repo uses tfrecords to feed into tf.keras to optomize GPU performance. Records need to be created before model training.
+
+```
+python experiments/generate.py
+```
+
+and then run training and log results to the comet dashboard.
+
+```
+python experiments/run.py
+```
 
 # Citation
 

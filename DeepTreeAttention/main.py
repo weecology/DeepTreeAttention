@@ -162,11 +162,8 @@ class AttentionModel():
         #gather y_true
         labels = []
         predictions = []
-        counter = 0
         for image, label in tf_dataset:
             try:
-                counter+=1
-                print(counter)
                 softmax_batch = self.model.predict_on_batch(image)
                 one_hot_label = label.numpy()
                 predictions.append(softmax_batch)

@@ -5,7 +5,7 @@ import numpy as np
 import os
 from datetime import datetime
 from DeepTreeAttention.main import AttentionModel
-from DeepTreeAttention.utils import metrics
+from DeepTreeAttention.utils import metrics, resample
 from DeepTreeAttention.visualization import visualize
 import matplotlib.pyplot as plt
 from tensorflow.keras import metrics as keras_metrics
@@ -20,10 +20,10 @@ experiment.log_parameter("timestamp",timestamp)
 model = AttentionModel()
 model.create()
 model.read_data(validation_split=True)
+experiment.log_parameter("Training Batch Size", model.config["train"]["batch_size"])
     
 #Log config
 experiment.log_parameters(model.config["train"])
-experiment.log_parameter("Training Batch Size", model.config["train"]["batch_size"])
 
 ##Train
 #Train see config.yml for tfrecords path
@@ -82,3 +82,7 @@ experiment.log_image(name="Prediction", image_data=predicted_raster, image_color
 
 #Save model
 model.model.save("{}/{}.h5".format(save_dir,timestamp))
+
+#Predict full training raster for upsampling
+filename = resample.resample(prediction_path)
+experiment.log_image(name="Resampled Prediction", path=filename, image_colormap=visualize.discrete_cmap(20, base_cmap="jet"))
