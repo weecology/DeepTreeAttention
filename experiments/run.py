@@ -79,6 +79,7 @@ experiment.log_image(name="Prediction", image_data=predicted_raster, image_color
 
 #Save as tif for resampling
 prediction_path = os.path.join(save_dir,"prediction.tif")
+predicted_raster = np.expand_dims(predicted_raster, 0)
 resample.create_tif("/home/b.weinstein/DeepTreeAttention/data/processed/20170218_UH_CASI_S4_NAD83.tif", filename=prediction_path, numpy_array=predicted_raster)
 filename = resample.resample(prediction_path)
 experiment.log_image(name="Resampled Prediction", path=filename, image_colormap=visualize.discrete_cmap(20, base_cmap="jet"))
