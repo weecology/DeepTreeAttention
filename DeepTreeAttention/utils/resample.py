@@ -1,5 +1,6 @@
 #Resample raster to desired resolution
 import rasterio
+import os
 from rasterio.enums import Resampling
 
 def create_tif(source_tif, filename, numpy_array):
@@ -37,14 +38,16 @@ def resample(path, upscale_factor=2):
         )
         
         #write new dataset
-        metadata = src.meta.copy()
+        metadata = dataset.meta.copy()
     
     metadata.update({
         'transform': transform,
+        "height": dataset.height*upscale_factor,
+        "width":dataset.width*upscale_factor
     })
     
-    basename = os.path.splitext(os.path.basename(path))[0]
-    filename = "{}/{}_resampled.tif".format(savedir, basename)
+    basename = os.path.splitext(path)[0]
+    filename = "{}_resampled.tif".format(basename)
     
     with rasterio.open(filename, "w", **metadata) as dest:
         dest.write(data)
