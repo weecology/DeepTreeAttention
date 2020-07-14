@@ -1,7 +1,7 @@
 #Tfrecords
 import tensorflow as tf
 
-def write_tfrecord(filename, images, labels=None, classes=20, train=True, x=None, y=None):
+def write_tfrecord(filename, images, labels=None, classes=21, train=True, x=None, y=None):
     """Write a training or prediction tfrecord
         Args:
             train: True -> create a training record with labels. False -> a prediciton record with raster indices
