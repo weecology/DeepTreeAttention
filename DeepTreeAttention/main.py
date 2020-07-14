@@ -147,9 +147,9 @@ class AttentionModel():
        
         #stack
         predictions = np.vstack(predictions)
-        row_list = np.vstack(row_list)
-        col_list = np.vstack(col_list)
-                
+        row_list = np.concatenate(row_list)
+        col_list = np.concatenate(col_list)
+        predictions = np.argmax(predictions,1)
         results = pd.DataFrame({"label":predictions,"row":row_list,"col":col_list})
         results = results.sort_values(by=["row","col"])
         
