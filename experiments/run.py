@@ -69,7 +69,7 @@ class_labels = {
     20 : "Stadium seat"
 }
 
-print("Unique labels in ytrue {}, unique labels in y_pred {}".format(np.unique(y_true),np.unique(y_pred)))
+print("Unique labels in ytrue {}, unique labels in y_pred {}".format(np.unique(np.argmax(y_true,1)),np.unique(np.argmax(y_pred,1))))
 experiment.log_confusion_matrix(y_true = y_true, y_predicted = y_pred, labels=list(class_labels.values()), title="Confusion Matrix")
 
 #Predict
