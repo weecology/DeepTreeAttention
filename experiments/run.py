@@ -28,9 +28,13 @@ experiment.log_parameter("Training Batch Size", model.config["train"]["batch_siz
 #Log config
 experiment.log_parameters(model.config["train"])
 
+#Create class weights
+experiment.log_parameter("Class Weighted", True)
+
 ##Train
-#Train see config.yml for tfrecords path
-model.train()
+#Train see config.yml for tfrecords path with weighted classes in cross entropy
+class_weights = model.calc_class_weights()
+model.train(class_weights=class_weights)
 
 ##Evaluate
 #Evaluation scores, see config.yml for tfrecords path
@@ -47,6 +51,7 @@ experiment.log_metric("MacroF1",macro)
 
 #Confusion matrix
 class_labels = {
+    0: "Unclassified",
     1 : "Healthy grass",
     2 : "Stressed grass",
     3 : "Artificial turf",

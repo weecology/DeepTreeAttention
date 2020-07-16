@@ -7,6 +7,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras import metrics
+from sklearn.utils import class_weight
 
 #Local Modules
 from DeepTreeAttention.utils.config import parse_yaml
@@ -47,7 +48,28 @@ class AttentionModel():
             return single_conv.create_model(height, width, channels, classes)
         else:
             raise ValueError("Unknown model name {}",format(name))
-
+    
+    def calc_class_weights(self):
+        """Get class frequency of labels"""
+        
+        #Check if train_split has been create
+        if not hasattr(self, "train_split"):
+            raise ValueError("No training split created, please call DeepTreeAttention.read_data()")
+        
+        labels = []
+        for image, label in self.train_split.repeat(1):
+            labels.append(label)
+            
+        #Convert from one_hot
+        labels = np.vstack(labels,1)
+        labels = np.argmax(labels,1)
+        
+        class_weights = class_weight.compute_class_weight('balanced',
+                                                          np.unique(labels),
+                                                         labels)
+        
+        return class_weights
+        
     def create(self, name="Hang2020",weights=None, submodel=None):
         """Load a model
             Args:
@@ -113,7 +135,7 @@ class AttentionModel():
                     batch_size = self.config["train"]["batch_size"],
                     shuffle = self.config["train"]["shuffle"])
 
-    def train(self, submodel=None):
+    def train(self, class_weight=None):
         """Train a model"""       
         
         callback_list = callbacks.create()
@@ -123,6 +145,7 @@ class AttentionModel():
             epochs=self.config["train"]["epochs"],
             validation_data=self.val_split,
             callbacks=callback_list,
+            class_weight=class_weight
         )
     
     def predict(self, tfrecords, batch_size=1):

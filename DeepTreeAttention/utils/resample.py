@@ -12,10 +12,11 @@ def create_tif(source_tif, filename, numpy_array):
     
     metadata.update({
         'count': 1,
+        'dtype': 'uint8'
     })    
     
     with rasterio.open(filename, "w", **metadata) as dest:
-        dest.write(numpy_array)    
+        dest.write(numpy_array.astype('uint8'))    
     
 def resample(path, upscale_factor=2):    
     """Resample resolution of .tif and return filename"""
@@ -28,7 +29,7 @@ def resample(path, upscale_factor=2):
                 int(dataset.height * upscale_factor),
                 int(dataset.width * upscale_factor)
             ),
-            resampling=Resampling.nearest
+            resampling=Resampling.mode
         )
     
         # scale image transform
