@@ -61,7 +61,7 @@ class AttentionModel():
             labels.append(label)
             
         #Convert from one_hot
-        labels = np.vstack(labels,1)
+        labels = np.vstack(labels)
         labels = np.argmax(labels,1)
         
         class_weights = class_weight.compute_class_weight('balanced',
