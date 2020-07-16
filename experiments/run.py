@@ -33,8 +33,8 @@ experiment.log_parameter("Class Weighted", True)
 
 ##Train
 #Train see config.yml for tfrecords path with weighted classes in cross entropy
-class_weights = model.calc_class_weights()
-model.train(class_weights=class_weights)
+class_weight = model.calc_class_weight()
+model.train(class_weight=class_weight)
 
 ##Evaluate
 #Evaluation scores, see config.yml for tfrecords path

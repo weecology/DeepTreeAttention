@@ -49,7 +49,7 @@ class AttentionModel():
         else:
             raise ValueError("Unknown model name {}",format(name))
     
-    def calc_class_weights(self):
+    def calc_class_weight(self):
         """Get class frequency of labels"""
         
         #Check if train_split has been create
@@ -64,11 +64,11 @@ class AttentionModel():
         labels = np.vstack(labels)
         labels = np.argmax(labels,1)
         
-        class_weights = class_weight.compute_class_weight('balanced',
+        class_weight = class_weight.compute_class_weight('balanced',
                                                           np.unique(labels),
                                                          labels)
         
-        return class_weights
+        return class_weight
         
     def create(self, name="Hang2020",weights=None, submodel=None):
         """Load a model
