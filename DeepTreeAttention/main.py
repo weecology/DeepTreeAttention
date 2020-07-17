@@ -64,11 +64,11 @@ class AttentionModel():
         labels = np.vstack(labels)
         labels = np.argmax(labels,1)
         
-        class_weight = class_weight.compute_class_weight('balanced',
+        class_weights = class_weight.compute_class_weight('balanced',
                                                           np.unique(labels),
                                                          labels)
         
-        return class_weight
+        return class_weights
         
     def create(self, name="Hang2020",weights=None, submodel=None):
         """Load a model
