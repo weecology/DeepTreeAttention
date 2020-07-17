@@ -123,20 +123,31 @@ def test_AttentionModel(test_config,validation_split):
     #initial weights
     initial_weight = mod.model.layers[1].get_weights()
     
-    #How many batches
+    #How many batches and ensure no overlap in data
+    train_image_data = []
+    test_image_data = []
     if validation_split:
-        train_counter =0
+        train_counter=0
         for data, label in mod.train_split:
-            print(data.shape)        
+            train_image_data.append(data)
             train_counter+=data.shape[0]
                 
-        test_counter =0
+        test_counter=0
         for data, label in mod.val_split:
-            print(data.shape)        
+            test_image_data.append(data)            
             test_counter+=data.shape[0]
         
         assert train_counter > test_counter
-    
+        
+        #No test in train batches
+        assert all([not np.array_equal(y,x) for x in train_image_data for y in test_image_data])
+        
+        #Spatial block of train and test
+        test_center_pixel = test_image_data[0][0,2,2,0].numpy()
+        test_pixel_image = test_image_data[0][0,:,:,0].numpy()        
+        for x in train_image_data:    
+            assert not test_center_pixel in x[:,2,2,0]
+        
     #train
     mod.train()
     

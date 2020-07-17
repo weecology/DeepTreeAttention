@@ -130,12 +130,16 @@ def test_tf_dataset_train(train_tfrecords, ground_truth_raster):
     
     counter=0
     labels =  []
+    center_pixels = []
     for data, label in dataset:  # turn off repeat
         counter+=data.shape[0]
+        center_pixels.append(data[:,4,4,0])
         labels.append(label)
     
     labels = np.vstack(labels)   
     labels = np.argmax(labels,1)
+    
+    center_pixels = np.concatenate(center_pixels)
     
     #one epoch should be every pixel in the raster minus the 0 label pixels
     src = rasterio.open(ground_truth_raster)

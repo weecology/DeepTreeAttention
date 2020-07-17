@@ -172,7 +172,7 @@ def generate_training(sensor_path,
     #Remove unclassified pixels? 
     results = results[~(results.label == 0)]
     
-    #Create chunks to write
+    #Create chunks to write based on a spatial block
     results["chunk"] = np.arange(len(results)) // chunk_size
     basename = os.path.splitext(os.path.basename(sensor_path))[0]
     filenames = []    
@@ -292,7 +292,6 @@ def tf_dataset(tfrecords,
     Returns:
         dataset: a tf.data dataset yielding crops and labels for train: True, crops and raster indices for train: False
         """
-
     AUTO = tf.data.experimental.AUTOTUNE
     ignore_order = tf.data.Options()
     ignore_order.experimental_deterministic = False
@@ -301,6 +300,7 @@ def tf_dataset(tfrecords,
     dataset = dataset.with_options(ignore_order)
     
     if shuffle:    
+        print("Shuffling data")
         dataset = dataset.shuffle(buffer_size=batch_size*5)
     if train:
         dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls=AUTO)
