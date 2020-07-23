@@ -3,11 +3,14 @@ import pytest
 import os
 import rasterio
 import numpy as np
+
 from DeepTreeAttention import main
 from DeepTreeAttention.generators import make_dataset
 from matplotlib.pyplot import imshow
 from DeepTreeAttention.visualization import visualize
 from DeepTreeAttention.utils import metrics
+
+import tensorflow as tf
 from tensorflow.keras import metrics as keras_metrics
 
 @pytest.fixture()
@@ -191,6 +194,16 @@ def test_evaluate(test_config):
     #Create
     mod.create()
     mod.read_data(validation_split=True)
+    
+    metric_list = [
+        keras_metrics.TopKCategoricalAccuracy(k=2, name="top_k"),
+        keras_metrics.CategoricalAccuracy(name="acc")
+    ]
+    
+    mod.model.compile(loss="categorical_crossentropy",
+                               optimizer=tf.keras.optimizers.Adam(
+                                   lr=float(mod.config['train']['learning_rate'])),
+                               metrics=metric_list)
     
     #Method 1, class eval method
     print("Before evaluation")
