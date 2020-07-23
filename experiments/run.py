@@ -28,13 +28,24 @@ experiment.log_parameter("Training Batch Size", model.config["train"]["batch_siz
 #Log config
 experiment.log_parameters(model.config["train"])
 
-#Create class weights
-experiment.log_parameter("Class Weighted", True)
 
 ##Train
 #Train see config.yml for tfrecords path with weighted classes in cross entropy
+#Create class weights
 class_weight = model.calc_class_weight()
-model.train(class_weight=class_weight)
+experiment.log_parameter("Class Weighted", True)
+
+## Train subnetwork
+experiment.log_parameter("Train subnetworks", True)
+with experiment.context("spectral_subnetwork"):
+    model.train(class_weight=class_weight, submodel="spatial")
+
+with experiment.context("spectral_subnetwork"):
+    model.train(class_weight=class_weight, submodel="spectral")
+        
+#Train full model
+with experiment.context("Full model"):
+    model.train(class_weight=class_weight)
 
 ##Evaluate
 #Evaluation scores, see config.yml for tfrecords path

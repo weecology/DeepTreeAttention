@@ -3,16 +3,18 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def create_raster(results):
     """Reshape a set of predictions from DeepTreeAttention.predict into a raster image"""
     #Create image
     rowIDs = results['row']
-    colIDs = results['col']            
-    predicted_raster = np.zeros((rowIDs.max()+1,colIDs.max()+1))
+    colIDs = results['col']
+    predicted_raster = np.zeros((rowIDs.max() + 1, colIDs.max() + 1))
     predicted_raster[rowIDs, colIDs] = results["label"]
     predicted_raster = predicted_raster.astype("uint16")
-    
+
     return predicted_raster
+
 
 def discrete_cmap(N, base_cmap=None):
     """Create an N-bin discrete colormap from the specified input map"""

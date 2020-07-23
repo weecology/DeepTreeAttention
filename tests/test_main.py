@@ -126,6 +126,7 @@ def test_AttentionModel(test_config,validation_split):
     #How many batches and ensure no overlap in data
     train_image_data = []
     test_image_data = []
+    
     if validation_split:
         train_counter=0
         for data, label in mod.train_split:
@@ -246,4 +247,20 @@ def test_validation_order(test_config):
     second_sample = np.vstack(second_sample)    
 
     assert np.array_equal(first_sample, second_sample)
+    
+
+#Submodel compile and train
+@pytest.mark.parametrize("submodel",["spectral","spatial"])
+def test_AttentionModel(test_config, submodel):
+    #Create class
+    mod = main.AttentionModel()      
+    
+    #Replace config for testing env
+    for key, value in test_config.items():
+        for nested_key, nested_value in value.items():
+            mod.config[key][nested_key] = nested_value
         
+    #Create model
+    mod.create()
+    mod.read_data()
+    mod.train(submodel=submodel)
