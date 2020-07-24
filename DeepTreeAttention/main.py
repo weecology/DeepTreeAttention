@@ -62,13 +62,41 @@ class AttentionModel():
                 name: a model name from DeepTreeAttention.models
             """
         #Tensorflow suggest create on CPU to reduce memory
-        with tf.device('/cpu:0'):
-            classes = self.config["train"]["classes"]
-            height = self.config["train"]["crop_size"]
-            width = self.config["train"]["crop_size"]
-            channels = self.config["train"]["sensor_channels"]
-            weighted_sum = self.config["train"]["weighted_sum"]
+                #If more than GPU is requested
+                
+        classes = self.config["train"]["classes"]
+        height = self.config["train"]["crop_size"]
+        width = self.config["train"]["crop_size"]
+        channels = self.config["train"]["sensor_channels"]
+        weighted_sum = self.config["train"]["weighted_sum"]
+                
+        if self.config["train"]["gpu"] > 1:
+            strategy = tf.distribute.MirroredStrategy()
+            print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
     
+            #Store intermediary layers for subtraining
+            with strategy.scope():
+                self.inputs, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang2020.create_model(
+                    height, width, channels, classes, weighted_sum)
+        
+                #Full model
+                self.model = tf.keras.Model(inputs=self.inputs,
+                                            outputs=self.combined_output,
+                                            name="DeepTreeAttention")
+        
+                # Spatial Attention softmax model
+                self.spatial_model = tf.keras.Model(inputs=self.inputs,
+                                                    outputs=self.spatial_attention_outputs,
+                                                    name="DeepTreeAttention")
+        
+                # Spectral Attention softmax model
+                self.spectral_model = tf.keras.Model(inputs=self.inputs,
+                                                     outputs=self.spectral_attention_outputs,
+                                                     name="DeepTreeAttention")
+        
+                if weights:
+                    self.model.load_weights(weights)
+        else:
             #Store intermediary layers for subtraining
             self.inputs, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang2020.create_model(
                 height, width, channels, classes, weighted_sum)
@@ -89,13 +117,7 @@ class AttentionModel():
                                                  name="DeepTreeAttention")
     
             if weights:
-                self.model.load_weights(weights)
-        
-        #If more than GPU is requested
-        if self.config["train"]["gpu"] > 1:
-            self.spectral_model = multi_gpu_model(self.spectral_model, gpus=self.config["train"]["gpu"])
-            self.spatial_model = multi_gpu_model(self.spatial_model, gpus=self.config["train"]["gpu"])
-            self.model = multi_gpu_model(self.model, gpus=self.config["train"]["gpu"])
+                self.model.load_weights(weights)            
         
     def read_data(self, mode="train", validation_split=False):
         """Read tfrecord into datasets from config
