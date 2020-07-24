@@ -22,7 +22,6 @@ experiment.log_parameter("timestamp",timestamp)
 #Create a class and run
 model = AttentionModel()
 model.create()
-model.read_data(validation_split=True)
 experiment.log_parameter("Training Batch Size", model.config["train"]["batch_size"])
     
 #Log config
@@ -37,12 +36,15 @@ experiment.log_parameter("Class Weighted", True)
 ## Train subnetwork
 experiment.log_parameter("Train subnetworks", True)
 with experiment.context_manager("spectral_subnetwork"):
+    model.read_data(mode="submodel",validation_split=True)    
     model.train(submodel="spatial")
 
 with experiment.context_manager("spectral_subnetwork"):
+    model.read_data(mode="submodel",validation_split=True)        
     model.train(submodel="spectral")
         
 #Train full model
+model.read_data(validation_split=True)    
 model.train(class_weight=class_weight)
 
 ##Evaluate
