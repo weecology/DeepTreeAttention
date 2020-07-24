@@ -7,6 +7,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras import metrics
+from tensorflow.keras.utils import multi_gpu_model
+
 from sklearn.utils import class_weight
 
 #Local Modules
@@ -14,7 +16,6 @@ from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.models import Hang2020, single_conv
 from DeepTreeAttention.generators.make_dataset import tf_dataset
 from DeepTreeAttention.callbacks import callbacks
-
 
 class AttentionModel():
     """The main class holding train, predict and evaluate methods"""
@@ -60,34 +61,42 @@ class AttentionModel():
                 weights: a saved model weights from previous run
                 name: a model name from DeepTreeAttention.models
             """
-        classes = self.config["train"]["classes"]
-        height = self.config["train"]["crop_size"]
-        width = self.config["train"]["crop_size"]
-        channels = self.config["train"]["sensor_channels"]
-        weighted_sum = self.config["train"]["weighted_sum"]
-
-        #Store intermediary layers for subtraining
-        self.inputs, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang2020.create_model(
-            height, width, channels, classes, weighted_sum)
-
-        #Full model
-        self.model = tf.keras.Model(inputs=self.inputs,
-                                    outputs=self.combined_output,
-                                    name="DeepTreeAttention")
-
-        # Spatial Attention softmax model
-        self.spatial_model = tf.keras.Model(inputs=self.inputs,
-                                            outputs=self.spatial_attention_outputs,
-                                            name="DeepTreeAttention")
-
-        # Spectral Attention softmax model
-        self.spectral_model = tf.keras.Model(inputs=self.inputs,
-                                             outputs=self.spectral_attention_outputs,
-                                             name="DeepTreeAttention")
-
-        if weights:
-            self.model.load_weights(weights)
-
+        #Tensorflow suggest create on CPU to reduce memory
+        with tf.device('/cpu:0'):
+            classes = self.config["train"]["classes"]
+            height = self.config["train"]["crop_size"]
+            width = self.config["train"]["crop_size"]
+            channels = self.config["train"]["sensor_channels"]
+            weighted_sum = self.config["train"]["weighted_sum"]
+    
+            #Store intermediary layers for subtraining
+            self.inputs, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang2020.create_model(
+                height, width, channels, classes, weighted_sum)
+    
+            #Full model
+            self.model = tf.keras.Model(inputs=self.inputs,
+                                        outputs=self.combined_output,
+                                        name="DeepTreeAttention")
+    
+            # Spatial Attention softmax model
+            self.spatial_model = tf.keras.Model(inputs=self.inputs,
+                                                outputs=self.spatial_attention_outputs,
+                                                name="DeepTreeAttention")
+    
+            # Spectral Attention softmax model
+            self.spectral_model = tf.keras.Model(inputs=self.inputs,
+                                                 outputs=self.spectral_attention_outputs,
+                                                 name="DeepTreeAttention")
+    
+            if weights:
+                self.model.load_weights(weights)
+        
+        #If more than GPU is requested
+        if self.config["train"]["gpu"] > 1:
+            self.spectral_model = multi_gpu_model(self.spectral_model, gpus=self.config["train"]["gpu"])
+            self.spatial_model = multi_gpu_model(self.spatial_model, gpus=self.config["train"]["gpu"])
+            self.model = multi_gpu_model(self.model, gpus=self.config["train"]["gpu"])
+        
     def read_data(self, mode="train", validation_split=False):
         """Read tfrecord into datasets from config
             Args:
