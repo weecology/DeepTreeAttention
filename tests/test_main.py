@@ -210,7 +210,6 @@ def test_evaluate(test_config):
     y_pred, y_true = mod.evaluate(mod.val_split)
     
     print("evaluated")
-    
     test_acc = keras_metrics.CategoricalAccuracy()
     test_acc.update_state(y_true=y_true, y_pred = y_pred)
     method1_eval_accuracy = test_acc.result().numpy()
@@ -258,9 +257,7 @@ def test_validation_order(test_config):
         second_sample.append(label)
     
     second_sample = np.vstack(second_sample)    
-
     assert np.array_equal(first_sample, second_sample)
-    
 
 #Submodel compile and train
 @pytest.mark.parametrize("submodel",["spectral","spatial"])
@@ -275,5 +272,8 @@ def test_AttentionModel(test_config, submodel):
         
     #Create model
     mod.create()
-    mod.read_data()
+    mod.read_data(mode="submodel")
     mod.train(submodel=submodel)
+    
+    for batch in mod.train_split:
+        len(batch)

@@ -88,7 +88,7 @@ class AttentionModel():
         if weights:
             self.model.load_weights(weights)
 
-    def read_data(self, validation_split=False):
+    def read_data(self, mode="train", validation_split=False):
         """Read tfrecord into datasets from config
             Args:
                 validation_split: True -> split tfrecords into train test. This overrides the evaluation config!
@@ -107,16 +107,20 @@ class AttentionModel():
             #Create training tf.data
             self.train_split = tf_dataset(tfrecords=self.train_split_records,
                                           batch_size=self.config["train"]["batch_size"],
-                                          shuffle=self.config["train"]["shuffle"])
+                                          shuffle=self.config["train"]["shuffle"],
+                                          mode=mode)
+            
             #Create testing tf.data
             self.val_split = tf_dataset(tfrecords=self.test_split_records,
                                         batch_size=self.config["train"]["batch_size"],
-                                        shuffle=self.config["train"]["shuffle"])
+                                        shuffle=self.config["train"]["shuffle"],
+                                        mode=mode)
         else:
             #Create training tf.data
             self.train_split = tf_dataset(tfrecords=self.train_records,
                                           batch_size=self.config["train"]["batch_size"],
-                                          shuffle=self.config["train"]["shuffle"])
+                                          shuffle=self.config["train"]["shuffle"],
+                                          mode=mode)
 
             #honor config if validation not set
             self.val_split = None
@@ -125,12 +129,14 @@ class AttentionModel():
                     os.path.join(self.config["evaluation"]["tfrecords"], "*.tfrecord"))
                 self.val_split = tf_dataset(tfrecords=self.test_records,
                                             batch_size=self.config["train"]["batch_size"],
-                                            shuffle=self.config["train"]["shuffle"])
+                                            shuffle=self.config["train"]["shuffle"],
+                                            mode=mode)
 
     def train(self, class_weight=None, submodel=None):
         """Train a model"""
 
         callback_list = callbacks.create()
+        
         #metrics
         metric_list = [
             metrics.TopKCategoricalAccuracy(k=2, name="top_k"),
@@ -151,12 +157,13 @@ class AttentionModel():
                 optimizer=tf.keras.optimizers.Adam(
                     lr=float(self.config['train']['learning_rate'])),
                 metrics=metric_list)
-
-            for image, label in self.train_split.repeat(self.config["train"]["epochs"]):
-                self.spatial_model.train_on_batch(x=image,
-                                                  y=[label, label, label],
-                                                  class_weight=class_weight)
-
+            
+            self.spatial_model.fit(self.train_split,
+                               epochs=self.config["train"]["epochs"],
+                               validation_data=self.val_split,
+                               callbacks=callback_list,
+                               class_weight=class_weight)
+            
         elif submodel == "spectral":
             #compile loss dict
             loss_dict = {
@@ -171,19 +178,20 @@ class AttentionModel():
                 optimizer=tf.keras.optimizers.Adam(
                     lr=float(self.config['train']['learning_rate'])),
                 metrics=metric_list)
-
-            for image, label in self.train_split.repeat(self.config["train"]["epochs"]):
-                self.spectral_model.train_on_batch(x=image,
-                                                   y=[label, label, label],
-                                                   class_weight=class_weight)
-
+            
+            #one for each loss layer
+            self.spectral_model.fit(self.train_split,
+                               epochs=self.config["train"]["epochs"],
+                               validation_data=self.val_split,
+                               callbacks=callback_list,
+                               class_weight=class_weight)        
         else:
             #compile full model
             self.model.compile(loss="categorical_crossentropy",
                                optimizer=tf.keras.optimizers.Adam(
                                    lr=float(self.config['train']['learning_rate'])),
                                metrics=metric_list)
-
+    
             self.model.fit(self.train_split,
                            epochs=self.config["train"]["epochs"],
                            validation_data=self.val_split,
@@ -195,7 +203,7 @@ class AttentionModel():
         prediction_set = tf_dataset(tfrecords=tfrecords,
                                     batch_size=batch_size,
                                     shuffle=False,
-                                    train=False)
+                                    mode="predict")
 
         predictions = []
         row_list = []

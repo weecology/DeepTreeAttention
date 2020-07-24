@@ -43,8 +43,7 @@ with experiment.context_manager("spectral_subnetwork"):
     model.train(submodel="spectral")
         
 #Train full model
-with experiment.context_manager("Full model"):
-    model.train(class_weight=class_weight)
+model.train(class_weight=class_weight)
 
 ##Evaluate
 #Evaluation scores, see config.yml for tfrecords path

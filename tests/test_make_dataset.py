@@ -153,10 +153,9 @@ def test_tf_dataset_train(train_tfrecords, ground_truth_raster):
     #same frequency, take one values as an example
     assert len(raster[raster==7]) == len(labels[labels==7])
 
-    
 def test_tf_dataset_predict(predict_tfrecords):
     #Tensorflow encodes string as b bytes
-    dataset = make_dataset.tf_dataset(predict_tfrecords, batch_size=20, shuffle=False, train=False)
+    dataset = make_dataset.tf_dataset(predict_tfrecords, batch_size=20, shuffle=False, mode="predict")
     
     counter =0
     for data, x, y in dataset:  # only take first element of dataset

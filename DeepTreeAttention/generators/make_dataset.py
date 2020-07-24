@@ -293,12 +293,11 @@ def generate_prediction(sensor_path,
 
     return filenames
 
-
-def tf_dataset(tfrecords, batch_size=2, shuffle=True, train=True):
+def tf_dataset(tfrecords, batch_size=2, shuffle=True, mode="train"):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
         tfrecords: path to tfrecords, see generate.py
-        train: True training mode records include training labels, False: image data and coordinates
+        mode:  "train" mode records include training labels, "submodel" triples the layers to match number of softmax layers,  "predict" is just image data and coordinates
     Returns:
         dataset: a tf.data dataset yielding crops and labels for train: True, crops and raster indices for train: False
         """
@@ -312,13 +311,16 @@ def tf_dataset(tfrecords, batch_size=2, shuffle=True, train=True):
     if shuffle:
         print("Shuffling data")
         dataset = dataset.shuffle(buffer_size=batch_size * 5)
-    if train:
+    if mode == "train":
         dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls=AUTO)
-    else:
+    elif mode=="predict":
         dataset = dataset.map(create_tfrecords._predict_parse_, num_parallel_calls=AUTO)
-
+    elif mode=="submodel":
+        dataset = dataset.map(create_tfrecords._train_submodel_parse_, num_parallel_calls=AUTO)
+    else:
+        raise ValueError("invalid mode, please use train, predict or submodel: {}".format(mode))
+    
     dataset = dataset.batch(batch_size=batch_size)
-
     dataset = dataset.prefetch(buffer_size=AUTO)
 
     return dataset
