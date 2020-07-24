@@ -32,7 +32,7 @@ experiment.log_parameters(model.config["train"])
 
 ## Train subnetwork
 experiment.log_parameter("Train subnetworks", True)
-with experiment.context_manager("spectral_subnetwork"):
+with experiment.context_manager("spatial_subnetwork"):
     model.read_data(mode="submodel",validation_split=True)    
     model.train(submodel="spatial")
 
