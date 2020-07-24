@@ -13,7 +13,7 @@ from sklearn.utils import class_weight
 
 #Local Modules
 from DeepTreeAttention.utils.config import parse_yaml
-from DeepTreeAttention.models import Hang2020, single_conv
+from DeepTreeAttention.models import Hang2020
 from DeepTreeAttention.generators.make_dataset import tf_dataset
 from DeepTreeAttention.callbacks import callbacks
 
