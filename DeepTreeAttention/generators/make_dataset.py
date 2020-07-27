@@ -305,24 +305,23 @@ def tf_dataset(tfrecords, batch_size=2, shuffle=True, mode="train"):
     ignore_order = tf.data.Options()
     ignore_order.experimental_deterministic = False
 
-    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=20)
-    #dataset = dataset.with_options(ignore_order)
+    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=10)
+    dataset = dataset.with_options(ignore_order)
 
     if shuffle:
         print("Shuffling data")
-    if mode == "train":
-        dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls=AUTO)
         dataset = dataset.shuffle(buffer_size=batch_size * 5)        
+        
+    if mode == "train":
+        dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls=10)
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
         
     elif mode=="predict":
-        dataset = dataset.map(create_tfrecords._predict_parse_, num_parallel_calls=AUTO)
-        dataset = dataset.shuffle(buffer_size=batch_size * 5)        
+        dataset = dataset.map(create_tfrecords._predict_parse_, num_parallel_calls=10)
         dataset = dataset.batch(batch_size=batch_size)
         
     elif mode=="submodel":
-        dataset = dataset.map(create_tfrecords._train_submodel_parse_, num_parallel_calls=AUTO)
-        dataset = dataset.shuffle(buffer_size=batch_size * 5)        
+        dataset = dataset.map(create_tfrecords._train_submodel_parse_, num_parallel_calls=10)
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
     else:
         raise ValueError("invalid mode, please use train, predict or submodel: {}".format(mode))
