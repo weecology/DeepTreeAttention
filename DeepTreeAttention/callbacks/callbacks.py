@@ -4,12 +4,6 @@ from tensorflow.keras.callbacks import ReduceLROnPlateau
 from tensorflow.keras.callbacks import Callback, TensorBoard
 import os
 from datetime import datetime
-
-def tensorboard_callback(log_dir):
-    # Create a TensorBoard callback
-    tboard_callback = TensorBoard(log_dir = log_dir,
-                                                     histogram_freq = 1,
-                                                     profile_batch = '500,520')
     
 def create(log_dir=None):
     reduce_lr = ReduceLROnPlateau(monitor='val_loss',
@@ -19,6 +13,8 @@ def create(log_dir=None):
                                   verbose=1)
     
     if log_dir:
-        tensorboard  = tensorboard_callback(log_dir)
+        tensorboard = TensorBoard(log_dir = log_dir,
+                                                     histogram_freq = 1,
+                                                     profile_batch = '500,520')
     
     return [reduce_lr, tensorboard]
