@@ -15,6 +15,6 @@ def create(log_dir=None):
     if log_dir:
         tensorboard = TensorBoard(log_dir = log_dir,
                                                      histogram_freq = 1,
-                                                     profile_batch = '500,520')
+                                                     profile_batch = 10)
     
-    return [reduce_lr, tensorboard]
+    return [reduce_lr]

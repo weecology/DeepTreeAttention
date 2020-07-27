@@ -310,21 +310,23 @@ def tf_dataset(tfrecords, batch_size=2, shuffle=True, mode="train"):
 
     if shuffle:
         print("Shuffling data")
-        dataset = dataset.shuffle(buffer_size=batch_size * 5)
     if mode == "train":
         dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls=AUTO)
+        dataset = dataset.shuffle(buffer_size=batch_size * 5)        
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
         
     elif mode=="predict":
         dataset = dataset.map(create_tfrecords._predict_parse_, num_parallel_calls=AUTO)
+        dataset = dataset.shuffle(buffer_size=batch_size * 5)        
         dataset = dataset.batch(batch_size=batch_size)
         
     elif mode=="submodel":
         dataset = dataset.map(create_tfrecords._train_submodel_parse_, num_parallel_calls=AUTO)
+        dataset = dataset.shuffle(buffer_size=batch_size * 5)        
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
     else:
         raise ValueError("invalid mode, please use train, predict or submodel: {}".format(mode))
     
-    dataset = dataset.prefetch(buffer_size=AUTO)
+    dataset = dataset.prefetch(1)
 
     return dataset
