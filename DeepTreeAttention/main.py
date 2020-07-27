@@ -20,7 +20,7 @@ from DeepTreeAttention.callbacks import callbacks
 class AttentionModel():
     """The main class holding train, predict and evaluate methods"""
 
-    def __init__(self, config="conf/config.yml", saved_model=None):
+    def __init__(self, config="conf/config.yml", saved_model=None, log_dir=None):
         """
         Args:
             config: path to a config file, defaults to ../conf/config.yml
@@ -33,6 +33,9 @@ class AttentionModel():
         #Holders
         self.testing_set = None
         self.training_set = None
+        
+        if log_dir:
+            self.log_dir = log_dir
 
     def calc_class_weight(self):
         """Get class frequency of labels"""
@@ -166,7 +169,7 @@ class AttentionModel():
     def train(self, class_weight=None, submodel=None):
         """Train a model"""
 
-        callback_list = callbacks.create()
+        callback_list = callbacks.create(self.log_dir)
         
         #metrics
         metric_list = [

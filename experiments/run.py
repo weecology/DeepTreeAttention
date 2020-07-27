@@ -20,7 +20,7 @@ os.mkdir(save_dir)
 experiment.log_parameter("timestamp",timestamp)
 
 #Create a class and run
-model = AttentionModel()
+model = AttentionModel(log_dir=save_dir)
 model.create()
 experiment.log_parameter("Training Batch Size", model.config["train"]["batch_size"])
     

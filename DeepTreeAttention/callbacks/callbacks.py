@@ -2,28 +2,23 @@
 """Create training callbacks"""
 from tensorflow.keras.callbacks import ReduceLROnPlateau
 from tensorflow.keras.callbacks import Callback
+import os
+from datetime import datetime
 
-
-class CustomCallback(Callback):
-
-    def on_train_begin(self, logs=None):
-        print("Starting training")
-
-    def on_train_end(self, logs=None):
-        print("Stop training")
-
-    def on_epoch_begin(self, epoch, logs=None):
-        print("Start epoch {} of training".format(epoch))
-
-    def on_epoch_end(self, epoch, logs=None):
-        print("End epoch {} of training".format(epoch))
-
-
-def create():
+def tensorboard_callback(log_dir):
+    # Create a TensorBoard callback
+    tboard_callback = tf.keras.callbacks.TensorBoard(log_dir = log_dir,
+                                                     histogram_freq = 1,
+                                                     profile_batch = '500,520')
+    
+def create(log_dir=None):
     reduce_lr = ReduceLROnPlateau(monitor='val_loss',
                                   factor=0.1,
                                   patience=5,
                                   min_lr=0.00001,
                                   verbose=1)
-    test_callback = CustomCallback()
-    return [reduce_lr, test_callback]
+    
+    if log_dir:
+        tensorboard  = tensorboard_callback(log_dir)
+    
+    return [reduce_lr, tensorboard]
