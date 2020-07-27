@@ -48,7 +48,7 @@ class AttentionModel():
                 "No training split created, please call DeepTreeAttention.read_data()")
 
         labels = []
-        for image, label in self.train_split.repeat(1):
+        for image, label in self.train_split:
             labels.append(label)
 
         #Convert from one_hot
@@ -254,7 +254,6 @@ class AttentionModel():
         callback_list = callbacks.create(self.log_dir)
         
         if submodel == "spatial":
-            
             self.spatial_model.fit(self.train_split,
                                epochs=self.config["train"]["epochs"],
                                validation_data=self.val_split,
