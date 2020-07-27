@@ -1,13 +1,13 @@
 #Callbacks
 """Create training callbacks"""
 from tensorflow.keras.callbacks import ReduceLROnPlateau
-from tensorflow.keras.callbacks import Callback
+from tensorflow.keras.callbacks import Callback, TensorBoard
 import os
 from datetime import datetime
 
 def tensorboard_callback(log_dir):
     # Create a TensorBoard callback
-    tboard_callback = tf.keras.callbacks.TensorBoard(log_dir = log_dir,
+    tboard_callback = TensorBoard(log_dir = log_dir,
                                                      histogram_freq = 1,
                                                      profile_batch = '500,520')
     
