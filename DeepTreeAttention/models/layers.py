@@ -6,6 +6,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras import layers
 
+
 def conv_module(x, K, kX=3, kY=3, chanDim=-1, padding="same", maxpool=False):
     """
     Basic convolutional block with batch norm and optional max pooling
@@ -31,14 +32,14 @@ def spatial_network(x, classes=2):
         attention_outputs: list of the 3 attention softmax classification probabilities
     """
     #First submodel is 32 filters
-    x = conv_module(x, K=32,maxpool=False)
+    x = conv_module(x, K=32, maxpool=False)
 
     #Weak attention
     x, attention_1 = spatial_attention(filters=32, classes=classes, x=x)
-    
+
     #Second submodel is 64 filters - 2nd gets maxpool
     x = conv_module(x, K=64, maxpool=True)
-    
+
     #Weak Attention
     x, attention_2 = spatial_attention(filters=64, classes=classes, x=x)
 
@@ -47,12 +48,11 @@ def spatial_network(x, classes=2):
 
     #Weak Attention
     x, attention_3 = spatial_attention(filters=128, classes=classes, x=x)
-    
+
     x = layers.Flatten()(x)
     x = layers.Dense(classes, activation="softmax", name="spatial_softmax")(x)
-    
-    #return x, [attention_1, attention_2, attention_3]
-    return x
+
+    return x, [attention_1, attention_2, attention_3]
 
 
 def spectral_network(x, classes=2):
@@ -66,18 +66,18 @@ def spectral_network(x, classes=2):
     #Second submodel is 64 filters
     x = conv_module(x, K=64, maxpool=True)
     x, attention_2 = spectral_attention(filters=64, classes=classes, x=x)
-    
+
     #Third submodel is 128 filters
     x = conv_module(x, K=128, maxpool=True)
     x, attention_3 = spectral_attention(filters=128, classes=classes, x=x)
-    
+
     x = layers.Flatten()(x)
     x = layers.Dense(classes, activation="softmax", name="spectral_softmax")(x)
 
-    return x
+    return x, [attention_1, attention_2, attention_3]
 
 
-def spectral_attention(filters,classes, x):
+def spectral_attention(filters, classes, x):
     """
     Spectral attention layers: pool the feature maps and apply weak attention with a softmax multi-head output
     Args:
@@ -90,41 +90,50 @@ def spectral_attention(filters,classes, x):
     """
     #Global average pool
     attention_layers = layers.GlobalAveragePooling2D()(x)
-    attention_layers = layers.Reshape((1,1,filters))(attention_layers)
-    
-    # Weak Attention with adaptive filter size based on depth of incoming feature map
+    attention_layers = layers.Reshape((1, 1, filters))(attention_layers)
+
+    # Weak Attention with adaptive filter size based on depth of incoming feature map. Label 1,2,3 shallow -> deep
     if filters == 32:
+        label = 1
         kernel_size = 3
     elif filters == 64:
+        label = 2
         kernel_size = 5
     elif filters == 128:
+        label = 3
         kernel_size = 7
     else:
-        raise ValueError("Unknown incoming kernel size {} for attention layers".format(kernel_size))
-    
-    attention_layers = layers.Conv2D(filters, (kernel_size,kernel_size), padding="SAME", activation="relu")(attention_layers)
-    attention_layers = layers.Conv2D(filters, (kernel_size,kernel_size), padding="SAME", activation="sigmoid")(attention_layers)
+        raise ValueError(
+            "Unknown incoming kernel size {} for attention layers".format(kernel_size))
+
+    attention_layers = layers.Conv2D(filters, (kernel_size, kernel_size),
+                                     padding="SAME",
+                                     activation="relu")(attention_layers)
+    attention_layers = layers.Conv2D(filters, (kernel_size, kernel_size),
+                                     padding="SAME",
+                                     activation="sigmoid")(attention_layers)
 
     #Elementwise multiplication of attention with incoming feature map, expand among spatial dimension in 2D
-    attention_expansion = tf.keras.backend.repeat_elements(x=attention_layers,rep=x.shape[1],axis = 1)
-    attention_expansion = tf.keras.backend.repeat_elements(x=attention_expansion,rep=x.shape[1],axis = 2)
-    combined_layer = layers.Multiply()([x, attention_expansion])
-    
+    attention_layers = layers.Multiply()([x, attention_layers])
+
     #Add a classfication branch with max pool based on size of the layer
     if filters == 32:
-        pool_size = (4,4)
+        pool_size = (4, 4)
     elif filters == 64:
-        pool_size = (2,2)
+        pool_size = (2, 2)
     elif filters == 128:
-        pool_size = (1,1)
+        pool_size = (1, 1)
     else:
         raise ValueError("Unknown filter size for max pooling")
 
-    class_pool = layers.MaxPool2D(pool_size)(combined_layer)
+    class_pool = layers.MaxPool2D(pool_size)(attention_layers)
     class_pool = layers.Flatten()(class_pool)
-    output = layers.Dense(classes, activation="softmax", name="spatial_attention_softmax")(class_pool)
-        
-    return combined_layer, output
+    output = layers.Dense(classes,
+                          activation="softmax",
+                          name="spectral_attention_softmax_{}".format(label))(class_pool)
+
+    return attention_layers, output
+
 
 def spatial_attention(filters, classes, x):
     """
@@ -138,40 +147,47 @@ def spatial_attention(filters, classes, x):
         output: softmax attention layer
     """
     #Channel pool
-    attention_layers = layers.Conv2D(1, (1,1),activation="relu")(x)
-    
+    attention_layers = layers.Conv2D(1, (1, 1), activation="relu")(x)
+
     # Weak Attention with adaptive kernel size based on size of incoming feature map
     if filters == 32:
+        label = 1
         kernel_size = 7
     elif filters == 64:
+        label = 2
         kernel_size = 5
     elif filters == 128:
+        label = 3
         kernel_size = 3
     else:
-        raise ValueError("Unknown incoming kernel size {} for attention layers".format(kernel_size))
-    
-    attention_layers = layers.Conv2D(1, (kernel_size,kernel_size), padding="SAME", activation="relu")(attention_layers)
-    attention_layers = layers.Conv2D(1, (kernel_size,kernel_size), padding="SAME", activation="sigmoid")(attention_layers)
-    
-    #Elementwise multiplication of attention with incoming feature map, copied along depth axis
-    attention_expansion = tf.keras.backend.repeat_elements(x=attention_layers,rep=x.shape[3],axis = 3)
-    combined_layer = layers.Multiply()([x, attention_expansion])
-    
+        raise ValueError(
+            "Unknown incoming kernel size {} for attention layers".format(kernel_size))
+
+    attention_layers = layers.Conv2D(1, (kernel_size, kernel_size),
+                                     padding="SAME",
+                                     activation="relu")(attention_layers)
+    attention_layers = layers.Conv2D(1, (kernel_size, kernel_size),
+                                     padding="SAME",
+                                     activation="sigmoid")(attention_layers)
+
     #Add a classfication branch with max pool based on size of the layer
     if filters == 32:
-        pool_size = (4,4)
+        pool_size = (4, 4)
     elif filters == 64:
-        pool_size = (2,2)
+        pool_size = (2, 2)
     elif filters == 128:
-        pool_size = (1,1)
+        pool_size = (1, 1)
     else:
         raise ValueError("Unknown filter size for max pooling")
 
-    class_pool = layers.MaxPool2D(pool_size)(combined_layer)
+    class_pool = layers.MaxPool2D(pool_size)(attention_layers)
     class_pool = layers.Flatten()(class_pool)
-    output = layers.Dense(classes, activation="softmax", name="spatial_attention_softmax")(class_pool)
-        
-    return combined_layer, output
+    output = layers.Dense(classes,
+                          activation="softmax",
+                          name="spatial_attention_softmax_{}".format(label))(class_pool)
+
+    return attention_layers, output
+
 
 def _weighted_sum(x):
     return tf.keras.backend.sum(x[0] * tf.keras.backend.expand_dims(x[1], -1),

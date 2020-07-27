@@ -5,33 +5,50 @@ import numpy as np
 import os
 from datetime import datetime
 from DeepTreeAttention.main import AttentionModel
-from DeepTreeAttention.utils import metrics
+from DeepTreeAttention.utils import metrics, resample
 from DeepTreeAttention.visualization import visualize
 import matplotlib.pyplot as plt
 from tensorflow.keras import metrics as keras_metrics
 
 experiment = Experiment(project_name="deeptreeattention", workspace="bw4sz")
 
-#timestamp
+#Create output folder
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+save_dir = "{}/{}".format("/orange/ewhite/b.weinstein/Houston2018/snapshots/",timestamp)
+os.mkdir(save_dir)
+
 experiment.log_parameter("timestamp",timestamp)
 
 #Create a class and run
-model = AttentionModel()
+model = AttentionModel(log_dir=save_dir)
 model.create()
-model.read_data(validation_split=True)
+experiment.log_parameter("Training Batch Size", model.config["train"]["batch_size"])
     
 #Log config
 experiment.log_parameters(model.config["train"])
-experiment.log_parameter("Training Batch Size", model.config["train"]["batch_size"])
 
 ##Train
-#Train see config.yml for tfrecords path
-model.train()
+#Train see config.yml for tfrecords path with weighted classes in cross entropy
+
+## Train subnetwork
+experiment.log_parameter("Train subnetworks", True)
+with experiment.context_manager("spatial_subnetwork"):
+    model.read_data(mode="submodel",validation_split=True)    
+    model.train(submodel="spatial")
+
+with experiment.context_manager("spectral_subnetwork"):
+    model.read_data(mode="submodel",validation_split=True)        
+    model.train(submodel="spectral")
+        
+#Train full model
+model.read_data(validation_split=True)    
+class_weight = model.calc_class_weight()
+experiment.log_parameter("Class Weighted", True)
+model.train(class_weight=class_weight)
 
 ##Evaluate
 #Evaluation scores, see config.yml for tfrecords path
-y_pred, y_true = model.evaluate(model.val_split, batch_size=200)
+y_pred, y_true = model.evaluate(model.val_split)
 
 #Evaluation accuracy
 eval_acc = keras_metrics.CategoricalAccuracy()
@@ -44,6 +61,7 @@ experiment.log_metric("MacroF1",macro)
 
 #Confusion matrix
 class_labels = {
+    0: "Unclassified",
     1 : "Healthy grass",
     2 : "Stressed grass",
     3 : "Artificial turf",
@@ -66,19 +84,26 @@ class_labels = {
     20 : "Stadium seat"
 }
 
+print("Unique labels in ytrue {}, unique labels in y_pred {}".format(np.unique(np.argmax(y_true,1)),np.unique(np.argmax(y_pred,1))))
 experiment.log_confusion_matrix(y_true = y_true, y_predicted = y_pred, labels=list(class_labels.values()), title="Confusion Matrix")
 
-##Predict##
+#Predict
 predict_tfrecords = glob.glob("/orange/ewhite/b.weinstein/Houston2018/tfrecords/predict/*.tfrecord")
+results = model.predict(predict_tfrecords, batch_size=512)
+#predicted classes
+print(results.label.unique())
 
-#Predicted raster
-results = model.predict(predict_tfrecords, batch_size=200)
 predicted_raster = visualize.create_raster(results)
-
-save_dir = "{}/{}".format("/orange/ewhite/b.weinstein/Houston2018/snapshots/",timestamp)
-os.mkdir(save_dir)
-prediction_path = "{}/predicted_raster.png".format(save_dir)
+print(np.unique(predicted_raster))
 experiment.log_image(name="Prediction", image_data=predicted_raster, image_colormap=visualize.discrete_cmap(20, base_cmap="jet"))
+
+#Save as tif for resampling
+prediction_path = os.path.join(save_dir,"prediction.tif")
+predicted_raster = np.expand_dims(predicted_raster, 0)
+resample.create_tif("/home/b.weinstein/DeepTreeAttention/data/processed/20170218_UH_CASI_S4_NAD83.tif", filename=prediction_path, numpy_array=predicted_raster)
+filename = resample.resample(prediction_path)
+experiment.log_image(name="Resampled Prediction", image_data=filename, image_colormap=visualize.discrete_cmap(20, base_cmap="jet"))
 
 #Save model
 model.model.save("{}/{}.h5".format(save_dir,timestamp))
+

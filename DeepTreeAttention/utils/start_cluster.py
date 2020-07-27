@@ -8,8 +8,10 @@ from dask_jobqueue import SLURMCluster
 from dask.distributed import Client, wait
 import gc
 
+
 def collect():
     gc.collect()
+
 
 def args():
     parser = argparse.ArgumentParser(

@@ -34,7 +34,7 @@ def training_raster(tmp_path):
 def ground_truth_raster(tmp_path):
     fn = os.path.join(tmp_path,"ground_truth.tif")
     #Create a raster that looks data (smaller)
-    arr = np.random.randint(1, 21,size=(1, 50,100)).astype(np.uint16)
+    arr = np.random.randint(0, 21,size=(1, 50,100)).astype(np.uint16)
     
     #hard coded from Houston 2018 ground truth
     new_dataset = rasterio.open(fn, 'w', driver='GTiff',
@@ -52,11 +52,13 @@ def ground_truth_raster(tmp_path):
 def train_tfrecords(training_raster, ground_truth_raster,tmpdir):
     client = Client()
     tfrecords = make_dataset.generate_training(training_raster, ground_truth_raster,savedir=tmpdir, chunk_size=100, use_dask=True, client=client)
+    
     return tfrecords
 
 @pytest.fixture()
 def predict_tfrecords(training_raster,tmpdir):
     tfrecords = make_dataset.generate_prediction(sensor_path=training_raster, savedir=tmpdir,chunk_size=100)
+    
     return tfrecords
 
 def test_get_coordinates(ground_truth_raster):
@@ -112,25 +114,48 @@ def test_generate_prediction(training_raster,tmpdir, use_dask):
         assert os.path.exists(path)
         os.remove(path)
         
-def test_tf_dataset_train(train_tfrecords):
+def test_tf_dataset_train(train_tfrecords, ground_truth_raster):
     print(train_tfrecords)
     #Tensorflow encodes string as b bytes
     dataset = make_dataset.tf_dataset(train_tfrecords, batch_size=6, shuffle=False)
     
     counter=0
-    for data, label in dataset:  # only take first element of dataset
+    for data, label in dataset.take(2):  # turn off repeat
         numpy_data = data.numpy()
+        assert numpy_data.shape[0] == 6
         assert not numpy_data.sum() == 0
-        numpy_labels = label.numpy()
+    
+    #full dataset
+    dataset = make_dataset.tf_dataset(train_tfrecords, batch_size=6, shuffle=False)
+    
+    counter=0
+    labels =  []
+    center_pixels = []
+    for data, label in dataset:  # turn off repeat
         counter+=data.shape[0]
+        center_pixels.append(data[:,4,4,0])
+        labels.append(label)
     
-    #one epoch should be every pixel in the raster
-    assert counter == 50 * 100
-   
+    labels = np.vstack(labels)   
+    labels = np.argmax(labels,1)
     
+    center_pixels = np.concatenate(center_pixels)
+    
+    #one epoch should be every pixel in the raster minus the 0 label pixels
+    src = rasterio.open(ground_truth_raster)
+    raster = src.read()
+    non_zero = raster[raster != 0]
+    assert counter ==  len(non_zero)
+    
+    #The unique values should have the same indexing
+    np.testing.assert_equal(np.unique(non_zero), np.unique(labels))
+    
+    #same frequency, take one values as an example
+    assert len(raster[raster==7]) == len(labels[labels==7])
+
 def test_tf_dataset_predict(predict_tfrecords):
     #Tensorflow encodes string as b bytes
-    dataset = make_dataset.tf_dataset(predict_tfrecords, batch_size=20, shuffle=False, train=False)
+    dataset = make_dataset.tf_dataset(predict_tfrecords, batch_size=20, shuffle=False, mode="predict")
     
     counter =0
     for data, x, y in dataset:  # only take first element of dataset

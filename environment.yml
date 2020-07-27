@@ -27,4 +27,4 @@ dependencies:
     - dask
     - distributed
     - dask_jobqueue
-    - tensorflow-datasets
+    - tensorboard_plugin_profile
