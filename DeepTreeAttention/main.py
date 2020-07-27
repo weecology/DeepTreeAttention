@@ -220,7 +220,7 @@ class AttentionModel():
             #compile full model
             self.model.compile(loss="categorical_crossentropy",
                                optimizer=tf.keras.optimizers.Adam(
-                                   lr=float(self.config['train']['learning_rate'])),
+                                   lr=float(0.0001)),
                                metrics=metric_list)
     
             self.model.fit(self.train_split,

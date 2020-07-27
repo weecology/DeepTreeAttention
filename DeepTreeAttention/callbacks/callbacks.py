@@ -21,7 +21,7 @@ class CustomCallback(Callback):
 
 def create():
     reduce_lr = ReduceLROnPlateau(monitor='val_loss',
-                                  factor=0.2,
+                                  factor=0.1,
                                   patience=5,
                                   min_lr=0.00001,
                                   verbose=1)

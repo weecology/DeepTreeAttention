@@ -10,7 +10,7 @@
 #SBATCH --output=/home/b.weinstein/logs/DeepTreeAttention_%j.out   # Standard output and error log
 #SBATCH --error=/home/b.weinstein/logs/DeepTreeAttention_%j.err
 #SBATCH --partition=gpu
-#SBATCH --gpus=1
+#SBATCH --gpus=2
 
 module load tensorflow
 
@@ -22,5 +22,5 @@ cd /home/b.weinstein/DeepTreeAttention/
 
 #comet debug
 #Generate only once
-python experiments/generate.py
+#python experiments/generate.py
 python experiments/run.py

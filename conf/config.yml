@@ -7,8 +7,8 @@ train:
     sensor_channels: 48
     epochs: 50
     learning_rate: .001
-    gpu: 0
-    batch_size: 256
+    gpu: 2
+    batch_size: 1024
     weighted_sum: False
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
     steps:
