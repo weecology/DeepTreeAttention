@@ -4,7 +4,7 @@
 #SBATCH --mail-user=benweinstein2010@gmail.com  # Where to send mail
 #SBATCH --account=ewhite
 #SBATCH --nodes=1                 # Number of MPI ranks
-#SBATCH --cpus-per-task=5
+#SBATCH --cpus-per-task=20
 #SBATCH --mem=30GB
 #SBATCH --time=72:00:00       #Time limit hrs:min:sec
 #SBATCH --output=/home/b.weinstein/logs/DeepTreeAttention_%j.out   # Standard output and error log
@@ -22,5 +22,5 @@ cd /home/b.weinstein/DeepTreeAttention/
 
 #comet debug
 #Generate only once
-#python experiments/generate.py
+python experiments/generate.py
 python experiments/run.py

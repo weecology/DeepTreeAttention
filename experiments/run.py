@@ -89,7 +89,7 @@ experiment.log_confusion_matrix(y_true = y_true, y_predicted = y_pred, labels=li
 
 #Predict
 predict_tfrecords = glob.glob("/orange/ewhite/b.weinstein/Houston2018/tfrecords/predict/*.tfrecord")
-results = model.predict(predict_tfrecords, batch_size=256)
+results = model.predict(predict_tfrecords, batch_size=512)
 #predicted classes
 print(results.label.unique())
 
