@@ -94,6 +94,7 @@ def test_config(tfrecords):
     train_config["batch_size"] = 32
     train_config["epochs"] = 1
     train_config["steps"] = 2
+    train_config["gpu"] = 1
     train_config["crop_size"] = 5
     train_config["sensor_channels"] = 4
     train_config["shuffle"] = False

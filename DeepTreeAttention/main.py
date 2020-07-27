@@ -79,14 +79,40 @@ class AttentionModel():
     
             #Store intermediary layers for subtraining
             with strategy.scope():
+                #metrics
+                metric_list = [
+                    metrics.TopKCategoricalAccuracy(k=2, name="top_k"),
+                    metrics.CategoricalAccuracy(name="acc")
+                ]
+                
+                #Create model
                 self.inputs, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang2020.create_model(
                     height, width, channels, classes, weighted_sum)
         
-                #Full model
+                #Full model compile
                 self.model = tf.keras.Model(inputs=self.inputs,
                                             outputs=self.combined_output,
                                             name="DeepTreeAttention")
-        
+                
+                #compile full model
+                self.model.compile(loss="categorical_crossentropy",
+                                           optimizer=tf.keras.optimizers.Adam(
+                                               lr=float(0.0001)),
+                                           metrics=metric_list)
+                #compile
+                loss_dict = {
+                    "spatial_attention_softmax_1": "categorical_crossentropy",
+                    "spatial_attention_softmax_2": "categorical_crossentropy",
+                    "spatial_attention_softmax_3": "categorical_crossentropy"
+                }
+    
+                self.spatial_model.compile(
+                    loss=loss_dict,
+                    loss_weights=[0.01, 0.1, 1],
+                    optimizer=tf.keras.optimizers.Adam(
+                        lr=float(self.config['train']['learning_rate'])),
+                    metrics=metric_list)
+                
                 # Spatial Attention softmax model
                 self.spatial_model = tf.keras.Model(inputs=self.inputs,
                                                     outputs=self.spatial_attention_outputs,
@@ -96,19 +122,58 @@ class AttentionModel():
                 self.spectral_model = tf.keras.Model(inputs=self.inputs,
                                                      outputs=self.spectral_attention_outputs,
                                                      name="DeepTreeAttention")
-        
+                
+                #compile loss dict
+                loss_dict = {
+                    "spectral_attention_softmax_1": "categorical_crossentropy",
+                    "spectral_attention_softmax_2": "categorical_crossentropy",
+                    "spectral_attention_softmax_3": "categorical_crossentropy"
+                }
+    
+                self.spectral_model.compile(
+                    loss=loss_dict,
+                    loss_weights=[0.01, 0.1, 1],
+                    optimizer=tf.keras.optimizers.Adam(
+                        lr=float(self.config['train']['learning_rate'])),
+                    metrics=metric_list)
+                
                 if weights:
                     self.model.load_weights(weights)
         else:
-            #Store intermediary layers for subtraining
+            #metrics
+            metric_list = [
+                metrics.TopKCategoricalAccuracy(k=2, name="top_k"),
+                metrics.CategoricalAccuracy(name="acc")
+            ]
+            
+            #Create model
             self.inputs, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang2020.create_model(
                 height, width, channels, classes, weighted_sum)
     
-            #Full model
+            #Full model compile
             self.model = tf.keras.Model(inputs=self.inputs,
                                         outputs=self.combined_output,
                                         name="DeepTreeAttention")
-    
+            
+            #compile full model
+            self.model.compile(loss="categorical_crossentropy",
+                                       optimizer=tf.keras.optimizers.Adam(
+                                           lr=float(0.0001)),
+                                       metrics=metric_list)
+            #compile
+            loss_dict = {
+                "spatial_attention_softmax_1": "categorical_crossentropy",
+                "spatial_attention_softmax_2": "categorical_crossentropy",
+                "spatial_attention_softmax_3": "categorical_crossentropy"
+            }
+
+            self.spatial_model.compile(
+                loss=loss_dict,
+                loss_weights=[0.01, 0.1, 1],
+                optimizer=tf.keras.optimizers.Adam(
+                    lr=float(self.config['train']['learning_rate'])),
+                metrics=metric_list)
+            
             # Spatial Attention softmax model
             self.spatial_model = tf.keras.Model(inputs=self.inputs,
                                                 outputs=self.spatial_attention_outputs,
@@ -118,9 +183,23 @@ class AttentionModel():
             self.spectral_model = tf.keras.Model(inputs=self.inputs,
                                                  outputs=self.spectral_attention_outputs,
                                                  name="DeepTreeAttention")
-    
+            
+            #compile loss dict
+            loss_dict = {
+                "spectral_attention_softmax_1": "categorical_crossentropy",
+                "spectral_attention_softmax_2": "categorical_crossentropy",
+                "spectral_attention_softmax_3": "categorical_crossentropy"
+            }
+
+            self.spectral_model.compile(
+                loss=loss_dict,
+                loss_weights=[0.01, 0.1, 1],
+                optimizer=tf.keras.optimizers.Adam(
+                    lr=float(self.config['train']['learning_rate'])),
+                metrics=metric_list)
+            
             if weights:
-                self.model.load_weights(weights)            
+                self.model.load_weights(weights) 
         
     def read_data(self, mode="train", validation_split=False):
         """Read tfrecord into datasets from config
@@ -171,26 +250,7 @@ class AttentionModel():
 
         callback_list = callbacks.create(self.log_dir)
         
-        #metrics
-        metric_list = [
-            metrics.TopKCategoricalAccuracy(k=2, name="top_k"),
-            metrics.CategoricalAccuracy(name="acc")
-        ]
-
         if submodel == "spatial":
-            #compile
-            loss_dict = {
-                "spatial_attention_softmax_1": "categorical_crossentropy",
-                "spatial_attention_softmax_2": "categorical_crossentropy",
-                "spatial_attention_softmax_3": "categorical_crossentropy"
-            }
-
-            self.spatial_model.compile(
-                loss=loss_dict,
-                loss_weights=[0.01, 0.1, 1],
-                optimizer=tf.keras.optimizers.Adam(
-                    lr=float(self.config['train']['learning_rate'])),
-                metrics=metric_list)
             
             self.spatial_model.fit(self.train_split,
                                epochs=self.config["train"]["epochs"],
@@ -199,20 +259,6 @@ class AttentionModel():
                                class_weight=class_weight)
             
         elif submodel == "spectral":
-            #compile loss dict
-            loss_dict = {
-                "spectral_attention_softmax_1": "categorical_crossentropy",
-                "spectral_attention_softmax_2": "categorical_crossentropy",
-                "spectral_attention_softmax_3": "categorical_crossentropy"
-            }
-
-            self.spectral_model.compile(
-                loss=loss_dict,
-                loss_weights=[0.01, 0.1, 1],
-                optimizer=tf.keras.optimizers.Adam(
-                    lr=float(self.config['train']['learning_rate'])),
-                metrics=metric_list)
-            
             #one for each loss layer
             self.spectral_model.fit(self.train_split,
                                epochs=self.config["train"]["epochs"],
@@ -220,12 +266,6 @@ class AttentionModel():
                                callbacks=callback_list,
                                class_weight=class_weight)        
         else:
-            #compile full model
-            self.model.compile(loss="categorical_crossentropy",
-                               optimizer=tf.keras.optimizers.Adam(
-                                   lr=float(0.0001)),
-                               metrics=metric_list)
-    
             self.model.fit(self.train_split,
                            epochs=self.config["train"]["epochs"],
                            validation_data=self.val_split,

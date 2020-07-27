@@ -12,7 +12,7 @@ def create(log_dir=None):
                                   min_lr=0.00001,
                                   verbose=1)
     
-    if log_dir:
+    if log_dir is not None:
         tensorboard = TensorBoard(log_dir = log_dir,
                                                      histogram_freq = 1,
                                                      profile_batch = 10)
