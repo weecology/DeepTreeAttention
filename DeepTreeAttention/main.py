@@ -36,6 +36,8 @@ class AttentionModel():
         
         if log_dir:
             self.log_dir = log_dir
+        else:
+            self.log_dir = None
 
     def calc_class_weight(self):
         """Get class frequency of labels"""
@@ -105,18 +107,19 @@ class AttentionModel():
                     "spatial_attention_softmax_2": "categorical_crossentropy",
                     "spatial_attention_softmax_3": "categorical_crossentropy"
                 }
-    
+
+                # Spatial Attention softmax model
+                self.spatial_model = tf.keras.Model(inputs=self.inputs,
+                                                    outputs=self.spatial_attention_outputs,
+                                                    name="DeepTreeAttention")
+                
                 self.spatial_model.compile(
                     loss=loss_dict,
                     loss_weights=[0.01, 0.1, 1],
                     optimizer=tf.keras.optimizers.Adam(
                         lr=float(self.config['train']['learning_rate'])),
                     metrics=metric_list)
-                
-                # Spatial Attention softmax model
-                self.spatial_model = tf.keras.Model(inputs=self.inputs,
-                                                    outputs=self.spatial_attention_outputs,
-                                                    name="DeepTreeAttention")
+                                
         
                 # Spectral Attention softmax model
                 self.spectral_model = tf.keras.Model(inputs=self.inputs,
@@ -166,6 +169,11 @@ class AttentionModel():
                 "spatial_attention_softmax_2": "categorical_crossentropy",
                 "spatial_attention_softmax_3": "categorical_crossentropy"
             }
+            
+            # Spatial Attention softmax model
+            self.spatial_model = tf.keras.Model(inputs=self.inputs,
+                                                        outputs=self.spatial_attention_outputs,
+                                                        name="DeepTreeAttention")            
 
             self.spatial_model.compile(
                 loss=loss_dict,
@@ -173,12 +181,7 @@ class AttentionModel():
                 optimizer=tf.keras.optimizers.Adam(
                     lr=float(self.config['train']['learning_rate'])),
                 metrics=metric_list)
-            
-            # Spatial Attention softmax model
-            self.spatial_model = tf.keras.Model(inputs=self.inputs,
-                                                outputs=self.spatial_attention_outputs,
-                                                name="DeepTreeAttention")
-    
+        
             # Spectral Attention softmax model
             self.spectral_model = tf.keras.Model(inputs=self.inputs,
                                                  outputs=self.spectral_attention_outputs,
@@ -247,7 +250,7 @@ class AttentionModel():
 
     def train(self, class_weight=None, submodel=None):
         """Train a model"""
-
+        
         callback_list = callbacks.create(self.log_dir)
         
         if submodel == "spatial":
