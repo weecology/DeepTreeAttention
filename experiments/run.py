@@ -29,22 +29,22 @@ experiment.log_parameters(model.config["train"])
 
 ##Train
 #Train see config.yml for tfrecords path with weighted classes in cross entropy
+model.read_data(validation_split=True)    
+class_weight = model.calc_class_weight()
 
 ## Train subnetwork
 experiment.log_parameter("Train subnetworks", True)
 with experiment.context_manager("spatial_subnetwork"):
     print("Train spatial subnetwork")
     model.read_data(mode="submodel",validation_split=True)    
-    model.train(submodel="spatial", class_weight=None)
+    model.train(submodel="spatial", class_weight=class_weight)
 
 with experiment.context_manager("spectral_subnetwork"):
     print("Train spectral subnetwork")    
     model.read_data(mode="submodel",validation_split=True)   
-    model.train(submodel="spectral", class_weight=None)
+    model.train(submodel="spectral", class_weight=class_weight)
         
 #Train full model
-model.read_data(validation_split=True)    
-class_weight = model.calc_class_weight()
 experiment.log_parameter("Class Weighted", True)
 model.train(class_weight=class_weight)
 
