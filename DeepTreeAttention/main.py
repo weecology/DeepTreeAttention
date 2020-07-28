@@ -254,8 +254,9 @@ class AttentionModel():
         callback_list = callbacks.create(self.log_dir)
         
         if submodel == "spatial":
+            #The spatial model is very shallow compared to spectral, train for longer
             self.spatial_model.fit(self.train_split,
-                               epochs=self.config["train"]["epochs"],
+                               epochs=int(self.config["train"]["epochs"]*2),
                                validation_data=self.val_split,
                                callbacks=callback_list,
                                class_weight=class_weight)
