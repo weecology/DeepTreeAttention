@@ -37,12 +37,12 @@ experiment.log_parameter("Train subnetworks", True)
 with experiment.context_manager("spatial_subnetwork"):
     print("Train spatial subnetwork")
     model.read_data(mode="submodel",validation_split=True)    
-    model.train(submodel="spatial", class_weight=class_weight)
+    model.train(submodel="spatial", class_weight=[class_weight, class_weight, class_weight])
 
 with experiment.context_manager("spectral_subnetwork"):
     print("Train spectral subnetwork")    
     model.read_data(mode="submodel",validation_split=True)   
-    model.train(submodel="spectral", class_weight=class_weight)
+    model.train(submodel="spectral", class_weight=[class_weight, class_weight, class_weight])
         
 #Train full model
 experiment.log_parameter("Class Weighted", True)
