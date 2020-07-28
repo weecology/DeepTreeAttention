@@ -33,9 +33,7 @@ See conf/config.yml for training parameters.
 - [x] tf.data data generators for semantic segmentation of input raster
 - [x] Initial tests of backbone (see experiments)
 - [x] Add attention layers
-- [ ] Recreate Houston 2018 Results
-- [ ] tf.data generators for variable sized (?) pre-cropped images
-- [ ] Multi-gpu
+- [x] Multi-gpu
 
 # Experiments
 
@@ -45,6 +43,7 @@ Major milestones will be listed below, but for fine-grained information on code,
 
 * [Backbone CNN](https://www.comet.ml/bw4sz/deeptreeattention/d32b066dce254c2d9742331e97b494f5?experiment-tab=chart&showOutliers=true&smoothing=0&view=Hang&xAxis=step)
 * [With Attention Layers](https://www.comet.ml/bw4sz/deeptreeattention/15d3246de6cf490cacf63d1764c9c494?experiment-tab=chart&showOutliers=true&smoothing=0&view=Hang&xAxis=step)
+* [With Ensemble Training of Spectral/Spatial subnetworks on multi-gpu](https://www.comet.ml/bw4sz/deeptreeattention/5d632e11d2484bfdb4de32166c5099ce)
 
 ## Data
 

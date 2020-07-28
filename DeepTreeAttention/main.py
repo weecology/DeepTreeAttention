@@ -83,7 +83,6 @@ class AttentionModel():
             with strategy.scope():
                 #metrics
                 metric_list = [
-                    metrics.TopKCategoricalAccuracy(k=2, name="top_k"),
                     metrics.CategoricalAccuracy(name="acc")
                 ]
                 
@@ -145,7 +144,6 @@ class AttentionModel():
         else:
             #metrics
             metric_list = [
-                metrics.TopKCategoricalAccuracy(k=2, name="top_k"),
                 metrics.CategoricalAccuracy(name="acc")
             ]
             

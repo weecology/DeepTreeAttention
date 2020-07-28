@@ -24,5 +24,4 @@ def create_model(height=11, width=11, channels=48, classes=2, weighted_sum=False
     #Output layers
     outputs = combined_output
 
-    #TO DO just return input nd combined and call attention layers by name.
     return inputs, combined_output, spatial_attention_outputs, spectral_attention_outputs

@@ -46,6 +46,7 @@ with experiment.context_manager("spectral_subnetwork"):
         
 #Train full model
 experiment.log_parameter("Class Weighted", True)
+model.read_data(validation_split=True)
 model.train(class_weight=class_weight)
 
 ##Evaluate
