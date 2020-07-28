@@ -50,7 +50,10 @@ model.read_data(validation_split=True)
 model.train(class_weight=class_weight)
 
 #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
-
+if model.config["train"]["weighted_sum"]:
+    estimate_a = mod.model.layers[-1].get_weights()
+    experiment.log_metric(name="spatial/spectral weight", value=a)
+    
 ##Evaluate
 #Evaluation scores, see config.yml for tfrecords path
 y_pred, y_true = model.evaluate(model.val_split)

@@ -206,7 +206,7 @@ class WeightedSum(layers.Layer):
 
     def build(self, input_shape=1):
         self.a = self.add_weight(
-            name='a',
+            name='alpha',
             shape=(),
             initializer='ones',
             dtype='float32',
@@ -225,7 +225,7 @@ def submodule_consensus(spatial_layers, spectral_layers, weighted_sum=True):
     """Learned weighted sum among layers"""
 
     if weighted_sum:
-        x = WeightedSum()([spatial_layers, spectral_layers], name="Weighted Sum")
+        x = WeightedSum()([spatial_layers, spectral_layers])
     else:
         x = layers.Average()([spatial_layers, spectral_layers])
 
