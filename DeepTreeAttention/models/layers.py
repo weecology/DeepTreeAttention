@@ -170,6 +170,9 @@ def spatial_attention(filters, classes, x):
                                      padding="SAME",
                                      activation="sigmoid")(attention_layers)
 
+    #Elementwise multiplication of attention with incoming feature map, expand among filter dimension in 3D
+    attention_layers = layers.Multiply()([x, attention_layers])
+    
     #Add a classfication branch with max pool based on size of the layer
     if filters == 32:
         pool_size = (4, 4)
