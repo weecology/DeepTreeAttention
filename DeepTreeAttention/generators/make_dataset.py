@@ -293,7 +293,7 @@ def generate_prediction(sensor_path,
 
     return filenames
 
-def tf_dataset(tfrecords, batch_size=2, shuffle=True, mode="train"):
+def tf_dataset(tfrecords, batch_size=2, shuffle=True, mode="train", cores=10):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
         tfrecords: path to tfrecords, see generate.py
@@ -305,7 +305,7 @@ def tf_dataset(tfrecords, batch_size=2, shuffle=True, mode="train"):
     ignore_order = tf.data.Options()
     ignore_order.experimental_deterministic = False
 
-    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=10)
+    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)
     dataset = dataset.with_options(ignore_order)
 
     if shuffle:
@@ -313,15 +313,15 @@ def tf_dataset(tfrecords, batch_size=2, shuffle=True, mode="train"):
         dataset = dataset.shuffle(buffer_size=10)        
         
     if mode == "train":
-        dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls=10)
+        dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls=cores)
         dataset = dataset.batch(batch_size=batch_size)
         
     elif mode=="predict":
-        dataset = dataset.map(create_tfrecords._predict_parse_, num_parallel_calls=10)
+        dataset = dataset.map(create_tfrecords._predict_parse_, num_parallel_calls=cores)
         dataset = dataset.batch(batch_size=batch_size)
         
     elif mode=="submodel":
-        dataset = dataset.map(create_tfrecords._train_submodel_parse_, num_parallel_calls=10)
+        dataset = dataset.map(create_tfrecords._train_submodel_parse_, num_parallel_calls=cores)
         dataset = dataset.batch(batch_size=batch_size)
     else:
         raise ValueError("invalid mode, please use train, predict or submodel: {}".format(mode))
