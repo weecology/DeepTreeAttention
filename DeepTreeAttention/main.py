@@ -222,19 +222,22 @@ class AttentionModel():
             self.train_split = tf_dataset(tfrecords=self.train_split_records,
                                           batch_size=self.config["train"]["batch_size"],
                                           shuffle=self.config["train"]["shuffle"],
-                                          mode=mode)
+                                          mode=mode,
+                                          cores=self.config["cpu_workers"])
             
             #Create testing tf.data
             self.val_split = tf_dataset(tfrecords=self.test_split_records,
                                         batch_size=self.config["train"]["batch_size"],
                                         shuffle=self.config["train"]["shuffle"],
-                                        mode=mode)
+                                        mode=mode,
+                                        cores=self.config["cpu_workers"])
         else:
             #Create training tf.data
             self.train_split = tf_dataset(tfrecords=self.train_records,
                                           batch_size=self.config["train"]["batch_size"],
                                           shuffle=self.config["train"]["shuffle"],
-                                          mode=mode)
+                                          mode=mode,
+                                        cores=self.config["cpu_workers"])
 
             #honor config if validation not set
             self.val_split = None
@@ -244,7 +247,8 @@ class AttentionModel():
                 self.val_split = tf_dataset(tfrecords=self.test_records,
                                             batch_size=self.config["train"]["batch_size"],
                                             shuffle=self.config["train"]["shuffle"],
-                                            mode=mode)
+                                            mode=mode,
+                                            cores=self.config["cpu_workers"])
 
     def train(self, class_weight=None, submodel=None):
         """Train a model"""
@@ -278,7 +282,8 @@ class AttentionModel():
         prediction_set = tf_dataset(tfrecords=tfrecords,
                                     batch_size=batch_size,
                                     shuffle=False,
-                                    mode="predict")
+                                    mode="predict",
+                                    cores=self.config["cpu_workers"])
 
         predictions = []
         row_list = []

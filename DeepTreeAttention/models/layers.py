@@ -225,7 +225,7 @@ def submodule_consensus(spatial_layers, spectral_layers, weighted_sum=True):
     """Learned weighted sum among layers"""
 
     if weighted_sum:
-        x = WeightedSum()([spatial_layers, spectral_layers])
+        x = WeightedSum()([spatial_layers, spectral_layers], name="Weighted Sum")
     else:
         x = layers.Average()([spatial_layers, spectral_layers])
 

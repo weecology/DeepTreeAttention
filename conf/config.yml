@@ -1,3 +1,6 @@
+#Parallel workers
+cpu_workers: 10
+
 train:
     classes: 21
     sensor_path: data/processed/20170218_UH_CASI_S4_NAD83_crop.tif  #path to sensor data
