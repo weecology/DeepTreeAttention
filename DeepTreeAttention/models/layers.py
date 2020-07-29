@@ -211,6 +211,7 @@ class WeightedSum(layers.Layer):
             initializer='ones',
             dtype='float32',
             trainable=True,
+            constraint=tf.keras.constraints.min_max_norm(max_value=1,min_value=0)
         )
         super(WeightedSum, self).build(input_shape)
 
@@ -227,6 +228,6 @@ def submodule_consensus(spatial_layers, spectral_layers, weighted_sum=True):
     if weighted_sum:
         x = WeightedSum()([spatial_layers, spectral_layers])
     else:
-        x = layers.Average()([spatial_layers, spectral_layers])
+        x = layers.Add()([spatial_layers, spectral_layers])
 
     return x
