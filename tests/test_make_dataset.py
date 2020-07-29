@@ -51,13 +51,13 @@ def ground_truth_raster(tmp_path):
 @pytest.fixture()
 def train_tfrecords(training_raster, ground_truth_raster,tmpdir):
     client = Client()
-    tfrecords = make_dataset.generate_training(training_raster, ground_truth_raster,savedir=tmpdir, chunk_size=100, use_dask=True, client=client)
+    tfrecords = make_dataset.generate_training(training_raster, ground_truth_raster,savedir=tmpdir, n_chunks=10, use_dask=True, client=client)
     
     return tfrecords
 
 @pytest.fixture()
 def predict_tfrecords(training_raster,tmpdir):
-    tfrecords = make_dataset.generate_prediction(sensor_path=training_raster, savedir=tmpdir,chunk_size=100)
+    tfrecords = make_dataset.generate_prediction(sensor_path=training_raster, savedir=tmpdir, chunk_size=100)
     
     return tfrecords
 
@@ -74,6 +74,9 @@ def test_get_coordinates(ground_truth_raster):
     
     results.iloc[0].label == A[0,0,0]
     results.iloc[1].label == A[0,1,0]
+    
+    #no duplicates
+    assert results.groupby(["easting","northing"]).size().value_counts().shape[0] == 1
 
 def test_select_training_crops(ground_truth_raster, training_raster):
     results = make_dataset.get_coordinates(ground_truth_raster)
@@ -81,14 +84,21 @@ def test_select_training_crops(ground_truth_raster, training_raster):
     crops, x, y = make_dataset.select_training_crops(training_raster, coordinates, size=5)
     
     assert all([x.shape == (5,5,4) for x in crops])
-    assert all([x.sum()> 0 for x in crops])
     assert results.shape[0] == len(crops)
     
     #should be approxiately in the top corner, allow for pixel rounding. The sensor raster is filled with index values
     target = np.array( [ [9999, 9999, 9999,9999,9999], [9999, 9999, 9999,9999,9999] ,
                          [9999,9999,0,1,2] , [9999,9999,50,51,52],[9999,9999,100,101,102]])
+    
     np.testing.assert_almost_equal(crops[0][:,:,0],target)
     
+    #There should be 4 examples, since training resolution is 2x ground truth
+    counter = 0
+    for x in crops:
+        if np.array_equal(target, x[:,:,0]):
+            counter +=1
+            
+    assert counter == 4 
 @pytest.mark.parametrize("use_dask",[False,True])
 def test_generate_training(training_raster, ground_truth_raster,tmpdir, use_dask):
     if use_dask:

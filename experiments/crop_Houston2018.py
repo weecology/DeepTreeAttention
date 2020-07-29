@@ -3,6 +3,7 @@ import rasterio
 from rasterio.mask import mask
 import geopandas as gpd
 from shapely.geometry import box
+from DeepTreeAttention.utils import resample
 
 #Crop to ground truth
 sensor_path = "data/raw/20170218_UH_CASI_S4_NAD83.pix"
@@ -52,3 +53,6 @@ out_meta.update({"driver": "GTiff",
 with rasterio.open(destination_path, "w", **out_meta) as dest:
     dest.write(out_img)
 
+
+#Resample ground truth raster to the correct size
+resample.resample(ground_truth_path, upscale_factor=0.5)

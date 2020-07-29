@@ -207,7 +207,7 @@ class WeightedSum(layers.Layer):
     def build(self, input_shape=1):
         self.a = self.add_weight(
             name='alpha',
-            shape=(),
+            shape=(1),
             initializer='ones',
             dtype='float32',
             trainable=True,
