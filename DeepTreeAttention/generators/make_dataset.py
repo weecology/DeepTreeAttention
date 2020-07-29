@@ -163,14 +163,14 @@ def _record_wrapper_(sensor_path,
 def generate_training(sensor_path,
                       ground_truth_path,
                       size=11,
-                      chunk_size=500,
+                      n_chunks=3,
                       classes=21,
                       savedir=".",
                       use_dask=False,
                       client=None):
     """Yield one instance of data with one hot labels
     Args:
-        chunk_size: number of images per tfrecord
+        n_chunks: sqrt(number) of tfrecords to write. n_chunks refer to the integer number of breaks in x and y dimensions. The result is n_chunks^2 square tfrecords blocks.
         size: N x N image size
         savedir: directory to save tfrecords
         use_dask: optional dask client to parallelize computation
@@ -186,7 +186,21 @@ def generate_training(sensor_path,
     results = results[~(results.label == 0)]
 
     #Create chunks to write based on a spatial block
-    results["chunk"] = np.arange(len(results)) // chunk_size
+    easting_min = results.easting.min() - 1
+    easting_max = results.easting.max() + 1
+    northing_min = results.northing.min() - 1
+    northing_max = results.northing.max() + 1
+    
+    easting_breaks = [int(x) for x in np.linspace(easting_min, easting_max, num=n_chunks)]
+    northing_breaks = [int(x) for x in np.linspace(northing_min, northing_max, num=n_chunks)]
+    
+    counter = 0
+    for easting in easting_breaks:
+        for northing in northing_breaks:
+            results.loc[(results["easting"] > easting) & (results["northing"] > northing), "chunk"] = int(counter)
+            counter +=1
+    
+    #Make sure chunks are rounded
     basename = os.path.splitext(os.path.basename(sensor_path))[0]
     filenames = []
 
@@ -227,7 +241,6 @@ def generate_training(sensor_path,
             filenames.append(fn)
 
     return filenames
-
 
 def generate_prediction(sensor_path,
                         size=11,

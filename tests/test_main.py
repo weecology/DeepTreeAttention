@@ -24,7 +24,7 @@ def ground_truth_raster(tmp_path):
                                 height = arr.shape[1], width = arr.shape[2],
                                 count=arr.shape[0], dtype="uint16",
                                 crs=rasterio.crs.CRS.from_epsg("26915"),
-                                transform=rasterio.transform.from_origin(272056.0, 3289689.0, 0.5, -0.5))
+                                transform=rasterio.transform.from_origin(272056.0, 3289689.0, 1, -1))
     
     new_dataset.write(arr)
     new_dataset.close()
@@ -36,7 +36,7 @@ def training_raster(tmp_path):
     fn = os.path.join(tmp_path,"training.tif")
     
     #Create a raster that looks data, index order to help id
-    arr = np.arange(15 * 15).reshape((15,15))
+    arr = np.arange(30 * 30).reshape((30,30))
     arr = np.dstack([arr]*4)
     arr = np.rollaxis(arr, 2,0)
     arr = arr.astype("uint16")
@@ -77,13 +77,13 @@ def predict_raster(tmp_path):
 
 @pytest.fixture()
 def tfrecords(training_raster, ground_truth_raster,tmpdir):
-    tfrecords = make_dataset.generate_training(training_raster, ground_truth_raster, size=5, savedir=tmpdir,chunk_size=100)
+    tfrecords = make_dataset.generate_training(training_raster, ground_truth_raster, size=5, savedir=tmpdir,n_chunks=3)
     
     return os.path.dirname(tfrecords[0])
 
 @pytest.fixture()
 def predict_tfrecords(predict_raster,tmpdir):
-    tfrecords = make_dataset.generate_prediction(predict_raster, savedir=tmpdir, size=5, chunk_size=100)
+    tfrecords = make_dataset.generate_prediction(predict_raster, savedir=tmpdir, size=5,chunk_size=100)
     return tfrecords
 
 @pytest.fixture()
@@ -262,7 +262,7 @@ def test_validation_order(test_config):
 
 #Submodel compile and train
 @pytest.mark.parametrize("submodel",["spectral","spatial"])
-def test_AttentionModel(test_config, submodel):
+def test_submodel_AttentionModel(test_config, submodel):
     #Create class
     mod = main.AttentionModel()      
     
@@ -278,3 +278,17 @@ def test_AttentionModel(test_config, submodel):
     
     for batch in mod.train_split:
         len(batch)
+        
+def test_split_data(test_config):
+    #Create class
+    mod = main.AttentionModel()      
+    
+    #Replace config for testing env
+    for key, value in test_config.items():
+        for nested_key, nested_value in value.items():
+            mod.config[key][nested_key] = nested_value
+            
+    mod.read_data(validation_split=True)
+    
+    #Assert tfrecords are split
+    assert all([x not in mod.train_split_records for x in mod.test_split_records])
