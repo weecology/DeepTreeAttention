@@ -109,8 +109,8 @@ def test_config(tfrecords):
     
     return config
 
-@pytest.mark.parametrize("validation_split",[False, True])
-def test_AttentionModel(test_config,validation_split):
+@pytest.mark.parametrize("weighted_sum",[False, True])
+def test_AttentionModel(test_config,weighted_sum):
 
     #Create class
     mod = main.AttentionModel()      
@@ -119,10 +119,12 @@ def test_AttentionModel(test_config,validation_split):
     for key, value in test_config.items():
         for nested_key, nested_value in value.items():
             mod.config[key][nested_key] = nested_value
+    
+    mod.config["train"]["weighted_sum"] = weighted_sum
         
     #Create model
     mod.create()
-    mod.read_data(validation_split=validation_split)
+    mod.read_data(validation_split=True)
         
     #initial weights
     initial_weight = mod.model.layers[1].get_weights()
@@ -131,28 +133,27 @@ def test_AttentionModel(test_config,validation_split):
     train_image_data = []
     test_image_data = []
     
-    if validation_split:
-        train_counter=0
-        for data, label in mod.train_split:
-            train_image_data.append(data)
-            train_counter+=data.shape[0]
-                
-        test_counter=0
-        for data, label in mod.val_split:
-            test_image_data.append(data)            
-            test_counter+=data.shape[0]
-        
-        assert train_counter > test_counter
-        
-        #No test in train batches
-        assert all([not np.array_equal(y,x) for x in train_image_data for y in test_image_data])
-        
-        #Spatial block of train and test
-        test_center_pixel = test_image_data[0][0,2,2,0].numpy()
-        test_pixel_image = test_image_data[0][0,:,:,0].numpy()        
-        for x in train_image_data:    
-            assert not test_center_pixel in x[:,2,2,0]
-        
+    train_counter=0
+    for data, label in mod.train_split:
+        train_image_data.append(data)
+        train_counter+=data.shape[0]
+            
+    test_counter=0
+    for data, label in mod.val_split:
+        test_image_data.append(data)            
+        test_counter+=data.shape[0]
+    
+    assert train_counter > test_counter
+    
+    #No test in train batches
+    assert all([not np.array_equal(y,x) for x in train_image_data for y in test_image_data])
+    
+    #Spatial block of train and test
+    test_center_pixel = test_image_data[0][0,2,2,0].numpy()
+    test_pixel_image = test_image_data[0][0,:,:,0].numpy()        
+    for x in train_image_data:    
+        assert not test_center_pixel in x[:,2,2,0]
+    
     #train
     mod.train()
     
@@ -160,10 +161,8 @@ def test_AttentionModel(test_config,validation_split):
     
     #assert training took place
     assert not np.array_equal(final_weight,initial_weight)
-    
-    #assert val acc exists if split
-    if validation_split:
-        assert "val_acc" in list(mod.model.history.history.keys()) 
+
+    assert "val_acc" in list(mod.model.history.history.keys()) 
         
 def test_predict(test_config, predict_tfrecords):
     #Create class
