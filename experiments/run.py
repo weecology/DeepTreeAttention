@@ -52,7 +52,7 @@ model.train(class_weight=class_weight)
 #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
 if model.config["train"]["weighted_sum"]:
     estimate_a = model.model.layers[-1].get_weights()
-    experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0])
+    experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
     
 ##Evaluate
 #Evaluation scores, see config.yml for tfrecords path
