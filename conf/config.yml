@@ -4,7 +4,7 @@ cpu_workers: 10
 train:
     classes: 21
     sensor_path: data/processed/20170218_UH_CASI_S4_NAD83_crop.tif  #path to sensor data
-    ground_truth_path: data/raw/2018_IEEE_GRSS_DFC_GT_TR.tif #path to ground truth class raster
+    ground_truth_path: data/raw/2018_IEEE_GRSS_DFC_GT_TR_resampled.tif #path to ground truth class raster
     tfrecords: /orange/ewhite/b.weinstein/Houston2018/tfrecords/train/ # Note this is not under version control, see generate.py to create locally.
     crop_size: 11
     sensor_channels: 48
