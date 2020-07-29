@@ -208,7 +208,7 @@ class WeightedSum(layers.Layer):
         self.a = self.add_weight(
             name='alpha',
             shape=(1),
-            initializer='ones',
+            initializer=tf.keras.initializers.Constant(0.5),
             dtype='float32',
             trainable=True,
             constraint=tf.keras.constraints.min_max_norm(max_value=1,min_value=0)

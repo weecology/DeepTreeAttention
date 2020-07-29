@@ -164,6 +164,7 @@ def test_AttentionModel(test_config,weighted_sum):
 
     assert "val_acc" in list(mod.model.history.history.keys()) 
         
+        
 def test_predict(test_config, predict_tfrecords):
     #Create class
     mod = main.AttentionModel()    
