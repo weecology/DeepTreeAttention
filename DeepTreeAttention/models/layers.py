@@ -49,10 +49,7 @@ def spatial_network(x, classes=2):
     #Weak Attention
     x, attention_3 = spatial_attention(filters=128, classes=classes, x=x)
 
-    x = layers.Flatten()(x)
-    x = layers.Dense(classes, activation="softmax", name="spatial_softmax")(x)
-
-    return x, [attention_1, attention_2, attention_3]
+    return [attention_1, attention_2, attention_3]
 
 
 def spectral_network(x, classes=2):
@@ -71,10 +68,7 @@ def spectral_network(x, classes=2):
     x = conv_module(x, K=128, maxpool=True)
     x, attention_3 = spectral_attention(filters=128, classes=classes, x=x)
 
-    x = layers.Flatten()(x)
-    x = layers.Dense(classes, activation="softmax", name="spectral_softmax")(x)
-
-    return x, [attention_1, attention_2, attention_3]
+    return [attention_1, attention_2, attention_3]
 
 
 def spectral_attention(filters, classes, x):
