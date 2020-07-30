@@ -16,7 +16,7 @@ experiment = Experiment(project_name="deeptreeattention", workspace="bw4sz")
 
 #Create output folder
 #Sleep for a moment to allow queries to build up in SLURM queue
-sleep(randint(0,5))
+sleep(randint(0,10))
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 save_dir = "{}/{}".format("/orange/ewhite/b.weinstein/Houston2018/snapshots/",timestamp)
 os.mkdir(save_dir)
