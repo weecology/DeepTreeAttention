@@ -9,10 +9,14 @@ from DeepTreeAttention.utils import metrics, resample
 from DeepTreeAttention.visualization import visualize
 import matplotlib.pyplot as plt
 from tensorflow.keras import metrics as keras_metrics
+from random import randint
+from time import sleep
 
 experiment = Experiment(project_name="deeptreeattention", workspace="bw4sz")
 
 #Create output folder
+#Sleep for a moment to allow queries to build up in SLURM queue
+sleep(randint(0,5))
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 save_dir = "{}/{}".format("/orange/ewhite/b.weinstein/Houston2018/snapshots/",timestamp)
 os.mkdir(save_dir)
