@@ -102,9 +102,9 @@ class AttentionModel():
                                            metrics=metric_list)
                 #compile
                 loss_dict = {
-                    "spatial_attention_softmax_1": "categorical_crossentropy",
-                    "spatial_attention_softmax_2": "categorical_crossentropy",
-                    "spatial_attention_softmax_3": "categorical_crossentropy"
+                    "spatial_attention_1": "categorical_crossentropy",
+                    "spatial_attention_2": "categorical_crossentropy",
+                    "spatial_attention_3": "categorical_crossentropy"
                 }
 
                 # Spatial Attention softmax model
@@ -127,9 +127,9 @@ class AttentionModel():
                 
                 #compile loss dict
                 loss_dict = {
-                    "spectral_attention_softmax_1": "categorical_crossentropy",
-                    "spectral_attention_softmax_2": "categorical_crossentropy",
-                    "spectral_attention_softmax_3": "categorical_crossentropy"
+                    "spectral_attention_1": "categorical_crossentropy",
+                    "spectral_attention_2": "categorical_crossentropy",
+                    "spectral_attention_3": "categorical_crossentropy"
                 }
     
                 self.spectral_model.compile(
@@ -159,13 +159,13 @@ class AttentionModel():
             #compile full model
             self.model.compile(loss="categorical_crossentropy",
                                        optimizer=tf.keras.optimizers.Adam(
-                                           lr=float(0.0001)),
+                                           lr=float(self.config['train']['learning_rate'])),
                                        metrics=metric_list)
             #compile
             loss_dict = {
-                "spatial_attention_softmax_1": "categorical_crossentropy",
-                "spatial_attention_softmax_2": "categorical_crossentropy",
-                "spatial_attention_softmax_3": "categorical_crossentropy"
+                "spatial_attention_1": "categorical_crossentropy",
+                "spatial_attention_2": "categorical_crossentropy",
+                "spatial_attention_3": "categorical_crossentropy"
             }
             
             # Spatial Attention softmax model
@@ -187,9 +187,9 @@ class AttentionModel():
             
             #compile loss dict
             loss_dict = {
-                "spectral_attention_softmax_1": "categorical_crossentropy",
-                "spectral_attention_softmax_2": "categorical_crossentropy",
-                "spectral_attention_softmax_3": "categorical_crossentropy"
+                "spectral_attention_1": "categorical_crossentropy",
+                "spectral_attention_2": "categorical_crossentropy",
+                "spectral_attention_3": "categorical_crossentropy"
             }
 
             self.spectral_model.compile(

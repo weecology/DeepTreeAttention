@@ -7,9 +7,8 @@ from datetime import datetime
     
 def create(log_dir=None):
     reduce_lr = ReduceLROnPlateau(monitor='val_loss',
-                                  factor=0.4,
-                                  patience=5,
-                                  cooldown=5,
+                                  factor=0.2,
+                                  patience=4,
                                   min_lr=0.00001,
                                   verbose=1)
     
