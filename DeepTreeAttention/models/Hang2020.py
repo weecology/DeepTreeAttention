@@ -18,7 +18,4 @@ def create_model(height=11, width=11, channels=48, classes=2, weighted_sum=False
     #Learn weighted average of just the final conv
     combined_output = submodule_consensus(spatial_attention_outputs[2],spectral_attention_outputs[2], weighted_sum=weighted_sum)
 
-    #Output layers
-    outputs = combined_output
-
     return inputs, combined_output, spatial_attention_outputs, spectral_attention_outputs
