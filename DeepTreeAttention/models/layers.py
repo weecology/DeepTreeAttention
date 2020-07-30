@@ -123,7 +123,7 @@ def spectral_attention(filters, classes, x):
     class_pool = layers.MaxPool2D(pool_size)(attention_layers)
     class_pool = layers.Flatten()(class_pool)
     output = layers.Dense(classes,
-                          activation="relu",
+                          activation="softmax",
                           name="spectral_attention_{}".format(label))(class_pool)
 
     return attention_layers, output
