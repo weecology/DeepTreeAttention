@@ -123,8 +123,8 @@ def spectral_attention(filters, classes, x):
     class_pool = layers.MaxPool2D(pool_size)(attention_layers)
     class_pool = layers.Flatten()(class_pool)
     output = layers.Dense(classes,
-                          activation="softmax",
-                          name="spectral_attention_softmax_{}".format(label))(class_pool)
+                          activation="relu",
+                          name="spectral_attention_{}".format(label))(class_pool)
 
     return attention_layers, output
 
@@ -180,17 +180,10 @@ def spatial_attention(filters, classes, x):
     class_pool = layers.MaxPool2D(pool_size)(attention_layers)
     class_pool = layers.Flatten()(class_pool)
     output = layers.Dense(classes,
-                          activation="softmax",
-                          name="spatial_attention_softmax_{}".format(label))(class_pool)
+                          activation="relu",
+                          name="spatial_attention_{}".format(label))(class_pool)
 
     return attention_layers, output
-
-
-def _weighted_sum(x):
-    return tf.keras.backend.sum(x[0] * tf.keras.backend.expand_dims(x[1], -1),
-                                axis=1,
-                                keepdims=True)
-
 
 class WeightedSum(layers.Layer):
     """A custom keras layer to learn a weighted sum of tensors"""
