@@ -33,7 +33,7 @@ experiment.log_parameters(model.config["train"])
 
 ##Train
 #Train see config.yml for tfrecords path with weighted classes in cross entropy
-model.read_data(validation_split=True)    
+model.read_data(validation_split=True)
 class_weight = model.calc_class_weight()
 
 ## Train subnetwork
