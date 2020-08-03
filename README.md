@@ -1,7 +1,7 @@
 # DeepTreeAttention
 [![Build Status](https://travis-ci.org/weecology/DeepTreeAttention.svg?branch=master)](https://travis-ci.org/weecology/DeepTreeAttention)
 
-Implementation of Hang et al. 2020 [Hyperspectral Image Classification with Attention Aided CNNs](https://arxiv.org/abs/2005.11977) for tree species prediction 
+Implementation of Hang et al. 2020 [Hyperspectral Image Classification with Attention Aided CNNs](https://arxiv.org/abs/2005.11977) for tree species prediction. This repo first reproduces the work using the Houston2018 open source benchmark and then applies it to NEON trees. The two workflows differ in that the goal of the Houston2018 is to predict every cell in a raster, whereas the NEON trees are first predicted based on object detection. The goal is then to predict a single label per predicted tree box.
 
 # Model Architecture
 
@@ -17,7 +17,7 @@ See conf/config.yml for training parameters.
 ├── conf                   # Config files for model training and evaluation
 ├── data                   #  Location to place data for model reading. Most data is too large to be in version control, see below
 ├── DeepTreeAttention                   # Source files
-├── references                    # Documentation files 
+├── experiments                    # Model training and SLURM multi-gpu cluster experiments with comet dashboards 
 ├── models                    # Trained snapshots
 ├── docs                   #
 ├── tests                    # Automated pytest tests
@@ -29,46 +29,59 @@ See conf/config.yml for training parameters.
 
 # Roadmap
 
+## Houston2018
+
 - [x] Model skeleton with CNNs
 - [x] tf.data data generators for semantic segmentation of input raster
 - [x] Initial tests of backbone (see experiments)
 - [x] Add attention layers
 - [x] Multi-gpu
 
-# Experiments
+## NEON
+
+- [ ] Data pipeline to predict species class for a DeepForest bounding box (https://deepforest.readthedocs.io/)
+- [ ] Training Pipeline for Hyperspectral DeepTreeAttention Model
+- [ ] Training Pipeline for RGB DeepTreeAttention Model
+- [ ] Training Pipeline for LiDAR classification model (PointNet Variant)
+- [ ] Learned fusion among data inputs
+
+# How to view the experiments
 
 This repo is being tested as an open source project on comet_ml. Comet is a great machine learning dashboard. The project link is [here](https://www.comet.ml/bw4sz/deeptreeattention/view/new).
 Major milestones will be listed below, but for fine-grained information on code, model structure and evaluation statistics, see individual comet pages. To recreate experiments, make sure to set your own comet_ml api key by creating a .comet.config in your home directory (see https://www.comet.ml/docs/python-sdk/advanced/
 ).
 
+## Houston2018
+
 * [Backbone CNN](https://www.comet.ml/bw4sz/deeptreeattention/d32b066dce254c2d9742331e97b494f5?experiment-tab=chart&showOutliers=true&smoothing=0&view=Hang&xAxis=step)
 * [With Attention Layers](https://www.comet.ml/bw4sz/deeptreeattention/15d3246de6cf490cacf63d1764c9c494?experiment-tab=chart&showOutliers=true&smoothing=0&view=Hang&xAxis=step)
 * [With Ensemble Training of Spectral/Spatial subnetworks on multi-gpu](https://www.comet.ml/bw4sz/deeptreeattention/5d632e11d2484bfdb4de32166c5099ce)
 
-## Data
+### Data
 
 * The Houston 2018 IEEE competition data can be downloaded [here](https://hyperspectral.ee.uh.edu/?page_id=1075) and should be placed in data/raw. This folder is not under version control. 
 To process the sensor data into same extent as the ground truth labels run from top dir:
 
 ```
-python crop_Houston2018.py
+python experiments/Houston2018/crop_Houston2018.py
 ```
 
 Which will save the crop in data/processed.
 
-## Workflow
-
 This repo uses tfrecords to feed into tf.keras to optomize GPU performance. Records need to be created before model training.
 
 ```
-python experiments/generate.py
+python experiments/Houston2018/generate.py
 ```
 
 and then run training and log results to the comet dashboard.
 
 ```
-python experiments/run.py
+python experiments/Houston2018/run_Houston2018.py
 ```
+
+## NEON
+
 
 # Citation
 

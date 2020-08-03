@@ -27,3 +27,26 @@ evaluation:
     sensor_path:
     ground_truth_path:
     steps:
+    
+class_labels:
+    0: "Unclassified",
+    1 : "Healthy grass",
+    2 : "Stressed grass",
+    3 : "Artificial turf",
+    4 : "Evergreen trees",
+    5 : "Deciduous trees",
+    6 : "Bare earth",
+    7 : "Water",
+    8 : "Residential buildings",
+    9 : "Non-residential buildings",
+    10 : "Roads",
+    11 : "Sidewalks",
+    12 : "Crosswalks",
+    13 : "Major thoroughfares",
+    14 : "Highways",
+    15 : "Railways",
+    16 : "Paved parking lots",
+    17 : "Unpaved parking lots",
+    18 : "Cars",
+    19 : "Trains",
+    20 : "Stadium seat"

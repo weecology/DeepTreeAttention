@@ -164,7 +164,7 @@ def test_AttentionModel(test_config,weighted_sum):
 
     assert "val_acc" in list(mod.model.history.history.keys()) 
         
-def test_predict(test_config, predict_tfrecords):
+def test_predict_raster(test_config, predict_tfrecords):
     #Create class
     mod = main.AttentionModel()    
     
@@ -176,7 +176,7 @@ def test_predict(test_config, predict_tfrecords):
     #Create
     mod.create()
     mod.read_data()
-    results = mod.predict(predict_tfrecords, batch_size=2)
+    results = mod.predict_raster(predict_tfrecords, batch_size=2)
     predicted_raster = visualize.create_raster(results)
     
     #Equals size of the input raster

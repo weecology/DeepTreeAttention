@@ -277,7 +277,7 @@ class AttentionModel():
                            callbacks=callback_list,
                            class_weight=class_weight)
 
-    def predict(self, tfrecords, batch_size=1):
+    def predict_raster(self, tfrecords, batch_size=1):
         """Predicted a set of tfrecords and create a raster image"""
         prediction_set = tf_dataset(tfrecords=tfrecords,
                                     batch_size=batch_size,
@@ -306,7 +306,39 @@ class AttentionModel():
         results = results.sort_values(by=["row", "col"])
 
         return results
+    
+    def predict_boxes(self, tfrecords, batch_size=1, majority_vote=True):
+        """Predicted a set of tfrecords and create a raster image"""
+        prediction_set = tf_dataset(tfrecords=tfrecords,
+                                    batch_size=batch_size,
+                                    shuffle=False,
+                                    mode="box",
+                                    cores=self.config["cpu_workers"])
 
+        predictions = []
+        indices = []
+        for image, box_index in prediction_set:
+            try:
+                softmax_batch = self.model.predict_on_batch(image)
+                predictions.append(softmax_batch)
+                indices.append(box_index)
+            except tf.errors.OutOfRangeError:
+                print("Completed {} predictions".format(len(predictions)))
+
+        #stack
+        predictions = np.vstack(predictions)
+        predictions = np.argmax(predictions, 1)
+        
+        indices = np.concatenate(indices)
+        labels = [self.config["class_labels"][x] for x in predictions]
+        results = pd.DataFrame({"label": labels, "box_index": indices})
+        
+        if majority_vote:
+            majority_results = results.groupby("box_index").agg(pd.Series.mode).to_frame()
+            return majority_results
+        else:
+            return results
+        
     def evaluate(self, tf_dataset):
         """Evaluate metrics on held out training data. Defaults to reading from config.yml evaluation sensor path
         Args: 

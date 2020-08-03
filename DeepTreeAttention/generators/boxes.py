@@ -10,7 +10,6 @@ import tensorflow as tf
 from . import create_tfrecords
 from DeepTreeAttention.utils.start_cluster import start
 
-
 def get_coordinates(fname):
     """Read raster and convert into a zipped list of values and coordinates
     Args:
@@ -243,7 +242,7 @@ def generate_training(sensor_path,
 
     return filenames
 
-def generate_box_prediction(shapefile, sensor_path,
+def generate_prediction(shapefile, sensor_path,
                         size=11,
                         chunk_size=500,
                         classes=21,
@@ -261,70 +260,6 @@ def generate_box_prediction(shapefile, sensor_path,
     """
     
     geopan
-    with rasterio.open(sensor_path) as src:
-        cols, rows = np.meshgrid(np.arange(src.shape[1]), np.arange(src.shape[0]))
-        results = pd.DataFrame({"rows": np.ravel(rows), "cols": np.ravel(cols)})
-
-    #turn ground truth into a dataframe of coords
-    print("There are {} sensor pixels in the prediction data".format(results.shape[0]))
-
-    #Create chunks to write
-    results["chunk"] = np.arange(len(results)) // chunk_size
-    basename = os.path.splitext(os.path.basename(sensor_path))[0]
-    filenames = []
-
-    if use_dask:
-        if client is None:
-            raise ValueError("use_dask is {} but no client specified".format(use_dask))
-
-        for g, df in results.groupby("chunk"):
-            coordinates = zip(df.rows, df.cols)
-            filename = "{}/{}_{}.tfrecord".format(savedir, basename, g)
-
-            #Submit to dask client
-            fn = client.submit(_record_wrapper_,
-                               sensor_path=sensor_path,
-                               index_iterable=coordinates,
-                               size=size,
-                               classes=classes,
-                               filename=filename,
-                               train=False)
-            filenames.append(fn)
-        wait(filenames)
-        filenames = [x.result() for x in filenames]
-
-    else:
-        for g, df in results.groupby("chunk"):
-            filename = "{}/{}_{}.tfrecord".format(savedir, basename, g)
-            coordinates = zip(df.rows, df.cols)
-
-            #Write record
-            fn = _record_wrapper_(sensor_path=sensor_path,
-                                  index_iterable=coordinates,
-                                  size=size,
-                                  classes=classes,
-                                  filename=filename,
-                                  train=False)
-            filenames.append(fn)
-
-    return filenames
-
-def generate_raster_prediction(sensor_path,
-                        size=11,
-                        chunk_size=500,
-                        classes=21,
-                        savedir=".",
-                        use_dask=False,
-                        client=None):
-    """Yield one instance of data with raster indices for semantic segmentation of a raster
-    Args:
-        chunk_size: number of images per tfrecord
-        size: N x N image size
-        savedir: directory to save tfrecords
-        use_dask: optional dask client to parallelize computation
-    Returns:
-        filename: tfrecords path
-    """
     with rasterio.open(sensor_path) as src:
         cols, rows = np.meshgrid(np.arange(src.shape[1]), np.arange(src.shape[0]))
         results = pd.DataFrame({"rows": np.ravel(rows), "cols": np.ravel(cols)})
