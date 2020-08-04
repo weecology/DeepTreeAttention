@@ -1,318 +1,273 @@
 #### tf.data input pipeline ###
-from dask.distributed import wait
 import geopandas
 import numpy as np
 import os
 import pandas as pd
 import rasterio
 import tensorflow as tf
+import cv2
 
-from . import create_tfrecords
-from DeepTreeAttention.utils.start_cluster import start
+from DeepTreeAttention.generators import create_tfrecords
+from rasterio.windows import from_bounds
 
-def get_coordinates(fname):
-    """Read raster and convert into a zipped list of values and coordinates
-    Args:
-        fname: path to raster on file
-    Returns:
-        results: a zipped list that yields values, coordinates in a tuple
-        """
-    src = rasterio.open(fname)
-    T0 = src.transform  # upper-left pixel corner affine transform
-    A = src.read()  # pixel values
-
-    # All rows and columns
-    cols, rows = np.meshgrid(np.arange(A.shape[2]), np.arange(A.shape[1]))
-
-    # Function to convert pixel row/column index (from 0) to easting/northing at centre
-    rc2en = lambda r, c: (c, r) * T0
-
-    # All eastings and northings (there is probably a faster way to do this)
-    eastings, northings = np.vectorize(rc2en, otypes=[np.float, np.float])(rows, cols)
-
-    eastings = eastings.flatten()
-    northings = northings.flatten()
-
-    #get values at each position to be absolutely sure they are the same
-    labels = []
-    for x, y in zip(eastings, northings):
-        for label in src.sample([(x, y)]):
-            labels.append(label[0])
-
-    results = pd.DataFrame({"label": labels, "easting": eastings, "northing": northings})
-
-    return results
-
-
-def select_training_crops(infile, coordinates, size=5):
-    """Generate a square window crop centered on a geographic location
-    Args:
-        infile: path to sensor data
-        coordinates: a tuple of (easting, northing)
-        size: number of pixels to buffer (expressed as a diameter, not a radius). 
-    Returns:
-        crop: a numpy array of cropped values of size (2*crop_height + 1, 2*crop_width+1)
-        raster_rows: numpy row index
-        raster_cols: numpy col index
-    """
-    # Open the raster
-    crops = []
-    raster_rows = []
-    raster_cols = []
-
-    with rasterio.open(infile) as dataset:
-        # Loop through your list of coords
-        for i, (x, y) in enumerate(coordinates):
-
-            # Get pixel coordinates from map coordinates
-            py, px = dataset.index(x=x, y=y)
-
-            #Add to index unsure of x,y order! #TODO https://rasterio.readthedocs.io/en/latest/api/rasterio.io.html#rasterio.io.BufferedDatasetWriter.index
-            raster_rows.append(py)
-            raster_cols.append(px)
-
-            # Build an NxN window
-            window = rasterio.windows.Window(px - size // 2, py - size // 2, size, size)
-
-            # Read the data in the window
-            # clip is a nbands * size * size numpy array
-            crop = dataset.read(window=window, boundless=True, fill_value=9999)
-            crop = np.rollaxis(crop, 0, 3)
-
-            ##needs to be revisted
-            #if all(np.unique(crop)  == [9999]):
-            #raise ValueError("Crop has no data. Coordinate x: {x}, Coordinate y: {y}, row: {py}, col {px}, windows {window}".format(x=x,y=y,py=py,px=px, window=window))
-
-            crops.append(crop)
-
-    return crops, raster_rows, raster_cols
-
-
-def select_prediction_crops(infile, index_iterable, size=5):
-    """Generate a square window crop centered on a geographic location
-    Args:
-        index_iterable: a zipped (x,y) tuple of indices to process
-        size: number of pixels to buffer (expressed as a diameter, not a radius). 
-    Returns:
-        crop: a numpy array of cropped values of size (2*crop_height + 1, 2*crop_width+1)
-        raster_rows: numpy row index
-        raster_cols: numpy col index
-    """
-    # Open the raster
-    crops = []
-    raster_rows = []
-    raster_cols = []
-
-    with rasterio.open(infile) as dataset:
-
-        # Loop through your list of coords
-        for x, y in index_iterable:
-
-            raster_rows.append(x)
-            raster_cols.append(y)
-
-            # Build an NxN window
-            window = rasterio.windows.Window(y - size // 2, x - size // 2, size, size)
-
-            # Read the data in the window
-            # clip is a nbands * size * size numpy array
-            crop = dataset.read(window=window, boundless=True, fill_value=9999)
-            crop = np.rollaxis(crop, 0, 3)
-
-            #if all(np.unique(crop)  == [9999]):
-            #raise ValueError("Crop has no data. Coordinate x: {x}, Coordinate y: {y}: windows {window}".format(x=x,y=y, window=window))
-
-            crops.append(crop)
-
-    return crops, raster_rows, raster_cols
-
-
-def _record_wrapper_(sensor_path,
-                     size,
-                     classes,
-                     filename,
-                     train,
-                     coordinates=None,
-                     index_iterable=None,
-                     labels=None):
-    """A wrapper for writing the correct type of tfrecord (train=True or False)"""
-
-    if train:
-        if labels is None:
-            raise ValueError("Missing labels but training mode set to True")
-        sensor_patches, x, y = select_training_crops(sensor_path, coordinates, size=size)
-        create_tfrecords.write_tfrecord(filename=filename,
-                                        images=sensor_patches,
-                                        labels=labels,
-                                        classes=classes,
-                                        train=train)
-    else:
-        sensor_patches, x, y = select_prediction_crops(infile=sensor_path,
-                                                       index_iterable=index_iterable,
-                                                       size=size)
-        create_tfrecords.write_tfrecord(filename=filename,
-                                        images=sensor_patches,
-                                        x=x,
-                                        y=y,
-                                        classes=classes,
-                                        train=train)
-
-    return filename
-
-
-def generate_training(sensor_path,
-                      ground_truth_path,
-                      size=11,
-                      n_chunks=3,
-                      classes=21,
+def resize(img, height, width):
+    # resize image
+    dim = (width, height)    
+    resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
+    
+    return resized
+    
+def generate_tfrecords(shapefile, sensor_path,
+                      chunk_size=1000,
                       savedir=".",
-                      use_dask=False,
-                      client=None):
+                      height=40,
+                      width=40,
+                      classes=20,
+                      train=True):
     """Yield one instance of data with one hot labels
     Args:
-        n_chunks: sqrt(number) of tfrecords to write. n_chunks refer to the integer number of breaks in x and y dimensions. The result is n_chunks^2 square tfrecords blocks.
-        size: N x N image size
+        chunk_size: number of windows per tfrecord
         savedir: directory to save tfrecords
-        use_dask: optional dask client to parallelize computation
+        train: training mode to include yielded labels
     Returns:
         filename: tfrecords path
     """
-    #turn ground truth into a dataframe of coords
-    results = get_coordinates(ground_truth_path)
-    print("There are {} label pixels in the labeled ground truth".format(
-        results.shape[0]))
-
-    #Remove unclassified pixels?
-    results = results[~(results.label == 0)]
-
-    #Create chunks to write based on a spatial block
-    easting_min = results.easting.min() - 1
-    easting_max = results.easting.max() + 1
-    northing_min = results.northing.min() - 1
-    northing_max = results.northing.max() + 1
+    gdf = geopandas.read_file(shapefile)
+    basename = os.path.splitext(os.path.basename(shapefile))[0]
+    src = rasterio.open(sensor_path)
     
-    easting_breaks = [int(x) for x in np.linspace(easting_min, easting_max, num=n_chunks)]
-    northing_breaks = [int(x) for x in np.linspace(northing_min, northing_max, num=n_chunks)]
-    
+    gdf["box_index"] = ["{}_{}".format(basename,x) for x in gdf.index.values]
+    labels = []
+    crops = []
+    indices = []
+    for index, row in gdf.iterrows():
+        #Add training label, ignore unclassified 0 class
+        if train:
+            if row["label"] == 0:
+                continue
+            
+            labels.append(row["label"])
+            
+        window=from_bounds(*row["geometry"].bounds, transform = src.transform)
+        masked_image = src.read(window=window)
+        
+        #Roll depth to channel last
+        masked_image = np.rollaxis(masked_image, 0, 3)
+        
+        #Skip empty frames
+        if masked_image.size ==0:
+            continue
+        
+        crops.append(masked_image)
+        indices.append(row["box_index"])
+        
+
+    #get keys and divide into chunks for a single tfrecord
+    filenames = []
     counter = 0
-    for easting in easting_breaks:
-        for northing in northing_breaks:
-            results.loc[(results["easting"] > easting) & (results["northing"] > northing), "chunk"] = int(counter)
-            counter +=1
-    
-    #Make sure chunks are rounded
-    basename = os.path.splitext(os.path.basename(sensor_path))[0]
-    filenames = []
-
-    if use_dask:
-        if client is None:
-            raise ValueError("use_dask is {} but no client specified".format(use_dask))
-
-        for g, df in results.groupby("chunk"):
-            coordinates = zip(df.easting, df.northing)
-            filename = "{}/{}_{}.tfrecord".format(savedir, basename, g)
-
-            #Submit to dask client
-            fn = client.submit(_record_wrapper_,
-                               labels=df.label.values,
-                               sensor_path=sensor_path,
-                               coordinates=coordinates,
-                               size=size,
-                               classes=classes,
-                               filename=filename,
-                               train=True)
-            filenames.append(fn)
-        wait(filenames)
-        filenames = [x.result() for x in filenames]
-
-    else:
-        for g, df in results.groupby("chunk"):
-            filename = "{}/{}_{}.tfrecord".format(savedir, basename, g)
-            coordinates = zip(df.easting, df.northing)
-
-            #Write record
-            fn = _record_wrapper_(labels=df.label.values,
-                                  sensor_path=sensor_path,
-                                  coordinates=coordinates,
-                                  size=size,
-                                  classes=classes,
-                                  filename=filename,
-                                  train=True)
-            filenames.append(fn)
+    for i in range(0, len(crops)+1, chunk_size):
+        chunk_crops = crops[i:i + chunk_size]
+        chunk_index = indices[i:i + chunk_size]
+        
+        if train:
+            chunk_labels = labels[i:i + chunk_size]
+        else:
+            chunk_labels = None
+        
+        #resize crops
+        resized_crops = [resize(x, height, width).astype("int16") for x in chunk_crops]
+        
+        filename = "{}/{}_{}.tfrecord".format(savedir, basename, counter)
+        write_tfrecord(filename=filename,
+                                            images=resized_crops,
+                                            labels=chunk_labels,
+                                            indices=chunk_index,
+                                            classes=classes)
+        
+        filenames.append(filename)
+        counter +=1
 
     return filenames
 
-def generate_prediction(shapefile, sensor_path,
-                        size=11,
-                        chunk_size=500,
-                        classes=21,
-                        savedir=".",
-                        use_dask=False,
-                        client=None):
-    """Yield one instance of data with raster indices for semantic segmentation of a raster
-    Args:
-        chunk_size: number of images per tfrecord
-        size: N x N image size
-        savedir: directory to save tfrecords
-        use_dask: optional dask client to parallelize computation
-    Returns:
-        filename: tfrecords path
+def _int64_feature(value):
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+
+def _bytes_feature(value):
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
+def write_tfrecord(filename, images, indices, labels=None, classes=21):
+    """Write a training or prediction tfrecord
+        Args:
+            train: True -> create a training record with labels. False -> a prediciton record with raster indices
+        """
+    writer = tf.io.TFRecordWriter(filename)
+    
+    if labels is not None:
+        #Write parser
+        for index, image in enumerate(images):
+            tf_example = create_record(index=indices[index], image=images[index], label=labels[index], classes=classes)
+            writer.write(tf_example.SerializeToString())
+    else:
+        for index, image in enumerate(images):
+            tf_example = create_record(index=indices[index], image=image, classes=classes)
+            writer.write(tf_example.SerializeToString())
+
+    writer.close()
+
+def create_record(image, index, classes, label=None):
     """
+    Generate one record from an image 
+    Args:
+        image: a numpy arry in the form height, row, depth channels
+        index: box_index GIS label
+        classes: number of classes of labels to train/predict
+        label: Optional label for training class
+    Returns:
+        tf example parser
+    """
+    rows = image.shape[0]
+    cols = image.shape[1]
+    depth = image.shape[2]
     
-    geopan
-    with rasterio.open(sensor_path) as src:
-        cols, rows = np.meshgrid(np.arange(src.shape[1]), np.arange(src.shape[0]))
-        results = pd.DataFrame({"rows": np.ravel(rows), "cols": np.ravel(cols)})
-
-    #turn ground truth into a dataframe of coords
-    print("There are {} sensor pixels in the prediction data".format(results.shape[0]))
-
-    #Create chunks to write
-    results["chunk"] = np.arange(len(results)) // chunk_size
-    basename = os.path.splitext(os.path.basename(sensor_path))[0]
-    filenames = []
-
-    if use_dask:
-        if client is None:
-            raise ValueError("use_dask is {} but no client specified".format(use_dask))
-
-        for g, df in results.groupby("chunk"):
-            coordinates = zip(df.rows, df.cols)
-            filename = "{}/{}_{}.tfrecord".format(savedir, basename, g)
-
-            #Submit to dask client
-            fn = client.submit(_record_wrapper_,
-                               sensor_path=sensor_path,
-                               index_iterable=coordinates,
-                               size=size,
-                               classes=classes,
-                               filename=filename,
-                               train=False)
-            filenames.append(fn)
-        wait(filenames)
-        filenames = [x.result() for x in filenames]
-
+    if label is not None:
+        example = tf.train.Example(features=tf.train.Features(
+            feature={
+                'box_index': _bytes_feature(index.encode()),
+                'image/data': _bytes_feature(image.tostring()),
+                'label': _int64_feature(label),
+                'image/height': _int64_feature(rows),
+                'image/width': _int64_feature(cols),
+                'image/depth': _int64_feature(depth),
+                'classes': _int64_feature(classes),
+            }))
     else:
-        for g, df in results.groupby("chunk"):
-            filename = "{}/{}_{}.tfrecord".format(savedir, basename, g)
-            coordinates = zip(df.rows, df.cols)
+        example = tf.train.Example(features=tf.train.Features(
+            feature={
+                'box_index': _bytes_feature(index.encode()),
+                'image/data': _bytes_feature(image.tostring()),
+                'image/height': _int64_feature(rows),
+                'image/width': _int64_feature(cols),
+                'image/depth': _int64_feature(depth),
+                'classes': _int64_feature(classes),
+            }))        
 
-            #Write record
-            fn = _record_wrapper_(sensor_path=sensor_path,
-                                  index_iterable=coordinates,
-                                  size=size,
-                                  classes=classes,
-                                  filename=filename,
-                                  train=False)
-            filenames.append(fn)
+    # Serialize to string and write to file
+    return example
 
-    return filenames
+def _train_parse_(tfrecord):
+    # Define features
+    features = {
+        'image/data': tf.io.FixedLenFeature([], tf.string),
+        'box_index': tf.io.FixedLenFeature([], tf.string),        
+        "label": tf.io.FixedLenFeature([], tf.int64),
+        "image/height": tf.io.FixedLenFeature([], tf.int64),
+        "image/width": tf.io.FixedLenFeature([], tf.int64),
+        "image/depth": tf.io.FixedLenFeature([], tf.int64),
+        "classes": tf.io.FixedLenFeature([], tf.int64),
+    }
 
-def tf_dataset(tfrecords, batch_size=2, shuffle=True, mode="train", cores=10):
+    # Load one example and parse
+    example = tf.io.parse_single_example(tfrecord, features)
+    classes = tf.cast(example['classes'], tf.int32)
+
+    height = tf.cast(example['image/height'], tf.int64)
+    width = tf.cast(example['image/width'], tf.int64)
+    depth = tf.cast(example['image/depth'], tf.int64)
+
+    #recast
+    label = tf.cast(example['label'], tf.int64)
+
+    # Load image from file
+    image = tf.io.decode_raw(example['image/data'], tf.uint16)
+    image_shape = tf.stack([height, width, depth])
+
+    # Reshape to known shape
+    loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
+    loaded_image = tf.cast(loaded_image, dtype=tf.float32)
+
+    #one hot
+    one_hot_labels = tf.one_hot(label, classes)
+
+    return loaded_image, one_hot_labels
+
+def _train_submodel_parse_(tfrecord):
+    # Define features
+    features = {
+        'image/data': tf.io.FixedLenFeature([], tf.string),
+        'box_index': tf.io.FixedLenFeature([], tf.string),        
+        "label": tf.io.FixedLenFeature([], tf.int64),
+        "image/height": tf.io.FixedLenFeature([], tf.int64),
+        "image/width": tf.io.FixedLenFeature([], tf.int64),
+        "image/depth": tf.io.FixedLenFeature([], tf.int64),
+        "classes": tf.io.FixedLenFeature([], tf.int64),
+    }
+
+    # Load one example and parse
+    example = tf.io.parse_single_example(tfrecord, features)
+    classes = tf.cast(example['classes'], tf.int32)
+
+    height = tf.cast(example['image/height'], tf.int64)
+    width = tf.cast(example['image/width'], tf.int64)
+    depth = tf.cast(example['image/depth'], tf.int64)
+
+    #recast
+    label = tf.cast(example['label'], tf.int64)
+
+    # Load image from file
+    image = tf.io.decode_raw(example['image/data'], tf.uint16)
+    image_shape = tf.stack([height, width, depth])
+
+    # Reshape to known shape
+    loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
+    loaded_image = tf.cast(loaded_image, dtype=tf.float32)
+
+    #one hot
+    one_hot_labels = tf.one_hot(label, classes)
+
+    return loaded_image, (one_hot_labels, one_hot_labels, one_hot_labels)
+
+def _predict_parse_(tfrecord):
+    """Tfrecord parser for prediction. No labels available
+        Args:
+            tfrecord: path to tfrecord
+        Returns:
+            indices: x,y index of row, col position in original raster
+            loaded_image: image data crop
+        """
+    # Define features
+    features = {
+        'image/data': tf.io.FixedLenFeature([], tf.string),
+        'box_index': tf.io.FixedLenFeature([], tf.string),        
+        "image/height": tf.io.FixedLenFeature([], tf.int64),
+        "image/width": tf.io.FixedLenFeature([], tf.int64),
+        "image/depth": tf.io.FixedLenFeature([], tf.int64),
+        "classes": tf.io.FixedLenFeature([], tf.int64),
+    }
+
+    # Load one example and parse
+    example = tf.io.parse_single_example(tfrecord, features)
+
+    height = tf.cast(example['image/height'], tf.int64)
+    width = tf.cast(example['image/width'], tf.int64)
+    depth = tf.cast(example['image/depth'], tf.int64)
+
+    # Load image from file
+    image = tf.io.decode_raw(example['image/data'], tf.uint16)
+    image_shape = tf.stack([height, width, depth])
+
+    # Reshape to known shape
+    loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
+    loaded_image = tf.cast(loaded_image, dtype=tf.float32)
+
+    return loaded_image, example['box_index']
+    
+def tf_dataset(tfrecords, batch_size=2, height=20, width=20, shuffle=True, mode="train", cores=10):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
         tfrecords: path to tfrecords, see generate.py
         mode:  "train" mode records include training labels, "submodel" triples the layers to match number of softmax layers,  "predict" is just image data and coordinates
+        height: crop resized height
+        width: crop resized width
     Returns:
         dataset: a tf.data dataset yielding crops and labels for train: True, crops and raster indices for train: False
         """
@@ -326,14 +281,14 @@ def tf_dataset(tfrecords, batch_size=2, shuffle=True, mode="train", cores=10):
     if shuffle:
         print("Shuffling data")
         dataset = dataset.shuffle(buffer_size=20)        
-        
+    
     if mode == "train":
-        dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls=cores)
+        dataset = dataset.map(_train_parse_, num_parallel_calls=cores)
         dataset = dataset.shuffle(buffer_size=100)                
         dataset = dataset.batch(batch_size=batch_size)
         
     elif mode=="predict":
-        dataset = dataset.map(create_tfrecords._predict_parse_, num_parallel_calls=cores)
+        dataset = dataset.map(_predict_parse_, num_parallel_calls=cores)
         dataset = dataset.batch(batch_size=batch_size)
         
     elif mode=="submodel":
