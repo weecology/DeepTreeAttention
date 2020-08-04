@@ -83,7 +83,7 @@ def tfrecords(training_raster, ground_truth_raster,tmpdir):
 
 @pytest.fixture()
 def predict_tfrecords(predict_raster,tmpdir):
-    tfrecords = make_dataset.generate_prediction(predict_raster, savedir=tmpdir, size=5,chunk_size=100)
+    tfrecords = make_dataset.generate_raster_prediction(predict_raster, savedir=tmpdir, size=5,chunk_size=100)
     return tfrecords
 
 @pytest.fixture()
