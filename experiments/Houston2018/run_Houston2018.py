@@ -4,7 +4,7 @@ import glob
 import numpy as np
 import os
 from datetime import datetime
-from DeepTreeAttention.main import AttentionModel
+from DeepTreeAttention.Houston2018 import AttentionModel
 from DeepTreeAttention.utils import metrics, resample
 from DeepTreeAttention.visualization import visualize
 import matplotlib.pyplot as plt

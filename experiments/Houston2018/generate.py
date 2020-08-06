@@ -1,5 +1,5 @@
 #Generate tfrecords
-from DeepTreeAttention.main import AttentionModel
+from DeepTreeAttention.Houston2018 import AttentionModel
 from DeepTreeAttention.generators import make_dataset
 from DeepTreeAttention.utils.start_cluster import start
 import os

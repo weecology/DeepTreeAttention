@@ -61,7 +61,6 @@ def generate_tfrecords(shapefile, sensor_path,
         crops.append(masked_image)
         indices.append(row["box_index"])
         
-
     #get keys and divide into chunks for a single tfrecord
     filenames = []
     counter = 0
@@ -260,7 +259,7 @@ def _predict_parse_(tfrecord):
     loaded_image = tf.cast(loaded_image, dtype=tf.float32)
 
     return loaded_image, example['box_index']
-    
+
 def tf_dataset(tfrecords, batch_size=2, height=20, width=20, shuffle=True, mode="train", cores=10):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:

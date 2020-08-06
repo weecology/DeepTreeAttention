@@ -14,7 +14,8 @@ from sklearn.utils import class_weight
 #Local Modules
 from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.models import Hang2020
-from DeepTreeAttention.generators.make_dataset import tf_dataset
+from DeepTreeAttention.generators import make_dataset
+from DeepTreeAttention.generators import boxes
 from DeepTreeAttention.callbacks import callbacks
 
 class AttentionModel():
@@ -219,21 +220,21 @@ class AttentionModel():
                 train_df.isin(self.train_split_records))].values
 
             #Create training tf.data
-            self.train_split = tf_dataset(tfrecords=self.train_split_records,
+            self.train_split = make_dataset.tf_dataset(tfrecords=self.train_split_records,
                                           batch_size=self.config["train"]["batch_size"],
                                           shuffle=self.config["train"]["shuffle"],
                                           mode=mode,
                                           cores=self.config["cpu_workers"])
             
             #Create testing tf.data
-            self.val_split = tf_dataset(tfrecords=self.test_split_records,
+            self.val_split = make_dataset.tf_dataset(tfrecords=self.test_split_records,
                                         batch_size=self.config["train"]["batch_size"],
                                         shuffle=self.config["train"]["shuffle"],
                                         mode=mode,
                                         cores=self.config["cpu_workers"])
         else:
             #Create training tf.data
-            self.train_split = tf_dataset(tfrecords=self.train_records,
+            self.train_split = make_dataset.tf_dataset(tfrecords=self.train_records,
                                           batch_size=self.config["train"]["batch_size"],
                                           shuffle=self.config["train"]["shuffle"],
                                           mode=mode,
@@ -242,9 +243,9 @@ class AttentionModel():
             #honor config if validation not set
             self.val_split = None
             if self.config["evaluation"]["tfrecords"] is not None:
-                self.test_records = glob.glob(
-                    os.path.join(self.config["evaluation"]["tfrecords"], "*.tfrecord"))
-                self.val_split = tf_dataset(tfrecords=self.test_records,
+                self.test_records = glob.glob(os.path.join(self.config["evaluation"]["tfrecords"], "*.tfrecord"))
+                
+                self.val_split = make_dataset.tf_dataset(tfrecords=self.test_records,
                                             batch_size=self.config["train"]["batch_size"],
                                             shuffle=self.config["train"]["shuffle"],
                                             mode=mode,
@@ -279,7 +280,7 @@ class AttentionModel():
 
     def predict_raster(self, tfrecords, batch_size=1):
         """Predicted a set of tfrecords and create a raster image"""
-        prediction_set = tf_dataset(tfrecords=tfrecords,
+        prediction_set = make_dataset.tf_dataset(tfrecords=tfrecords,
                                     batch_size=batch_size,
                                     shuffle=False,
                                     mode="predict",
@@ -307,12 +308,12 @@ class AttentionModel():
 
         return results
     
-    def predict_boxes(self, tfrecords, batch_size=1, majority_vote=True):
+    def predict_boxes(self, tfrecords, batch_size=1):
         """Predicted a set of tfrecords and create a raster image"""
-        prediction_set = tf_dataset(tfrecords=tfrecords,
+        prediction_set = boxes.tf_dataset(tfrecords=tfrecords,
                                     batch_size=batch_size,
                                     shuffle=False,
-                                    mode="box",
+                                    mode="predict",
                                     cores=self.config["cpu_workers"])
 
         predictions = []
@@ -333,11 +334,11 @@ class AttentionModel():
         labels = [self.config["class_labels"][x] for x in predictions]
         results = pd.DataFrame({"label": labels, "box_index": indices})
         
-        if majority_vote:
-            majority_results = results.groupby("box_index").agg(pd.Series.mode).to_frame()
-            return majority_results
-        else:
-            return results
+        #decode results
+        results["box_index"] = results["box_index"].apply(lambda x: x.decode()).astype(str)
+        
+        return results
+
         
     def evaluate(self, tf_dataset):
         """Evaluate metrics on held out training data. Defaults to reading from config.yml evaluation sensor path
