@@ -21,4 +21,5 @@ export LD_LIBRARY_PATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention/lib/:
 cd /home/b.weinstein/DeepTreeAttention/experiments/NEON/
 
 #Generate only once
+python generate.py
 python run.py

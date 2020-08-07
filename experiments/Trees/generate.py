@@ -15,9 +15,9 @@ train_tfrecords = client.map(boxes.generate, shapefile=shapefiles,chunk_size=100
 print("Created {} training records:{}...".format(len(train_tfrecords),train_tfrecords[0:3]))
 
 #Generate prediction data
-shapefiles = glob.glob(os.path.join("/orange/idtrees-collab/predictions/","*.shp"))
-predict_tfrecords = client.map(boxes.generate, shapefile=shapefiles,chunk_size=10000, train=True)
-print("Created {} prediction records:{}...".format(len(predict_tfrecords),predict_tfrecords[0:3]))
+#shapefiles = glob.glob(os.path.join("/orange/idtrees-collab/predictions/","*.shp"))
+#predict_tfrecords = client.map(boxes.generate, shapefile=shapefiles,chunk_size=10000, train=True)
+#print("Created {} prediction records:{}...".format(len(predict_tfrecords),predict_tfrecords[0:3]))
 
 wait(train_tfrecords)
-wait(predict_tfrecords)
+#wait(predict_tfrecords)

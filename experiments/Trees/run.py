@@ -10,19 +10,11 @@ from random import randint
 from time import sleep
 from distributed import wait
 
-import argparse
 import glob
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-def parse_args():
-    """Set training mode hrough command line"""
-    parser = argparse.ArgumentParser(description='NEON species prediction pipeline')
-    parser.add_argument('train', action='store_true')
-    args = parser.parse_args()
-    
-    return args
 
 def find_shapefiles(dirname):
     files = glob.glob(os.path.join(dirname,"*.shp"))
@@ -50,7 +42,6 @@ def predict(dirname, savedir, generate=True, cpus=2, parallel=True, height=40, w
             _predict_(shapefile, model_path, savedir=savedir, create_records=generate)
             
 if __name == "__main__":
-    args = parse_args()
     experiment = Experiment(project_name="neontrees", workspace="bw4sz")
 
     #Create output folder
@@ -63,7 +54,7 @@ if __name == "__main__":
     experiment.log_parameter("timestamp",timestamp)
     
     #Create a class and run
-    model = AttentionModel(config="conf/houston_config.yml")
+    model = AttentionModel(config="conf/trees_config.yml")
     model.create()
         
     #Log config
