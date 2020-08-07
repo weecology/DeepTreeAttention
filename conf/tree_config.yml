@@ -1,0 +1,47 @@
+#Parallel workers
+cpu_workers: 10
+
+train:
+    classes: 9
+    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
+    sensor_pool: /orange/ewhite/NeonData/*/DP3.30006.001/**/Reflectance/*.tif  #path to sensor data regex, recursive wildcards allowed
+    ground_truth_path: data/raw/2018_IEEE_GRSS_DFC_GT_TR_resampled.tif #path to ground truth class raster    
+    crop_size: 11
+    sensor_channels: 3
+    epochs: 50
+    learning_rate: .001
+    gpu: 1
+    batch_size: 512
+    weighted_sum: False
+    # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
+    steps:
+    shuffle: True
+    training_fraction: 0.9
+
+callbacks:
+    snapshots_path: /../models/
+    project_name: DeepTreeAttention
+
+#All the above parameters apply to evaluation except for paths, leave blank to ignore.
+evaluation:
+    tfrecords:
+    sensor_path:
+    ground_truth_path:
+    steps:
+
+predict:
+    saved_model:
+    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/predict/
+    sensor_pool: /orange/ewhite/NeonData/*/DP3.30006.001/**/Reflectance/*.tif  #path to sensor data regex, recursive wildcards allowed
+    savedir: /orange/idtrees-collab/DeepTreeAttention/predictions/
+    
+class_labels:
+    0: Unknown 
+    1: ACPE   
+    2: ACRU   
+    3: BELE   
+    4: BEPAP  
+    5: FAGR   
+    6: QURU   
+    7: TSCA   
+    8: ABLO 

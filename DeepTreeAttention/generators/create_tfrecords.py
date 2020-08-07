@@ -1,7 +1,6 @@
 #Tfrecords
 import tensorflow as tf
 
-
 def write_tfrecord(filename, images, labels=None, classes=21, train=True, x=None, y=None):
     """Write a training or prediction tfrecord
         Args:
