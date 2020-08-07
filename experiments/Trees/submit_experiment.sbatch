@@ -11,7 +11,7 @@
 #SBATCH --partition=gpu
 #SBATCH --gpus=1
 
-module load tensorflow
+module load tensorflow/2.1.0
 
 export PATH=${PATH}:/home/b.weinstein/miniconda3/envs/DeepTreeAttention/bin/
 export PYTHONPATH=${PYTHONPATH}:/home/b.weinstein/miniconda3/envs/DeepTreeAttention/lib/python3.7/site-packages/
