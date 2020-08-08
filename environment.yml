@@ -2,6 +2,7 @@ name: DeepTreeAttention
 channels:
   - conda-forge
 dependencies:
+  - python==3.7
   - geopandas
   - tensorflow > 2.0
   - scikit-learn
