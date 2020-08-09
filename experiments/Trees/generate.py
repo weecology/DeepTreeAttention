@@ -4,7 +4,7 @@ from DeepTreeAttention.generators import boxes
 from DeepTreeAttention.utils.start_cluster import start
 import os
 
-att = AttentionModel()
+att = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
 
 #get root dir full path
 client = start(cpus=10, mem_size="5GB") 
