@@ -12,7 +12,7 @@ client = start(cpus=10, mem_size="5GB")
 
 #Generate training data
 shapefiles = glob.glob(os.path.join("/orange/idtrees-collab/DeepTreeAttention/WeakLabels/","*.shp"))
-train_tfrecords = client.map(boxes.generate, shapefile=shapefiles,chunk_size=10000, train=True)
+train_tfrecords = client.map(att.generate, shapefile=shapefiles,chunk_size=10000, train=True)
 print("Created {} training records:{}...".format(len(train_tfrecords),train_tfrecords[0:3]))
 
 #Generate prediction data
