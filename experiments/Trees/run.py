@@ -41,7 +41,7 @@ def predict(dirname, savedir, generate=True, cpus=2, parallel=True, height=40, w
         for shapefile in shapefiles:
             _predict_(shapefile, model_path, savedir=savedir, create_records=generate)
             
-if __name == "__main__":
+if __name__ == "__main__":
     experiment = Experiment(project_name="neontrees", workspace="bw4sz")
 
     #Create output folder
