@@ -54,7 +54,7 @@ if __name__ == "__main__":
     experiment.log_parameter("timestamp",timestamp)
     
     #Create a class and run
-    model = AttentionModel(config="conf/trees_config.yml")
+    model = AttentionModel(config="conf/tree_config.yml")
     model.create()
         
     #Log config
