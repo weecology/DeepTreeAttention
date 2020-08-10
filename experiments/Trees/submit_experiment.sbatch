@@ -13,7 +13,7 @@
 
 module load tensorflow/2.1.0
 
-export PATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention/bin/:/home/b.weinstein/DeepTreeAttention/:${PATH}:
+export PATH=${PATH}:/home/b.weinstein/miniconda3/envs/DeepTreeAttention/bin/
 export PYTHONPATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention/lib/python3.7/site-packages/:/home/b.weinstein/DeepTreeAttention/:${PYTHONPATH}
 export LD_LIBRARY_PATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention/lib/:${LD_LIBRARY_PATH}
 
