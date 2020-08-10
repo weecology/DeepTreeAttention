@@ -1,10 +1,13 @@
 #Parallel workers
 cpu_workers: 10
+#Intermediate location to store .h5 converted geotiff hyperspec tiles
+hyperspectral_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/
 
 train:
     classes: 9
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
-    sensor_pool: /orange/ewhite/NeonData/**/Reflectance/*.h5  #path to sensor data regex, recursive wildcards allowed
+    hyperspectral_sensor_pool: /orange/ewhite/NeonData/**/Reflectance/*.h5  #path to sensor data regex, recursive wildcards allowed
+    rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif  #path to sensor data regex, recursive wildcards allowed
     ground_truth_path: data/raw/2018_IEEE_GRSS_DFC_GT_TR_resampled.tif #path to ground truth class raster    
     crop_size: 11
     sensor_channels: 3
@@ -32,7 +35,8 @@ evaluation:
 predict:
     saved_model:
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/predict/
-    sensor_pool: /orange/ewhite/NeonData/*/DP3.30006.001/**/Reflectance/*.tif  #path to sensor data regex, recursive wildcards allowed
+    hyperspectral_sensor_pool: /orange/ewhite/NeonData/**/Reflectance/*.h5  #path to sensor data regex, recursive wildcards allowed
+    rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/*.tif  #path to sensor data regex, recursive wildcards allowed
     savedir: /orange/idtrees-collab/DeepTreeAttention/predictions/
     
 class_labels:

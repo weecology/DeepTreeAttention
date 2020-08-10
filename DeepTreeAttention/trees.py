@@ -17,6 +17,7 @@ from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.models import Hang2020
 from DeepTreeAttention.generators import boxes
 from DeepTreeAttention.callbacks import callbacks
+from DeepTreeAttention.utils import Hyperspectral
 
 class AttentionModel():
     """The main class holding train, predict and evaluate methods"""
@@ -67,21 +68,51 @@ class AttentionModel():
             raise ValueError("Multiple matching tiles in {} for shapefile {}".format(lookup_pool, shapefile))
         else:
             return match[0]
-     
+    
+    def find_rgb_path(self, shapefile, lookup_pool):
+        """Find a hyperspec path based on the shapefile using NEONs schema"""
+        pool = glob.glob(lookup_pool, recursive=True)
+        basename = os.path.splitext(os.path.basename(shapefile))[0]        
+        
+        #Get file metadata from name string
+        geo_index = re.search("(\d+_\d+)_image",basename).group(1)
+        year = re.search("(\d+)_",basename).group(1)
+        
+        match = [x for x in pool if geo_index in x]
+        
+        #of the matches get the correct year
+        year_match = [x for x in match if year in x]
+        
+        if len(match) == 0:
+            raise ValueError("No matching rgb tile in {} for shapefile {}".format(lookup_pool, shapefile))
+        elif len(match) > 1:
+            raise ValueError("Multiple matching rgb tiles in {} for shapefile {}".format(lookup_pool, shapefile))
+        else:
+            return match[0]
+        
     def generate(self, shapefile, train=True, sensor_path=None, chunk_size=1000):
         """Predict species class for each DeepForest bounding box
         Args:
             shapefile: a DeepForest shapefile (see NeonCrownMaps) with a bounding box and utm projection
             train: generate a training record that yields, image, label, or a prediction record with metadata? Default True
-            sensor_path: supply a known path to a sensor tile. If not, use a lookup function hardcoded to a dir
+            sensor_path: supply a known path to a sensor geoTIFF tile. If not, use a lookup function hardcoded to a dir
             chunk_size: number of crops per tfrecord
         """
         if sensor_path is None:
             if train:
-                sensor_path = self.find_hyperspectral_path(shapefile, lookup_pool=self.config["train"]["sensor_pool"])
+                hyperspectral_h5_path = self.find_hyperspectral_path(shapefile, lookup_pool=self.config["train"]["hyperspectral_sensor_pool"])
+                rgb_path = self.find_rgb_path(shapefile, lookup_pool=self.config["train"]["rgb_sensor_pool"])                
             else:
-                sensor_path = self.find_hyperspectral_path(shapefile, lookup_pool=self.config["predict"]["sensor_pool"])                
+                hyperspectral_h5_path = self.find_hyperspectral_path(shapefile, lookup_pool=self.config["train"]["hyperspectral_sensor_pool"])
+                rgb_path = self.find_rgb_path(shapefile, lookup_pool=self.config["train"]["rgb_sensor_pool"])                
         
+        #convert .h5 hyperspec tile if needed
+        if os.path.splitext[1] == ".h5":
+            tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"    
+            tif_path = "{}/{}".format(self.config["hyperspectral_tif_dir"], tif_basename)
+            
+            if not os.path.exists(tif_path):
+                sensor_path = Hyperspectral.generate_raster(h5_path = hyperspectral_h5_path, rgb_filename=rgb_path, bands="All", save_dir=self.config["hyperspectral_tif_dir"])
         #set savedir
         if train:
             savedir = self.config["train"]["tfrecords"]
