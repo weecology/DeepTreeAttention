@@ -4,7 +4,7 @@ cpu_workers: 10
 train:
     classes: 9
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
-    sensor_pool: /orange/ewhite/NeonData/*/DP3.30006.001/**/Reflectance/*.tif  #path to sensor data regex, recursive wildcards allowed
+    sensor_pool: /orange/ewhite/NeonData/**/Reflectance/*.h5  #path to sensor data regex, recursive wildcards allowed
     ground_truth_path: data/raw/2018_IEEE_GRSS_DFC_GT_TR_resampled.tif #path to ground truth class raster    
     crop_size: 11
     sensor_channels: 3
