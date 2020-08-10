@@ -113,6 +113,9 @@ class AttentionModel():
             
             if not os.path.exists(tif_path):
                 sensor_path = Hyperspectral.generate_raster(h5_path = hyperspectral_h5_path, rgb_filename=rgb_path, bands="All", save_dir=self.config["hyperspectral_tif_dir"])
+            else:
+                sensor_path = tif_path
+        
         #set savedir
         if train:
             savedir = self.config["train"]["tfrecords"]

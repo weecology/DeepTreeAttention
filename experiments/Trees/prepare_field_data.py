@@ -5,8 +5,47 @@ from DeepTreeAttention.generators.boxes import write_tfrecord
 
 #What to do about classes?
 
-def find_sensor_data(plot_name, sensor="hyperspectral"):
-    pass
+def find_hyperspectral_path(shapefile, lookup_pool):
+    """Find a hyperspec path based on the shapefile using NEONs schema"""
+    pool = glob.glob(lookup_pool, recursive=True)
+    basename = os.path.splitext(os.path.basename(shapefile))[0]        
+    
+    #Get file metadata from name string
+    geo_index = re.search("(\d+_\d+)_image",basename).group(1)
+    year = re.search("(\d+)_",basename).group(1)
+    
+    match = [x for x in pool if geo_index in x]
+    
+    #of the matches get the correct year
+    year_match = [x for x in match if year in x]
+    
+    if len(match) == 0:
+        raise ValueError("No matching tile in {} for shapefile {}".format(lookup_pool, shapefile))
+    elif len(match) > 1:
+        raise ValueError("Multiple matching tiles in {} for shapefile {}".format(lookup_pool, shapefile))
+    else:
+        return match[0]
+
+def find_rgb_path(shapefile, lookup_pool):
+    """Find a hyperspec path based on the shapefile using NEONs schema"""
+    pool = glob.glob(lookup_pool, recursive=True)
+    basename = os.path.splitext(os.path.basename(shapefile))[0]        
+    
+    #Get file metadata from name string
+    geo_index = re.search("(\d+_\d+)_image",basename).group(1)
+    year = re.search("(\d+)_",basename).group(1)
+    
+    match = [x for x in pool if geo_index in x]
+    
+    #of the matches get the correct year
+    year_match = [x for x in match if year in x]
+    
+    if len(match) == 0:
+        raise ValueError("No matching rgb tile in {} for shapefile {}".format(lookup_pool, shapefile))
+    elif len(match) > 1:
+        raise ValueError("Multiple matching rgb tiles in {} for shapefile {}".format(lookup_pool, shapefile))
+    else:
+        return match[0]
 
 def resize(img, height, width):
     # resize image
@@ -19,7 +58,8 @@ def process_plot(plot_data):
     """For a given NEON plot, find the correct sensor data, predict trees and associate bounding boxes with field data
     Args:
         plot_data: geopandas dataframe in a utm projection
-        
+    Returns:
+        merged_boxes: geodataframe of bounding box predictions with species labels
     """
     #DeepForest prediction
     plot_name = plot_data.plotID.unique()[0]
@@ -37,8 +77,15 @@ def process_plot(plot_data):
     
     return merged_boxes
 
-def create_crops():
-    """Crop sensor data based on a dataframe of geopandas bounding boxes"""
+def create_crops(merged_boxes):
+    """Crop sensor data based on a dataframe of geopandas bounding boxes
+    Args:
+        merged_boxes: geopandas dataframe with bounding box geometry, plotID, and species label
+    Returns:
+        crops: list of cropped sensor data
+        labels: species id labels
+        box_index: unique index and plot_data length.
+    """
     crops = []
     labels = []
     box_index = []
