@@ -25,7 +25,7 @@ print("Created {} training records:{}...".format(len(train_tfrecords),train_tfre
 wait(train_tfrecords)
 for x in train_tfrecords:
     try:
-        train_tfrecords.result()
+        x.result()
     except Exception as e:
         print(e)
 
