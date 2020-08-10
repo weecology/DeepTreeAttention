@@ -4,8 +4,6 @@ from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.generators.boxes import write_tfrecord
 from DeepTreeAttention.utils import Hyperspectral
 
-mod = AttentionModel(config="conf/tree_config.yml")
-
 def lookup_and_convert(shapefile, rgb_pool, hyperspectral_pool):
     hyperspectral_h5_path = find_hyperspectral_path(shapefile, lookup_pool=hyperspectral_pool)
     rgb_path = self.find_rgb_path(shapefile, lookup_pool=rgb_pool) 
