@@ -131,13 +131,13 @@ def main(field_data, savedir=".", chunk_size=1000):
         field_data: csv file with location and class of each field collected point
         savedir: direcory to save completed tfrecords
     """
-    neon_data = read_data()
-    plot_names = get_plotnames()
+    df = pd.read_csv(field_data)
+    plot_names = df.plotID.unique()
     
     merged_boxes = []
     for plot in plot_names:
         #Filter data
-        plot_data = neon_data[neon_data.plotID == plot]
+        plot_data = df[df.plotID == plot]
         predicted_trees = process_plot(plot_data)
         merged_boxes.append(predicted_trees)
         
