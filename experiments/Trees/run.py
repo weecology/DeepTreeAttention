@@ -1,7 +1,7 @@
 #Experiment
 from comet_ml import Experiment
 from datetime import datetime
-from DeepTreeAttention.main import AttentionModel
+from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention import species
 from DeepTreeAttention.utils import metrics, resample, start_cluster
 from DeepTreeAttention.visualization import visualize
