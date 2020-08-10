@@ -48,7 +48,7 @@ class AttentionModel():
     
     def find_hyperspectral_path(self, shapefile, lookup_pool):
         """Find a hyperspec path based on the shapefile"""
-        pool = glob.glob(llookup_pool)
+        pool = glob.glob(lookup_pool)
         basename = os.path.splitext(os.path.basename(shapefile))[0]
         match = [x for x in pool if basename in x]
         
