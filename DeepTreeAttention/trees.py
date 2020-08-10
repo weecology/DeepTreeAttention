@@ -1,14 +1,15 @@
 #Wrapper class for DeepTreeAttention
 """Wrap generate data, create, train and predict into a single set of class commands"""
 import os
+import re
 import glob
 import pandas as pd
 import numpy as np
 import tensorflow as tf
+
 from tensorflow.keras.models import load_model
 from tensorflow.keras import metrics
 from tensorflow.keras.utils import multi_gpu_model
-
 from sklearn.utils import class_weight
 
 #Local Modules
@@ -47,17 +48,25 @@ class AttentionModel():
         self.weighted_sum = self.config["train"]["weighted_sum"]
     
     def find_hyperspectral_path(self, shapefile, lookup_pool):
-        """Find a hyperspec path based on the shapefile"""
+        """Find a hyperspec path based on the shapefile using NEONs schema"""
         pool = glob.glob(lookup_pool, recursive=True)
-        basename = os.path.splitext(os.path.basename(shapefile))[0]
-        match = [x for x in pool if basename in x]
+        basename = os.path.splitext(os.path.basename(shapefile))[0]        
+        
+        #Get file metadata from name string
+        geo_index = re.search("(\d+_\d+)_image",basename).group(1)
+        year = re.search("(\d+)_",basename).group(1)
+        
+        match = [x for x in pool if geo_index in x]
+        
+        #of the matches get the correct year
+        year_match = [x for x in match if year in x]
         
         if len(match) == 0:
             raise ValueError("No matching tile in {} for shapefile {}".format(lookup_pool, shapefile))
         elif len(match) > 1:
             raise ValueError("Multiple matching tiles in {} for shapefile {}".format(lookup_pool, shapefile))
         else:
-            return match
+            return match[0]
      
     def generate(self, shapefile, train=True, sensor_path=None, chunk_size=1000):
         """Predict species class for each DeepForest bounding box
