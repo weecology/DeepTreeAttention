@@ -1,9 +1,25 @@
 #Convert NEON field sample points into bounding boxes of cropped image data for model training
 import cv2
-
+from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.generators.boxes import write_tfrecord
+from DeepTreeAttention.utils import Hyperspectral
 
-#What to do about classes?
+mod = AttentionModel(config="conf/tree_config.yml")
+
+def lookup_and_convert(shapefile, rgb_pool, hyperspectral_pool):
+    hyperspectral_h5_path = find_hyperspectral_path(shapefile, lookup_pool=hyperspectral_pool)
+    rgb_path = self.find_rgb_path(shapefile, lookup_pool=rgb_pool) 
+    
+    #convert .h5 hyperspec tile if needed
+    tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"    
+    tif_path = "{}/{}".format(self.config["hyperspectral_tif_dir"], tif_basename)
+    
+    if not os.path.exists(tif_path):
+        sensor_path = Hyperspectral.generate_raster(h5_path = hyperspectral_h5_path, rgb_filename=rgb_path, bands="All", save_dir=self.config["hyperspectral_tif_dir"])
+    else:
+        sensor_path = tif_path
+        
+    return sensor_path
 
 def find_hyperspectral_path(shapefile, lookup_pool):
     """Find a hyperspec path based on the shapefile using NEONs schema"""
@@ -19,12 +35,12 @@ def find_hyperspectral_path(shapefile, lookup_pool):
     #of the matches get the correct year
     year_match = [x for x in match if year in x]
     
-    if len(match) == 0:
+    if len(year_match) == 0:
         raise ValueError("No matching tile in {} for shapefile {}".format(lookup_pool, shapefile))
-    elif len(match) > 1:
+    elif len(year_match) > 1:
         raise ValueError("Multiple matching tiles in {} for shapefile {}".format(lookup_pool, shapefile))
     else:
-        return match[0]
+        return year_match[0]
 
 def find_rgb_path(shapefile, lookup_pool):
     """Find a hyperspec path based on the shapefile using NEONs schema"""
@@ -40,12 +56,12 @@ def find_rgb_path(shapefile, lookup_pool):
     #of the matches get the correct year
     year_match = [x for x in match if year in x]
     
-    if len(match) == 0:
+    if len(year_match) == 0:
         raise ValueError("No matching rgb tile in {} for shapefile {}".format(lookup_pool, shapefile))
-    elif len(match) > 1:
+    elif len(year_match) > 1:
         raise ValueError("Multiple matching rgb tiles in {} for shapefile {}".format(lookup_pool, shapefile))
     else:
-        return match[0]
+        return year_match[0]
 
 def resize(img, height, width):
     # resize image
