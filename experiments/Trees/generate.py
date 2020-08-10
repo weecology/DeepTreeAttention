@@ -23,4 +23,10 @@ print("Created {} training records:{}...".format(len(train_tfrecords),train_tfre
 #print("Created {} prediction records:{}...".format(len(predict_tfrecords),predict_tfrecords[0:3]))
 
 wait(train_tfrecords)
+for x in train_tfrecords:
+    try:
+        train_tfrecords.result()
+    except Exception as e:
+        print(e)
+
 #wait(predict_tfrecords)
