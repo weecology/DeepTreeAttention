@@ -62,12 +62,12 @@ class AttentionModel():
         #of the matches get the correct year
         year_match = [x for x in match if year in x]
         
-        if len(match) == 0:
+        if len(year_match) == 0:
             raise ValueError("No matching tile in {} for shapefile {}".format(lookup_pool, shapefile))
-        elif len(match) > 1:
+        elif len(year_match) > 1:
             raise ValueError("Multiple matching tiles in {} for shapefile {}".format(lookup_pool, shapefile))
         else:
-            return match[0]
+            return year_match[0]
     
     def find_rgb_path(self, shapefile, lookup_pool):
         """Find a hyperspec path based on the shapefile using NEONs schema"""
@@ -83,12 +83,12 @@ class AttentionModel():
         #of the matches get the correct year
         year_match = [x for x in match if year in x]
         
-        if len(match) == 0:
+        if len(year_match) == 0:
             raise ValueError("No matching rgb tile in {} for shapefile {}".format(lookup_pool, shapefile))
-        elif len(match) > 1:
+        elif len(year_match) > 1:
             raise ValueError("Multiple matching rgb tiles in {} for shapefile {}".format(lookup_pool, shapefile))
         else:
-            return match[0]
+            return year_match[0]
         
     def generate(self, shapefile, train=True, sensor_path=None, chunk_size=1000):
         """Predict species class for each DeepForest bounding box
