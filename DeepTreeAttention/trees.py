@@ -69,9 +69,9 @@ class AttentionModel():
         """
         if sensor_path is None:
             if train:
-                sensor_path = find_hyperspectral_path(shapefile, lookup_pool=self.config["train"]["sensor_pool"])
+                sensor_path = self.find_hyperspectral_path(shapefile, lookup_pool=self.config["train"]["sensor_pool"])
             else:
-                sensor_path = find_hyperspectral_path(shapefile, lookup_pool=self.config["predict"]["sensor_pool"])                
+                sensor_path = self.find_hyperspectral_path(shapefile, lookup_pool=self.config["predict"]["sensor_pool"])                
         
         #set savedir
         if train:
