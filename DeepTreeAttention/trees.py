@@ -47,32 +47,33 @@ class AttentionModel():
         self.channels = self.config["train"]["sensor_channels"]
         self.weighted_sum = self.config["train"]["weighted_sum"]
         
-def generate(self, shapefile, sensor_path, train=True, chunk_size=1000):
-        """Predict species class for each DeepForest bounding box
-        Args:
-            shapefile: a DeepForest shapefile (see NeonCrownMaps) with a bounding box and utm projection
-            train: generate a training record that yields, image, label, or a prediction record with metadata? Default True
-            sensor_path: supply a known path to a sensor geoTIFF tile. 
-            chunk_size: number of crops per tfrecord
-        """
-        #set savedir
-        if train:
-            savedir = self.config["train"]["tfrecords"]
-        else:
-            savedir = self.config["predict"]["tfrecords"]
-            
-        created_records = boxes.generate_tfrecords(
-            shapefile=shapefile,
-            sensor_path=sensor_path,
-            height=self.height,
-            width=self.width,
-            savedir=savedir,
-            train=train,
-            classes=self.classes,
-            chunk_size=chunk_size
-        )
+    def generate(self, shapefile, sensor_path, train=True, chunk_size=1000):
     
-        return created_records
+            """Predict species class for each DeepForest bounding box
+            Args:
+                shapefile: a DeepForest shapefile (see NeonCrownMaps) with a bounding box and utm projection
+                train: generate a training record that yields, image, label, or a prediction record with metadata? Default True
+                sensor_path: supply a known path to a sensor geoTIFF tile. 
+                chunk_size: number of crops per tfrecord
+            """
+            #set savedir
+            if train:
+                savedir = self.config["train"]["tfrecords"]
+            else:
+                savedir = self.config["predict"]["tfrecords"]
+                
+            created_records = boxes.generate_tfrecords(
+                shapefile=shapefile,
+                sensor_path=sensor_path,
+                height=self.height,
+                width=self.width,
+                savedir=savedir,
+                train=train,
+                classes=self.classes,
+                chunk_size=chunk_size
+            )
+        
+            return created_records
         
     def calc_class_weight(self):
         """Get class frequency of labels"""
