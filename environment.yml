@@ -3,6 +3,9 @@ channels:
   - conda-forge
 dependencies:
   - python=3.7
+  - geopandas
+  - gdal
+  - rasterio > 1.0
   - tensorflow > 2.0
   - scikit-learn
   - sphinx
@@ -20,8 +23,6 @@ dependencies:
   - twine
   - yapf
   - pip:
-    - geopandas
-    - rasterio
     - opencv-python
     - sphinx-markdown-tables
     - bumpversion
