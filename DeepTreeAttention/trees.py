@@ -48,14 +48,14 @@ class AttentionModel():
     
     def find_hyperspectral_path(self, shapefile, lookup_pool):
         """Find a hyperspec path based on the shapefile"""
-        pool = glob.glob(lookup_pool)
+        pool = glob.glob(lookup_pool, recursive=True)
         basename = os.path.splitext(os.path.basename(shapefile))[0]
         match = [x for x in pool if basename in x]
         
         if len(match) == 0:
-            raise ValueError("No matching tile in {} for shapefile {}".format(lookup_dir, shapefile))
+            raise ValueError("No matching tile in {} for shapefile {}".format(lookup_pool, shapefile))
         elif len(match) > 1:
-            raise ValueError("Multiple matching tiles in {} for shapefile {}".format(lookup_dir, shapefile))
+            raise ValueError("Multiple matching tiles in {} for shapefile {}".format(lookup_pool, shapefile))
         else:
             return match
      
