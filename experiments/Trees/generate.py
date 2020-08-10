@@ -2,6 +2,8 @@
 from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.generators import boxes
 from DeepTreeAttention.utils.start_cluster import start
+from distributed import wait
+
 import glob
 import os
 
