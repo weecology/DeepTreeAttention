@@ -4,16 +4,16 @@ from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.generators.boxes import write_tfrecord
 from DeepTreeAttention.utils import Hyperspectral
 
-def lookup_and_convert(shapefile, rgb_pool, hyperspectral_pool):
+def lookup_and_convert(shapefile, rgb_pool, hyperspectral_pool, savedir):
     hyperspectral_h5_path = find_hyperspectral_path(shapefile, lookup_pool=hyperspectral_pool)
-    rgb_path = self.find_rgb_path(shapefile, lookup_pool=rgb_pool) 
+    rgb_path = find_rgb_path(shapefile, lookup_pool=rgb_pool) 
     
     #convert .h5 hyperspec tile if needed
     tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"    
-    tif_path = "{}/{}".format(self.config["hyperspectral_tif_dir"], tif_basename)
+    tif_path = "{}/{}".format(savedir, tif_basename)
     
     if not os.path.exists(tif_path):
-        sensor_path = Hyperspectral.generate_raster(h5_path = hyperspectral_h5_path, rgb_filename=rgb_path, bands="All", save_dir=self.config["hyperspectral_tif_dir"])
+        sensor_path = Hyperspectral.generate_raster(h5_path = hyperspectral_h5_path, rgb_filename=rgb_path, bands="All", save_dir=savedir)
     else:
         sensor_path = tif_path
         
