@@ -74,7 +74,7 @@ def generate_tfrecords(shapefile, sensor_path,
             chunk_labels = None
         
         #resize crops
-        resized_crops = [resize(x, height, width).astype("int16") for x in chunk_crops]
+        resized_crops = [resize(x.astype("float32"), height, width) for x in chunk_crops]
         
         filename = "{}/{}_{}.tfrecord".format(savedir, basename, counter)
         write_tfrecord(filename=filename,
