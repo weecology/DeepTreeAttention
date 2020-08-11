@@ -15,6 +15,7 @@ dependencies:
   - h5py
   - numpy
   - pillow
+  - bokeh
   - pip
   - matplotlib
   - sphinx_rtd_theme

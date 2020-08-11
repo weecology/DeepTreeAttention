@@ -22,7 +22,5 @@ for shapefile in shapefiles:
     
 wait(train_tfrecords)
 for x in train_tfrecords:
-    try:
-        x.result()
-    except Exception as e:
-        print(e)
+    x.result()
+        
