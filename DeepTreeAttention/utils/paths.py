@@ -42,7 +42,7 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None, sensor="hyperspec
         
         #Get file metadata from name string        
         basename = os.path.splitext(os.path.basename(shapefile))[0]
-        geo_index = re.search("(\d+_\d+)_reflectance",basename).group(1)
+        geo_index = re.search("(\d+_\d+)_image",basename).group(1)
         match = [x for x in pool if geo_index in x]        
         year = re.search("(\d+)_",basename).group(1)
         year_match = [x for x in match if year in x]    
