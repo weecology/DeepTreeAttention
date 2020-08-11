@@ -2,8 +2,9 @@
 from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.generators import boxes
 from DeepTreeAttention.utils.start_cluster import start
+from DeepTreeAttention.utils.paths import lookup_and_convert
+
 from distributed import wait
-from prepare_field_data import lookup_and_convert
 import glob
 import os
 
