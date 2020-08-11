@@ -11,8 +11,8 @@ from DeepTreeAttention.generators.boxes import write_tfrecord
 from DeepTreeAttention.utils import Hyperspectral
 
 def lookup_and_convert(shapefile, rgb_pool, hyperspectral_pool, savedir):
-    hyperspectral_h5_path = find_hyperspectral_path(shapefile, lookup_pool=hyperspectral_pool)
-    rgb_path = find_rgb_path(shapefile, lookup_pool=rgb_pool) 
+    hyperspectral_h5_path = find_sensor_path(shapefile=shapefile, lookup_pool=hyperspectral_pool, sensor="hyperspectral")
+    rgb_path = find_sensor_path(shapefile=shapefile, lookup_pool=rgb_pool, sensor="rgb") 
     
     #convert .h5 hyperspec tile if needed
     tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"    
@@ -25,27 +25,6 @@ def lookup_and_convert(shapefile, rgb_pool, hyperspectral_pool, savedir):
         sensor_path = tif_path
         
     return sensor_path
-
-def find_hyperspectral_path(shapefile, lookup_pool):
-    """Find a hyperspec path based on the shapefile using NEONs schema"""
-    pool = glob.glob(lookup_pool, recursive=True)
-    basename = os.path.splitext(os.path.basename(shapefile))[0]        
-    
-    #Get file metadata from name string
-    geo_index = re.search("(\d+_\d+)_image",basename).group(1)
-    year = re.search("(\d+)_",basename).group(1)
-    
-    match = [x for x in pool if geo_index in x]
-    
-    #of the matches get the correct year
-    year_match = [x for x in match if year in x]
-    
-    if len(year_match) == 0:
-        raise ValueError("No matching tile in {} for shapefile {}".format(lookup_pool, shapefile))
-    elif len(year_match) > 1:
-        raise ValueError("Multiple matching tiles in {} for shapefile {}".format(lookup_pool, shapefile))
-    else:
-        return year_match[0]
 
 def bounds_to_geoindex(bounds):
     """Convert an extent into NEONs naming schema
@@ -64,23 +43,38 @@ def bounds_to_geoindex(bounds):
     
     return geoindex
     
-def find_rgb_path(bounds, lookup_pool):
+def find_sensor_path(lookup_pool, shapefile=None, bounds=None, sensor="hyperspecral"):
     """Find a hyperspec path based on the shapefile using NEONs schema
     Args:
-        bounds: list of top, left, bottom, right bounds, usually from geopandas.total_bounds
+        bounds: Optional: list of top, left, bottom, right bounds, usually from geopandas.total_bounds. Instead of providing a shapefile
         lookup_pool: glob string to search for matching files for geoindex
+    Returns:s
+        year_match: full path to sensor tile
     """
-    geo_index = bounds_to_geoindex(bounds)      
     pool = glob.glob(lookup_pool, recursive=True)
     
-    #Get file metadata from name string
-    year = re.search("(\d+)_",basename).group(1)
-    
-    match = [x for x in pool if geo_index in x]
-    
-    #of the matches get the correct year
-    year_match = [x for x in match if year in x]
-    
+    if shapefile is None:
+        geo_index = bounds_to_geoindex(bounds)
+        match = [x for x in pool if geo_index in x]        
+        match.sort()
+        year_match = match[-1]        
+    else:
+        
+        #Get file metadata from name string        
+        basename = os.path.splitext(os.path.basename(shapefile))[0]
+       
+        if sensor == "hyperspectral":
+            geo_index = re.search("(\d+_\d+)_reflectance",basename).group(1)
+            match = [x for x in pool if geo_index in x]
+            match.sort()
+            year_match = match[-1]                   
+        
+        elif sensor == "rgb":
+            geo_index = re.search("(\d+_\d+)_image",basename).group(1)
+            year = re.search("(\d+)_",basename).group(1)
+            match = [x for x in pool if geo_index in x]
+            year_match = [x for x in match if year in x]            
+
     if len(year_match) == 0:
         raise ValueError("No matching rgb tile in {} for shapefile {}".format(lookup_pool, shapefile))
     elif len(year_match) > 1:
@@ -96,7 +90,7 @@ def resize(img, height, width):
     
     return resized
 
-def process_plot(plot_data):
+def process_plot(plot_data, rgb_pool):
     """For a given NEON plot, find the correct sensor data, predict trees and associate bounding boxes with field data
     Args:
         plot_data: geopandas dataframe in a utm projection
@@ -105,7 +99,7 @@ def process_plot(plot_data):
     """
     #DeepForest prediction
     
-    rgb_sensor_path = find_rgb_path(plot_data.total_bounds)
+    rgb_sensor_path = find_sensor_path(bounds=plot_data.total_bounds,lookup_pool=rgb_pool)
     boxes = predict_trees(rgb_sensor_path)
 
     #Merge results with field data
@@ -116,10 +110,11 @@ def process_plot(plot_data):
     
     return merged_boxes
 
-def create_crops(merged_boxes):
+def create_crops(merged_boxes, hyperspectral_pool, sensor="hyperspectral"):
     """Crop sensor data based on a dataframe of geopandas bounding boxes
     Args:
         merged_boxes: geopandas dataframe with bounding box geometry, plotID, and species label
+        hyperspectral_pool: glob string for looking up matching sensor tiles
     Returns:
         crops: list of cropped sensor data
         labels: species id labels
@@ -131,7 +126,7 @@ def create_crops(merged_boxes):
     for index, row in merged_boxes.iterrows():
         box = row["geometry"]       
         plot_name = row["plotID"]                
-        sensor_path = find_hyperspectral_path(box)        
+        sensor_path = find_sensor_path(bounds=box.bounds, lookup_pool=hyperspectral_pool, sensor=sensor)        
         crop = crop_image(sensor_path, box)
         labels.append(row["label"])
         box_index.append("{}_{}".format(plot_name,index))
@@ -164,12 +159,19 @@ def create_records(crops, labels, box_index, savedir, chunk_size=1000):
         filenames.append(filename)
         counter +=1    
     
-def main(field_data, savedir=".", chunk_size=1000):
+def main(field_data, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=1000):
     """Prepare NEON field data into tfrecords
     Args:
         field_data: shp file with location and class of each field collected point
+        sensor: 'rgb' or 'hyperspecral' image crop
         savedir: direcory to save completed tfrecords
     """
+    #Check sensor type has paths
+    if sensor == "hyperspectral":
+        assert not hyperspectral_pool is None
+    if sensor=="rgb":
+        assert not rgb_pool is None
+        
     df = gpd.read_file(field_data)
     plot_names = df.plotID.unique()
     
@@ -177,11 +179,11 @@ def main(field_data, savedir=".", chunk_size=1000):
     for plot in plot_names:
         #Filter data
         plot_data = df[df.plotID == plot]
-        predicted_trees = process_plot(plot_data)
+        predicted_trees = process_plot(plot_data, rgb_pool)
         merged_boxes.append(predicted_trees)
         
     #Get sensor data
-    crops, labels, box_index = create_crops(merged_boxes)
+    crops, labels, box_index = create_crops(merged_boxes, lookup_pool=hyperspectral_pool, sensor=sensor)
         
     #Write tfrecords
     create_records(crops, labels, box_index, savedir, chunk_size=chunk_size)

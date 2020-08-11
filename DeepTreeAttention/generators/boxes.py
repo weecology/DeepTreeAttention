@@ -13,9 +13,7 @@ from rasterio.windows import from_bounds
 def resize(img, height, width):
     # resize image
     dim = (width, height)   
-    print("Dim is {}".format(dim))
     img = img.astype("float32")
-    
     resized = cv2.resize(img, dim, interpolation = cv2.INTER_NEAREST)
     
     return resized
