@@ -12,8 +12,8 @@ from rasterio.windows import from_bounds
 
 def resize(img, height, width):
     # resize image
-    dim = (width, height)    
-    resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
+    dim = (width, height)   
+    resized = cv2.resize(img.astype("float32"), dim, interpolation = cv2.INTER_AREA)
     
     return resized
     
@@ -74,7 +74,7 @@ def generate_tfrecords(shapefile, sensor_path,
             chunk_labels = None
         
         #resize crops
-        resized_crops = [resize(x.astype("float32"), height, width) for x in chunk_crops]
+        resized_crops = [resize(x, height, width) for x in chunk_crops]
         
         filename = "{}/{}_{}.tfrecord".format(savedir, basename, counter)
         write_tfrecord(filename=filename,
