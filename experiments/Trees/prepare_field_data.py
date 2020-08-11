@@ -83,10 +83,8 @@ def process_plot(plot_data):
     """
     #DeepForest prediction
     plot_name = plot_data.plotID.unique()[0]
-    if len(plot_name) > 1:
-        raise ValueError("Multiple plots passed to plot_data argument")
     
-    rgb_sensor_path = find_sensor_data(plot_name, sensor="rgb")
+    rgb_sensor_path = find_rgb_path(plot_name)
     boxes = predict_trees(rgb_sensor_path)
 
     #Merge results with field data
@@ -112,7 +110,7 @@ def create_crops(merged_boxes):
     for index, row in merged_boxes.iterrows():
         box = row["geometry"]       
         plot_name = row["plotID"]                
-        sensor_path = find_sensor_data(box, sensor="hyperspectral")        
+        sensor_path = find_hyperspectral_path(box)        
         crop = crop_image(sensor_path, box)
         labels.append(row["label"])
         box_index.append("{}_{}".format(plot_name,index))
