@@ -2,6 +2,8 @@
 import cv2
 import os
 import glob
+import re
+import geopandas as gpd
 
 from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.generators.boxes import write_tfrecord
@@ -145,10 +147,10 @@ def create_records(crops, labels, box_index, savedir, chunk_size=1000):
 def main(field_data, savedir=".", chunk_size=1000):
     """Prepare NEON field data into tfrecords
     Args:
-        field_data: csv file with location and class of each field collected point
+        field_data: shp file with location and class of each field collected point
         savedir: direcory to save completed tfrecords
     """
-    df = pd.read_csv(field_data)
+    df = gpd.read_file(field_data)
     plot_names = df.plotID.unique()
     
     merged_boxes = []
@@ -165,4 +167,4 @@ def main(field_data, savedir=".", chunk_size=1000):
     create_records(crops, labels, box_index, savedir, chunk_size=chunk_size)
     
 if __name__ == "__main__":
-    main()
+    main("data/processed/field_data.shp")
