@@ -7,9 +7,6 @@ Implementation of Hang et al. 2020 [Hyperspectral Image Classification with Atte
 
 ![](www/model.png)
 
-## Config file
-
-See conf/config.yml for training parameters.
 
 # Organization
 
@@ -57,9 +54,16 @@ Major milestones will be listed below, but for fine-grained information on code,
 * [With Attention Layers](https://www.comet.ml/bw4sz/deeptreeattention/15d3246de6cf490cacf63d1764c9c494?experiment-tab=chart&showOutliers=true&smoothing=0&view=Hang&xAxis=step)
 * [With Ensemble Training of Spectral/Spatial subnetworks on multi-gpu](https://www.comet.ml/bw4sz/deeptreeattention/5d632e11d2484bfdb4de32166c5099ce)
 
+### Config file
+
+See conf/houston_config.yml for training parameters.
+
 ### Data
 
 * The Houston 2018 IEEE competition data can be downloaded [here](https://hyperspectral.ee.uh.edu/?page_id=1075) and should be placed in data/raw. This folder is not under version control. 
+
+### Workflow
+
 To process the sensor data into same extent as the ground truth labels run from top dir:
 
 ```
@@ -82,6 +86,33 @@ python experiments/Houston2018/run_Houston2018.py
 
 ## NEON
 
+### Config file
+
+See conf/tree_config.yml for training parameters.
+
+### Data
+
+The field data are from NEON's woody vegetation structure dataset. I curated .shp is found at data/processed/field.shp which contains species labels and utm coordinates of each tree stem
+
+### Workflow
+
+To generate training data from existing shapefiles of deepforest predictions
+
+```
+python experiments/Trees/generate.py
+```
+
+To generate new deepforest boxes, you will need to create a seperate conda environment. DeepForest requires tensorflow <2.0 where this repo is >2.0. The requirements are otherwise the same. To generate boxes see
+
+```
+python experiments/Trees/prepare_field_data.py
+```
+
+After creating training data the main entry point is 
+
+```
+python experiments/Trees/run.py
+```
 
 # Citation
 
