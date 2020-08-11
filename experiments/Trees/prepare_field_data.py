@@ -6,25 +6,10 @@ import math
 import re
 import geopandas as gpd
 
-from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.generators.boxes import write_tfrecord
 from DeepTreeAttention.utils import Hyperspectral
 
-def lookup_and_convert(shapefile, rgb_pool, hyperspectral_pool, savedir):
-    hyperspectral_h5_path = find_sensor_path(shapefile=shapefile, lookup_pool=hyperspectral_pool, sensor="hyperspectral")
-    rgb_path = find_sensor_path(shapefile=shapefile, lookup_pool=rgb_pool, sensor="rgb") 
-    
-    #convert .h5 hyperspec tile if needed
-    tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"    
-    tif_path = "{}/{}".format(savedir, tif_basename)
-    
-    if not os.path.exists(tif_path):
-        tif_basename = Hyperspectral.generate_raster(h5_path = hyperspectral_h5_path, rgb_filename=rgb_path, bands="All", save_dir=savedir)
-        tif_path = "{}/{}".format(savedir, tif_basename)
-    else:
-        sensor_path = tif_path
-        
-    return sensor_path
+from deepforest import deepforest
 
 def bounds_to_geoindex(bounds):
     """Convert an extent into NEONs naming schema
@@ -43,7 +28,7 @@ def bounds_to_geoindex(bounds):
     
     return geoindex
     
-def find_sensor_path(lookup_pool, shapefile=None, bounds=None, sensor="hyperspecral"):
+def find_sensor_path(lookup_pool, shapefile=None, bounds=None, sensor="hyperspectral"):
     """Find a hyperspec path based on the shapefile using NEONs schema
     Args:
         bounds: Optional: list of top, left, bottom, right bounds, usually from geopandas.total_bounds. Instead of providing a shapefile
@@ -62,25 +47,29 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None, sensor="hyperspec
         
         #Get file metadata from name string        
         basename = os.path.splitext(os.path.basename(shapefile))[0]
-       
-        if sensor == "hyperspectral":
-            geo_index = re.search("(\d+_\d+)_reflectance",basename).group(1)
-            match = [x for x in pool if geo_index in x]
-            match.sort()
-            year_match = match[-1]                   
-        
-        elif sensor == "rgb":
-            geo_index = re.search("(\d+_\d+)_image",basename).group(1)
-            year = re.search("(\d+)_",basename).group(1)
-            match = [x for x in pool if geo_index in x]
-            year_match = [x for x in match if year in x]            
+        geo_index = re.search("(\d+_\d+)_reflectance",basename).group(1)
+        match = [x for x in pool if geo_index in x]        
+        year = re.search("(\d+)_",basename).group(1)
+        year_match = [x for x in match if year in x]    
+        year_match = year_match[0]
 
-    if len(year_match) == 0:
-        raise ValueError("No matching rgb tile in {} for shapefile {}".format(lookup_pool, shapefile))
-    elif len(year_match) > 1:
-        raise ValueError("Multiple matching rgb tiles in {} for shapefile {}".format(lookup_pool, shapefile))
+    return year_match
+
+def lookup_and_convert(shapefile, rgb_pool, hyperspectral_pool, savedir):
+    hyperspectral_h5_path = find_sensor_path(shapefile=shapefile, lookup_pool=hyperspectral_pool, sensor="hyperspectral")
+    rgb_path = find_sensor_path(shapefile=shapefile, lookup_pool=rgb_pool, sensor="rgb") 
+    
+    #convert .h5 hyperspec tile if needed
+    tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"    
+    tif_path = "{}/{}".format(savedir, tif_basename)
+    
+    if not os.path.exists(tif_path):
+        tif_basename = Hyperspectral.generate_raster(h5_path = hyperspectral_h5_path, rgb_filename=rgb_path, bands="All", save_dir=savedir)
+        tif_path = "{}/{}".format(savedir, tif_basename)
     else:
-        return year_match[0]
+        sensor_path = tif_path
+        
+    return sensor_path
 
 def resize(img, height, width):
     # resize image
@@ -90,7 +79,11 @@ def resize(img, height, width):
     
     return resized
 
-def process_plot(plot_data, rgb_pool):
+def predict_trees(deepforest_model, rgb_path):
+    boxes = deepforest_model.predict_tile(rgb_path)
+    return boxes
+
+def process_plot(plot_data, rgb_pool, deepforest_model):
     """For a given NEON plot, find the correct sensor data, predict trees and associate bounding boxes with field data
     Args:
         plot_data: geopandas dataframe in a utm projection
@@ -175,11 +168,15 @@ def main(field_data, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectr
     df = gpd.read_file(field_data)
     plot_names = df.plotID.unique()
     
+    #create deepforest model
+    deepforest_model = deepforest.deepforest()
+    deepforest_model.use_release()
+    
     merged_boxes = []
     for plot in plot_names:
         #Filter data
         plot_data = df[df.plotID == plot]
-        predicted_trees = process_plot(plot_data, rgb_pool)
+        predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
         merged_boxes.append(predicted_trees)
         
     #Get sensor data

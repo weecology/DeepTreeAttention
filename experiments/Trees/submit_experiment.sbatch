@@ -13,12 +13,9 @@
 
 module load tensorflow/2.1.0
 
-export PATH=${PATH}:/home/b.weinstein/miniconda3/envs/DeepTreeAttention/bin/
-export PYTHONPATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention/lib/python3.7/site-packages/:/home/b.weinstein/DeepTreeAttention/:${PYTHONPATH}
-export LD_LIBRARY_PATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention/lib/:${LD_LIBRARY_PATH}
+export PATH=${PATH}:/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/bin/
+export PYTHONPATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/:/home/b.weinstein/DeepTreeAttention_DeepForest/:${PYTHONPATH}
+export LD_LIBRARY_PATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/:${LD_LIBRARY_PATH}
 
-cd /home/b.weinstein/DeepTreeAttention/experiments/Trees/
-
-#Generate only once
-python generate.py
+#Run using tensorflow greater than tensorflow 2.0
 python run.py
