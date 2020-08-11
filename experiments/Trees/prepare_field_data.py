@@ -18,7 +18,8 @@ def lookup_and_convert(shapefile, rgb_pool, hyperspectral_pool, savedir):
     tif_path = "{}/{}".format(savedir, tif_basename)
     
     if not os.path.exists(tif_path):
-        sensor_path = Hyperspectral.generate_raster(h5_path = hyperspectral_h5_path, rgb_filename=rgb_path, bands="All", save_dir=savedir)
+        tif_basename = Hyperspectral.generate_raster(h5_path = hyperspectral_h5_path, rgb_filename=rgb_path, bands="All", save_dir=savedir)
+        tif_path = "{}/{}".format(savedir, tif_basename)
     else:
         sensor_path = tif_path
         
