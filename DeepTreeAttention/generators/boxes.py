@@ -16,7 +16,7 @@ def resize(img, height, width):
     print("Dim is {}".format(dim))
     img = img.astype("float32")
     
-    resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
+    resized = cv2.resize(img, dim, interpolation = cv2.INTER_NEAREST)
     
     return resized
     

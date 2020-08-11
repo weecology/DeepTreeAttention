@@ -2,6 +2,7 @@
 import cv2
 import os
 import glob
+import math
 import re
 import geopandas as gpd
 
@@ -46,13 +47,33 @@ def find_hyperspectral_path(shapefile, lookup_pool):
     else:
         return year_match[0]
 
-def find_rgb_path(shapefile, lookup_pool):
-    """Find a hyperspec path based on the shapefile using NEONs schema"""
+def bounds_to_geoindex(bounds):
+    """Convert an extent into NEONs naming schema
+    Args:
+        bounds: list of top, left, bottom, right bounds, usually from geopandas.total_bounds
+    Return:
+        geoindex: str {easting}_{northing}
+    """
+    easting = min(bounds[0], bounds[2])
+    northing = min(bounds[1], bounds[3])
+    
+    easting = math.floor(easting/1000)*1000
+    northing = math.floor(northing/1000)*1000
+    
+    geoindex = "{}_{}".format(easting,northing)
+    
+    return geoindex
+    
+def find_rgb_path(bounds, lookup_pool):
+    """Find a hyperspec path based on the shapefile using NEONs schema
+    Args:
+        bounds: list of top, left, bottom, right bounds, usually from geopandas.total_bounds
+        lookup_pool: glob string to search for matching files for geoindex
+    """
+    geo_index = bounds_to_geoindex(bounds)      
     pool = glob.glob(lookup_pool, recursive=True)
-    basename = os.path.splitext(os.path.basename(shapefile))[0]        
     
     #Get file metadata from name string
-    geo_index = re.search("(\d+_\d+)_image",basename).group(1)
     year = re.search("(\d+)_",basename).group(1)
     
     match = [x for x in pool if geo_index in x]
@@ -70,7 +91,8 @@ def find_rgb_path(shapefile, lookup_pool):
 def resize(img, height, width):
     # resize image
     dim = (width, height)    
-    resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
+    img = img.astype("float32")
+    resized = cv2.resize(img, dim, interpolation = cv2.INTER_NEAREST)
     
     return resized
 
@@ -82,9 +104,8 @@ def process_plot(plot_data):
         merged_boxes: geodataframe of bounding box predictions with species labels
     """
     #DeepForest prediction
-    plot_name = plot_data.plotID.unique()[0]
     
-    rgb_sensor_path = find_rgb_path(plot_name)
+    rgb_sensor_path = find_rgb_path(plot_data.total_bounds)
     boxes = predict_trees(rgb_sensor_path)
 
     #Merge results with field data
