@@ -47,7 +47,7 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None, sensor="hyperspec
         year = re.search("(\d+)_",basename).group(1)
         year_match = [x for x in match if year in x]    
         year_match = year_match[0]
-
+    
     return year_match
 
 def lookup_and_convert(shapefile, rgb_pool, hyperspectral_pool, savedir):
