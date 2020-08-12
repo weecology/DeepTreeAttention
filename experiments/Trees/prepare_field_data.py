@@ -8,7 +8,7 @@ import numpy as np
 import shapely
 
 from DeepTreeAttention.generators.boxes import write_tfrecord
-from DeepTreeAttention.utils.paths import find_sensor_path
+from DeepTreeAttention.utils.paths import find_sensor_path, convert_h5
 from DeepTreeAttention.utils.config import parse_yaml
 
 from deepforest import deepforest
@@ -86,7 +86,7 @@ def crop_image(sensor_path, box, expand=10):
     try:
         masked_image = src.read(window=window)
     except Exception as e:
-        print("sensor path: {} failed at reading window {} with error {}".format(sensor_path, box.bounds,e))
+        raise ValueError("sensor path: {} failed at reading window {} with error {}".format(sensor_path, box.bounds,e))
         
     #Roll depth to channel last
     masked_image = np.rollaxis(masked_image, 0, 3)
@@ -97,33 +97,34 @@ def crop_image(sensor_path, box, expand=10):
     
     return masked_image
 
-def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="hyperspectral", expand=0):
+def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="hyperspectral", expand=0, hyperspectral_savedir="."):
     """Crop sensor data based on a dataframe of geopandas bounding boxes
     Args:
         merged_boxes: geopandas dataframe with bounding box geometry, plotID, and species label
         hyperspectral_pool: glob string for looking up matching sensor tiles
         expand: units in meters to add to crops to give context around deepforest box
+        hyperspectral_savedir: location to save convert .tif from .h5 files
     Returns:
         crops: list of cropped sensor data
         labels: species id labels
         box_index: unique index and plot_data length.
-    """
-    #Set pool
-    if sensor == "hyperspectral":
-        lookup_pool = hyperspectral_pool
-    elif sensor == "rgb":
-        lookup_pool = rgb_pool
-    else:
-        raise ValueError("Available sensors are 'rgb' or 'hyperspectral'")
-    
+    """    
     crops = []
     labels = []
     box_index = []
     for index, row in merged_boxes.iterrows():
         #Crop and append
         box = row["geometry"]       
-        plot_name = row["plotID"]                
-        sensor_path = find_sensor_path(bounds=box.bounds, lookup_pool=lookup_pool, sensor=sensor)        
+        plot_name = row["plotID"] 
+        
+        #get sensor data
+        if sensor == "rgb":
+            sensor_path = find_sensor_path(bounds=box.bounds, lookup_pool=rgb_pool, sensor="rgb")
+        elif sensor == "hyperspectral":
+            rgb_path = find_sensor_path(bounds=box.bounds, lookup_pool=rgb_pool, sensor="rgb")
+            hyperspectral_h5_path = find_sensor_path(bounds=box.bounds, lookup_pool=hyperspectral_pool, sensor="hyperspectral")
+            sensor_path = convert_h5(hyperspectral_h5_path, rgb_path, savedir=hyperspectral_savedir)
+        
         crop = crop_image(sensor_path=sensor_path, box=box, expand=expand)
         
         crops.append(crop)
@@ -156,7 +157,7 @@ def create_records(crops, labels, box_index, savedir, height, width, chunk_size=
     
     return filenames
     
-def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=1000, extend_box=0):
+def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=1000, extend_box=0, hyperspectral_savedir="."):
     """Prepare NEON field data into tfrecords
     Args:
         field_data: shp file with location and class of each field collected point
@@ -165,6 +166,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
         sensor: 'rgb' or 'hyperspecral' image crop
         savedir: direcory to save completed tfrecords
         extend_box: units in meters to add to the edge of a predicted box to give more context
+        hyperspectral_savedir: location to save converted .h5 to .tif
     Returns:
         tfrecords: list of created tfrecords
     """
@@ -188,7 +190,14 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
         #Filter data and process
         plot_data = df[df.plotID == plot]
         predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
-        plot_crops, plot_labels, plot_box_index = create_crops(predicted_trees, hyperspectral_pool=hyperspectral_pool, rgb_pool=rgb_pool, sensor=sensor, expand=extend_box)
+        plot_crops, plot_labels, plot_box_index = create_crops(
+            predicted_trees,
+            hyperspectral_pool=hyperspectral_pool,
+            rgb_pool=rgb_pool,
+            sensor=sensor,
+            expand=extend_box,
+            hyperspectral_savedir=hyperspectral_savedir
+        )
         
         #Append to general plot list
         crops.extend(plot_crops)
@@ -218,5 +227,6 @@ if __name__ == "__main__":
         width=config["train"]["crop_size"],        
         hyperspectral_pool=config["train"]["hyperspectral_sensor_pool"],
         rgb_pool=config["train"]["rgb_sensor_pool"],
-        extend_box=config["train"]["extend_box"]
+        extend_box=config["train"]["extend_box"],
+        hyperspectral_savedir=config["hyperspectral_tif_dir"]
     )
