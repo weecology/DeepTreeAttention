@@ -11,13 +11,13 @@
 #SBATCH --partition=gpu
 #SBATCH --gpus=1
 
-module load tensorflow/1.1.14
+module load tensorflow/1.14.0
 
-export PATH=${PATH}:/home/b.weinstein/miniconda3/envs/DeepTreeAttention/bin/
-export PYTHONPATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention/lib/python3.7/site-packages/:/home/b.weinstein/DeepTreeAttention/:${PYTHONPATH}
-export LD_LIBRARY_PATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention/lib/:${LD_LIBRARY_PATH}
+export PATH=${PATH}:/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/bin/
+export PYTHONPATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/:/home/b.weinstein/DeepTreeAttention/:${PYTHONPATH}
+export LD_LIBRARY_PATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/:${LD_LIBRARY_PATH}
 
 cd /home/b.weinstein/DeepTreeAttention/experiments/Trees/
 
 #Generate only once using DeepForest requires less than tensorflow 2.0
-python generate.py
+python prepare_field_data.py

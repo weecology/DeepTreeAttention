@@ -24,12 +24,14 @@ def generate_tfrecords(shapefile, sensor_path,
                       height=40,
                       width=40,
                       classes=20,
-                      train=True):
+                      train=True,
+                      extend_box=0):
     """Yield one instance of data with one hot labels
     Args:
         chunk_size: number of windows per tfrecord
         savedir: directory to save tfrecords
         train: training mode to include yielded labels
+        extend_box: units in meters to expand DeepForest bounding box to give crop more context
     Returns:
         filename: tfrecords path
     """
@@ -48,8 +50,9 @@ def generate_tfrecords(shapefile, sensor_path,
                 continue
             
             labels.append(row["label"])
-            
-        window=from_bounds(*row["geometry"].bounds, transform = src.transform)
+        
+        left, bottom, right, top = row["geometry"].bounds
+        window=from_bounds(left-expand, bottom-expand, right+expand, top+expand, transform=src.transform)        
         masked_image = src.read(window=window)
         
         #Roll depth to channel last

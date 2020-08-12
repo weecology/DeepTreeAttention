@@ -9,6 +9,8 @@ import shapely
 
 from DeepTreeAttention.generators.boxes import write_tfrecord
 from DeepTreeAttention.utils.paths import find_sensor_path
+from DeepTreeAttention.utils.config import parse_yaml
+
 from deepforest import deepforest
 
 def resize(img, height, width):
@@ -59,7 +61,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
         merged_boxes: geodataframe of bounding box predictions with species labels
     """
     #DeepForest prediction
-    rgb_sensor_path = find_sensor_path(bounds=plot_data.total_bounds,lookup_pool=rgb_pool, sensor="rgb")
+    rgb_sensor_path = find_sensor_path(bounds=plot_data.total_bounds, lookup_pool=rgb_pool, sensor="rgb")
     boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
 
     #Merge results with field data
@@ -92,11 +94,12 @@ def crop_image(sensor_path, box, expand=0):
     
     return masked_image
 
-def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="hyperspectral"):
+def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="hyperspectral", expand=0):
     """Crop sensor data based on a dataframe of geopandas bounding boxes
     Args:
         merged_boxes: geopandas dataframe with bounding box geometry, plotID, and species label
         hyperspectral_pool: glob string for looking up matching sensor tiles
+        expand: units in meters to add to crops to give context around deepforest box
     Returns:
         crops: list of cropped sensor data
         labels: species id labels
@@ -118,7 +121,7 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         box = row["geometry"]       
         plot_name = row["plotID"]                
         sensor_path = find_sensor_path(bounds=box.bounds, lookup_pool=lookup_pool, sensor=sensor)        
-        crop = crop_image(sensor_path, box)
+        crop = crop_image(sensor_path=sensor_path, box=box, expand=expand)
         
         crops.append(crop)
         labels.append(row["taxonID"])
@@ -150,7 +153,7 @@ def create_records(crops, labels, box_index, savedir, height, width, chunk_size=
     
     return filenames
     
-def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=1000):
+def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=1000, extend_box=0):
     """Prepare NEON field data into tfrecords
     Args:
         field_data: shp file with location and class of each field collected point
@@ -158,6 +161,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
         width: width in meters of the resized training image
         sensor: 'rgb' or 'hyperspecral' image crop
         savedir: direcory to save completed tfrecords
+        extend_box: units in meters to add to the edge of a predicted box to give more context
     Returns:
         tfrecords: list of created tfrecords
     """
@@ -181,7 +185,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
         #Filter data and process
         plot_data = df[df.plotID == plot]
         predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
-        plot_crops, plot_labels, plot_box_index = create_crops(predicted_trees, hyperspectral_pool=hyperspectral_pool, rgb_pool=rgb_pool, sensor=sensor)
+        plot_crops, plot_labels, plot_box_index = create_crops(predicted_trees, hyperspectral_pool=hyperspectral_pool, rgb_pool=rgb_pool, sensor=sensor, expand=extend_box)
         
         #Append to general plot list
         crops.extend(plot_crops)
@@ -203,4 +207,13 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
     return tfrecords
     
 if __name__ == "__main__":
-    main("data/processed/field_data.shp")
+    #Read config 
+    config = parse_yaml("../../conf/tree_config.yml")
+    main(
+        field_data=config["train"]["ground_truth_path"],
+        height=config["train"]["crop_size"],
+        width=config["train"]["crop_size"],        
+        hyperspectral_pool=config["train"]["hyperspectral_sensor_pool"],
+        rgb_pool=config["train"]["rgb_pool"],
+        extend_box=config["train"]["extend_box"]
+    )
