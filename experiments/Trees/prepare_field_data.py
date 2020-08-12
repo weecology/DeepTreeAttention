@@ -70,7 +70,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     
     return merged_boxes
 
-def crop_image(sensor_path, box, expand=0):
+def crop_image(sensor_path, box, expand=10):
     """Read sensor data and crop a bounding box
     Args:
         sensor_path: full path to sensor data
@@ -83,7 +83,10 @@ def crop_image(sensor_path, box, expand=0):
     src = rasterio.open(sensor_path)
     left, bottom, right, top = box.bounds
     window=rasterio.windows.from_bounds(left-expand, bottom-expand, right+expand, top+expand, transform=src.transform)
-    masked_image = src.read(window=window)
+    try:
+        masked_image = src.read(window=window)
+    except Exception as e:
+        print("sensor path: {} failed at reading window {} with error {}".format(sensor_path, box.bounds,e))
         
     #Roll depth to channel last
     masked_image = np.rollaxis(masked_image, 0, 3)
@@ -214,6 +217,6 @@ if __name__ == "__main__":
         height=config["train"]["crop_size"],
         width=config["train"]["crop_size"],        
         hyperspectral_pool=config["train"]["hyperspectral_sensor_pool"],
-        rgb_pool=config["train"]["rgb_pool"],
+        rgb_pool=config["train"]["rgb_sensor_pool"],
         extend_box=config["train"]["extend_box"]
     )
