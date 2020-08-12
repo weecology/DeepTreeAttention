@@ -46,6 +46,7 @@ class AttentionModel():
         self.width = self.config["train"]["crop_size"]
         self.channels = self.config["train"]["sensor_channels"]
         self.weighted_sum = self.config["train"]["weighted_sum"]
+        self.extend_box = self.config["train"]["extend_box"]
         
     def generate(self, shapefile, sensor_path, train=True, chunk_size=1000):
     
@@ -70,7 +71,8 @@ class AttentionModel():
                 savedir=savedir,
                 train=train,
                 classes=self.classes,
-                chunk_size=chunk_size
+                chunk_size=chunk_size,
+                extend_box=self.extend_box
             )
         
             return created_records
