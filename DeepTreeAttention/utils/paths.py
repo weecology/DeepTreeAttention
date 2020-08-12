@@ -50,6 +50,15 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None, sensor="hyperspec
     
     return year_match
 
+def convert_h5(hyperspectral_h5_path, rgb_path, savedir):
+    tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"    
+    tif_path = "{}/{}".format(savedir, tif_basename)
+    
+    if not os.path.exists(tif_path):
+        Hyperspectral.generate_raster(h5_path = hyperspectral_h5_path, rgb_filename=rgb_path, bands="All", save_dir=savedir)
+        
+    return tif_path
+
 def lookup_and_convert(shapefile, rgb_pool, hyperspectral_pool, savedir):
     hyperspectral_h5_path = find_sensor_path(shapefile=shapefile, lookup_pool=hyperspectral_pool, sensor="hyperspectral")
     rgb_path = find_sensor_path(shapefile=shapefile, lookup_pool=rgb_pool, sensor="rgb") 
@@ -59,9 +68,6 @@ def lookup_and_convert(shapefile, rgb_pool, hyperspectral_pool, savedir):
     tif_path = "{}/{}".format(savedir, tif_basename)
     
     if not os.path.exists(tif_path):
-        tif_basename = Hyperspectral.generate_raster(h5_path = hyperspectral_h5_path, rgb_filename=rgb_path, bands="All", save_dir=savedir)
-        tif_path = "{}/{}".format(savedir, tif_basename)
-    else:
-        sensor_path = tif_path
+        tif_path = convert_h5(hyperspectral_h5_path, rgb_path, savedir)
         
-    return sensor_path
+    return tif_path
