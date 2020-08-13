@@ -161,19 +161,18 @@ def create_records(crops, labels, box_index, savedir, height, width, chunk_size=
     
     return filenames
 
-def run(plot, df, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", extend_box=0, hyperspectral_savedir="."):
+def run(plot, df, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", extend_box=0, hyperspectral_savedir=".",saved_model=None):
     """wrapper function for dask, see main.py"""
     try:
         from deepforest import deepforest
     
         #create deepforest model
-        deepforest_model = deepforest.deepforest()
-        
-        #if too many threads check github at the same time, it thrashes, offer a small time delay to make it more palatable. 
-        sleep(randint(1, 6))
-        
-        deepforest_model.use_release()
-        
+        if saved_model is None:
+            deepforest_model = deepforest.deepforest()
+            deepforest_model.use_release()
+        else:
+            deepforest_model = deepforest.deepforest(saved_model=saved_model)
+
         #Filter data and process
         plot_data = df[df.plotID == plot]
         predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
@@ -190,7 +189,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral"
         
     return plot_crops, plot_labels, plot_box_index
 
-def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=200, extend_box=0, hyperspectral_savedir=".", n_workers=20):
+def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=200, extend_box=0, hyperspectral_savedir=".", n_workers=20, saved_model=None):
     """Prepare NEON field data into tfrecords
     Args:
         field_data: shp file with location and class of each field collected point
@@ -224,7 +223,8 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
             hyperspectral_pool=hyperspectral_pool,
             sensor=sensor,
             extend_box=extend_box,
-            hyperspectral_savedir=hyperspectral_savedir
+            hyperspectral_savedir=hyperspectral_savedir,
+            saved_model=saved_model
         )
         futures.append(future)
     
@@ -272,5 +272,6 @@ if __name__ == "__main__":
         extend_box=config["train"]["extend_box"],
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["train"]["tfrecords"],
-        n_workers=config["cpu_workers"]
+        n_workers=config["cpu_workers"],
+        saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )
