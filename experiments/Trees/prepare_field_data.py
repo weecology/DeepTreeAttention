@@ -161,24 +161,27 @@ def create_records(crops, labels, box_index, savedir, height, width, chunk_size=
 
 def run(plot, df, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", extend_box=0, hyperspectral_savedir="."):
     """wrapper function for dask, see main.py"""
-    from deepforest import deepforest
+    try:
+        from deepforest import deepforest
     
-    #create deepforest model
-    deepforest_model = deepforest.deepforest()
-    deepforest_model.use_release()
-    
-    #Filter data and process
-    plot_data = df[df.plotID == plot]
-    predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
-    plot_crops, plot_labels, plot_box_index = create_crops(
-        predicted_trees,
-        hyperspectral_pool=hyperspectral_pool,
-        rgb_pool=rgb_pool,
-        sensor=sensor,
-        expand=extend_box,
-        hyperspectral_savedir=hyperspectral_savedir
+        #create deepforest model
+        deepforest_model = deepforest.deepforest()
+        deepforest_model.use_release()
+        
+        #Filter data and process
+        plot_data = df[df.plotID == plot]
+        predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
+        plot_crops, plot_labels, plot_box_index = create_crops(
+            predicted_trees,
+            hyperspectral_pool=hyperspectral_pool,
+            rgb_pool=rgb_pool,
+            sensor=sensor,
+            expand=extend_box,
+            hyperspectral_savedir=hyperspectral_savedir
     )
-    
+    except Exception as e:
+        raise ValueError("Plot {} failed with {}".format(plot,e))
+        
     return plot_crops, plot_labels, plot_box_index
 
 def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=200, extend_box=0, hyperspectral_savedir=".", n_workers=20):
@@ -228,12 +231,13 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
         try:
             plot_crops, plot_labels, plot_box_index = x.result()
             print(plot_box_index[0])
+            
             #Append to general plot list
             crops.extend(plot_crops)
             labels.extend(plot_labels)
             box_indexes.extend(plot_box_index)            
         except Exception as e:
-            print("plot {} failed with {}".format(plot,e))
+            print("Future failed with {}".format(e))
 
     #Convert labels to numeric
     unique_labels = np.unique(labels)
