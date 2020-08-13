@@ -40,14 +40,3 @@ predict:
     hyperspectral_sensor_pool: /orange/ewhite/NeonData/**/Reflectance/*.h5  #path to sensor data regex, recursive wildcards allowed
     rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/*.tif  #path to sensor data regex, recursive wildcards allowed
     savedir: /orange/idtrees-collab/DeepTreeAttention/predictions/
-    
-class_labels:
-    0: Unknown 
-    1: ACPE   
-    2: ACRU   
-    3: BELE   
-    4: BEPAP  
-    5: FAGR   
-    6: QURU   
-    7: TSCA   
-    8: ABLO 

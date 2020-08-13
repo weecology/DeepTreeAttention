@@ -48,11 +48,19 @@ def mod(tmpdir):
     config["evaluation"] = eval_config
     config["predict"] = predict_config
     
-    
     #Replace config for testing env
     for key, value in config.items():
         for nested_key, nested_value in value.items():
             mod.config[key][nested_key] = nested_value
+    
+    #Update the inits
+    mod.height = mod.config["train"]["crop_size"]
+    mod.width = mod.config["train"]["crop_size"]
+    mod.channels = mod.config["train"]["sensor_channels"]
+    mod.weighted_sum = mod.config["train"]["weighted_sum"]
+    mod.extend_box = mod.config["train"]["extend_box"]
+    mod.classes_file = os.path.join(mod.config["train"]["tfrecords"],"class_labels.csv")
+    mod.classes = mod.config["train"]["classes"]
     
     #Create a model with input sizes
     mod.create()

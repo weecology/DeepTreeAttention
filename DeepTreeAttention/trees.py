@@ -41,15 +41,15 @@ class AttentionModel():
             self.log_dir = None
 
         #log some helpful data
-        self.classes = self.config["train"]["classes"]
         self.height = self.config["train"]["crop_size"]
         self.width = self.config["train"]["crop_size"]
         self.channels = self.config["train"]["sensor_channels"]
         self.weighted_sum = self.config["train"]["weighted_sum"]
         self.extend_box = self.config["train"]["extend_box"]
+        self.classes_file = os.path.join(self.config["train"]["tfrecords"],"class_labels.csv")
+        self.classes = self.config["train"]["classes"]
         
     def generate(self, shapefile, sensor_path, train=True, chunk_size=1000):
-    
             """Predict species class for each DeepForest bounding box
             Args:
                 shapefile: a DeepForest shapefile (see NeonCrownMaps) with a bounding box and utm projection
@@ -381,7 +381,10 @@ class AttentionModel():
         predictions = np.argmax(predictions, 1)
         
         indices = np.concatenate(indices)
-        labels = [self.config["class_labels"][x] for x in predictions]
+        
+        #Read class labels
+        labeldf = pd.read_csv(self.classes_file)
+        labels = [labeldf.loc[labeldf.index == x,"taxonID"].values[0] for x in predictions]
         results = pd.DataFrame({"label": labels, "box_index": indices})
         
         #decode results
