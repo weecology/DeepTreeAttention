@@ -159,7 +159,7 @@ def create_records(crops, labels, box_index, savedir, height, width, chunk_size=
     
     return filenames
 
-def run(rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", extend_box=0, hyperspectral_savedir="."):
+def run(df, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", extend_box=0, hyperspectral_savedir="."):
     """wrapper function for dask, see main.py"""
     from deepforest import deepforest
     
@@ -207,8 +207,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
     client = start_cluster.start(cpus=n_workers)
     futures = []
     for plot in plot_names:
-        print("Running plot {}".format(plot))
-        future = client.submit(run, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, sensor=sensor, extend_box=extend_box, hyperspectral_savedir=hyperspectral_savedir)
+        future = client.submit(run, df=df, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, sensor=sensor, extend_box=extend_box, hyperspectral_savedir=hyperspectral_savedir)
         futures.append(future)
     
     wait(futures)
@@ -219,6 +218,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
     for x in futures:
         try:
             plot_crops, plot_labels, plot_box_index = x.result()
+            print(plot_box_index[0])
             #Append to general plot list
             crops.extend(plot_crops)
             labels.extend(plot_labels)
