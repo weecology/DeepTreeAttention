@@ -13,7 +13,6 @@ from DeepTreeAttention.utils.paths import find_sensor_path, convert_h5
 from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.utils import start_cluster
 
-from deepforest import deepforest
 from distributed import wait
 
 def resize(img, height, width):
@@ -162,6 +161,8 @@ def create_records(crops, labels, box_index, savedir, height, width, chunk_size=
 
 def run(rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", extend_box=0, hyperspectral_savedir="."):
     """wrapper function for dask, see main.py"""
+    from deepforest import deepforest
+    
     #create deepforest model
     deepforest_model = deepforest.deepforest()
     deepforest_model.use_release()
@@ -211,6 +212,10 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
         futures.append(future)
     
     wait(futures)
+    
+    labels = []
+    crops = []
+    box_indexes = []
     for x in futures:
         try:
             plot_crops, plot_labels, plot_box_index = x.result()
