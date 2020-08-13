@@ -144,7 +144,7 @@ def create_records(crops, labels, box_index, savedir, height, width, chunk_size=
         chunk_labels = labels[i:i + chunk_size]
 
         #resize crops
-        resized_crops = [resize(x, height, width) for x in chunk_crops]
+        resized_crops = [resize(x, height, width).astype("int16") for x in chunk_crops]
         
         filename = "{}/field_data_{}.tfrecord".format(savedir, counter)
         write_tfrecord(filename=filename,
