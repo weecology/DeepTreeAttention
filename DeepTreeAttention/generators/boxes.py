@@ -78,7 +78,7 @@ def generate_tfrecords(shapefile, sensor_path,
             chunk_labels = None
         
         #resize crops
-        resized_crops = [resize(x, height, width) for x in chunk_crops]
+        resized_crops = [resize(x, height, width).astype("int16") for x in chunk_crops]
         
         filename = "{}/{}_{}.tfrecord".format(savedir, basename, counter)
         write_tfrecord(filename=filename,
@@ -181,11 +181,12 @@ def _train_parse_(tfrecord):
     label = tf.cast(example['label'], tf.int64)
 
     # Load image from file
-    image = tf.io.decode_raw(example['image/data'], tf.float32)
+    image = tf.io.decode_raw(example['image/data'], tf.uint16)
     image_shape = tf.stack([height, width, depth])
 
     # Reshape to known shape
     loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
+    loaded_image = tf.cast(loaded_image, dtype=tf.float32)
 
     #one hot
     one_hot_labels = tf.one_hot(label, classes)
@@ -216,11 +217,12 @@ def _train_submodel_parse_(tfrecord):
     label = tf.cast(example['label'], tf.int64)
 
     # Load image from file
-    image = tf.io.decode_raw(example['image/data'], tf.float32)
+    image = tf.io.decode_raw(example['image/data'], tf.uint16)
     image_shape = tf.stack([height, width, depth])
 
     # Reshape to known shape
     loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
+    loaded_image = tf.cast(loaded_image, dtype=tf.float32)
 
     #one hot
     one_hot_labels = tf.one_hot(label, classes)
@@ -253,11 +255,12 @@ def _predict_parse_(tfrecord):
     depth = tf.cast(example['image/depth'], tf.int64)
 
     # Load image from file
-    image = tf.io.decode_raw(example['image/data'], tf.float32)
+    image = tf.io.decode_raw(example['image/data'], tf.uint16)
     image_shape = tf.stack([height, width, depth])
 
     # Reshape to known shape
     loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
+    loaded_image = tf.cast(loaded_image, dtype=tf.float32)    
 
     return loaded_image, example['box_index']
 
