@@ -6,6 +6,7 @@ import geopandas as gpd
 import rasterio
 import numpy as np
 import shapely
+import pandas as pd
 
 from DeepTreeAttention.generators.boxes import write_tfrecord
 from DeepTreeAttention.utils.paths import find_sensor_path, convert_h5
@@ -133,7 +134,7 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         
     return crops, labels, box_index
 
-def create_records(crops, labels, box_index, savedir, height, width, chunk_size=1000):
+def create_records(crops, labels, box_index, savedir, height, width, chunk_size=200):
     #get keys and divide into chunks for a single tfrecord
     filenames = []
     counter = 0
@@ -157,7 +158,7 @@ def create_records(crops, labels, box_index, savedir, height, width, chunk_size=
     
     return filenames
     
-def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=1000, extend_box=0, hyperspectral_savedir="."):
+def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=200, extend_box=0, hyperspectral_savedir="."):
     """Prepare NEON field data into tfrecords
     Args:
         field_data: shp file with location and class of each field collected point
@@ -217,6 +218,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
         label_dict[label] = index
         
     numeric_labels = [label_dict[x] for x in labels]
+    pd.DataFrame(label_dict.items(), columns=["taxonID","index"]).to_csv("{}/class_labels.csv".format(savedir))
     
     #Write tfrecords
     tfrecords = create_records(crops, numeric_labels, box_indexes, savedir, height, width, chunk_size=chunk_size)
@@ -233,5 +235,6 @@ if __name__ == "__main__":
         hyperspectral_pool=config["train"]["hyperspectral_sensor_pool"],
         rgb_pool=config["train"]["rgb_sensor_pool"],
         extend_box=config["train"]["extend_box"],
-        hyperspectral_savedir=config["hyperspectral_tif_dir"]
+        hyperspectral_savedir=config["hyperspectral_tif_dir"],
+        savedir=config["train"]["tfrecords"]
     )
