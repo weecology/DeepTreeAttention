@@ -14,6 +14,8 @@ from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.utils import start_cluster
 
 from distributed import wait
+from random import randint
+from time import sleep
 
 def resize(img, height, width):
     # resize image
@@ -166,6 +168,10 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral"
     
         #create deepforest model
         deepforest_model = deepforest.deepforest()
+        
+        #if too many threads check github at the same time, it thrashes, offer a small time delay to make it more palatable. 
+        sleep(randint(1, 6))
+        
         deepforest_model.use_release()
         
         #Filter data and process

@@ -52,7 +52,7 @@ def generate_tfrecords(shapefile, sensor_path,
             labels.append(row["label"])
         
         left, bottom, right, top = row["geometry"].bounds
-        window=from_bounds(left-extend_box, bottom-extend_box, right+extend_box, top+extend_box, transform=src.transform)        
+        window = from_bounds(left-extend_box, bottom-extend_box, right+extend_box, top+extend_box, transform=src.transform)        
         masked_image = src.read(window=window)
         
         #Roll depth to channel last
