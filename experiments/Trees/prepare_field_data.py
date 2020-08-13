@@ -187,22 +187,27 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
     labels = []
     box_indexes = []
     for plot in plot_names:
-        #Filter data and process
-        plot_data = df[df.plotID == plot]
-        predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
-        plot_crops, plot_labels, plot_box_index = create_crops(
-            predicted_trees,
-            hyperspectral_pool=hyperspectral_pool,
-            rgb_pool=rgb_pool,
-            sensor=sensor,
-            expand=extend_box,
-            hyperspectral_savedir=hyperspectral_savedir
-        )
+        print("Running plot {}".format(plot))
         
-        #Append to general plot list
-        crops.extend(plot_crops)
-        labels.extend(plot_labels)
-        box_indexes.extend(plot_box_index)
+        try:
+            #Filter data and process
+            plot_data = df[df.plotID == plot]
+            predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
+            plot_crops, plot_labels, plot_box_index = create_crops(
+                predicted_trees,
+                hyperspectral_pool=hyperspectral_pool,
+                rgb_pool=rgb_pool,
+                sensor=sensor,
+                expand=extend_box,
+                hyperspectral_savedir=hyperspectral_savedir
+            )
+            
+            #Append to general plot list
+            crops.extend(plot_crops)
+            labels.extend(plot_labels)
+            box_indexes.extend(plot_box_index)
+        except Exception as e:
+            print("plot {} failed with {}".format(plot_name,e))
     
     #Convert labels to numeric
     unique_labels = np.unique(labels)
