@@ -1,5 +1,5 @@
 #Parallel workers
-cpu_workers: 10
+cpu_workers: 20
 
 #Intermediate location to store .h5 converted geotiff hyperspec tiles
 hyperspectral_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/

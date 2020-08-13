@@ -212,7 +212,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
     df = gpd.read_file(field_data)
     plot_names = df.plotID.unique()
     
-    client = start_cluster.start(cpus=n_workers)
+    client = start_cluster.start(cpus=n_workers, mem_size="20GB")
     futures = []
     for plot in plot_names:
         future = client.submit(
