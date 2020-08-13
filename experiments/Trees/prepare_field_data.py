@@ -11,8 +11,10 @@ import pandas as pd
 from DeepTreeAttention.generators.boxes import write_tfrecord
 from DeepTreeAttention.utils.paths import find_sensor_path, convert_h5
 from DeepTreeAttention.utils.config import parse_yaml
+from DeepTreeAttention.utils import start_cluster
 
 from deepforest import deepforest
+from distributed import wait
 
 def resize(img, height, width):
     # resize image
@@ -157,8 +159,28 @@ def create_records(crops, labels, box_index, savedir, height, width, chunk_size=
         counter +=1    
     
     return filenames
+
+def run(rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", extend_box=0, hyperspectral_savedir="."):
+    """wrapper function for dask, see main.py"""
+    #create deepforest model
+    deepforest_model = deepforest.deepforest()
+    deepforest_model.use_release()
     
-def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=200, extend_box=0, hyperspectral_savedir="."):
+    #Filter data and process
+    plot_data = df[df.plotID == plot]
+    predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
+    plot_crops, plot_labels, plot_box_index = create_crops(
+        predicted_trees,
+        hyperspectral_pool=hyperspectral_pool,
+        rgb_pool=rgb_pool,
+        sensor=sensor,
+        expand=extend_box,
+        hyperspectral_savedir=hyperspectral_savedir
+    )
+    
+    return plot_crops, plot_labels, plot_box_index
+
+def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=200, extend_box=0, hyperspectral_savedir=".", n_workers=20):
     """Prepare NEON field data into tfrecords
     Args:
         field_data: shp file with location and class of each field collected point
@@ -168,6 +190,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
         savedir: direcory to save completed tfrecords
         extend_box: units in meters to add to the edge of a predicted box to give more context
         hyperspectral_savedir: location to save converted .h5 to .tif
+        n_workers: number of dask workers
     Returns:
         tfrecords: list of created tfrecords
     """
@@ -180,36 +203,24 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
     df = gpd.read_file(field_data)
     plot_names = df.plotID.unique()
     
-    #create deepforest model
-    deepforest_model = deepforest.deepforest()
-    deepforest_model.use_release()
-    
-    crops = []
-    labels = []
-    box_indexes = []
+    client = start_cluster.start(cpus=n_workers)
+    futures = []
     for plot in plot_names:
         print("Running plot {}".format(plot))
-        
+        future = client.submit(run, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, sensor=sensor, extend_box=extend_box, hyperspectral_savedir=hyperspectral_savedir)
+        futures.append(future)
+    
+    wait(futures)
+    for x in futures:
         try:
-            #Filter data and process
-            plot_data = df[df.plotID == plot]
-            predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
-            plot_crops, plot_labels, plot_box_index = create_crops(
-                predicted_trees,
-                hyperspectral_pool=hyperspectral_pool,
-                rgb_pool=rgb_pool,
-                sensor=sensor,
-                expand=extend_box,
-                hyperspectral_savedir=hyperspectral_savedir
-            )
-            
+            plot_crops, plot_labels, plot_box_index = x.result()
             #Append to general plot list
             crops.extend(plot_crops)
             labels.extend(plot_labels)
-            box_indexes.extend(plot_box_index)
+            box_indexes.extend(plot_box_index)            
         except Exception as e:
             print("plot {} failed with {}".format(plot,e))
-    
+
     #Convert labels to numeric
     unique_labels = np.unique(labels)
     label_dict = {}
@@ -236,5 +247,6 @@ if __name__ == "__main__":
         rgb_pool=config["train"]["rgb_sensor_pool"],
         extend_box=config["train"]["extend_box"],
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
-        savedir=config["train"]["tfrecords"]
+        savedir=config["train"]["tfrecords"],
+        n_workers=config["cpu_workers"]
     )

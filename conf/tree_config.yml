@@ -5,7 +5,7 @@ cpu_workers: 10
 hyperspectral_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/
 
 train:
-    classes: 9
+    classes: 66
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     hyperspectral_sensor_pool: /orange/ewhite/NeonData/**/Reflectance/*.h5  #path to sensor data regex, recursive wildcards allowed
     rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif  #path to sensor data regex, recursive wildcards allowed
