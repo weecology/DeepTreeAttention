@@ -207,7 +207,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
             labels.extend(plot_labels)
             box_indexes.extend(plot_box_index)
         except Exception as e:
-            print("plot {} failed with {}".format(plot_name,e))
+            print("plot {} failed with {}".format(plot,e))
     
     #Convert labels to numeric
     unique_labels = np.unique(labels)
