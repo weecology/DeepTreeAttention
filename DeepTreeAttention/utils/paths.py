@@ -37,7 +37,10 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None, sensor="hyperspec
         geo_index = bounds_to_geoindex(bounds)
         match = [x for x in pool if geo_index in x]        
         match.sort()
-        year_match = match[-1]        
+        try:
+            year_match = match[-1]    
+        except Exception as e:
+            raise ValueError("No matches for {} in {}: {}".format(bounds, lookup_pool, e))
     else:
         
         #Get file metadata from name string        
@@ -46,7 +49,10 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None, sensor="hyperspec
         match = [x for x in pool if geo_index in x]        
         year = re.search("(\d+)_",basename).group(1)
         year_match = [x for x in match if year in x]    
-        year_match = year_match[0]
+        try:
+            year_match = year_match[0]
+        except Exception as e:
+            raise ValueError("No matches for {} in {}: {}".format(shapefile, lookup_pool, e))
     
     return year_match
 

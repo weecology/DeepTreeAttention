@@ -100,7 +100,10 @@ if __name__ == "__main__":
     experiment.log_metric("MacroF1",macro)
     
     print("Unique labels in ytrue {}, unique labels in y_pred {}".format(np.unique(np.argmax(y_true,1)),np.unique(np.argmax(y_pred,1))))
-    experiment.log_confusion_matrix(y_true = y_true, y_predicted = y_pred, labels=list(class_labels.values()), title="Confusion Matrix")
+    
+    #Read class labels
+    labeldf = pd.read_csv(model.classes_file)    
+    experiment.log_confusion_matrix(y_true = y_true, y_predicted = y_pred, labels=list(labeldf.taxonID.values()), title="Confusion Matrix")
     
     #Save model
     model.model.save("{}/{}.h5".format(save_dir,timestamp))
