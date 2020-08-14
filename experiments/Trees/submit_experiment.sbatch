@@ -19,5 +19,5 @@ export LD_LIBRARY_PATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention/lib/:
 
 #Run using tensorflow greater than tensorflow 2.0
 cd /home/b.weinstein/DeepTreeAttention/experiments/Trees/
-python generate.py
+#python generate.py
 python run.py
