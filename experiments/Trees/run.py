@@ -104,7 +104,7 @@ if __name__ == "__main__":
     
     #Read class labels
     labeldf = pd.read_csv(model.classes_file)    
-    experiment.log_confusion_matrix(y_true = y_true, y_predicted = y_pred, labels=list(labeldf.taxonID.values()), title="Confusion Matrix")
+    experiment.log_confusion_matrix(y_true = y_true, y_predicted = y_pred, labels=list(labeldf.taxonID.values), title="Confusion Matrix")
     
     #Save model
     model.model.save("{}/{}.h5".format(save_dir,timestamp))
