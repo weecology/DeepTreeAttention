@@ -2,11 +2,13 @@
 import cv2
 import os
 import glob
+import sys
 import geopandas as gpd
 import rasterio
 import numpy as np
 import shapely
 import pandas as pd
+import traceback
 
 from DeepTreeAttention.generators.boxes import write_tfrecord
 from DeepTreeAttention.utils.paths import find_sensor_path, convert_h5
@@ -154,7 +156,7 @@ def create_records(crops, labels, box_index, savedir, height, width, chunk_size=
                                             images=resized_crops,
                                             labels=chunk_labels,
                                             indices=chunk_index,
-                                            classes=max(labels))
+                                            classes=max(labels)+1)
         
         filenames.append(filename)
         counter +=1    
@@ -184,12 +186,13 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral"
             expand=extend_box,
             hyperspectral_savedir=hyperspectral_savedir
     )
-    except Exception as e:
-        raise ValueError("Plot {} failed with {}".format(plot,e))
+    except:
+        print("Plot {} failed".format(plot))
+        raise
         
     return plot_crops, plot_labels, plot_box_index
 
-def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=200, extend_box=0, hyperspectral_savedir=".", n_workers=20, saved_model=None):
+def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=200, extend_box=0, hyperspectral_savedir=".", n_workers=20, saved_model=None, use_dask=True):
     """Prepare NEON field data into tfrecords
     Args:
         field_data: shp file with location and class of each field collected point
@@ -212,39 +215,48 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
     df = gpd.read_file(field_data)
     plot_names = df.plotID.unique()
     
-    client = start_cluster.start(cpus=n_workers, mem_size="20GB")
-    futures = []
-    for plot in plot_names:
-        future = client.submit(
-            run,
-            plot=plot,
-            df=df,
-            rgb_pool=rgb_pool,
-            hyperspectral_pool=hyperspectral_pool,
-            sensor=sensor,
-            extend_box=extend_box,
-            hyperspectral_savedir=hyperspectral_savedir,
-            saved_model=saved_model
-        )
-        futures.append(future)
-    
-    wait(futures)
-    
     labels = []
     crops = []
-    box_indexes = []
-    for x in futures:
-        try:
-            plot_crops, plot_labels, plot_box_index = x.result()
-            print(plot_box_index[0])
+    box_indexes = []    
+    if use_dask:
+        client = start_cluster.start(cpus=n_workers, mem_size="20GB")
+        futures = []
+        for plot in plot_names:
+            future = client.submit(
+                run,
+                plot=plot,
+                df=df,
+                rgb_pool=rgb_pool,
+                hyperspectral_pool=hyperspectral_pool,
+                sensor=sensor,
+                extend_box=extend_box,
+                hyperspectral_savedir=hyperspectral_savedir,
+                saved_model=saved_model
+            )
+            futures.append(future)
+        
+        wait(futures)
+        for x in futures:
+            try:
+                plot_crops, plot_labels, plot_box_index = x.result()
+                print(plot_box_index[0])
+                
+                #Append to general plot list
+                crops.extend(plot_crops)
+                labels.extend(plot_labels)
+                box_indexes.extend(plot_box_index)            
+            except Exception as e:
+                print("Future failed with {}".format(e))        
+    else:
+        for plot in plot_names:
+            plot_crops, plot_labels, plot_box_index = run(plot=plot, df=df, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, 
+               sensor="hyperspectral", extend_box=0, hyperspectral_savedir=hyperspectral_savedir, saved_model=saved_model) 
             
             #Append to general plot list
             crops.extend(plot_crops)
             labels.extend(plot_labels)
-            box_indexes.extend(plot_box_index)            
-        except Exception as e:
-            print("Future failed with {}".format(e))
-
+            box_indexes.extend(plot_box_index)  
+            
     #Convert labels to numeric
     unique_labels = np.unique(labels)
     label_dict = {}
@@ -253,7 +265,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
         label_dict[label] = index
         
     numeric_labels = [label_dict[x] for x in labels]
-    pd.DataFrame(label_dict.items(), columns=["taxonID","index"]).to_csv("{}/class_labels.csv".format(savedir))
+    pd.DataFrame(label_dict.items(), columns=["taxonID","label"]).to_csv("{}/class_labels.csv".format(savedir))
     
     #Write tfrecords
     tfrecords = create_records(crops, numeric_labels, box_indexes, savedir, height, width, chunk_size=chunk_size)
@@ -262,7 +274,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
     
 if __name__ == "__main__":
     #Read config 
-    config = parse_yaml("../../conf/tree_config.yml")
+    config = parse_yaml("conf/tree_config.yml")
     main(
         field_data=config["train"]["ground_truth_path"],
         height=config["train"]["crop_size"],
