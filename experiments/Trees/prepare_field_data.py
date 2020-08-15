@@ -273,8 +273,9 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
     return tfrecords
     
 if __name__ == "__main__":
-    #Read config 
-    config = parse_yaml("conf/tree_config.yml")
+    #Read config from top level dir
+    ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    config = parse_yaml("{}/conf/tree_config.yml".format(ROOT))
     main(
         field_data=config["train"]["ground_truth_path"],
         height=config["train"]["crop_size"],
