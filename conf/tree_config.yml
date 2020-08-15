@@ -18,6 +18,7 @@ train:
     gpu: 1
     batch_size: 2
     weighted_sum: True
+    weighted_sum: False
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
     steps:
     shuffle: True
