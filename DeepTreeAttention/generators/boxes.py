@@ -14,7 +14,7 @@ def resize(img, height, width):
     # resize image
     dim = (width, height)   
     img = img.astype("float32")
-    resized = cv2.resize(img, dim, interpolation = cv2.INTER_NEAREST)
+    resized = cv2.resize(img, dim, interpolation = cv2.INTER_LINEAR)
     
     return resized
     

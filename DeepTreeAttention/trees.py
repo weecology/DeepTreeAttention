@@ -41,6 +41,7 @@ class AttentionModel():
             self.log_dir = None
 
         #log some helpful data
+        self.train_records = glob.glob(os.path.join(self.config["train"]["tfrecords"], "*.tfrecord"))        
         self.height = self.config["train"]["crop_size"]
         self.width = self.config["train"]["crop_size"]
         self.channels = self.config["train"]["sensor_channels"]
@@ -239,8 +240,6 @@ class AttentionModel():
             Args:
                 validation_split: True -> split tfrecords into train test. This overrides the evaluation config!
             """
-        self.train_records = glob.glob(
-            os.path.join(self.config["train"]["tfrecords"], "*.tfrecord"))
 
         if validation_split:
             print("Splitting training set into train-test")
