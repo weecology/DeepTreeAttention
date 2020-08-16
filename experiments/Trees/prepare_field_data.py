@@ -9,6 +9,7 @@ import numpy as np
 import shapely
 import pandas as pd
 import traceback
+from matplotlib import pyplot
 
 from DeepTreeAttention.generators.boxes import write_tfrecord
 from DeepTreeAttention.utils.paths import find_sensor_path, convert_h5
@@ -35,16 +36,25 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=10):
         bounds: utm extent given by geopandas.total_bounds
         expand: numeric meters to add to edges to reduce edge effects
         """
+    #DeepForest is trained on 400m crops, easiest to mantain this approximate size centered on points
     left, bottom, right, top = bounds
+    expand_width = (40 - (right - left))/2
+    left = left - expand_width
+    right = right + expand_width
+    
+    expand_height = (40 - (top - bottom))/2 
+    bottom = bottom - expand_height
+    top = top + expand_height 
+    
     src = rasterio.open(rgb_path)
     pixelSizeX, pixelSizeY  = src.res    
-    img = src.read(window=rasterio.windows.from_bounds(left-expand, bottom-expand, right+expand, top+expand, transform=src.transform))
+    img = src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform))
     
     #roll to bgr channel order, bgr
     img = np.rollaxis(img, 0,3)
     img = img[:,:,::-1]
     
-    boxes = deepforest_model.predict_tile(numpy_image=img, patch_overlap=0.1)
+    boxes = deepforest_model.predict_image(numpy_image = img, return_plot=False)
 
     #subtract origin. Recall that numpy origin is top left! Not bottom left.
     boxes["xmin"] = (boxes["xmin"] *pixelSizeX) + left
@@ -70,13 +80,13 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     rgb_sensor_path = find_sensor_path(bounds=plot_data.total_bounds, lookup_pool=rgb_pool, sensor="rgb")
     boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
 
-    #Merge results with field data
+    #Merge results with field data, buffer on edge 
     merged_boxes = gpd.sjoin(boxes, plot_data)
     merged_boxes = merged_boxes.drop(columns=["xmin","xmax","ymin","ymax"])
     
     return merged_boxes
 
-def crop_image(sensor_path, box, expand=10):
+def crop_image(sensor_path, box, expand=0):
     """Read sensor data and crop a bounding box
     Args:
         sensor_path: full path to sensor data
@@ -141,14 +151,18 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
 
 def create_records(crops, labels, box_index, savedir, height, width, chunk_size=200):
     #get keys and divide into chunks for a single tfrecord
+    #resize crops
+    for x in crops:
+        pyplot.imshow(x)
+        pyplot.show()
+        
     filenames = []
     counter = 0
     for i in range(0, len(crops)+1, chunk_size):
         chunk_crops = crops[i:i + chunk_size]
         chunk_index = box_index[i:i + chunk_size]
         chunk_labels = labels[i:i + chunk_size]
-
-        #resize crops
+            
         resized_crops = [resize(x, height, width).astype("int16") for x in chunk_crops]
         
         filename = "{}/field_data_{}.tfrecord".format(savedir, counter)
@@ -250,7 +264,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
     else:
         for plot in plot_names:
             plot_crops, plot_labels, plot_box_index = run(plot=plot, df=df, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, 
-               sensor="hyperspectral", extend_box=0, hyperspectral_savedir=hyperspectral_savedir, saved_model=saved_model) 
+               sensor=sensor, extend_box=extend_box, hyperspectral_savedir=hyperspectral_savedir, saved_model=saved_model) 
             
             #Append to general plot list
             crops.extend(plot_crops)

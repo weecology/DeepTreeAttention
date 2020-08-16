@@ -14,6 +14,7 @@ from tensorflow.keras import metrics as keras_metrics
 #random label predictions just for testing
 test_predictions = "data/raw/2019_BART_5_320000_4881000_image.shp"
 
+test_field_data = "data/processed/field_data_01.tfrecord"
 #Use a small rgb crop as a example tile
 test_sensor_tile = "data/raw/2019_BART_5_320000_4881000_image_crop.tif"
 
@@ -75,8 +76,8 @@ def tfrecords(mod, tmpdir):
 def test_generate(mod):
     created_records = mod.generate(shapefile=test_predictions, sensor_path=test_sensor_tile, train=True, chunk_size=100)  
     assert all([os.path.exists(x) for x in created_records])
-    
-def test_split_data(mod, tfrecords):
+
+def test_split_data(mod):
     #Create class
     mod.read_data(validation_split=True)
     
