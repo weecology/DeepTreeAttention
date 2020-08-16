@@ -150,12 +150,7 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
     return crops, labels, box_index
 
 def create_records(crops, labels, box_index, savedir, height, width, chunk_size=200):
-    #get keys and divide into chunks for a single tfrecord
-    #resize crops
-    for x in crops:
-        pyplot.imshow(x)
-        pyplot.show()
-        
+    #get keys and divide into chunks for a single tfrecor
     filenames = []
     counter = 0
     for i in range(0, len(crops)+1, chunk_size):
@@ -294,6 +289,7 @@ if __name__ == "__main__":
         field_data=config["train"]["ground_truth_path"],
         height=config["train"]["crop_size"],
         width=config["train"]["crop_size"],        
+        sensor="hyperspectral",
         hyperspectral_pool=config["train"]["hyperspectral_sensor_pool"],
         rgb_pool=config["train"]["rgb_sensor_pool"],
         extend_box=config["train"]["extend_box"],
