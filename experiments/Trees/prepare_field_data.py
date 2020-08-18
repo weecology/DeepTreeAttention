@@ -270,7 +270,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
      
     
     if shuffle:
-        z = zip(crops, box_indexes, labels)
+        z = list(zip(crops, box_indexes, labels))
         random.shuffle(z)
         crops, box_indexes, labels = zip(*z)
                     

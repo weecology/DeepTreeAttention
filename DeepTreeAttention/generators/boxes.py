@@ -80,11 +80,11 @@ def generate_tfrecords(shapefile, sensor_path,
     #shuffle before writing to help with validation data split
     if shuffle:
         if train:
-            z = zip(crops, indices, labels)
+            z = list(zip(crops, indices, labels))
             random.shuffle(z)
             crops, indices, labels = zip(*z)
         else:
-            z = zip(crops, indices)
+            z = list(zip(crops, indices))
             random.shuffle(z)
             crops, indices = zip(*z)            
         
