@@ -41,7 +41,6 @@ class AttentionModel():
             self.log_dir = None
 
         #log some helpful data
-        self.train_records = glob.glob(os.path.join(self.config["train"]["tfrecords"], "*.tfrecord"))        
         self.height = self.config["train"]["crop_size"]
         self.width = self.config["train"]["crop_size"]
         self.channels = self.config["train"]["sensor_channels"]
@@ -240,6 +239,7 @@ class AttentionModel():
             Args:
                 validation_split: True -> split tfrecords into train test. This overrides the evaluation config!
             """
+        self.train_records = glob.glob(os.path.join(self.config["train"]["tfrecords"], "*.tfrecord"))        
 
         if validation_split:
             print("Splitting training set into train-test")
@@ -281,10 +281,18 @@ class AttentionModel():
                                             mode=mode,
                                             cores=self.config["cpu_workers"])
 
-    def train(self, class_weight=None, submodel=None):
-        """Train a model"""
-        callback_list = callbacks.create(self.log_dir)
-        
+    def train(self, experiment=None, class_weight=None, submodel=None):
+        """Train a model with callbacks"""
+
+        if self.val_split is None:
+            print("Cannot run callbacks without validation data, skipping...")
+        elif experiment is None:
+            print("Cannot run callbacks without comet experiment, skipping...")      
+            callback_list = None
+        else:
+            labeldf = pd.read_csv(self.classes_file)                
+            callback_list = callbacks.create(log_dir=self.log_dir, experiment=experiment, validation_data=self.val_split, label_names=list(labeldf.taxonID.values))
+
         if submodel == "spatial":
             #The spatial model is very shallow compared to spectral, train for longer
             self.spatial_model.fit(self.train_split,

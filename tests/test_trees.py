@@ -1,6 +1,11 @@
-#Test main tree module
-import pytest
+#Test main tree module, only run comet experiment locally to debug callbacks
 import os
+
+if os.getenv("TRAVIS") is not True:
+    from comet_ml import Experiment 
+    experiment = Experiment(project_name="neontrees", workspace="bw4sz")
+
+import pytest
 import rasterio
 import numpy as np
 import tensorflow as tf
@@ -12,7 +17,7 @@ from matplotlib.pyplot import imshow
 from tensorflow.keras import metrics as keras_metrics
 
 #random label predictions just for testing
-test_predictions = "data/raw/2019_BART_5_320000_4881000_image.shp"
+test_predictions = "data/raw/2019_BART_5_320000_4881000_image_edited.shp"
 
 test_field_data = "data/processed/field_data_01.tfrecord"
 #Use a small rgb crop as a example tile
@@ -20,7 +25,6 @@ test_sensor_tile = "data/raw/2019_BART_5_320000_4881000_image_crop.tif"
 
 @pytest.fixture()
 def mod(tmpdir):
-    
     mod = trees.AttentionModel(config="conf/tree_config.yml")   
     
     train_dir = tmpdir.mkdir("train")
@@ -33,9 +37,11 @@ def mod(tmpdir):
     train_config["epochs"] = 1
     train_config["steps"] = 2
     train_config["gpu"] = 1
-    train_config["crop_size"] = 20
+    train_config["crop_size"] = 100
     train_config["sensor_channels"] = 3
-    train_config["shuffle"] = False
+    train_config["shuffle"] = True
+    train_config["weighted_sum"] = False
+    train_config["classes"] = 2
         
     #evaluation
     eval_config = { }
@@ -77,7 +83,7 @@ def test_generate(mod):
     created_records = mod.generate(shapefile=test_predictions, sensor_path=test_sensor_tile, train=True, chunk_size=100)  
     assert all([os.path.exists(x) for x in created_records])
 
-def test_split_data(mod):
+def test_split_data(mod, tfrecords):
     #Create class
     mod.read_data(validation_split=True)
     
@@ -155,3 +161,11 @@ def test_evaluate(mod, tfrecords):
         metric_dict[mod.model.metrics_names[index]] = value
     
     assert method1_eval_accuracy == metric_dict["acc"]
+
+@pytest.mark.skipif(os.getenv("TRAVIS") is True, reason="Cannot load comet on TRAVIS")
+def test_train_callbacks(tfrecords, mod):
+    mod.read_data(validation_split=True)
+    mod.train(experiment=experiment)
+    
+
+    
