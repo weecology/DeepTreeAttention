@@ -25,7 +25,7 @@ def plot_prediction(image, label, prediction):
         plot_image = image[:,:,[11, 55, 113]]
         for band in np.arange(plot_image.shape[2]):
             plot_image[:,:,band] = normalize(plot_image[:,:,band])
-            plot.astype("float")
+            plot_image.astype("float")
     else:
         plot_image = image.astype(int)
                 
