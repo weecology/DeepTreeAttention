@@ -79,6 +79,11 @@ def tfrecords(mod, tmpdir):
     created_records = mod.generate(shapefile=test_predictions, sensor_path=test_sensor_tile, train=True, chunk_size=100)    
     return created_records[0:2]
 
+@pytest.fixture()
+def field_tfrecords(mod, tmpdir):
+    created_records = glob.glob("data/processed/*.tfrecord")
+    return created_records[0:2]
+
 def test_generate(mod):
     created_records = mod.generate(shapefile=test_predictions, sensor_path=test_sensor_tile, train=True, chunk_size=100)  
     assert all([os.path.exists(x) for x in created_records])
