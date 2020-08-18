@@ -2,20 +2,27 @@
 #From https://gist.github.com/jakevdp/91077b0cae40f8f8244a
 import matplotlib.pyplot as plt
 import numpy as np
+from skimage import exposure
 
-def plot_prediction(image, label, prediction):
+def plot_prediction(image, label, prediction, ls_pct=5):
+    """Plot an image with labels, optionally create a three band composite
+    Args:
+        image: a rgb or multiband image
+        label: true class
+        prediction: predicted class
+        ls_pct: linear stretch of three band
+    """
     fig = plt.figure()    
     ax = fig.add_subplot(111)
     
     #check if hyperspec and create three band false color.
     if image.shape[2] > 3:
-        print("Original image shape is {}".format(image.shape))
-        image = image[:,:,[11, 55, 113]]
-        image = (image/image.max()) * 255
-        print("Final image shape is {}".format(image.shape))
-        
+        image = image[:,:,[11, 55, 113]]        
+        pLow, pHigh = np.percentile(image[~np.isnan(image)], (ls_pct,100-ls_pct))
+        image = exposure.rescale_intensity(image, in_range=(pLow,pHigh))
+                
     ax.imshow(image.astype(int))
-    ax.set_title("T: {}, P: {} ".format(label, prediction))
+    ax.set_title("True: {}, Predicted: {} ".format(label, prediction))
     
     return fig
 
