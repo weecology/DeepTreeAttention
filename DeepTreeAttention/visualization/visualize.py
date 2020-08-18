@@ -23,7 +23,7 @@ def plot_prediction(image, label, prediction):
     #check if hyperspec and create three band false color.
     if image.shape[2] > 3:
         plot_image = image[:,:,[11, 55, 113]]
-        for pixel in np.arange(plot_image.shape[2]):
+        for band in np.arange(plot_image.shape[2]):
             plot_image[:,:,band] = normalize(plot_image[:,:,band])
             plot.astype("float")
     else:
