@@ -52,11 +52,19 @@ class ImageCallback(Callback):
         images = []
         y_pred = []
         y_true = []
-        for image, label in self.dataset.take(2):
-            pred = self.model.predict(image)
-            images.append(image)
-            y_pred.append(pred)
-            y_true.append(label)
+        
+        #fill until there is atleast 20 images
+        limit = 20
+        num_images = 0 
+        for image, label in self.dataset:
+            if num_images < limit:
+                pred = self.model.predict(image)
+                images.append(image)
+                y_pred.append(pred)
+                y_true.append(label)
+                num_images+=image.shape[0]
+            else:
+                break
         
         images = np.vstack(images)        
         y_true = np.vstack(y_true)
