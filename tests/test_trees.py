@@ -1,5 +1,6 @@
 #Test main tree module, only run comet experiment locally to debug callbacks
 import os
+import glob
 
 if os.getenv("TRAVIS") is not True:
     from comet_ml import Experiment 
@@ -77,11 +78,6 @@ def mod(tmpdir):
 @pytest.fixture()
 def tfrecords(mod, tmpdir):
     created_records = mod.generate(shapefile=test_predictions, sensor_path=test_sensor_tile, train=True, chunk_size=100)    
-    return created_records[0:2]
-
-@pytest.fixture()
-def field_tfrecords(mod, tmpdir):
-    created_records = glob.glob("data/processed/*.tfrecord")
     return created_records[0:2]
 
 def test_generate(mod):
@@ -171,6 +167,16 @@ def test_evaluate(mod, tfrecords):
 def test_train_callbacks(tfrecords, mod):
     mod.read_data(validation_split=True)
     mod.train(experiment=experiment)
-    
+
+@pytest.mark.skipif(os.getenv("TRAVIS") is True, reason="Cannot load comet on TRAVIS")
+def test_train_field_callbacks(mod):
+    mod.config["train"]["tfrecords"] = "data/processed/"
+    mod.height = 20
+    mod.width = 20
+    mod.channels = 369
+    mod.create()
+    mod.read_data(validation_split=True)
+    mod.classes_file = "data/processed/class_labels.csv"
+    mod.train(experiment=experiment)
 
     
