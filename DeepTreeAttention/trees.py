@@ -240,7 +240,10 @@ class AttentionModel():
             Args:
                 validation_split: True -> split tfrecords into train test. This overrides the evaluation config!
             """
-        self.train_records = glob.glob(os.path.join(self.config["train"]["tfrecords"], "*.tfrecord"))        
+        self.train_records = glob.glob(os.path.join(self.config["train"]["tfrecords"], "*.tfrecord"))   
+        
+        if len(self.train_records) == 0:
+            raise IOError("Cannot find .tfrecords at {}".format(self.config["train"]["tfrecords"]))
 
         if validation_split:
             print("Splitting training set into train-test")
@@ -287,6 +290,7 @@ class AttentionModel():
 
         if self.val_split is None:
             print("Cannot run callbacks without validation data, skipping...")
+            callback_list = None            
         elif experiment is None:
             print("Cannot run callbacks without comet experiment, skipping...")      
             callback_list = None

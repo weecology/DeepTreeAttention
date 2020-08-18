@@ -4,7 +4,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from skimage import exposure
 
-def plot_prediction(image, label, prediction, ls_pct=2):
+def normalize(array):
+    """Normalizes numpy arrays into scale 0.0 - 1.0"""
+    array_min, array_max = array.min(), array.max()
+    return ((array - array_min)/(array_max - array_min))
+
+def plot_prediction(image, label, prediction):
     """Plot an image with labels, optionally create a three band composite
     Args:
         image: a rgb or multiband image
@@ -17,14 +22,14 @@ def plot_prediction(image, label, prediction, ls_pct=2):
     
     #check if hyperspec and create three band false color.
     if image.shape[2] > 3:
-        image = image[:,:,[11, 55, 113]]
-        pLow, pHigh = np.percentile(image[~np.isnan(image)], (ls_pct,100-ls_pct))
-        image = exposure.rescale_intensity(image, in_range=(pLow,pHigh))
-        image = image.astype(int) * 255
+        plot_image = image[:,:,[11, 55, 113]]
+        for pixel in np.arange(plot_image.shape[2]):
+            plot_image[:,:,band] = normalize(plot_image[:,:,band])
+            plot.astype("float")
     else:
-        image = image.astype(int)
+        plot_image = image.astype(int)
                 
-    ax.imshow(image)
+    ax.imshow(plot_image)
     ax.set_title("True: {}, Predicted: {} ".format(label, prediction))
     
     return fig
