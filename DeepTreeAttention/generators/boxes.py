@@ -14,7 +14,7 @@ def resize(img, height, width):
     # resize image
     dim = (width, height)   
     img = img.astype("float32")
-    resized = cv2.resize(img, dim, interpolation = cv2.INTER_LINEAR)
+    resized = cv2.resize(img, dim, interpolation = cv2.INTER_NEAREST)
     
     return resized
     
@@ -64,6 +64,16 @@ def generate_tfrecords(shapefile, sensor_path,
         
         crops.append(masked_image)
         indices.append(row["box_index"])
+
+    #Convert labels to numeric
+    unique_labels = np.unique(labels)
+    label_dict = {}
+    
+    for index, label in enumerate(unique_labels):
+        label_dict[label] = index
+        
+    numeric_labels = [label_dict[x] for x in labels]
+    pd.DataFrame(label_dict.items(), columns=["taxonID","label"]).to_csv("{}/class_labels.csv".format(savedir))
         
     #get keys and divide into chunks for a single tfrecord
     filenames = []
@@ -73,7 +83,7 @@ def generate_tfrecords(shapefile, sensor_path,
         chunk_index = indices[i:i + chunk_size]
         
         if train:
-            chunk_labels = labels[i:i + chunk_size]
+            chunk_labels = numeric_labels[i:i + chunk_size]
         else:
             chunk_labels = None
         
@@ -287,7 +297,7 @@ def tf_dataset(tfrecords, batch_size=2, height=20, width=20, shuffle=True, mode=
     
     if mode == "train":
         dataset = dataset.map(_train_parse_, num_parallel_calls=cores)
-        dataset = dataset.shuffle(buffer_size=100)                
+        dataset = dataset.shuffle(buffer_size=batch_size * 5)                
         dataset = dataset.batch(batch_size=batch_size)
         
     elif mode=="predict":
@@ -296,7 +306,7 @@ def tf_dataset(tfrecords, batch_size=2, height=20, width=20, shuffle=True, mode=
         
     elif mode=="submodel":
         dataset = dataset.map(create_tfrecords._train_submodel_parse_, num_parallel_calls=cores)
-        dataset = dataset.shuffle(buffer_size=100)                
+        dataset = dataset.shuffle(buffer_size=batch_size *5)                
         dataset = dataset.batch(batch_size=batch_size)
     else:
         raise ValueError("invalid mode, please use train, predict or submodel: {}".format(mode))
