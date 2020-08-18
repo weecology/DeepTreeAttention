@@ -72,7 +72,8 @@ class AttentionModel():
                 train=train,
                 classes=self.classes,
                 chunk_size=chunk_size,
-                extend_box=self.extend_box
+                extend_box=self.extend_box,
+                shuffle=True
             )
         
             return created_records

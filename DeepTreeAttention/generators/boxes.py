@@ -4,6 +4,7 @@ import numpy as np
 import os
 import pandas as pd
 import rasterio
+import random
 import tensorflow as tf
 import cv2
 
@@ -25,7 +26,8 @@ def generate_tfrecords(shapefile, sensor_path,
                       width=40,
                       classes=20,
                       train=True,
-                      extend_box=0):
+                      extend_box=0,
+                      shuffle=True):
     """Yield one instance of data with one hot labels
     Args:
         chunk_size: number of windows per tfrecord
@@ -74,6 +76,17 @@ def generate_tfrecords(shapefile, sensor_path,
         
     numeric_labels = [label_dict[x] for x in labels]
     pd.DataFrame(label_dict.items(), columns=["taxonID","label"]).to_csv("{}/class_labels.csv".format(savedir))
+    
+    #shuffle before writing to help with validation data split
+    if shuffle:
+        if train:
+            z = zip(crops, indices, labels)
+            random.shuffle(z)
+            crops, indices, labels = zip(*z)
+        else:
+            z = zip(crops, indices)
+            random.shuffle(z)
+            crops, indices = zip(*z)            
         
     #get keys and divide into chunks for a single tfrecord
     filenames = []
