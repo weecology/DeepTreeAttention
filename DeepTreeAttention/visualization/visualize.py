@@ -6,6 +6,11 @@ import numpy as np
 def plot_prediction(image, label, prediction):
     fig = plt.figure()    
     ax = fig.add_subplot(111)
+    
+    #check if hyperspec and create three band false color.
+    if image.shape[2] > 3:
+        image = image[:,:,[11, 55, 113]]
+        
     ax.imshow(image.astype(int))
     ax.set_title("T: {}, P: {} ".format(label, prediction))
     
