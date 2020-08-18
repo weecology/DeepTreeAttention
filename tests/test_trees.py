@@ -2,7 +2,8 @@
 import os
 import glob
 
-if os.getenv("TRAVIS") is not True:
+is_travis = 'TRAVIS' in os.environ
+if not is_travis:
     from comet_ml import Experiment 
     experiment = Experiment(project_name="neontrees", workspace="bw4sz")
 
