@@ -7,7 +7,7 @@ def plot_prediction(image, label, prediction):
     fig = plt.figure()    
     ax = fig.add_subplot(111)
     ax.imshow(image.astype(int))
-    plt.title("T: {}, P: {} ".format(label, prediction))
+    ax.set_title("T: {}, P: {} ".format(label, prediction))
     
     return ax
 
