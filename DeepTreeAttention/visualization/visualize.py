@@ -9,8 +9,10 @@ def plot_prediction(image, label, prediction):
     
     #check if hyperspec and create three band false color.
     if image.shape[2] > 3:
+        print("Original image shape is {}".format(image.shape))
         image = image[:,:,[11, 55, 113]]
         image = (image/image.max()) * 255
+        print("Final image shape is {}".format(image.shape))
         
     ax.imshow(image.astype(int))
     ax.set_title("T: {}, P: {} ".format(label, prediction))
