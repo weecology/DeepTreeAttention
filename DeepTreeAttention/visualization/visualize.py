@@ -20,7 +20,6 @@ def plot_prediction(image, label, prediction, ls_pct=5):
         image = image[:,:,[11, 55, 113]]        
         pLow, pHigh = np.percentile(image[~np.isnan(image)], (ls_pct,100-ls_pct))
         image = exposure.rescale_intensity(image, in_range=(pLow,pHigh))
-        image = image * 255 
                 
     ax.imshow(image)
     ax.set_title("True: {}, Predicted: {} ".format(label, prediction))
