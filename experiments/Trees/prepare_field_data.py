@@ -5,6 +5,7 @@ import glob
 import sys
 import geopandas as gpd
 import rasterio
+import random
 import numpy as np
 import shapely
 import pandas as pd
@@ -201,7 +202,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral"
         
     return plot_crops, plot_labels, plot_box_index
 
-def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=200, extend_box=0, hyperspectral_savedir=".", n_workers=20, saved_model=None, use_dask=True):
+def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=200, extend_box=0, hyperspectral_savedir=".", n_workers=20, saved_model=None, use_dask=True, shuffle=True):
     """Prepare NEON field data into tfrecords
     Args:
         field_data: shp file with location and class of each field collected point
@@ -212,6 +213,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
         extend_box: units in meters to add to the edge of a predicted box to give more context
         hyperspectral_savedir: location to save converted .h5 to .tif
         n_workers: number of dask workers
+        shuffle: shuffle lists before writing
     Returns:
         tfrecords: list of created tfrecords
     """
@@ -265,7 +267,13 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
             crops.extend(plot_crops)
             labels.extend(plot_labels)
             box_indexes.extend(plot_box_index)  
-            
+     
+    
+    if shuffle:
+        z = zip(crops, box_indexes, labels)
+        random.shuffle(z)
+        crops, box_indexes, labels = zip(*z)
+                    
     #Convert labels to numeric
     unique_labels = np.unique(labels)
     label_dict = {}
