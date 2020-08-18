@@ -22,7 +22,7 @@ def plot_prediction(image, label, prediction, ls_pct=5):
         image = exposure.rescale_intensity(image, in_range=(pLow,pHigh))
         image = image * 255 
                 
-    ax.imshow(image.astype(int))
+    ax.imshow(image)
     ax.set_title("True: {}, Predicted: {} ".format(label, prediction))
     
     return fig
