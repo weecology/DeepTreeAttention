@@ -70,8 +70,8 @@ class ImageCallback(Callback):
          
         counter =0                  
         for label, prediction, image in zip(true_taxonID, pred_taxonID, images):
-            visualize.plot_prediction(image=image, prediction=prediction,label=label)
-            self.experiment.log_image(name="{}_{}".format(true_taxonID, counter), image_data=image)
+            figure = visualize.plot_prediction(image=image, prediction=prediction,label=label)
+            self.experiment.log_image(name="{}_{}".format(true_taxonID, counter), image_data=figure)
             counter+=1
     
 def create(experiment, validation_data, log_dir=None, label_names=None):
