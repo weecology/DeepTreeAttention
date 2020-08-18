@@ -45,7 +45,7 @@ class ImageCallback(Callback):
         self.dataset = dataset
         self.label_names = label_names
 
-    def on_epoch_end(self, epoch, logs={}):
+    def on_train_end(self, epoch, logs={}):
         """Plot sample images with labels annotated"""
         counter=0
         
