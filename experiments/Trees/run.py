@@ -80,7 +80,7 @@ if __name__ == "__main__":
     #Train full model
     experiment.log_parameter("Class Weighted", True)
     model.read_data(validation_split=True)
-    model.train(class_weight=class_weight)
+    model.train(class_weight=class_weight, experiment=experiment)
     
     #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
     if model.config["train"]["weighted_sum"]:

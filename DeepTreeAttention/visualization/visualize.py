@@ -9,7 +9,7 @@ def plot_prediction(image, label, prediction):
     ax.imshow(image.astype(int))
     ax.set_title("T: {}, P: {} ".format(label, prediction))
     
-    return ax
+    return fig
 
 def create_raster(results):
     """Reshape a set of predictions from DeepTreeAttention.predict into a raster image"""
