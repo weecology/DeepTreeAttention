@@ -85,6 +85,10 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     merged_boxes = gpd.sjoin(boxes, plot_data)
     merged_boxes = merged_boxes.drop(columns=["xmin","xmax","ymin","ymax"])
     
+    #If no remaining boxes yield error
+    if merged_boxes.empty:
+        raise ValueError("No matching deepforest boxes for {}".format(plot_data.head()))
+    
     return merged_boxes
 
 def crop_image(sensor_path, box, expand=0):
@@ -266,8 +270,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
             #Append to general plot list
             crops.extend(plot_crops)
             labels.extend(plot_labels)
-            box_indexes.extend(plot_box_index)  
-     
+            box_indexes.extend(plot_box_index)
     
     if shuffle:
         z = list(zip(crops, box_indexes, labels))
