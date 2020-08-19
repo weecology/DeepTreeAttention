@@ -7,7 +7,7 @@ hyperspectral_sensor_pool: /orange/ewhite/NeonData/**/Reflectance/*.h5  #path to
 rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif  #path to sensor data regex, recursive wildcards allowed
 
 train:
-    classes: 75
+    classes: 74
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/train_data.shp  #path to ground truth class shapefile   
     crop_size: 20
@@ -30,7 +30,7 @@ callbacks:
 #All the above parameters apply to evaluation except for paths, leave blank to ignore.
 evaluation:
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/
-    ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/train_data.shp
+    ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/test_data.shp
     steps:
 
 predict:
