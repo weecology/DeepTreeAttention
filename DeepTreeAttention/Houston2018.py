@@ -255,7 +255,7 @@ class AttentionModel():
     def train(self, class_weight=None, submodel=None):
         """Train a model"""
 
-        callback_list = callbacks.create(self.log_dir)
+        callback_list = callbacks.create(self.log_dir, validation_data=self.val_split)
 
         if submodel == "spatial":
             #The spatial model is very shallow compared to spectral, train for longer

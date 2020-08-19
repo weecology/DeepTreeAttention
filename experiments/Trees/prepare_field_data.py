@@ -296,16 +296,33 @@ if __name__ == "__main__":
     #Read config from top level dir
     ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     config = parse_yaml("{}/conf/tree_config.yml".format(ROOT))
+    
+    #train data
     main(
         field_data=config["train"]["ground_truth_path"],
         height=config["train"]["crop_size"],
         width=config["train"]["crop_size"],        
         sensor="hyperspectral",
-        hyperspectral_pool=config["train"]["hyperspectral_sensor_pool"],
-        rgb_pool=config["train"]["rgb_sensor_pool"],
+        hyperspectral_pool=config["hyperspectral_sensor_pool"],
+        rgb_pool=config["rgb_sensor_pool"],
         extend_box=config["train"]["extend_box"],
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["train"]["tfrecords"],
         n_workers=config["cpu_workers"],
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )
+    
+    #test data
+    main(
+        field_data=config["evaluation"]["ground_truth_path"],
+        height=config["train"]["crop_size"],
+        width=config["train"]["crop_size"],        
+        sensor="hyperspectral",
+        hyperspectral_pool=config["hyperspectral_sensor_pool"],
+        rgb_pool=config["rgb_sensor_pool"],
+        extend_box=config["train"]["extend_box"],
+        hyperspectral_savedir=config["hyperspectral_tif_dir"],
+        savedir=config["evaluation"]["tfrecords"],
+        n_workers=config["cpu_workers"],
+        saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
+    )    

@@ -36,8 +36,9 @@ Implementation of Hang et al. 2020 [Hyperspectral Image Classification with Atte
 
 ## NEON
 
-- [ ] Data pipeline to predict species class for a DeepForest bounding box (https://deepforest.readthedocs.io/)
-- [ ] Training Pipeline for Hyperspectral DeepTreeAttention Model
+- [x] Data pipeline to predict species class for a DeepForest bounding box (https://deepforest.readthedocs.io/) for NEON Woody Veg Data
+- [x] Data pipeline to predict species class for a bounding box with weakly learned labels from random forest
+- [x] Training Pipeline for Hyperspectral DeepTreeAttention Model
 - [ ] Training Pipeline for RGB DeepTreeAttention Model
 - [ ] Training Pipeline for LiDAR classification model (PointNet Variant)
 - [ ] Learned fusion among data inputs
