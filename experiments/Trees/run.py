@@ -91,6 +91,7 @@ if __name__ == "__main__":
     y_pred, y_true = model.evaluate(model.val_split)
     
     #Evaluation accuracy
+    #Something is wrong here, this does not seem right,.
     eval_acc = keras_metrics.CategoricalAccuracy()
     eval_acc.update_state(y_true, y_pred)
     experiment.log_metric("Evaluation Accuracy",eval_acc.result().numpy())
