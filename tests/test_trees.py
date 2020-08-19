@@ -21,7 +21,7 @@ from tensorflow.keras import metrics as keras_metrics
 #random label predictions just for testing
 test_predictions = "data/raw/2019_BART_5_320000_4881000_image_edited.shp"
 
-test_field_data = "data/processed/field_data_01.tfrecord"
+test_field_data = "data/processed/field_data_1.tfrecord"
 #Use a small rgb crop as a example tile
 test_sensor_tile = "data/raw/2019_BART_5_320000_4881000_image_crop.tif"
 
@@ -79,7 +79,7 @@ def mod(tmpdir):
 @pytest.fixture()
 def tfrecords(mod, tmpdir):
     created_records = mod.generate(shapefile=test_predictions, sensor_path=test_sensor_tile, train=True, chunk_size=100)    
-    return created_records[0:2]
+    return created_records
 
 def test_generate(mod):
     created_records = mod.generate(shapefile=test_predictions, sensor_path=test_sensor_tile, train=True, chunk_size=100)  
@@ -164,12 +164,12 @@ def test_evaluate(mod, tfrecords):
     
     assert method1_eval_accuracy == metric_dict["acc"]
 
-@pytest.mark.skipif(os.getenv("TRAVIS") is True, reason="Cannot load comet on TRAVIS")
+@pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
     mod.read_data(validation_split=True)
     mod.train(experiment=experiment)
 
-@pytest.mark.skipif(os.getenv("TRAVIS") is True, reason="Cannot load comet on TRAVIS")
+@pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_field_callbacks(mod):
     mod.config["train"]["tfrecords"] = "data/processed/"
     mod.height = 20
