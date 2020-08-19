@@ -91,7 +91,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     
     return merged_boxes
 
-def crop_image(sensor_path, box, expand=0):
+def crop_image(sensor_path, box, expand=0): 
     """Read sensor data and crop a bounding box
     Args:
         sensor_path: full path to sensor data
