@@ -18,6 +18,7 @@ from DeepTreeAttention.models import Hang2020
 from DeepTreeAttention.generators import boxes
 from DeepTreeAttention.callbacks import callbacks
 
+
 class AttentionModel():
     """The main class holding train, predict and evaluate methods"""
 
@@ -34,7 +35,7 @@ class AttentionModel():
         #Holders
         self.testing_set = None
         self.training_set = None
-        
+
         if log_dir:
             self.log_dir = log_dir
         else:
@@ -46,38 +47,37 @@ class AttentionModel():
         self.channels = self.config["train"]["sensor_channels"]
         self.weighted_sum = self.config["train"]["weighted_sum"]
         self.extend_box = self.config["train"]["extend_box"]
-        self.classes_file = os.path.join(self.config["train"]["tfrecords"],"class_labels.csv")
+        self.classes_file = os.path.join(self.config["train"]["tfrecords"],
+                                         "class_labels.csv")
         self.classes = self.config["train"]["classes"]
-        
+
     def generate(self, shapefile, sensor_path, train=True, chunk_size=1000):
-            """Predict species class for each DeepForest bounding box
+        """Predict species class for each DeepForest bounding box
             Args:
                 shapefile: a DeepForest shapefile (see NeonCrownMaps) with a bounding box and utm projection
                 train: generate a training record that yields, image, label, or a prediction record with metadata? Default True
                 sensor_path: supply a known path to a sensor geoTIFF tile. 
                 chunk_size: number of crops per tfrecord
             """
-            #set savedir
-            if train:
-                savedir = self.config["train"]["tfrecords"]
-            else:
-                savedir = self.config["predict"]["tfrecords"]
-                
-            created_records = boxes.generate_tfrecords(
-                shapefile=shapefile,
-                sensor_path=sensor_path,
-                height=self.height,
-                width=self.width,
-                savedir=savedir,
-                train=train,
-                classes=self.classes,
-                chunk_size=chunk_size,
-                extend_box=self.extend_box,
-                shuffle=True
-            )
-        
-            return created_records
-        
+        #set savedir
+        if train:
+            savedir = self.config["train"]["tfrecords"]
+        else:
+            savedir = self.config["predict"]["tfrecords"]
+
+        created_records = boxes.generate_tfrecords(shapefile=shapefile,
+                                                   sensor_path=sensor_path,
+                                                   height=self.height,
+                                                   width=self.width,
+                                                   savedir=savedir,
+                                                   train=train,
+                                                   classes=self.classes,
+                                                   chunk_size=chunk_size,
+                                                   extend_box=self.extend_box,
+                                                   shuffle=True)
+
+        return created_records
+
     def calc_class_weight(self):
         """Get class frequency of labels"""
 
@@ -106,33 +106,31 @@ class AttentionModel():
                 name: a model name from DeepTreeAttention.models
             """
         #Tensorflow suggest create on CPU to reduce memory
-                #If more than GPU is requested
-                
+        #If more than GPU is requested
+
         if self.config["train"]["gpu"] > 1:
             strategy = tf.distribute.MirroredStrategy()
             print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
-    
+
             #Store intermediary layers for subtraining
             with strategy.scope():
                 #metrics
-                metric_list = [
-                    metrics.CategoricalAccuracy(name="acc")
-                ]
-                
+                metric_list = [metrics.CategoricalAccuracy(name="acc")]
+
                 #Create model
                 self.inputs, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang2020.create_model(
-                    self.height, self.width, self.channels, self.classes, self.weighted_sum)
-        
+                    self.height, self.width, self.channels, self.classes,
+                    self.weighted_sum)
+
                 #Full model compile
                 self.model = tf.keras.Model(inputs=self.inputs,
                                             outputs=self.combined_output,
                                             name="DeepTreeAttention")
-                
+
                 #compile full model
                 self.model.compile(loss="categorical_crossentropy",
-                                           optimizer=tf.keras.optimizers.Adam(
-                                               lr=float(0.0001)),
-                                           metrics=metric_list)
+                                   optimizer=tf.keras.optimizers.Adam(lr=float(0.0001)),
+                                   metrics=metric_list)
                 #compile
                 loss_dict = {
                     "spatial_attention_1": "categorical_crossentropy",
@@ -141,70 +139,69 @@ class AttentionModel():
                 }
 
                 # Spatial Attention softmax model
-                self.spatial_model = tf.keras.Model(inputs=self.inputs,
-                                                    outputs=self.spatial_attention_outputs,
-                                                    name="DeepTreeAttention")
-                
+                self.spatial_model = tf.keras.Model(
+                    inputs=self.inputs,
+                    outputs=self.spatial_attention_outputs,
+                    name="DeepTreeAttention")
+
                 self.spatial_model.compile(
                     loss=loss_dict,
                     loss_weights=[0.01, 0.1, 1],
                     optimizer=tf.keras.optimizers.Adam(
                         lr=float(self.config['train']['learning_rate'])),
                     metrics=metric_list)
-                                
-        
+
                 # Spectral Attention softmax model
-                self.spectral_model = tf.keras.Model(inputs=self.inputs,
-                                                     outputs=self.spectral_attention_outputs,
-                                                     name="DeepTreeAttention")
-                
+                self.spectral_model = tf.keras.Model(
+                    inputs=self.inputs,
+                    outputs=self.spectral_attention_outputs,
+                    name="DeepTreeAttention")
+
                 #compile loss dict
                 loss_dict = {
                     "spectral_attention_1": "categorical_crossentropy",
                     "spectral_attention_2": "categorical_crossentropy",
                     "spectral_attention_3": "categorical_crossentropy"
                 }
-    
+
                 self.spectral_model.compile(
                     loss=loss_dict,
                     loss_weights=[0.01, 0.1, 1],
                     optimizer=tf.keras.optimizers.Adam(
                         lr=float(self.config['train']['learning_rate'])),
                     metrics=metric_list)
-                
+
                 if weights:
                     self.model.load_weights(weights)
         else:
             #metrics
-            metric_list = [
-                metrics.CategoricalAccuracy(name="acc")
-            ]
-            
+            metric_list = [metrics.CategoricalAccuracy(name="acc")]
+
             #Create model
             self.inputs, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang2020.create_model(
                 self.height, self.width, self.channels, self.classes, self.weighted_sum)
-    
+
             #Full model compile
             self.model = tf.keras.Model(inputs=self.inputs,
                                         outputs=self.combined_output,
                                         name="DeepTreeAttention")
-            
+
             #compile full model
             self.model.compile(loss="categorical_crossentropy",
-                                       optimizer=tf.keras.optimizers.Adam(
-                                           lr=float(self.config['train']['learning_rate'])),
-                                       metrics=metric_list)
+                               optimizer=tf.keras.optimizers.Adam(
+                                   lr=float(self.config['train']['learning_rate'])),
+                               metrics=metric_list)
             #compile
             loss_dict = {
                 "spatial_attention_1": "categorical_crossentropy",
                 "spatial_attention_2": "categorical_crossentropy",
                 "spatial_attention_3": "categorical_crossentropy"
             }
-            
+
             # Spatial Attention softmax model
             self.spatial_model = tf.keras.Model(inputs=self.inputs,
-                                                        outputs=self.spatial_attention_outputs,
-                                                        name="DeepTreeAttention")            
+                                                outputs=self.spatial_attention_outputs,
+                                                name="DeepTreeAttention")
 
             self.spatial_model.compile(
                 loss=loss_dict,
@@ -212,12 +209,12 @@ class AttentionModel():
                 optimizer=tf.keras.optimizers.Adam(
                     lr=float(self.config['train']['learning_rate'])),
                 metrics=metric_list)
-        
+
             # Spectral Attention softmax model
             self.spectral_model = tf.keras.Model(inputs=self.inputs,
                                                  outputs=self.spectral_attention_outputs,
                                                  name="DeepTreeAttention")
-            
+
             #compile loss dict
             loss_dict = {
                 "spectral_attention_1": "categorical_crossentropy",
@@ -231,88 +228,99 @@ class AttentionModel():
                 optimizer=tf.keras.optimizers.Adam(
                     lr=float(self.config['train']['learning_rate'])),
                 metrics=metric_list)
-            
+
             if weights:
-                self.model.load_weights(weights) 
-        
+                self.model.load_weights(weights)
+
     def read_data(self, mode="train", validation_split=False):
         """Read tfrecord into datasets from config
             Args:
                 validation_split: True -> split tfrecords into train test. This overrides the evaluation config!
             """
-        self.train_records = glob.glob(os.path.join(self.config["train"]["tfrecords"], "*.tfrecord"))   
-        
+        self.train_records = glob.glob(
+            os.path.join(self.config["train"]["tfrecords"], "*.tfrecord"))
+
         if len(self.train_records) == 0:
-            raise IOError("Cannot find .tfrecords at {}".format(self.config["train"]["tfrecords"]))
+            raise IOError("Cannot find .tfrecords at {}".format(
+                self.config["train"]["tfrecords"]))
 
         if validation_split:
             print("Splitting training set into train-test")
             train_df = pd.Series(self.train_records)
             #Sample with set seed to make it the same between runs
-            self.train_split_records = train_df.head(int(self.config["train"]["training_fraction"] * train_df.shape[0])).values
+            self.train_split_records = train_df.head(
+                int(self.config["train"]["training_fraction"] * train_df.shape[0])).values
             self.test_split_records = train_df[~(
                 train_df.isin(self.train_split_records))].values
 
             #Create training tf.data
-            self.train_split = boxes.tf_dataset(tfrecords=self.train_split_records,
-                                          batch_size=self.config["train"]["batch_size"],
-                                          shuffle=self.config["train"]["shuffle"],
-                                          mode=mode,
-                                          cores=self.config["cpu_workers"])
-            
+            self.train_split = boxes.tf_dataset(
+                tfrecords=self.train_split_records,
+                batch_size=self.config["train"]["batch_size"],
+                shuffle=self.config["train"]["shuffle"],
+                mode=mode,
+                cores=self.config["cpu_workers"])
+
             #Create testing tf.data
-            self.val_split = boxes.tf_dataset(tfrecords=self.test_split_records,
-                                        batch_size=self.config["train"]["batch_size"],
-                                        shuffle=self.config["train"]["shuffle"],
-                                        mode=mode,
-                                        cores=self.config["cpu_workers"])
+            self.val_split = boxes.tf_dataset(
+                tfrecords=self.test_split_records,
+                batch_size=self.config["train"]["batch_size"],
+                shuffle=self.config["train"]["shuffle"],
+                mode=mode,
+                cores=self.config["cpu_workers"])
         else:
             #Create training tf.data
-            self.train_split = boxes.tf_dataset(tfrecords=self.train_records,
-                                          batch_size=self.config["train"]["batch_size"],
-                                          shuffle=self.config["train"]["shuffle"],
-                                          mode=mode,
-                                        cores=self.config["cpu_workers"])
+            self.train_split = boxes.tf_dataset(
+                tfrecords=self.train_records,
+                batch_size=self.config["train"]["batch_size"],
+                shuffle=self.config["train"]["shuffle"],
+                mode=mode,
+                cores=self.config["cpu_workers"])
 
             #honor config if validation not set
             self.val_split = None
             if self.config["evaluation"]["tfrecords"] is not None:
-                self.test_records = glob.glob(os.path.join(self.config["evaluation"]["tfrecords"], "*.tfrecord"))
-                
-                self.val_split = boxes.tf_dataset(tfrecords=self.test_records,
-                                            batch_size=self.config["train"]["batch_size"],
-                                            shuffle=self.config["train"]["shuffle"],
-                                            mode=mode,
-                                            cores=self.config["cpu_workers"])
+                self.test_records = glob.glob(
+                    os.path.join(self.config["evaluation"]["tfrecords"], "*.tfrecord"))
+
+                self.val_split = boxes.tf_dataset(
+                    tfrecords=self.test_records,
+                    batch_size=self.config["train"]["batch_size"],
+                    shuffle=self.config["train"]["shuffle"],
+                    mode=mode,
+                    cores=self.config["cpu_workers"])
 
     def train(self, experiment=None, class_weight=None, submodel=None):
         """Train a model with callbacks"""
 
         if self.val_split is None:
             print("Cannot run callbacks without validation data, skipping...")
-            callback_list = None            
+            callback_list = None
         elif experiment is None:
-            print("Cannot run callbacks without comet experiment, skipping...")      
+            print("Cannot run callbacks without comet experiment, skipping...")
             callback_list = None
         else:
-            labeldf = pd.read_csv(self.classes_file)                
-            callback_list = callbacks.create(log_dir=self.log_dir, experiment=experiment, validation_data=self.val_split, label_names=list(labeldf.taxonID.values))
+            labeldf = pd.read_csv(self.classes_file)
+            callback_list = callbacks.create(log_dir=self.log_dir,
+                                             experiment=experiment,
+                                             validation_data=self.val_split,
+                                             label_names=list(labeldf.taxonID.values))
 
         if submodel == "spatial":
             #The spatial model is very shallow compared to spectral, train for longer
             self.spatial_model.fit(self.train_split,
-                               epochs=int(self.config["train"]["epochs"]/2),
-                               validation_data=self.val_split,
-                               callbacks=callback_list,
-                               class_weight=class_weight)
-            
+                                   epochs=int(self.config["train"]["epochs"] / 2),
+                                   validation_data=self.val_split,
+                                   callbacks=callback_list,
+                                   class_weight=class_weight)
+
         elif submodel == "spectral":
             #one for each loss layer
             self.spectral_model.fit(self.train_split,
-                               epochs=int(self.config["train"]["epochs"]/2),
-                               validation_data=self.val_split,
-                               callbacks=callback_list,
-                               class_weight=class_weight)        
+                                    epochs=int(self.config["train"]["epochs"] / 2),
+                                    validation_data=self.val_split,
+                                    callbacks=callback_list,
+                                    class_weight=class_weight)
         else:
             self.model.fit(self.train_split,
                            epochs=self.config["train"]["epochs"],
@@ -323,10 +331,10 @@ class AttentionModel():
     def predict_raster(self, tfrecords, batch_size=1):
         """Predicted a set of tfrecords and create a raster image"""
         prediction_set = boxes.tf_dataset(tfrecords=tfrecords,
-                                    batch_size=batch_size,
-                                    shuffle=False,
-                                    mode="predict",
-                                    cores=self.config["cpu_workers"])
+                                          batch_size=batch_size,
+                                          shuffle=False,
+                                          mode="predict",
+                                          cores=self.config["cpu_workers"])
 
         predictions = []
         row_list = []
@@ -349,7 +357,7 @@ class AttentionModel():
         results = results.sort_values(by=["row", "col"])
 
         return results
-    
+
     def predict(self, shapefile, savedir, create_records=True, sensor_path=None):
         """Predict species id for each box in a single shapefile
         Args:
@@ -358,25 +366,31 @@ class AttentionModel():
             create_records: overwrite previous records
         Returns:
             fname: path to predicted shapefile
-        """                
+        """
         if create_records:
-            created_records = boxes.generate(shapefile, sensor_path=sensor_path, savedir = self.config["predict"]["savedir"], height=self.height, width=self.width, classes=self.classes, train=False)
+            created_records = boxes.generate(shapefile,
+                                             sensor_path=sensor_path,
+                                             savedir=self.config["predict"]["savedir"],
+                                             height=self.height,
+                                             width=self.width,
+                                             classes=self.classes,
+                                             train=False)
         else:
             created_records = glob.glob(dirname + "*.tfrecord")
-        
+
         #Merge with original box shapefile by index and write new shapefile to file
         results = self.predict_boxes(created_records)
         fname = self.merge_shapefile(shapefile, results, savedir=savedir)
-        
+
         return fname
-    
+
     def predict_boxes(self, tfrecords, batch_size=1):
         """Predicted a set of tfrecords and create a raster image"""
         prediction_set = boxes.tf_dataset(tfrecords=tfrecords,
-                                    batch_size=batch_size,
-                                    shuffle=False,
-                                    mode="predict",
-                                    cores=self.config["cpu_workers"])
+                                          batch_size=batch_size,
+                                          shuffle=False,
+                                          mode="predict",
+                                          cores=self.config["cpu_workers"])
 
         predictions = []
         indices = []
@@ -391,36 +405,39 @@ class AttentionModel():
         #stack
         predictions = np.vstack(predictions)
         predictions = np.argmax(predictions, 1)
-        
+
         indices = np.concatenate(indices)
-        
+
         #Read class labels
         labeldf = pd.read_csv(self.classes_file)
-        labels = [labeldf.loc[labeldf.index == x,"taxonID"].values[0] for x in predictions]
+        labels = [
+            labeldf.loc[labeldf.index == x, "taxonID"].values[0] for x in predictions
+        ]
         results = pd.DataFrame({"label": labels, "box_index": indices})
-        
+
         #decode results
-        results["box_index"] = results["box_index"].apply(lambda x: x.decode()).astype(str)
-        
+        results["box_index"] = results["box_index"].apply(lambda x: x.decode()).astype(
+            str)
+
         return results
-    
+
     def merge_shapefile(self, shapefile, results, savedir):
         """Merge predicted species label with box id"""
-        
+
         gdf = geopandas.read_file(shapefile)
-        
+
         #Make sure there isn't a label column in merge data
         gdf = gdf.drop(columns="label")
         basename = os.path.splitext(os.path.basename(shapefile))[0]
         gdf["box_index"] = ["{}_{}".format(basename, x) for x in gdf.index.values]
-        
-        #Merge 
+
+        #Merge
         joined_gdf = gdf.merge(results, on="box_index")
         fname = "{}/{}.shp".format(savedir, basename)
         joined_gdf.to_file(fname)
-        
+
         return fname
-    
+
     def evaluate(self, tf_dataset):
         """Evaluate metrics on held out training data. Defaults to reading from config.yml evaluation sensor path
         Args: 

@@ -166,7 +166,7 @@ def spatial_attention(filters, classes, x):
 
     #Elementwise multiplication of attention with incoming feature map, expand among filter dimension in 3D
     attention_layers = layers.Multiply()([x, attention_layers])
-    
+
     #Add a classfication branch with max pool based on size of the layer
     if filters == 32:
         pool_size = (4, 4)
@@ -185,6 +185,7 @@ def spatial_attention(filters, classes, x):
 
     return attention_layers, output
 
+
 class WeightedSum(layers.Layer):
     """A custom keras layer to learn a weighted sum of tensors"""
 
@@ -192,14 +193,13 @@ class WeightedSum(layers.Layer):
         super(WeightedSum, self).__init__(**kwargs)
 
     def build(self, input_shape=1):
-        self.a = self.add_weight(
-            name='alpha',
-            shape=(1),
-            initializer=tf.keras.initializers.Constant(0.5),
-            dtype='float32',
-            trainable=True,
-            constraint=tf.keras.constraints.min_max_norm(max_value=1,min_value=0)
-        )
+        self.a = self.add_weight(name='alpha',
+                                 shape=(1),
+                                 initializer=tf.keras.initializers.Constant(0.5),
+                                 dtype='float32',
+                                 trainable=True,
+                                 constraint=tf.keras.constraints.min_max_norm(
+                                     max_value=1, min_value=0))
         super(WeightedSum, self).build(input_shape)
 
     def call(self, model_outputs):

@@ -1,6 +1,7 @@
 #Tfrecords
 import tensorflow as tf
 
+
 def write_tfrecord(filename, images, labels=None, classes=21, train=True, x=None, y=None):
     """Write a training or prediction tfrecord
         Args:
@@ -72,6 +73,7 @@ def create_prediction_record(image, classes, x, y):
     # Serialize to string and write to file
     return example
 
+
 def _train_parse_(tfrecord):
     # Define features
     features = {
@@ -108,6 +110,7 @@ def _train_parse_(tfrecord):
 
     return loaded_image, one_hot_labels
 
+
 def _train_submodel_parse_(tfrecord):
     # Define features
     features = {
@@ -143,6 +146,7 @@ def _train_submodel_parse_(tfrecord):
     one_hot_labels = tf.one_hot(label, classes)
 
     return loaded_image, (one_hot_labels, one_hot_labels, one_hot_labels)
+
 
 def _predict_parse_(tfrecord):
     """Tfrecord parser for prediction. No labels available

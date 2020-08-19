@@ -11,23 +11,26 @@ import cv2
 from DeepTreeAttention.generators import create_tfrecords
 from rasterio.windows import from_bounds
 
+
 def resize(img, height, width):
     # resize image
-    dim = (width, height)   
+    dim = (width, height)
     img = img.astype("float32")
-    resized = cv2.resize(img, dim, interpolation = cv2.INTER_NEAREST)
-    
+    resized = cv2.resize(img, dim, interpolation=cv2.INTER_NEAREST)
+
     return resized
-    
-def generate_tfrecords(shapefile, sensor_path,
-                      chunk_size=1000,
-                      savedir=".",
-                      height=40,
-                      width=40,
-                      classes=20,
-                      train=True,
-                      extend_box=0,
-                      shuffle=True):
+
+
+def generate_tfrecords(shapefile,
+                       sensor_path,
+                       chunk_size=1000,
+                       savedir=".",
+                       height=40,
+                       width=40,
+                       classes=20,
+                       train=True,
+                       extend_box=0,
+                       shuffle=True):
     """Yield one instance of data with one hot labels
     Args:
         chunk_size: number of windows per tfrecord
@@ -40,8 +43,8 @@ def generate_tfrecords(shapefile, sensor_path,
     gdf = geopandas.read_file(shapefile)
     basename = os.path.splitext(os.path.basename(shapefile))[0]
     src = rasterio.open(sensor_path)
-    
-    gdf["box_index"] = ["{}_{}".format(basename,x) for x in gdf.index.values]
+
+    gdf["box_index"] = ["{}_{}".format(basename, x) for x in gdf.index.values]
     labels = []
     crops = []
     indices = []
@@ -50,33 +53,39 @@ def generate_tfrecords(shapefile, sensor_path,
         if train:
             if row["label"] == 0:
                 continue
-            
+
             labels.append(row["label"])
-        
+
         left, bottom, right, top = row["geometry"].bounds
-        window = from_bounds(left-extend_box, bottom-extend_box, right+extend_box, top+extend_box, transform=src.transform)        
+        window = from_bounds(left - extend_box,
+                             bottom - extend_box,
+                             right + extend_box,
+                             top + extend_box,
+                             transform=src.transform)
         masked_image = src.read(window=window)
-        
+
         #Roll depth to channel last
         masked_image = np.rollaxis(masked_image, 0, 3)
-        
+
         #Skip empty frames
-        if masked_image.size ==0:
+        if masked_image.size == 0:
             continue
-        
+
         crops.append(masked_image)
         indices.append(row["box_index"])
 
     #Convert labels to numeric
     unique_labels = np.unique(labels)
     label_dict = {}
-    
+
     for index, label in enumerate(unique_labels):
         label_dict[label] = index
-        
+
     numeric_labels = [label_dict[x] for x in labels]
-    pd.DataFrame(label_dict.items(), columns=["taxonID","label"]).to_csv("{}/class_labels.csv".format(savedir))
-    
+    pd.DataFrame(label_dict.items(),
+                 columns=["taxonID",
+                          "label"]).to_csv("{}/class_labels.csv".format(savedir))
+
     #shuffle before writing to help with validation data split
     if shuffle:
         if train:
@@ -86,40 +95,43 @@ def generate_tfrecords(shapefile, sensor_path,
         else:
             z = list(zip(crops, indices))
             random.shuffle(z)
-            crops, indices = zip(*z)            
-        
+            crops, indices = zip(*z)
+
     #get keys and divide into chunks for a single tfrecord
     filenames = []
     counter = 0
-    for i in range(0, len(crops)+1, chunk_size):
+    for i in range(0, len(crops) + 1, chunk_size):
         chunk_crops = crops[i:i + chunk_size]
         chunk_index = indices[i:i + chunk_size]
-        
+
         if train:
             chunk_labels = numeric_labels[i:i + chunk_size]
         else:
             chunk_labels = None
-        
+
         #resize crops
         resized_crops = [resize(x, height, width).astype("int16") for x in chunk_crops]
-        
+
         filename = "{}/{}_{}.tfrecord".format(savedir, basename, counter)
         write_tfrecord(filename=filename,
-                                            images=resized_crops,
-                                            labels=chunk_labels,
-                                            indices=chunk_index,
-                                            classes=classes)
-        
+                       images=resized_crops,
+                       labels=chunk_labels,
+                       indices=chunk_index,
+                       classes=classes)
+
         filenames.append(filename)
-        counter +=1
+        counter += 1
 
     return filenames
+
 
 def _int64_feature(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
+
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
 
 def write_tfrecord(filename, images, indices, labels=None, classes=21):
     """Write a training or prediction tfrecord
@@ -127,11 +139,14 @@ def write_tfrecord(filename, images, indices, labels=None, classes=21):
             train: True -> create a training record with labels. False -> a prediciton record with raster indices
         """
     writer = tf.io.TFRecordWriter(filename)
-    
+
     if labels is not None:
         #Write parser
         for index, image in enumerate(images):
-            tf_example = create_record(index=indices[index], image=images[index], label=labels[index], classes=classes)
+            tf_example = create_record(index=indices[index],
+                                       image=images[index],
+                                       label=labels[index],
+                                       classes=classes)
             writer.write(tf_example.SerializeToString())
     else:
         for index, image in enumerate(images):
@@ -139,6 +154,7 @@ def write_tfrecord(filename, images, indices, labels=None, classes=21):
             writer.write(tf_example.SerializeToString())
 
     writer.close()
+
 
 def create_record(image, index, classes, label=None):
     """
@@ -154,7 +170,7 @@ def create_record(image, index, classes, label=None):
     rows = image.shape[0]
     cols = image.shape[1]
     depth = image.shape[2]
-    
+
     if label is not None:
         example = tf.train.Example(features=tf.train.Features(
             feature={
@@ -175,16 +191,17 @@ def create_record(image, index, classes, label=None):
                 'image/width': _int64_feature(cols),
                 'image/depth': _int64_feature(depth),
                 'classes': _int64_feature(classes),
-            }))        
+            }))
 
     # Serialize to string and write to file
     return example
+
 
 def _train_parse_(tfrecord):
     # Define features
     features = {
         'image/data': tf.io.FixedLenFeature([], tf.string),
-        'box_index': tf.io.FixedLenFeature([], tf.string),        
+        'box_index': tf.io.FixedLenFeature([], tf.string),
         "label": tf.io.FixedLenFeature([], tf.int64),
         "image/height": tf.io.FixedLenFeature([], tf.int64),
         "image/width": tf.io.FixedLenFeature([], tf.int64),
@@ -216,11 +233,12 @@ def _train_parse_(tfrecord):
 
     return loaded_image, one_hot_labels
 
+
 def _train_submodel_parse_(tfrecord):
     # Define features
     features = {
         'image/data': tf.io.FixedLenFeature([], tf.string),
-        'box_index': tf.io.FixedLenFeature([], tf.string),        
+        'box_index': tf.io.FixedLenFeature([], tf.string),
         "label": tf.io.FixedLenFeature([], tf.int64),
         "image/height": tf.io.FixedLenFeature([], tf.int64),
         "image/width": tf.io.FixedLenFeature([], tf.int64),
@@ -252,6 +270,7 @@ def _train_submodel_parse_(tfrecord):
 
     return loaded_image, (one_hot_labels, one_hot_labels, one_hot_labels)
 
+
 def _predict_parse_(tfrecord):
     """Tfrecord parser for prediction. No labels available
         Args:
@@ -263,7 +282,7 @@ def _predict_parse_(tfrecord):
     # Define features
     features = {
         'image/data': tf.io.FixedLenFeature([], tf.string),
-        'box_index': tf.io.FixedLenFeature([], tf.string),        
+        'box_index': tf.io.FixedLenFeature([], tf.string),
         "image/height": tf.io.FixedLenFeature([], tf.int64),
         "image/width": tf.io.FixedLenFeature([], tf.int64),
         "image/depth": tf.io.FixedLenFeature([], tf.int64),
@@ -283,11 +302,18 @@ def _predict_parse_(tfrecord):
 
     # Reshape to known shape
     loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
-    loaded_image = tf.cast(loaded_image, dtype=tf.float32)    
+    loaded_image = tf.cast(loaded_image, dtype=tf.float32)
 
     return loaded_image, example['box_index']
 
-def tf_dataset(tfrecords, batch_size=2, height=20, width=20, shuffle=True, mode="train", cores=10):
+
+def tf_dataset(tfrecords,
+               batch_size=2,
+               height=20,
+               width=20,
+               shuffle=True,
+               mode="train",
+               cores=10):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
         tfrecords: path to tfrecords, see generate.py
@@ -306,24 +332,26 @@ def tf_dataset(tfrecords, batch_size=2, height=20, width=20, shuffle=True, mode=
 
     if shuffle:
         print("Shuffling data")
-        dataset = dataset.shuffle(buffer_size=20)        
-    
+        dataset = dataset.shuffle(buffer_size=20)
+
     if mode == "train":
         dataset = dataset.map(_train_parse_, num_parallel_calls=cores)
-        dataset = dataset.shuffle(buffer_size=batch_size * 5)                
+        dataset = dataset.shuffle(buffer_size=batch_size * 5)
         dataset = dataset.batch(batch_size=batch_size)
-        
-    elif mode=="predict":
+
+    elif mode == "predict":
         dataset = dataset.map(_predict_parse_, num_parallel_calls=cores)
         dataset = dataset.batch(batch_size=batch_size)
-        
-    elif mode=="submodel":
-        dataset = dataset.map(create_tfrecords._train_submodel_parse_, num_parallel_calls=cores)
-        dataset = dataset.shuffle(buffer_size=batch_size *5)                
+
+    elif mode == "submodel":
+        dataset = dataset.map(create_tfrecords._train_submodel_parse_,
+                              num_parallel_calls=cores)
+        dataset = dataset.shuffle(buffer_size=batch_size * 5)
         dataset = dataset.batch(batch_size=batch_size)
     else:
-        raise ValueError("invalid mode, please use train, predict or submodel: {}".format(mode))
-    
+        raise ValueError(
+            "invalid mode, please use train, predict or submodel: {}".format(mode))
+
     dataset = dataset.prefetch(buffer_size=1)
 
     return dataset

@@ -17,6 +17,7 @@ from DeepTreeAttention.models import Hang2020
 from DeepTreeAttention.generators import make_dataset
 from DeepTreeAttention.callbacks import callbacks
 
+
 class AttentionModel():
     """The main class holding train, predict and evaluate methods"""
 
@@ -33,7 +34,7 @@ class AttentionModel():
         #Holders
         self.testing_set = None
         self.training_set = None
-        
+
         if log_dir:
             self.log_dir = log_dir
         else:
@@ -67,39 +68,36 @@ class AttentionModel():
                 name: a model name from DeepTreeAttention.models
             """
         #Tensorflow suggest create on CPU to reduce memory
-                #If more than GPU is requested
-                
+        #If more than GPU is requested
+
         classes = self.config["train"]["classes"]
         height = self.config["train"]["crop_size"]
         width = self.config["train"]["crop_size"]
         channels = self.config["train"]["sensor_channels"]
         weighted_sum = self.config["train"]["weighted_sum"]
-                
+
         if self.config["train"]["gpu"] > 1:
             strategy = tf.distribute.MirroredStrategy()
             print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
-    
+
             #Store intermediary layers for subtraining
             with strategy.scope():
                 #metrics
-                metric_list = [
-                    metrics.CategoricalAccuracy(name="acc")
-                ]
-                
+                metric_list = [metrics.CategoricalAccuracy(name="acc")]
+
                 #Create model
                 self.inputs, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang2020.create_model(
                     height, width, channels, classes, weighted_sum)
-        
+
                 #Full model compile
                 self.model = tf.keras.Model(inputs=self.inputs,
                                             outputs=self.combined_output,
                                             name="DeepTreeAttention")
-                
+
                 #compile full model
                 self.model.compile(loss="categorical_crossentropy",
-                                           optimizer=tf.keras.optimizers.Adam(
-                                               lr=float(0.0001)),
-                                           metrics=metric_list)
+                                   optimizer=tf.keras.optimizers.Adam(lr=float(0.0001)),
+                                   metrics=metric_list)
                 #compile
                 loss_dict = {
                     "spatial_attention_1": "categorical_crossentropy",
@@ -108,70 +106,69 @@ class AttentionModel():
                 }
 
                 # Spatial Attention softmax model
-                self.spatial_model = tf.keras.Model(inputs=self.inputs,
-                                                    outputs=self.spatial_attention_outputs,
-                                                    name="DeepTreeAttention")
-                
+                self.spatial_model = tf.keras.Model(
+                    inputs=self.inputs,
+                    outputs=self.spatial_attention_outputs,
+                    name="DeepTreeAttention")
+
                 self.spatial_model.compile(
                     loss=loss_dict,
                     loss_weights=[0.01, 0.1, 1],
                     optimizer=tf.keras.optimizers.Adam(
                         lr=float(self.config['train']['learning_rate'])),
                     metrics=metric_list)
-                                
-        
+
                 # Spectral Attention softmax model
-                self.spectral_model = tf.keras.Model(inputs=self.inputs,
-                                                     outputs=self.spectral_attention_outputs,
-                                                     name="DeepTreeAttention")
-                
+                self.spectral_model = tf.keras.Model(
+                    inputs=self.inputs,
+                    outputs=self.spectral_attention_outputs,
+                    name="DeepTreeAttention")
+
                 #compile loss dict
                 loss_dict = {
                     "spectral_attention_1": "categorical_crossentropy",
                     "spectral_attention_2": "categorical_crossentropy",
                     "spectral_attention_3": "categorical_crossentropy"
                 }
-    
+
                 self.spectral_model.compile(
                     loss=loss_dict,
                     loss_weights=[0.01, 0.1, 1],
                     optimizer=tf.keras.optimizers.Adam(
                         lr=float(self.config['train']['learning_rate'])),
                     metrics=metric_list)
-                
+
                 if weights:
                     self.model.load_weights(weights)
         else:
             #metrics
-            metric_list = [
-                metrics.CategoricalAccuracy(name="acc")
-            ]
-            
+            metric_list = [metrics.CategoricalAccuracy(name="acc")]
+
             #Create model
             self.inputs, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang2020.create_model(
                 height, width, channels, classes, weighted_sum)
-    
+
             #Full model compile
             self.model = tf.keras.Model(inputs=self.inputs,
                                         outputs=self.combined_output,
                                         name="DeepTreeAttention")
-            
+
             #compile full model
             self.model.compile(loss="categorical_crossentropy",
-                                       optimizer=tf.keras.optimizers.Adam(
-                                           lr=float(self.config['train']['learning_rate'])),
-                                       metrics=metric_list)
+                               optimizer=tf.keras.optimizers.Adam(
+                                   lr=float(self.config['train']['learning_rate'])),
+                               metrics=metric_list)
             #compile
             loss_dict = {
                 "spatial_attention_1": "categorical_crossentropy",
                 "spatial_attention_2": "categorical_crossentropy",
                 "spatial_attention_3": "categorical_crossentropy"
             }
-            
+
             # Spatial Attention softmax model
             self.spatial_model = tf.keras.Model(inputs=self.inputs,
-                                                        outputs=self.spatial_attention_outputs,
-                                                        name="DeepTreeAttention")            
+                                                outputs=self.spatial_attention_outputs,
+                                                name="DeepTreeAttention")
 
             self.spatial_model.compile(
                 loss=loss_dict,
@@ -179,12 +176,12 @@ class AttentionModel():
                 optimizer=tf.keras.optimizers.Adam(
                     lr=float(self.config['train']['learning_rate'])),
                 metrics=metric_list)
-        
+
             # Spectral Attention softmax model
             self.spectral_model = tf.keras.Model(inputs=self.inputs,
                                                  outputs=self.spectral_attention_outputs,
                                                  name="DeepTreeAttention")
-            
+
             #compile loss dict
             loss_dict = {
                 "spectral_attention_1": "categorical_crossentropy",
@@ -198,10 +195,10 @@ class AttentionModel():
                 optimizer=tf.keras.optimizers.Adam(
                     lr=float(self.config['train']['learning_rate'])),
                 metrics=metric_list)
-            
+
             if weights:
-                self.model.load_weights(weights) 
-        
+                self.model.load_weights(weights)
+
     def read_data(self, mode="train", validation_split=False):
         """Read tfrecord into datasets from config
             Args:
@@ -219,57 +216,62 @@ class AttentionModel():
                 train_df.isin(self.train_split_records))].values
 
             #Create training tf.data
-            self.train_split = make_dataset.tf_dataset(tfrecords=self.train_split_records,
-                                          batch_size=self.config["train"]["batch_size"],
-                                          shuffle=self.config["train"]["shuffle"],
-                                          mode=mode,
-                                          cores=self.config["cpu_workers"])
-            
+            self.train_split = make_dataset.tf_dataset(
+                tfrecords=self.train_split_records,
+                batch_size=self.config["train"]["batch_size"],
+                shuffle=self.config["train"]["shuffle"],
+                mode=mode,
+                cores=self.config["cpu_workers"])
+
             #Create testing tf.data
-            self.val_split = make_dataset.tf_dataset(tfrecords=self.test_split_records,
-                                        batch_size=self.config["train"]["batch_size"],
-                                        shuffle=self.config["train"]["shuffle"],
-                                        mode=mode,
-                                        cores=self.config["cpu_workers"])
+            self.val_split = make_dataset.tf_dataset(
+                tfrecords=self.test_split_records,
+                batch_size=self.config["train"]["batch_size"],
+                shuffle=self.config["train"]["shuffle"],
+                mode=mode,
+                cores=self.config["cpu_workers"])
         else:
             #Create training tf.data
-            self.train_split = make_dataset.tf_dataset(tfrecords=self.train_records,
-                                          batch_size=self.config["train"]["batch_size"],
-                                          shuffle=self.config["train"]["shuffle"],
-                                          mode=mode,
-                                        cores=self.config["cpu_workers"])
+            self.train_split = make_dataset.tf_dataset(
+                tfrecords=self.train_records,
+                batch_size=self.config["train"]["batch_size"],
+                shuffle=self.config["train"]["shuffle"],
+                mode=mode,
+                cores=self.config["cpu_workers"])
 
             #honor config if validation not set
             self.val_split = None
             if self.config["evaluation"]["tfrecords"] is not None:
-                self.test_records = glob.glob(os.path.join(self.config["evaluation"]["tfrecords"], "*.tfrecord"))
-                
-                self.val_split = make_dataset.tf_dataset(tfrecords=self.test_records,
-                                            batch_size=self.config["train"]["batch_size"],
-                                            shuffle=self.config["train"]["shuffle"],
-                                            mode=mode,
-                                            cores=self.config["cpu_workers"])
+                self.test_records = glob.glob(
+                    os.path.join(self.config["evaluation"]["tfrecords"], "*.tfrecord"))
+
+                self.val_split = make_dataset.tf_dataset(
+                    tfrecords=self.test_records,
+                    batch_size=self.config["train"]["batch_size"],
+                    shuffle=self.config["train"]["shuffle"],
+                    mode=mode,
+                    cores=self.config["cpu_workers"])
 
     def train(self, class_weight=None, submodel=None):
         """Train a model"""
-        
+
         callback_list = callbacks.create(self.log_dir)
-        
+
         if submodel == "spatial":
             #The spatial model is very shallow compared to spectral, train for longer
             self.spatial_model.fit(self.train_split,
-                               epochs=int(self.config["train"]["epochs"]/2),
-                               validation_data=self.val_split,
-                               callbacks=callback_list,
-                               class_weight=class_weight)
-            
+                                   epochs=int(self.config["train"]["epochs"] / 2),
+                                   validation_data=self.val_split,
+                                   callbacks=callback_list,
+                                   class_weight=class_weight)
+
         elif submodel == "spectral":
             #one for each loss layer
             self.spectral_model.fit(self.train_split,
-                               epochs=int(self.config["train"]["epochs"]/2),
-                               validation_data=self.val_split,
-                               callbacks=callback_list,
-                               class_weight=class_weight)        
+                                    epochs=int(self.config["train"]["epochs"] / 2),
+                                    validation_data=self.val_split,
+                                    callbacks=callback_list,
+                                    class_weight=class_weight)
         else:
             self.model.fit(self.train_split,
                            epochs=self.config["train"]["epochs"],
@@ -280,10 +282,10 @@ class AttentionModel():
     def predict_raster(self, tfrecords, batch_size=1):
         """Predicted a set of tfrecords and create a raster image"""
         prediction_set = make_dataset.tf_dataset(tfrecords=tfrecords,
-                                    batch_size=batch_size,
-                                    shuffle=False,
-                                    mode="predict",
-                                    cores=self.config["cpu_workers"])
+                                                 batch_size=batch_size,
+                                                 shuffle=False,
+                                                 mode="predict",
+                                                 cores=self.config["cpu_workers"])
 
         predictions = []
         row_list = []
@@ -306,7 +308,7 @@ class AttentionModel():
         results = results.sort_values(by=["row", "col"])
 
         return results
-        
+
     def evaluate(self, tf_dataset):
         """Evaluate metrics on held out training data. Defaults to reading from config.yml evaluation sensor path
         Args: 

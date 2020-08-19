@@ -4,10 +4,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from skimage import exposure
 
+
 def normalize(array):
     """Normalizes numpy arrays into scale 0.0 - 1.0"""
     array_min, array_max = array.min(), array.max()
-    return ((array - array_min)/(array_max - array_min))
+    return ((array - array_min) / (array_max - array_min))
+
 
 def plot_prediction(image, label, prediction):
     """Plot an image with labels, optionally create a three band composite
@@ -17,22 +19,23 @@ def plot_prediction(image, label, prediction):
         prediction: predicted class
         ls_pct: linear stretch of three band
     """
-    fig = plt.figure()    
+    fig = plt.figure()
     ax = fig.add_subplot(111)
-    
+
     #check if hyperspec and create three band false color.
     if image.shape[2] > 3:
-        plot_image = image[:,:,[11, 55, 113]]
+        plot_image = image[:, :, [11, 55, 113]]
         for band in np.arange(plot_image.shape[2]):
-            plot_image[:,:,band] = normalize(plot_image[:,:,band])
+            plot_image[:, :, band] = normalize(plot_image[:, :, band])
             plot_image.astype("float")
     else:
         plot_image = image.astype(int)
-                
+
     ax.imshow(plot_image)
     ax.set_title("True: {}, Predicted: {} ".format(label, prediction))
-    
+
     return fig
+
 
 def create_raster(results):
     """Reshape a set of predictions from DeepTreeAttention.predict into a raster image"""

@@ -191,16 +191,19 @@ def generate_training(sensor_path,
     easting_max = results.easting.max() + 1
     northing_min = results.northing.min() - 1
     northing_max = results.northing.max() + 1
-    
+
     easting_breaks = [int(x) for x in np.linspace(easting_min, easting_max, num=n_chunks)]
-    northing_breaks = [int(x) for x in np.linspace(northing_min, northing_max, num=n_chunks)]
-    
+    northing_breaks = [
+        int(x) for x in np.linspace(northing_min, northing_max, num=n_chunks)
+    ]
+
     counter = 0
     for easting in easting_breaks:
         for northing in northing_breaks:
-            results.loc[(results["easting"] > easting) & (results["northing"] > northing), "chunk"] = int(counter)
-            counter +=1
-    
+            results.loc[(results["easting"] > easting) & (results["northing"] > northing),
+                        "chunk"] = int(counter)
+            counter += 1
+
     #Make sure chunks are rounded
     basename = os.path.splitext(os.path.basename(sensor_path))[0]
     filenames = []
@@ -243,13 +246,15 @@ def generate_training(sensor_path,
 
     return filenames
 
-def generate_box_prediction(shapefile, sensor_path,
-                        size=11,
-                        chunk_size=500,
-                        classes=21,
-                        savedir=".",
-                        use_dask=False,
-                        client=None):
+
+def generate_box_prediction(shapefile,
+                            sensor_path,
+                            size=11,
+                            chunk_size=500,
+                            classes=21,
+                            savedir=".",
+                            use_dask=False,
+                            client=None):
     """Yield one instance of data with raster indices for semantic segmentation of a raster
     Args:
         chunk_size: number of images per tfrecord
@@ -259,7 +264,7 @@ def generate_box_prediction(shapefile, sensor_path,
     Returns:
         filename: tfrecords path
     """
-    
+
     geopan
     with rasterio.open(sensor_path) as src:
         cols, rows = np.meshgrid(np.arange(src.shape[1]), np.arange(src.shape[0]))
@@ -309,13 +314,14 @@ def generate_box_prediction(shapefile, sensor_path,
 
     return filenames
 
+
 def generate_raster_prediction(sensor_path,
-                        size=11,
-                        chunk_size=500,
-                        classes=21,
-                        savedir=".",
-                        use_dask=False,
-                        client=None):
+                               size=11,
+                               chunk_size=500,
+                               classes=21,
+                               savedir=".",
+                               use_dask=False,
+                               client=None):
     """Yield one instance of data with raster indices for semantic segmentation of a raster
     Args:
         chunk_size: number of images per tfrecord
@@ -373,6 +379,7 @@ def generate_raster_prediction(sensor_path,
 
     return filenames
 
+
 def tf_dataset(tfrecords, batch_size=2, shuffle=True, mode="train", cores=10):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
@@ -390,24 +397,26 @@ def tf_dataset(tfrecords, batch_size=2, shuffle=True, mode="train", cores=10):
 
     if shuffle:
         print("Shuffling data")
-        dataset = dataset.shuffle(buffer_size=20)        
-        
+        dataset = dataset.shuffle(buffer_size=20)
+
     if mode == "train":
         dataset = dataset.map(create_tfrecords._train_parse_, num_parallel_calls=cores)
-        dataset = dataset.shuffle(buffer_size=100)                
+        dataset = dataset.shuffle(buffer_size=100)
         dataset = dataset.batch(batch_size=batch_size)
-        
-    elif mode=="predict":
+
+    elif mode == "predict":
         dataset = dataset.map(create_tfrecords._predict_parse_, num_parallel_calls=cores)
         dataset = dataset.batch(batch_size=batch_size)
-        
-    elif mode=="submodel":
-        dataset = dataset.map(create_tfrecords._train_submodel_parse_, num_parallel_calls=cores)
-        dataset = dataset.shuffle(buffer_size=100)                
+
+    elif mode == "submodel":
+        dataset = dataset.map(create_tfrecords._train_submodel_parse_,
+                              num_parallel_calls=cores)
+        dataset = dataset.shuffle(buffer_size=100)
         dataset = dataset.batch(batch_size=batch_size)
     else:
-        raise ValueError("invalid mode, please use train, predict or submodel: {}".format(mode))
-    
+        raise ValueError(
+            "invalid mode, please use train, predict or submodel: {}".format(mode))
+
     dataset = dataset.prefetch(buffer_size=1)
 
     return dataset
