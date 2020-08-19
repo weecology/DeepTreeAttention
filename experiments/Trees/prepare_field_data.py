@@ -234,7 +234,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
     crops = []
     box_indexes = []    
     if use_dask:
-        client = start_cluster.start(cpus=n_workers, mem_size="20GB")
+        client = start_cluster.start(cpus=n_workers, mem_size="13GB")
         futures = []
         for plot in plot_names:
             future = client.submit(
