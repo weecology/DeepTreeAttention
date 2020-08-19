@@ -64,7 +64,7 @@ if __name__ == "__main__":
     ##Train
     #Train see config.yml for tfrecords path with weighted classes in cross entropy
     model.read_data()
-    class_weight = model.calc_class_weight(model.val_split)
+    class_weight = model.calc_class_weight()
     
     ## Train subnetwork
     experiment.log_parameter("Train subnetworks", True)
