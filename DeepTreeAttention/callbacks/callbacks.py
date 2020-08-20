@@ -27,8 +27,8 @@ class ConfusionMatrixCallback(Callback):
             y_pred.append(pred)
             y_true.append(label)
 
-        y_true = np.vstack(y_true)
-        y_pred = np.vstack(y_pred)
+        y_true = np.concatenate(y_true)
+        y_pred = np.concatenate(y_pred)
         macro, micro = metrics.f1_scores(y_true, y_pred)
         self.experiment.log_metric("MicroF1", micro)
         self.experiment.log_metric("MacroF1", macro)
@@ -50,7 +50,6 @@ class ImageCallback(Callback):
 
     def on_train_end(self, epoch, logs={}):
         """Plot sample images with labels annotated"""
-        counter = 0
 
         images = []
         y_pred = []
@@ -64,14 +63,14 @@ class ImageCallback(Callback):
                 pred = self.model.predict(image)
                 images.append(image)
                 y_pred.append(pred)
-                y_true.append(label)
+                y_true.append(label[0])
                 num_images += image.shape[0]
             else:
                 break
 
-        images = np.vstack(images)
-        y_true = np.vstack(y_true)
-        y_pred = np.vstack(y_pred)
+        images = np.column_stack(images)
+        y_true = np.concatenate(y_true)
+        y_pred = np.concatenate(y_pred)
 
         y_true = np.argmax(y_true, axis=1)
         y_pred = np.argmax(y_pred, axis=1)
