@@ -307,6 +307,12 @@ def _predict_parse_(tfrecord):
     return loaded_image, example['box_index']
 
 
+def _batch_normalization(tensor_in, epsilon=.0001):
+    mean,variance = tf.nn.moments(tensor_in,axes=[0])
+    print(mean)
+    tensor_normalized = (tensor_in-mean)/(variance+epsilon)
+    return tensor_normalized
+
 def tf_dataset(tfrecords,
                batch_size=2,
                height=20,
@@ -351,7 +357,10 @@ def tf_dataset(tfrecords,
     else:
         raise ValueError(
             "invalid mode, please use train, predict or submodel: {}".format(mode))
-
+    
+    #normalize after batch
+    dataset = dataset.map(_batch_normalization)
+    
     dataset = dataset.prefetch(buffer_size=1)
 
     return dataset
