@@ -10,13 +10,13 @@ from DeepTreeAttention.visualization import visualize
 from tensorflow.keras.callbacks import ReduceLROnPlateau
 from tensorflow.keras.callbacks import Callback, TensorBoard
 
-
 class ConfusionMatrixCallback(Callback):
 
-    def __init__(self, experiment, dataset, label_names):
+    def __init__(self, experiment, dataset, label_names, submodel):
         self.experiment = experiment
         self.dataset = dataset
         self.label_names = label_names
+        self.submodel = submodel
 
     def on_epoch_end(self, epoch, logs={}):
         y_true = []
@@ -24,8 +24,13 @@ class ConfusionMatrixCallback(Callback):
 
         for image, label in self.dataset:
             pred = self.model.predict(image)
-            y_pred.append(pred[0])
-            y_true.append(label[0])
+            
+            if self.submodel:
+                y_pred.append(pred[0])
+                y_true.append(label[0])
+            else:
+                y_pred.append(pred)
+                y_true.append(label)       
 
         y_true = np.concatenate(y_true)
         y_pred = np.concatenate(y_pred)
@@ -43,10 +48,11 @@ class ConfusionMatrixCallback(Callback):
 
 class ImageCallback(Callback):
 
-    def __init__(self, experiment, dataset, label_names):
+    def __init__(self, experiment, dataset, label_names, submodel=False):
         self.experiment = experiment
         self.dataset = dataset
         self.label_names = label_names
+        self.submodel = submodel
 
     def on_train_end(self, epoch, logs={}):
         """Plot sample images with labels annotated"""
@@ -62,8 +68,14 @@ class ImageCallback(Callback):
             if num_images < limit:
                 pred = self.model.predict(image)
                 images.append(image)
-                y_pred.append(pred[0])
-                y_true.append(label[0])
+                
+                if self.submodel:
+                    y_pred.append(pred[0])
+                    y_true.append(label[0])
+                else:
+                    y_pred.append(pred)
+                    y_true.append(label)                    
+
                 num_images += image.shape[0]
             else:
                 break

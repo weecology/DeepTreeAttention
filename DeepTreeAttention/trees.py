@@ -300,11 +300,13 @@ class AttentionModel():
             print("Cannot run callbacks without comet experiment, skipping...")
             callback_list = None
         else:
+            submodel_flag = submodel is not None
             labeldf = pd.read_csv(self.classes_file)
             callback_list = callbacks.create(log_dir=self.log_dir,
                                              experiment=experiment,
                                              validation_data=self.val_split,
-                                             label_names=list(labeldf.taxonID.values))
+                                             label_names=list(labeldf.taxonID.values),
+                                             submodel=submodel_flag)
 
         if submodel == "spatial":
             #The spatial model is very shallow compared to spectral, train for longer
