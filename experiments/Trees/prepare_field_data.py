@@ -206,7 +206,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral"
         
     return plot_crops, plot_labels, plot_box_index
 
-def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=200, extend_box=0, hyperspectral_savedir=".", n_workers=20, saved_model=None, use_dask=True, shuffle=True, classes_file=None):
+def main(field_data, height, width, rgb_dir=None, hyperspectral_dir=None, sensor="hyperspectral", savedir=".", chunk_size=200, extend_box=0, hyperspectral_savedir=".", n_workers=20, saved_model=None, use_dask=True, shuffle=True, classes_file=None):
     """Prepare NEON field data into tfrecords
     Args:
         field_data: shp file with location and class of each field collected point
@@ -224,12 +224,15 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
     """
     #Check sensor type has paths
     if sensor == "hyperspectral":
-        assert not hyperspectral_pool is None
+        assert not hyperspectral_dir is None
     if sensor=="rgb":
-        assert not rgb_pool is None
+        assert not rgb_dir is None
         
     df = gpd.read_file(field_data)
     plot_names = df.plotID.unique()
+    
+    hyperspectral_pool = glob.glob(hyperspectral_dir, recursive=True)
+    rgb_pool = glob.glob(rgb_dir, recursive=True)
     
     labels = []
     crops = []
@@ -311,8 +314,8 @@ if __name__ == "__main__":
         height=config["train"]["crop_size"],
         width=config["train"]["crop_size"],        
         sensor="hyperspectral",
-        hyperspectral_pool=config["hyperspectral_sensor_pool"],
-        rgb_pool=config["rgb_sensor_pool"],
+        hyperspectral_dir=config["hyperspectral_sensor_pool"],
+        rgb_dir=config["rgb_sensor_pool"],
         extend_box=config["train"]["extend_box"],
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["train"]["tfrecords"],
@@ -326,8 +329,8 @@ if __name__ == "__main__":
         height=config["train"]["crop_size"],
         width=config["train"]["crop_size"],        
         sensor="hyperspectral",
-        hyperspectral_pool=config["hyperspectral_sensor_pool"],
-        rgb_pool=config["rgb_sensor_pool"],
+        hyperspectral_dir=config["hyperspectral_sensor_pool"],
+        rgb_dir=config["rgb_sensor_pool"],
         extend_box=config["train"]["extend_box"],
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["evaluation"]["tfrecords"],
