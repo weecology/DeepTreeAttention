@@ -169,6 +169,9 @@ def test_train_callbacks(tfrecords, mod):
     mod.read_data(validation_split=True, mode="submodel")
     mod.train(submodel="spectral",experiment=experiment)
 
+    mod.read_data(validation_split=True)
+    mod.train(experiment=experiment)
+    
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_field_callbacks(mod):
     mod.config["train"]["tfrecords"] = "data/processed/"
