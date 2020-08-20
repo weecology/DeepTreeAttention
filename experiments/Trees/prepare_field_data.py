@@ -235,7 +235,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
     crops = []
     box_indexes = []    
     if use_dask:
-        client = start_cluster.start(cpus=n_workers, mem_size="13GB")
+        client = start_cluster.start(cpus=n_workers, mem_size="10GB")
         futures = []
         for plot in plot_names:
             future = client.submit(
@@ -332,6 +332,6 @@ if __name__ == "__main__":
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["evaluation"]["tfrecords"],
         n_workers=config["cpu_workers"],
-        classes_file = os.path.join(config["train"]["tfrecords"],"classes_file.csv"),
+        classes_file = os.path.join(config["train"]["tfrecords"],"class_labels.csv"),
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )    
