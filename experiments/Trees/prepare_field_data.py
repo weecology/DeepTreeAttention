@@ -206,7 +206,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral"
         
     return plot_crops, plot_labels, plot_box_index
 
-def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=200, extend_box=0, hyperspectral_savedir=".", n_workers=20, saved_model=None, use_dask=True, shuffle=True):
+def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", savedir=".", chunk_size=200, extend_box=0, hyperspectral_savedir=".", n_workers=20, saved_model=None, use_dask=True, shuffle=True, classes_file=None):
     """Prepare NEON field data into tfrecords
     Args:
         field_data: shp file with location and class of each field collected point
@@ -217,6 +217,7 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
         extend_box: units in meters to add to the edge of a predicted box to give more context
         hyperspectral_savedir: location to save converted .h5 to .tif
         n_workers: number of dask workers
+        classes_file: optional path to a two column csv file with index and labels
         shuffle: shuffle lists before writing
     Returns:
         tfrecords: list of created tfrecords
@@ -278,14 +279,21 @@ def main(field_data, height, width, rgb_pool=None, hyperspectral_pool=None, sens
         crops, box_indexes, labels = zip(*z)
                     
     #Convert labels to numeric
-    unique_labels = np.unique(labels)
-    label_dict = {}
     
-    for index, label in enumerate(unique_labels):
-        label_dict[label] = index
+    #If passes a label dict
+    if classes_file is not None:
+        classdf  = pd.read_csv(classes_file)
+        label_dict = classdf.set_index("taxonID").label.to_dict()
+    else:
+        #Create and save a label dict
+        unique_labels = np.unique(labels)
+        label_dict = {}
         
+        for index, label in enumerate(unique_labels):
+            label_dict[label] = index
+        pd.DataFrame(label_dict.items(), columns=["taxonID","label"]).to_csv("{}/class_labels.csv".format(savedir))
+
     numeric_labels = [label_dict[x] for x in labels]
-    pd.DataFrame(label_dict.items(), columns=["taxonID","label"]).to_csv("{}/class_labels.csv".format(savedir))
     
     #Write tfrecords
     tfrecords = create_records(crops, numeric_labels, box_indexes, savedir, height, width, chunk_size=chunk_size)
@@ -324,5 +332,6 @@ if __name__ == "__main__":
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["evaluation"]["tfrecords"],
         n_workers=config["cpu_workers"],
+        classes_file = os.path.join(config["train"]["tfrecords"],"classes_file.csv"),
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )    
