@@ -306,13 +306,6 @@ def _predict_parse_(tfrecord):
 
     return loaded_image, example['box_index']
 
-
-def _batch_normalization(tensor_in, epsilon=.0001):
-    mean,variance = tf.nn.moments(tensor_in,axes=[0])
-    print(mean)
-    tensor_normalized = (tensor_in-mean)/(variance+epsilon)
-    return tensor_normalized
-
 def tf_dataset(tfrecords,
                batch_size=2,
                height=20,
@@ -342,24 +335,25 @@ def tf_dataset(tfrecords,
 
     if mode == "train":
         dataset = dataset.map(_train_parse_, num_parallel_calls=cores)
+        #normalize and batch
+        dataset = dataset.map(lambda image, label: tf.image.per_image_standardization(image))
         dataset = dataset.shuffle(buffer_size=batch_size * 5)
         dataset = dataset.batch(batch_size=batch_size)
 
     elif mode == "predict":
         dataset = dataset.map(_predict_parse_, num_parallel_calls=cores)
+        dataset = dataset.map(lambda image, label: tf.image.per_image_standardization(image))
         dataset = dataset.batch(batch_size=batch_size)
 
     elif mode == "submodel":
         dataset = dataset.map(create_tfrecords._train_submodel_parse_,
                               num_parallel_calls=cores)
+        dataset = dataset.map(lambda image, label : tf.image.per_image_standardization(image))   
         dataset = dataset.shuffle(buffer_size=batch_size * 5)
         dataset = dataset.batch(batch_size=batch_size)
     else:
         raise ValueError(
             "invalid mode, please use train, predict or submodel: {}".format(mode))
-    
-    #normalize after batch
-    dataset = dataset.map(_batch_normalization)
     
     dataset = dataset.prefetch(buffer_size=1)
 
