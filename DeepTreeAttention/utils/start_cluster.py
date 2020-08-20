@@ -4,6 +4,7 @@ Create a cluster of GPU nodes to perform parallel prediction of tiles
 import argparse
 import sys
 import socket
+import subprocess
 from dask_jobqueue import SLURMCluster
 from dask.distributed import Client, wait
 import gc
@@ -11,7 +12,6 @@ import gc
 
 def collect():
     gc.collect()
-
 
 def args():
     parser = argparse.ArgumentParser(
@@ -27,6 +27,10 @@ def find_tiles():
     """Read a yaml describing which sites to run"""
     pass
 
+def start_notebook():
+    host = socket.gethostname()
+    proc = subprocess.Popen(['jupyter', 'lab', '--ip', host, '--no-browser'])
+    print("ssh -N -L 8888:%s:8888 -l b.weinstein hpg2.rc.ufl.edu" % (host))
 
 def start_tunnel():
     """

@@ -71,11 +71,11 @@ if __name__ == "__main__":
     with experiment.context_manager("spatial_subnetwork"):
         print("Train spatial subnetwork")
         model.read_data(mode="submodel")
-        model.train(submodel="spatial", class_weight=[class_weight, class_weight, class_weight])
+        model.train(submodel="spatial", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
     with experiment.context_manager("spectral_subnetwork"):
         print("Train spectral subnetwork")    
         model.read_data(mode="submodel")   
-        model.train(submodel="spectral", class_weight=[class_weight, class_weight, class_weight])
+        model.train(submodel="spectral", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
             
     #Train full model
     experiment.log_parameter("Class Weighted", True)
@@ -89,23 +89,7 @@ if __name__ == "__main__":
         
     ##Evaluate
     #Evaluation scores, see config.yml for tfrecords path
-    y_pred, y_true = model.evaluate(model.val_split)
-    
-    #Evaluation accuracy
-    #Something is wrong here, this does not seem right,.
-    eval_acc = keras_metrics.CategoricalAccuracy()
-    eval_acc.update_state(y_true, y_pred)
-    experiment.log_metric("Evaluation Accuracy",eval_acc.result().numpy())
-    
-    macro, micro = metrics.f1_scores(y_true, y_pred)
-    experiment.log_metric("MicroF1",micro)
-    experiment.log_metric("MacroF1",macro)
-    
-    print("Unique labels in ytrue {}, unique labels in y_pred {}".format(np.unique(np.argmax(y_true,1)),np.unique(np.argmax(y_pred,1))))
-    
-    #Read class labels
-    labeldf = pd.read_csv(model.classes_file)    
-    experiment.log_confusion_matrix(y_true = y_true, y_predicted = y_pred, labels=list(labeldf.taxonID.values), title="Confusion Matrix")
+    #y_pred, y_true = model.evaluate(model.val_split)
     
     #Save model
     model.model.save("{}/{}.h5".format(save_dir,timestamp))
