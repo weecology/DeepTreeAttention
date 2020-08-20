@@ -167,7 +167,7 @@ def test_evaluate(mod, tfrecords):
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
     mod.read_data(validation_split=True, mode="submodel")
-    mod.train(experiment=experiment)
+    mod.train(submodel="spectral",experiment=experiment)
 
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_field_callbacks(mod):

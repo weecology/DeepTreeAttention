@@ -24,7 +24,7 @@ class ConfusionMatrixCallback(Callback):
 
         for image, label in self.dataset:
             pred = self.model.predict(image)
-            y_pred.append(pred)
+            y_pred.append(pred[0])
             y_true.append(label[0])
 
         y_true = np.concatenate(y_true)
@@ -62,13 +62,13 @@ class ImageCallback(Callback):
             if num_images < limit:
                 pred = self.model.predict(image)
                 images.append(image)
-                y_pred.append(pred)
+                y_pred.append(pred[0])
                 y_true.append(label[0])
                 num_images += image.shape[0]
             else:
                 break
 
-        images = np.column_stack(images)
+        images = np.vstack(images)
         y_true = np.concatenate(y_true)
         y_pred = np.concatenate(y_pred)
 
