@@ -6,6 +6,7 @@ import tensorflow
 import numpy as np
 from matplotlib import pyplot as plt
 import geopandas as gpd
+import glob
 
 import prepare_field_data
 from DeepTreeAttention.generators import boxes
@@ -13,9 +14,12 @@ from deepforest import deepforest
 
 data_dir = os.path.dirname(prepare_field_data.__file__)
 data_path = "{}/test_data/sample.shp".format(data_dir)
-rgb_pool = "{}/test_data/rgb/*.tif".format(data_dir)
-hyperspec_pool = "{}/test_data/HSI/*.tif".format(data_dir)
+rgb_dir = "{}/test_data/rgb/*.tif".format(data_dir)
+hyperspectral_dir = "{}/test_data/HSI/*.tif".format(data_dir)
 hyperspectral_savedir = "{}/test_data/HSI/".format(data_dir)
+
+hyperspectral_pool = glob.glob(hyperspectral_dir, recursive=True)
+rgb_pool = glob.glob(rgb_dir, recursive=True)
 
 height = 100
 width = 100
@@ -32,7 +36,7 @@ def test_process_plot():
 def test_run():
     df = gpd.read_file(data_path)
     
-    plot_crops, plot_labels, plot_box_index = prepare_field_data.run(plot=df.plotID[0], df=df, rgb_pool=rgb_pool, hyperspectral_pool=hyperspec_pool, 
+    plot_crops, plot_labels, plot_box_index = prepare_field_data.run(plot=df.plotID[0], df=df, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, 
                                                           sensor="rgb", extend_box=1, hyperspectral_savedir=hyperspectral_savedir) 
     
     assert len(plot_labels) == df.shape[0]
@@ -46,10 +50,10 @@ def test_run():
 def test_main():
     created_records = prepare_field_data.main(
         field_data=data_path,
-        hyperspectral_pool=hyperspec_pool,
+        hyperspectral_dir=hyperspectral_dir,
         height=height,
         width=width,
-        rgb_pool=rgb_pool,
+        rgb_dir=rgb_dir,
         sensor="rgb",
         hyperspectral_savedir=hyperspectral_savedir,
         use_dask=False,

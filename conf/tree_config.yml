@@ -12,7 +12,7 @@ train:
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/train_data.shp  #path to ground truth class shapefile   
     crop_size: 20
     sensor_channels: 369
-    extend_box: 5 #expand DeepForest bounding boxes by x meters at edge
+    extend_box: 1 #expand DeepForest bounding boxes by x meters at edge
     epochs: 50
     learning_rate: .001
     gpu: 1

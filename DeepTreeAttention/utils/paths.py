@@ -33,16 +33,15 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None, sensor="hyperspec
     Returns:s
         year_match: full path to sensor tile
     """
-    pool = glob.glob(lookup_pool, recursive=True)
 
     if shapefile is None:
         geo_index = bounds_to_geoindex(bounds)
-        match = [x for x in pool if geo_index in x]
+        match = [x for x in lookup_pool if geo_index in x]
         match.sort()
         try:
             year_match = match[-1]
         except Exception as e:
-            raise ValueError("No matches for {} in {}: {}".format(bounds, lookup_pool, e))
+            raise ValueError("No matches for {} in {}: {}".format(bounds, os.path.dirname(lookup_pool), e))
     else:
 
         #Get file metadata from name string
