@@ -25,7 +25,7 @@ class ConfusionMatrixCallback(Callback):
         for image, label in self.dataset:
             pred = self.model.predict(image)
             y_pred.append(pred)
-            y_true.append(label)
+            y_true.append(label[0])
 
         y_true = np.concatenate(y_true)
         y_pred = np.concatenate(y_pred)
