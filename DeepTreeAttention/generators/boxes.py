@@ -306,6 +306,20 @@ def _predict_parse_(tfrecord):
 
     return loaded_image, example['box_index']
 
+def flip(x: tf.Tensor) -> tf.Tensor:
+    """Flip augmentation
+
+    Args:
+        x: Image to flip
+
+    Returns:
+        Augmented image
+    """
+    x = tf.image.random_flip_left_right(x)
+    x = tf.image.random_flip_up_down(x)
+
+    return x
+
 def tf_dataset(tfrecords,
                batch_size=2,
                height=20,
@@ -337,6 +351,7 @@ def tf_dataset(tfrecords,
         dataset = dataset.map(_train_parse_, num_parallel_calls=cores)
         #normalize and batch
         dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))
+        dataset = dataset.map(lambda image, label: (flip(image), label))        
         dataset = dataset.shuffle(buffer_size=batch_size * 5)
         dataset = dataset.batch(batch_size=batch_size)
 
@@ -349,6 +364,7 @@ def tf_dataset(tfrecords,
         dataset = dataset.map(create_tfrecords._train_submodel_parse_,
                               num_parallel_calls=cores)
         dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
+        dataset = dataset.map(lambda image, label: (flip(image), label))        
         dataset = dataset.shuffle(buffer_size=batch_size * 5)
         dataset = dataset.batch(batch_size=batch_size)
     else:
