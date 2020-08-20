@@ -43,7 +43,8 @@ class ConfusionMatrixCallback(Callback):
             y_pred,
             title="Confusion Matrix, Epoch #%d" % (epoch + 1),
             file_name="confusion-matrix-%03d.json" % (epoch + 1),
-            labels=self.label_names)
+            labels=self.label_names,
+            max_categories=74)
 
 
 class ImageCallback(Callback):
