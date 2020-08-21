@@ -67,6 +67,8 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=10):
     boxes['geometry'] = boxes.apply(lambda x: shapely.geometry.box(x.xmin,x.ymin,x.xmax,x.ymax), axis=1)
     boxes = gpd.GeoDataFrame(boxes, geometry='geometry')    
     
+    #Buffer slightly 
+    boxes.geometry = boxes.geometry.buffer(1)
     return boxes
 
 def process_plot(plot_data, rgb_pool, deepforest_model):
