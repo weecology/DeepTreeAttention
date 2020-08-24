@@ -10,7 +10,7 @@ from DeepTreeAttention.visualization import visualize
 from tensorflow.keras.callbacks import ReduceLROnPlateau
 from tensorflow.keras.callbacks import Callback, TensorBoard
 
-class ConfusionMatrixCallback(Callback):
+class F1Callback(Callback):
 
     def __init__(self, experiment, dataset, label_names, submodel):
         self.experiment = experiment
@@ -37,6 +37,31 @@ class ConfusionMatrixCallback(Callback):
         macro, micro = metrics.f1_scores(y_true, y_pred)
         self.experiment.log_metric("MicroF1", micro)
         self.experiment.log_metric("MacroF1", macro)
+        
+class ConfusionMatrixCallback(Callback):
+
+    def __init__(self, experiment, dataset, label_names, submodel):
+        self.experiment = experiment
+        self.dataset = dataset
+        self.label_names = label_names
+        self.submodel = submodel
+
+    def on_train_end(self, epoch, logs={}):
+        y_true = []
+        y_pred = []
+
+        for image, label in self.dataset:
+            pred = self.model.predict(image)
+            
+            if self.submodel:
+                y_pred.append(pred[0])
+                y_true.append(label[0])
+            else:
+                y_pred.append(pred)
+                y_true.append(label)       
+
+        y_true = np.concatenate(y_true)
+        y_pred = np.concatenate(y_pred)
 
         self.experiment.log_confusion_matrix(
             y_true,
@@ -109,8 +134,9 @@ def create(experiment, validation_data, log_dir=None, label_names=None, submodel
 
     confusion_matrix = ConfusionMatrixCallback(experiment, validation_data, label_names, submodel=submodel)
     plot_images = ImageCallback(experiment, validation_data, label_names, submodel=submodel)
+    f1 = F1Callback(experiment, validation_data, label_names, submodel=submodel)
 
     if log_dir is not None:
         tensorboard = TensorBoard(log_dir=log_dir, histogram_freq=1, profile_batch=10)
 
-    return [reduce_lr, confusion_matrix, plot_images]
+    return [reduce_lr, confusion_matrix, plot_images, f1]
