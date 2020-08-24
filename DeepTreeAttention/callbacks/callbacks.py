@@ -62,12 +62,17 @@ class ConfusionMatrixCallback(Callback):
 
         y_true = np.concatenate(y_true)
         y_pred = np.concatenate(y_pred)
+        
+        if self.submodel:
+            name = "Submodel Confusion Matrix"
+        else:
+            name = "Confusion Matrix"
 
         self.experiment.log_confusion_matrix(
             y_true,
             y_pred,
-            title="Confusion Matrix, Epoch #%d" % (epoch + 1),
-            file_name="confusion-matrix-%03d.json" % (epoch + 1),
+            title=name,
+            file_name= name,
             labels=self.label_names,
             max_categories=74)
 
