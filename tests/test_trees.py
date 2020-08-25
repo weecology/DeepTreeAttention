@@ -148,21 +148,6 @@ def test_evaluate(mod, tfrecords):
     #Method 1, class eval method
     print("Before evaluation")
     y_pred, y_true = mod.evaluate(mod.val_split)
-    
-    print("evaluated")
-    test_acc = keras_metrics.CategoricalAccuracy()
-    test_acc.update_state(y_true=y_true, y_pred = y_pred)
-    method1_eval_accuracy = test_acc.result().numpy()
-    
-    assert y_pred.shape == y_true.shape
-
-    #Method 2, keras eval method
-    metric_list = mod.model.evaluate(mod.val_split)
-    metric_dict = {}
-    for index, value in enumerate(metric_list):
-        metric_dict[mod.model.metrics_names[index]] = value
-    
-    assert method1_eval_accuracy == metric_dict["acc"]
 
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
