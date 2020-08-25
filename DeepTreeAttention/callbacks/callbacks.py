@@ -68,13 +68,15 @@ class ConfusionMatrixCallback(Callback):
         else:
             name = "Confusion Matrix"
 
-        self.experiment.log_confusion_matrix(
+        cm = self.experiment.log_confusion_matrix(
             y_true,
             y_pred,
             title=name,
             file_name= name,
             labels=self.label_names,
             max_categories=74)
+        
+        self.experiment.log_image(image_data = cm.display(), name = name)
 
 
 class ImageCallback(Callback):
