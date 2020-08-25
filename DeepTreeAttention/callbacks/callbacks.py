@@ -45,7 +45,7 @@ class ConfusionMatrixCallback(Callback):
         self.dataset = dataset
         self.label_names = label_names
         self.submodel = submodel
-
+        
     def on_train_end(self, epoch, logs={}):
         y_true = []
         y_pred = []
@@ -75,10 +75,6 @@ class ConfusionMatrixCallback(Callback):
             file_name= name,
             labels=self.label_names,
             max_categories=74)
-        
-        cm = compute_matrix(y_true, y_pred)
-        self.experiment.log_image(image_data = cm.display(), name = name)
-
 
 class ImageCallback(Callback):
 
