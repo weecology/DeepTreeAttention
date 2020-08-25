@@ -76,6 +76,7 @@ class ConfusionMatrixCallback(Callback):
             labels=self.label_names,
             max_categories=74)
         
+        cm = compute_matrix(y_true, y_pred)
         self.experiment.log_image(image_data = cm.display(), name = name)
 
 
