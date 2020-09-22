@@ -218,3 +218,16 @@ def submodule_consensus(spatial_layers, spectral_layers, weighted_sum=True):
         x = layers.Add()([spatial_layers, spectral_layers])
 
     return x
+
+def metadata_layer(metadata, spectral_spatial_layers, classes):
+    """Learn from a metadata layer and combined with spatial/spectral information. The combined model from Terry et al. 2020 Methods in E&E"""
+    x = layers.Dense(64)(metadata)
+    #x = layers.Dropout(0.2)(x)
+    x = layers.Dense(64)(x)
+    #x = layers.Dropout(0.2)(x)    
+    x = layers.Concatenate()([x,spectral_spatial_layers])
+    x = layers.Dense(classes, activation="softmax")(x)
+    
+    return x
+    
+    

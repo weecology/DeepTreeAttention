@@ -178,11 +178,11 @@ class AttentionModel():
             metric_list = [metrics.CategoricalAccuracy(name="acc")]
 
             #Create model
-            self.inputs, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang2020.create_model(
+            self.sensors_inputs, self.metadata_inputs, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang2020.create_model(
                 self.height, self.width, self.channels, self.classes, self.weighted_sum)
 
             #Full model compile
-            self.model = tf.keras.Model(inputs=self.inputs,
+            self.model = tf.keras.Model(inputs=[self.sensors_inputs, self.metadata_inputs],
                                         outputs=self.combined_output,
                                         name="DeepTreeAttention")
 
@@ -199,7 +199,7 @@ class AttentionModel():
             }
 
             # Spatial Attention softmax model
-            self.spatial_model = tf.keras.Model(inputs=self.inputs,
+            self.spatial_model = tf.keras.Model(inputs=self.sensors_inputs,
                                                 outputs=self.spatial_attention_outputs,
                                                 name="DeepTreeAttention")
 
@@ -211,7 +211,7 @@ class AttentionModel():
                 metrics=metric_list)
 
             # Spectral Attention softmax model
-            self.spectral_model = tf.keras.Model(inputs=self.inputs,
+            self.spectral_model = tf.keras.Model(inputs=self.sensors_inputs,
                                                  outputs=self.spectral_attention_outputs,
                                                  name="DeepTreeAttention")
 
