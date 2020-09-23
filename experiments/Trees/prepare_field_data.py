@@ -186,7 +186,7 @@ def create_records(crops, labels, sites, box_index, savedir, height, width, chun
         write_tfrecord(filename=filename,
                                             images=resized_crops,
                                             labels=chunk_labels,
-                                            sites = chuck_sites,
+                                            sites = chunk_sites,
                                             indices=chunk_index,
                                             classes=max(labels)+1)
         
