@@ -385,6 +385,6 @@ if __name__ == "__main__":
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["evaluation"]["tfrecords"],
         n_workers=config["cpu_workers"],
-        classes_file = os.path.join(config["train"]["tfrecords"],"class_labels.csv"),
+        species_classes_file = os.path.join(config["train"]["tfrecords"],"class_labels.csv"),
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )    
