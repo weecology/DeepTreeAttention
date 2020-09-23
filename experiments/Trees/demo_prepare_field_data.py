@@ -84,8 +84,7 @@ def test_main():
             except Exception as e:
                 print(e)
                 break
-    assert counter ==3 
-    assert max([np.argmax(x) for x in labels])
+    assert counter==5 
 
 #Run tests
 test_process_plot()
