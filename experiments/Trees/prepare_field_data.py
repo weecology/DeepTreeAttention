@@ -293,12 +293,12 @@ def main(
         wait(futures)
         for x in futures:
             try:
-                plot_crops, plot_labels, plot_box_index = x.result()
-                print(plot_box_index[0])
+                plot_crops, plot_labels, plot_sites, plot_box_index = x.result()
                 
                 #Append to general plot list
                 crops.extend(plot_crops)
                 labels.extend(plot_labels)
+                sites.extend(plot_sites)                            
                 box_indexes.extend(plot_box_index)            
             except Exception as e:
                 print("Future failed with {}".format(e))        
