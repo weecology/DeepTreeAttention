@@ -48,7 +48,7 @@ class AttentionModel():
         self.weighted_sum = self.config["train"]["weighted_sum"]
         self.extend_box = self.config["train"]["extend_box"]
         self.classes_file = os.path.join(self.config["train"]["tfrecords"],
-                                         "class_labels.csv")
+                                         "species_class_labels.csv")
         self.classes = self.config["train"]["classes"]
 
     def generate(self, shapefile, sensor_path, site, species_label_dict=None, train=True, chunk_size=1000):
