@@ -31,21 +31,27 @@ def test_process_plot():
     deepforest_model.use_release()
     
     merged_boxes = prepare_field_data.process_plot(plot_data=df, rgb_pool=rgb_pool, deepforest_model=deepforest_model)
-    assert df.shape[0] == merged_boxes.shape[0]
+    assert df.shape[0] <= merged_boxes.shape[0]
     
 def test_run():
     df = gpd.read_file(data_path)
     
-    plot_crops, plot_labels, plot_box_index = prepare_field_data.run(plot=df.plotID[0], df=df, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, 
-                                                          sensor="rgb", extend_box=1, hyperspectral_savedir=hyperspectral_savedir) 
+    plot_crops, plot_labels, plot_sites, plot_box_index = prepare_field_data.run(
+        plot=df.plotID[0],
+        df=df,
+        rgb_pool=rgb_pool,
+        hyperspectral_pool=hyperspectral_pool,
+        sensor="rgb",
+        extend_box=1,
+        hyperspectral_savedir=hyperspectral_savedir
+    ) 
     
-    assert len(plot_labels) == df.shape[0]
-    assert len(plot_crops) == df.shape[0]
-    assert len(plot_box_index) == df.shape[0]
+    #all have same length
+    lists = [plot_crops, plot_labels, plot_sites, plot_box_index]
+    assert len({len(i) for i in lists}) == 1
     
     #all indices should be unique
-    assert len(np.unique(plot_box_index)) == 3
-    
+    assert len(np.unique(plot_box_index)) == len(plot_box_index)
     
 def test_main():
     created_records = prepare_field_data.main(

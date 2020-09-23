@@ -1,8 +1,7 @@
 #Tfrecords
 import tensorflow as tf
 
-
-def write_tfrecord(filename, images, labels=None, classes=21, train=True, x=None, y=None):
+def write_tfrecord(filename, sites, images, labels=None, classes=21, train=True, x=None, y=None):
     """Write a training or prediction tfrecord
         Args:
             train: True -> create a training record with labels. False -> a prediciton record with raster indices
@@ -11,15 +10,15 @@ def write_tfrecord(filename, images, labels=None, classes=21, train=True, x=None
 
     #Write parser
     if train:
-        for image, label in zip(images, labels):
-            tf_example = create_training_record(image=image, label=label, classes=classes)
+        for image, site, label in zip(images, sites, labels):
+            tf_example = create_training_record(image=image, label=label, site=site, classes=classes)
             writer.write(tf_example.SerializeToString())
     else:
         if x is None:
             raise ValueError(
                 "x and y raster indices are required when creating prediction records")
-        for image, x, y in zip(images, x, y):
-            tf_example = create_prediction_record(image=image, classes=classes, x=x, y=y)
+        for image, site, x, y in zip(images, sites, x, y):
+            tf_example = create_prediction_record(image=image, classes=classes, site=site, x=x, y=y)
             writer.write(tf_example.SerializeToString())
 
     writer.close()
@@ -33,7 +32,7 @@ def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 
-def create_training_record(image, label, classes):
+def create_training_record(image, site, label, classes):
     """Generate one record"""
     rows = image.shape[0]
     cols = image.shape[1]
@@ -43,6 +42,7 @@ def create_training_record(image, label, classes):
         feature={
             'image/data': _bytes_feature(image.tostring()),
             'label': _int64_feature(label),
+            'site': _int64_feature(site),            
             'image/height': _int64_feature(rows),
             'image/width': _int64_feature(cols),
             'image/depth': _int64_feature(depth),
@@ -53,7 +53,7 @@ def create_training_record(image, label, classes):
     return example
 
 
-def create_prediction_record(image, classes, x, y):
+def create_prediction_record(image, site, classes, x, y):
     """Generate one record"""
     rows = image.shape[0]
     cols = image.shape[1]
@@ -66,6 +66,7 @@ def create_prediction_record(image, classes, x, y):
             'image/width': _int64_feature(cols),
             'image/depth': _int64_feature(depth),
             'classes': _int64_feature(classes),
+            'site': _int64_feature(site),            
             'x': _int64_feature(x),
             'y': _int64_feature(y),
         }))
@@ -79,6 +80,7 @@ def _train_parse_(tfrecord):
     features = {
         'image/data': tf.io.FixedLenFeature([], tf.string),
         "label": tf.io.FixedLenFeature([], tf.int64),
+        "site": tf.io.FixedLenFeature([], tf.int64),
         "image/height": tf.io.FixedLenFeature([], tf.int64),
         "image/width": tf.io.FixedLenFeature([], tf.int64),
         "image/depth": tf.io.FixedLenFeature([], tf.int64),
@@ -92,6 +94,7 @@ def _train_parse_(tfrecord):
     height = tf.cast(example['image/height'], tf.int64)
     width = tf.cast(example['image/width'], tf.int64)
     depth = tf.cast(example['image/depth'], tf.int64)
+    site = tf.cast(example['site'], tf.int64)
 
     #recast
     label = tf.cast(example['label'], tf.uint16)
@@ -108,7 +111,7 @@ def _train_parse_(tfrecord):
     #one hot
     one_hot_labels = tf.one_hot(label, classes)
 
-    return loaded_image, one_hot_labels
+    return (loaded_image, site),  one_hot_labels
 
 
 def _train_submodel_parse_(tfrecord):
@@ -159,6 +162,7 @@ def _predict_parse_(tfrecord):
     # Define features
     features = {
         'image/data': tf.io.FixedLenFeature([], tf.string),
+        'site': tf.io.FixedLenFeature([], tf.int64),
         "image/height": tf.io.FixedLenFeature([], tf.int64),
         "image/width": tf.io.FixedLenFeature([], tf.int64),
         "image/depth": tf.io.FixedLenFeature([], tf.int64),
@@ -173,6 +177,7 @@ def _predict_parse_(tfrecord):
     height = tf.cast(example['image/height'], tf.int64)
     width = tf.cast(example['image/width'], tf.int64)
     depth = tf.cast(example['image/depth'], tf.int64)
+    site = tf.cast(example['site'], tf.int64)
 
     # Load image from file
     image = tf.io.decode_raw(example['image/data'], tf.uint16)
@@ -185,4 +190,4 @@ def _predict_parse_(tfrecord):
     raster_rows = tf.cast(example['x'], tf.int64)
     raster_cols = tf.cast(example['y'], tf.int64)
 
-    return loaded_image, raster_rows, raster_cols
+    return (loaded_image, site), raster_rows, raster_cols

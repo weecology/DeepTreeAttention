@@ -1,5 +1,6 @@
 #Test main tree module, only run comet experiment locally to debug callbacks
 import os
+import pandas as pd
 import glob
 
 is_travis = 'TRAVIS' in os.environ
@@ -68,7 +69,7 @@ def mod(tmpdir):
     mod.channels = mod.config["train"]["sensor_channels"]
     mod.weighted_sum = mod.config["train"]["weighted_sum"]
     mod.extend_box = mod.config["train"]["extend_box"]
-    mod.classes_file = os.path.join(mod.config["train"]["tfrecords"],"class_labels.csv")
+    mod.species_classes_file = "data/processed/class_labels.csv"
     mod.classes = mod.config["train"]["classes"]
     
     #Create a model with input sizes
@@ -78,11 +79,11 @@ def mod(tmpdir):
 
 @pytest.fixture()
 def tfrecords(mod, tmpdir):
-    created_records = mod.generate(shapefile=test_predictions, sensor_path=test_sensor_tile, train=True, chunk_size=100)    
+    created_records = mod.generate(shapefile=test_predictions, site=0, sensor_path=test_sensor_tile, train=True, chunk_size=100)    
     return created_records
 
 def test_generate(mod):
-    created_records = mod.generate(shapefile=test_predictions, sensor_path=test_sensor_tile, train=True, chunk_size=100)  
+    created_records = mod.generate(shapefile=test_predictions, site=0, sensor_path=test_sensor_tile, train=True, chunk_size=100)  
     assert all([os.path.exists(x) for x in created_records])
 
 def test_split_data(mod, tfrecords):
@@ -104,12 +105,12 @@ def test_AttentionModel(mod, tfrecords, submodel):
     test_image_data = []
     
     train_counter=0
-    for data, label in mod.train_split:
+    for (data,site), label in mod.train_split:
         train_image_data.append(data)
         train_counter+=data.shape[0]
             
     test_counter=0
-    for data, label in mod.val_split:
+    for (data,site), label in mod.val_split:
         test_image_data.append(data)            
         test_counter+=data.shape[0]
     
