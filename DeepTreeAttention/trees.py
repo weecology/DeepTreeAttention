@@ -184,7 +184,12 @@ class AttentionModel():
 
             #Create model
             self.sensor_inputs, self.metadata_inputs, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang.create_model(
-                self.height, self.width, self.channels, self.classes, self.weighted_sum)
+                height=self.height,
+                width=self.width,
+                channels=self.channels,
+                classes=self.classes,
+                weighted_sum=self.weighted_sum,
+                self.sites=self.sites)
 
             #Full model compile
             self.model = tf.keras.Model(inputs=[self.sensor_inputs, self.metadata_inputs],
