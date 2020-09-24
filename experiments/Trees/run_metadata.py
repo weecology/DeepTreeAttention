@@ -1,7 +1,7 @@
 #Linear metadata model for testing purposes
+from comet_ml import Experiment
 from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.models import metadata
-from comet_ml import Experiment
 
 model = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
 model.create()
