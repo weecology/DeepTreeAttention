@@ -15,10 +15,16 @@ experiment.add_tag("metadata")
 
 ##Train
 #Train see config.yml for tfrecords path with weighted classes in cross entropy
-model.read_data()
+model.read_data(mode="metadata")
 
 #Cree 
-meta_model = metadata.metadata_model(classes=74)
+inputs, outputs = metadata.metadata_model(classes=74)
+self.model = tf.keras.Model(inputs=inputs,
+                                        outputs=outputs,
+                                        name="DeepTreeAttention")
+
+meta_model.compile(loss='categorical_crossentropy', optimizer='adam')
+
 meta_model.fit(model.train_split,
     epochs=model.config["train"]["epochs"],
     validation_data=model.val_split

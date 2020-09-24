@@ -279,7 +279,6 @@ def _train_submodel_parse_(tfrecord):
 
     return loaded_image, (one_hot_labels, one_hot_labels, one_hot_labels)
 
-
 def _predict_parse_(tfrecord):
     """Tfrecord parser for prediction. No labels available
         Args:
@@ -316,6 +315,24 @@ def _predict_parse_(tfrecord):
     loaded_image = tf.cast(loaded_image, dtype=tf.float32)
 
     return (loaded_image, site), example['box_index']
+
+def _metadata_parse_(tfrecord):
+    """Tfrecord generator parse for a metadata model only"""
+    # Define features
+    features = {
+        "label": tf.io.FixedLenFeature([], tf.int64),
+        "site": tf.io.FixedLenFeature([], tf.int64),  
+        "classes": tf.io.FixedLenFeature([], tf.int64)                
+    }
+
+    site = tf.cast(example['site'], tf.int64)
+    label = tf.cast(example['label'], tf.int64)
+    classes = tf.cast(example['classes'], tf.int32)    
+
+    #one hot
+    one_hot_labels = tf.one_hot(label, classes)
+
+    return site, one_hot_labels
 
 def flip(x: tf.Tensor) -> tf.Tensor:
     """Flip augmentation
@@ -370,7 +387,11 @@ def tf_dataset(tfrecords,
         dataset = dataset.map(_predict_parse_, num_parallel_calls=cores)
         dataset = dataset.map(lambda inputs, index: ((tf.image.per_image_standardization(inputs[0]),inputs[1]), index))
         dataset = dataset.batch(batch_size=batch_size)
-
+    
+    elif mode == "metadata":
+        dataset = dataset.map(_metadata_parse_, num_parallel_calls=cores)
+        dataset = dataset.batch(batch_size=batch_size)
+        
     elif mode == "submodel":
         dataset = dataset.map(create_tfrecords._train_submodel_parse_,
                               num_parallel_calls=cores)
