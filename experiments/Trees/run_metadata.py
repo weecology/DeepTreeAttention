@@ -1,0 +1,25 @@
+#Linear metadata model for testing purposes
+from DeepTreeAttention.trees import AttentionModel
+from DeepTreeAttention.models import metadata
+from comet_ml import Experiment
+
+model = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
+model.create()
+    
+#Log config
+experiment = Experiment(project_name="neontrees", workspace="bw4sz")
+experiment.log_parameters(model.config["train"])
+experiment.log_parameters(model.config["evaluation"])    
+experiment.log_parameters(model.config["predict"])
+experiment.add_tag("metadata")
+
+##Train
+#Train see config.yml for tfrecords path with weighted classes in cross entropy
+model.read_data()
+
+#Cree 
+meta_model = metadata.metadata_model(classes=74)
+meta_model.fit(
+    epochs=self.config["train"]["epochs"],
+    validation_data=self.val_split
+)
