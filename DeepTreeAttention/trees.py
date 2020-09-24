@@ -333,36 +333,6 @@ class AttentionModel():
                            callbacks=callback_list,
                            class_weight=class_weight)
 
-    def predict_raster(self, tfrecords, batch_size=1):
-        """Predicted a set of tfrecords and create a raster image"""
-        prediction_set = boxes.tf_dataset(tfrecords=tfrecords,
-                                          batch_size=batch_size,
-                                          shuffle=False,
-                                          mode="predict",
-                                          cores=self.config["cpu_workers"])
-
-        predictions = []
-        row_list = []
-        col_list = []
-        for image, x, y in prediction_set:
-            try:
-                softmax_batch = self.model.predict_on_batch(image)
-                row_list.append(x.numpy())
-                col_list.append(y.numpy())
-                predictions.append(softmax_batch)
-            except tf.errors.OutOfRangeError:
-                print("Completed {} predictions".format(len(predictions)))
-
-        #stack
-        predictions = np.vstack(predictions)
-        row_list = np.concatenate(row_list)
-        col_list = np.concatenate(col_list)
-        predictions = np.argmax(predictions, 1)
-        results = pd.DataFrame({"label": predictions, "row": row_list, "col": col_list})
-        results = results.sort_values(by=["row", "col"])
-
-        return results
-
     def predict(self, shapefile, savedir, create_records=True, sensor_path=None):
         """Predict species id for each box in a single shapefile
         Args:
