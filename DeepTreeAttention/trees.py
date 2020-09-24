@@ -189,7 +189,7 @@ class AttentionModel():
                 channels=self.channels,
                 classes=self.classes,
                 weighted_sum=self.weighted_sum,
-                self.sites=self.sites)
+                sites=self.sites)
 
             #Full model compile
             self.model = tf.keras.Model(inputs=[self.sensor_inputs, self.metadata_inputs],
