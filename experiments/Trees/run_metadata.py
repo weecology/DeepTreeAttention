@@ -1,5 +1,6 @@
 #Linear metadata model for testing purposes
 from comet_ml import Experiment
+import tensorflow as tf
 from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.models import metadata
 
