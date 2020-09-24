@@ -20,7 +20,7 @@ model.read_data(mode="metadata")
 
 #Cree 
 inputs, outputs = metadata.metadata_model(classes=74)
-self.model = tf.keras.Model(inputs=inputs,
+meta_model = tf.keras.Model(inputs=inputs,
                                         outputs=outputs,
                                         name="DeepTreeAttention")
 
