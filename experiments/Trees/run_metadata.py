@@ -19,7 +19,7 @@ model.read_data()
 
 #Cree 
 meta_model = metadata.metadata_model(classes=74)
-meta_model.fit(
+meta_model.fit(model.train_split,
     epochs=model.config["train"]["epochs"],
     validation_data=model.val_split
 )
