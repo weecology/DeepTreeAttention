@@ -9,5 +9,5 @@ def metadata_model(classes):
     model.add(Dense(classes, activation="softmax"))
     
     # Compile model
-    model.compile(loss='acc', optimizer='adam')
+    model.compile(loss='categorical_crossentropy', optimizer='adam')
     return model
