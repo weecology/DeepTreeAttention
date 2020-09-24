@@ -325,6 +325,8 @@ def _metadata_parse_(tfrecord):
         "classes": tf.io.FixedLenFeature([], tf.int64)                
     }
 
+    example = tf.io.parse_single_example(tfrecord, features)
+
     site = tf.cast(example['site'], tf.int64)
     label = tf.cast(example['label'], tf.int64)
     classes = tf.cast(example['classes'], tf.int32)    
