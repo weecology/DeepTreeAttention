@@ -106,7 +106,7 @@ class ImageCallback(Callback):
                     y_pred.append(pred)
                     y_true.append(label)                    
 
-                num_images += label.shape[0]
+                num_images += label[0].shape[0]
             else:
                 break
 
