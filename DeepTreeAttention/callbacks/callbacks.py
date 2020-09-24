@@ -137,7 +137,10 @@ def create(experiment, validation_data, log_dir=None, label_names=None, submodel
                                   verbose=1)
 
     confusion_matrix = ConfusionMatrixCallback(experiment, validation_data, label_names, submodel=submodel)
-    plot_images = ImageCallback(experiment, validation_data, label_names, submodel=submodel)
+    
+    if not submodel:
+        plot_images = ImageCallback(experiment, validation_data, label_names, submodel=submodel)
+        
     f1 = F1Callback(experiment, validation_data, label_names, submodel=submodel)
 
     if log_dir is not None:
