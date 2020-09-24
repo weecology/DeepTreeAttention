@@ -50,6 +50,7 @@ class AttentionModel():
         self.classes_file = os.path.join(self.config["train"]["tfrecords"],
                                          "species_class_labels.csv")
         self.classes = self.config["train"]["classes"]
+        self.sites = self.config["train"]["sites"]
 
     def generate(self, shapefile, sensor_path, site, species_label_dict=None, train=True, chunk_size=1000):
         """Predict species class for each DeepForest bounding box
@@ -74,6 +75,7 @@ class AttentionModel():
                                                    width=self.width,
                                                    savedir=savedir,
                                                    train=train,
+                                                   sites=self.sites,
                                                    classes=self.classes,
                                                    chunk_size=chunk_size,
                                                    extend_box=self.extend_box,

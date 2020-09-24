@@ -30,6 +30,7 @@ def generate_tfrecords(shapefile,
                        height=40,
                        width=40,
                        classes=20,
+                       number_of_sites=23,
                        train=True,
                        extend_box=0,
                        shuffle=True):
@@ -123,6 +124,7 @@ def generate_tfrecords(shapefile,
                        labels=chunk_labels,
                        sites=chunk_sites,
                        indices=chunk_index,
+                       number_of_sites=number_of_sites,
                        classes=classes)
 
         filenames.append(filename)
@@ -137,7 +139,7 @@ def _int64_feature(value):
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-def write_tfrecord(filename, images, sites, indices, labels=None, classes=21):
+def write_tfrecord(filename, images, sites, indices, labels=None, classes=21, number_of_sites=23):
     """Write a training or prediction tfrecord
         Args:
             train: True -> create a training record with labels. False -> a prediciton record with raster indices
@@ -151,23 +153,25 @@ def write_tfrecord(filename, images, sites, indices, labels=None, classes=21):
                                        site = sites[index],
                                        image=images[index],
                                        label=labels[index],
+                                       number_of_sites=number_of_sites,
                                        classes=classes)
             writer.write(tf_example.SerializeToString())
     else:
         for index, image in enumerate(images):
-            tf_example = create_record(index=indices[index], site = sites[index], image=image, classes=classes)
+            tf_example = create_record(index=indices[index], site = sites[index], image=image, number_of_sites=number_of_sites, classes=classes)
             writer.write(tf_example.SerializeToString())
 
     writer.close()
 
 
-def create_record(image, index, site, classes, label=None):
+def create_record(image, index, site, classes, number_of_sites, label=None):
     """
     Generate one record from an image 
     Args:
         image: a numpy arry in the form height, row, depth channels
         index: box_index GIS label
         classes: number of classes of labels to train/predict
+        sites: number of geographic sites in train/test to one-hot labels
         label: Optional label for training class
     Returns:
         tf example parser
@@ -186,7 +190,8 @@ def create_record(image, index, site, classes, label=None):
                 'image/height': _int64_feature(rows),
                 'image/width': _int64_feature(cols),
                 'image/depth': _int64_feature(depth),
-                'classes': _int64_feature(classes),
+                'classes': _int64_feature(classes),                
+                'number_of_sites': _int64_feature(number_of_sites),
             }))
     else:
         example = tf.train.Example(features=tf.train.Features(
@@ -197,7 +202,8 @@ def create_record(image, index, site, classes, label=None):
                 'image/width': _int64_feature(cols),
                 'image/depth': _int64_feature(depth),
                 'classes': _int64_feature(classes),
-                'site': _int64_feature(site)                             
+                'site': _int64_feature(site),                                
+                'number_of_sites': _int64_feature(number_of_sites),
             }))
 
     # Serialize to string and write to file
@@ -215,6 +221,7 @@ def _train_parse_(tfrecord):
         "image/width": tf.io.FixedLenFeature([], tf.int64),
         "image/depth": tf.io.FixedLenFeature([], tf.int64),
         "classes": tf.io.FixedLenFeature([], tf.int64),
+        "number_of_sites": tf.io.FixedLenFeature([], tf.int64),        
     }
 
     # Load one example and parse
@@ -322,19 +329,22 @@ def _metadata_parse_(tfrecord):
     features = {
         "label": tf.io.FixedLenFeature([], tf.int64),
         "site": tf.io.FixedLenFeature([], tf.int64),  
-        "classes": tf.io.FixedLenFeature([], tf.int64)                
+        "classes": tf.io.FixedLenFeature([], tf.int64),       
+        "number_of_sites": tf.io.FixedLenFeature([], tf.int64)                        
     }
 
     example = tf.io.parse_single_example(tfrecord, features)
 
     site = tf.cast(example['site'], tf.int64)
+    sites = tf.cast(example['number_of_sites'], tf.int32)    
     label = tf.cast(example['label'], tf.int64)
     classes = tf.cast(example['classes'], tf.int32)    
 
     #one hot
     one_hot_labels = tf.one_hot(label, classes)
+    one_hot_site = tf.one_hot(site, sites)
 
-    return site, one_hot_labels
+    return one_hot_site, one_hot_labels
 
 def flip(x: tf.Tensor) -> tf.Tensor:
     """Flip augmentation
