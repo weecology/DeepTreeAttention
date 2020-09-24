@@ -24,7 +24,11 @@ meta_model = tf.keras.Model(inputs=inputs,
                                         outputs=outputs,
                                         name="DeepTreeAttention")
 
-meta_model.compile(loss='categorical_crossentropy', optimizer='adam')
+meta_model.compile(
+    loss='categorical_crossentropy',
+    optimizer='adam',
+    metrics="acc"
+)
 
 meta_model.fit(model.train_split,
     epochs=model.config["train"]["epochs"],
