@@ -72,6 +72,7 @@ if __name__ == "__main__":
         print("Train spatial subnetwork")
         model.read_data(mode="submodel")
         model.train(submodel="spatial", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
+    
     with experiment.context_manager("spectral_subnetwork"):
         print("Train spectral subnetwork")    
         model.read_data(mode="submodel")   

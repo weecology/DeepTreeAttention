@@ -22,8 +22,8 @@ class F1Callback(Callback):
         y_true = []
         y_pred = []
 
-        for image, label in self.dataset:
-            pred = self.model.predict(image)
+        for (image,site), label in self.dataset:
+            pred = self.model.predict([image,site])
             
             if self.submodel:
                 y_pred.append(pred[0])
@@ -50,8 +50,8 @@ class ConfusionMatrixCallback(Callback):
         y_true = []
         y_pred = []
 
-        for image, label in self.dataset:
-            pred = self.model.predict(image)
+        for (image,site), label in self.dataset:
+            pred = self.model.predict([image,site])
             
             if self.submodel:
                 y_pred.append(pred[0])
@@ -94,9 +94,9 @@ class ImageCallback(Callback):
         #fill until there is atleast 20 images
         limit = 20
         num_images = 0
-        for image, label in self.dataset:
+        for (image,site), label in self.dataset:
             if num_images < limit:
-                pred = self.model.predict(image)
+                pred = self.model.predict([image,site])
                 images.append(image)
                 
                 if self.submodel:
