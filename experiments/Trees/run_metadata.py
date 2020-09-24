@@ -3,6 +3,7 @@ from comet_ml import Experiment
 import tensorflow as tf
 from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.models import metadata
+import pandas as pd
 
 model = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
 model.create()
@@ -30,7 +31,16 @@ meta_model.compile(
     metrics=["acc"]
 )
 
+labeldf = pd.read_csv(model.classes_file)
+callback_list = callbacks.create(
+    log_dir=model.log_dir,
+    experiment=experiment,
+    validation_data=model.val_split,
+    label_names=list(labeldf.taxonID.values),
+    submodel=None)
+
 meta_model.fit(model.train_split,
     epochs=model.config["train"]["epochs"],
-    validation_data=model.val_split
+    validation_data=model.val_split,
+    callbacks=callback_list
 )
