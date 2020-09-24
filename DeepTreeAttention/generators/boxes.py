@@ -231,6 +231,7 @@ def _train_parse_(tfrecord):
     height = tf.cast(example['image/height'], tf.int64)
     width = tf.cast(example['image/width'], tf.int64)
     depth = tf.cast(example['image/depth'], tf.int64)
+    sites = tf.cast(example['number_of_sites'], tf.int32)            
     site = tf.cast(example['site'], tf.int64)
 
     #recast
@@ -246,8 +247,9 @@ def _train_parse_(tfrecord):
 
     #one hot
     one_hot_labels = tf.one_hot(label, classes)
+    one_hot_site = tf.one_hot(site, sites)
 
-    return (loaded_image, site), one_hot_labels
+    return (loaded_image, one_hot_site), one_hot_labels
 
 
 def _train_submodel_parse_(tfrecord):
@@ -282,7 +284,7 @@ def _train_submodel_parse_(tfrecord):
     loaded_image = tf.cast(loaded_image, dtype=tf.float32)
 
     #one hot
-    one_hot_labels = tf.one_hot(label, classes)
+    one_hot_labels = tf.one_hot(label, classes)    
 
     return loaded_image, (one_hot_labels, one_hot_labels, one_hot_labels)
 
@@ -303,6 +305,7 @@ def _predict_parse_(tfrecord):
         "image/depth": tf.io.FixedLenFeature([], tf.int64),
         "classes": tf.io.FixedLenFeature([], tf.int64),
         "site": tf.io.FixedLenFeature([], tf.int64),
+        "number_of_sites":tf.io.FixedLenFeature([], tf.int64)
     }
 
     # Load one example and parse
@@ -312,6 +315,8 @@ def _predict_parse_(tfrecord):
     width = tf.cast(example['image/width'], tf.int64)
     depth = tf.cast(example['image/depth'], tf.int64)
     site = tf.cast(example['site'], tf.int64)
+    sites = tf.cast(example['number_of_sites'], tf.int64)
+    
 
     # Load image from file
     image = tf.io.decode_raw(example['image/data'], tf.uint16)
@@ -320,8 +325,9 @@ def _predict_parse_(tfrecord):
     # Reshape to known shape
     loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
     loaded_image = tf.cast(loaded_image, dtype=tf.float32)
+    one_hot_site = tf.one_hot(site, sites)
 
-    return (loaded_image, site), example['box_index']
+    return (loaded_image, one_hot_site), example['box_index']
 
 def _metadata_parse_(tfrecord):
     """Tfrecord generator parse for a metadata model only"""

@@ -75,7 +75,7 @@ class AttentionModel():
                                                    width=self.width,
                                                    savedir=savedir,
                                                    train=train,
-                                                   sites=self.sites,
+                                                   number_of_sites=self.sites,
                                                    classes=self.classes,
                                                    chunk_size=chunk_size,
                                                    extend_box=self.extend_box,
