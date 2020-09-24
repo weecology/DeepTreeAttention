@@ -225,7 +225,7 @@ def metadata_layer(metadata, sensor_softmax, classes):
     #x = layers.Dropout(0.2)(x)
     #x = layers.Dense(32)(x)
     #x = layers.Dropout(0.2)(x)    
-    x = layers.Dense(classes, activation="softmax")(x)
+    x = layers.Dense(classes, activation="softmax")(metadata)
     #x = layers.Multiply()([x, sensor_softmax])
     
     return x
