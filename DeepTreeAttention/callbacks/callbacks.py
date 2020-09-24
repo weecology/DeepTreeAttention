@@ -130,20 +130,25 @@ class ImageCallback(Callback):
 
 
 def create(experiment, validation_data, log_dir=None, label_names=None, submodel=False):
+    callback_list = []
     reduce_lr = ReduceLROnPlateau(monitor='val_loss',
                                   factor=0.2,
                                   patience=5,
                                   min_lr=0.00001,
                                   verbose=1)
+    callback_list.append(reduce_lr)
 
     confusion_matrix = ConfusionMatrixCallback(experiment, validation_data, label_names, submodel=submodel)
+    callback_list.append(confusion_matrix)
+    
+    f1 = F1Callback(experiment, validation_data, label_names, submodel=submodel)
+    callback_list.append(f1)
     
     if not submodel:
         plot_images = ImageCallback(experiment, validation_data, label_names, submodel=submodel)
+        callback_list.append(plot_images)
         
-    f1 = F1Callback(experiment, validation_data, label_names, submodel=submodel)
-
     if log_dir is not None:
         tensorboard = TensorBoard(log_dir=log_dir, histogram_freq=1, profile_batch=10)
 
-    return [reduce_lr, confusion_matrix, plot_images, f1]
+    return callback_list
