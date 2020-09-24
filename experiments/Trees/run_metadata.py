@@ -27,7 +27,7 @@ meta_model = tf.keras.Model(inputs=inputs,
 meta_model.compile(
     loss='categorical_crossentropy',
     optimizer='adam',
-    metrics="acc"
+    metrics=["acc"]
 )
 
 meta_model.fit(model.train_split,
