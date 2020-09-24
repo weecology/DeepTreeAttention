@@ -33,15 +33,10 @@ meta_model.compile(
 )
 
 labeldf = pd.read_csv(model.classes_file)
-callback_list = callbacks.create(
-    log_dir=model.log_dir,
-    experiment=experiment,
-    validation_data=model.val_split,
-    label_names=list(labeldf.taxonID.values),
-    submodel=None)
+callback_list = callbacks.ConfusionMatrixCallback(experiment, model.val_split, list(labeldf.taxonID.values), submodel=None)
 
 meta_model.fit(model.train_split,
     epochs=model.config["train"]["epochs"],
     validation_data=model.val_split,
-    callbacks=callback_list
+    callbacks=[callback_list]
 )
