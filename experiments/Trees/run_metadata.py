@@ -3,6 +3,7 @@ from comet_ml import Experiment
 import tensorflow as tf
 from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.models import metadata
+from DeepTreeAttention.callbacks import callbacks
 import pandas as pd
 
 model = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
