@@ -311,11 +311,17 @@ class AttentionModel():
             callback_list = None
         else:
             submodel_flag = submodel is not None
-            labeldf = pd.read_csv(self.classes_file)
+            
+            if self.species_classes_file is not None:
+                labeldf = pd.read_csv(self.species_classes_file)                
+                label_names = list(labeldf.taxonID.values)
+            else:
+                label_names = None
+                
             callback_list = callbacks.create(log_dir=self.log_dir,
                                              experiment=experiment,
                                              validation_data=self.val_split,
-                                             label_names=list(labeldf.taxonID.values),
+                                             label_names=label_names,
                                              submodel=submodel_flag)
 
         if submodel == "spatial":

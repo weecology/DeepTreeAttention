@@ -3,7 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from skimage import exposure
-
+import pandas as pd
 
 def normalize(array):
     """Normalizes numpy arrays into scale 0.0 - 1.0"""
@@ -60,3 +60,31 @@ def discrete_cmap(N, base_cmap=None):
     color_list = base(np.linspace(0, 1, N))
     cmap_name = base.name + str(N)
     return base.from_list(cmap_name, color_list, N)
+
+def site_confusion(y_true, y_pred, sites):
+    """What proportion of misidentified species come from the same site?"""
+    
+    #Create site x species matrix in the test data
+    df = pd.DataFrame({"site":sites,"species":y_true})
+    site_lists = df.groupby("species").site.unique().to_dict()
+    
+    for index, value in enumerate(y_true):
+        within_site = 0
+        cross_site = 0
+        #If not correctly predicted
+        if not value == ypred[index]:
+            correct_sites = site_lists[y_true]
+            incorrect_site = site_lists[y_pred]
+            #Do they co-occur?
+            site_overlap = any([site in incorrect_site for site in correct_sites])
+            if site_overlap:
+                within_site +=1
+            else:
+                cross_site +=1   
+        else:
+            pass
+    
+    #Get proportion of within site error
+    proportion_within = within_site/(within_site + cross_site)
+    
+    return proportion_within

@@ -69,7 +69,7 @@ def mod(tmpdir):
     mod.channels = mod.config["train"]["sensor_channels"]
     mod.weighted_sum = mod.config["train"]["weighted_sum"]
     mod.extend_box = mod.config["train"]["extend_box"]
-    mod.species_classes_file = "data/processed/class_labels.csv"
+    mod.species_classes_file = None
     mod.classes = mod.config["train"]["classes"]
     
     #Create a model with input sizes
@@ -152,6 +152,7 @@ def test_evaluate(mod, tfrecords):
 
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
+    mod.species_classes_file = "{}/species_class_labels.csv".format(os.path.dirname(tfrecords[0]))
     mod.read_data(validation_split=True, mode="submodel")
     mod.train(submodel="spectral",experiment=experiment)
 

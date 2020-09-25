@@ -21,7 +21,7 @@ class F1Callback(Callback):
     def on_epoch_end(self, epoch, logs={}):
         y_true = []
         y_pred = []
-
+        sites = []
         for data, label in self.dataset:
             pred = self.model.predict(data)
             
@@ -31,12 +31,21 @@ class F1Callback(Callback):
             else:
                 y_pred.append(pred)
                 y_true.append(label)       
+                sites.append(data[1])
 
         y_true = np.concatenate(y_true)
         y_pred = np.concatenate(y_pred)
+        
+        #F1
         macro, micro = metrics.f1_scores(y_true, y_pred)
         self.experiment.log_metric("MicroF1", micro)
         self.experiment.log_metric("MacroF1", macro)
+        
+        if not self.submodel:
+            sites = np.concatenate(sites)
+            sites = np.argmax(sites,1)
+            within_site_proportion = visualize.site_confusion(y_true, y_pred, sites)
+            self.experiment.log_metric("Within-site Error", within_site_proportion)
         
 class ConfusionMatrixCallback(Callback):
 

@@ -89,9 +89,6 @@ if __name__ == "__main__":
         experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
         
     ##Evaluate
-    #Evaluation on within-between site confusion
-    #site_matrix = site_confusion(model.model, model.val_split)
-    #experiment.log_figure("site_matrix",site_matrix)
     
     
     #Save model
