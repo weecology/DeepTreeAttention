@@ -89,8 +89,10 @@ if __name__ == "__main__":
         experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
         
     ##Evaluate
-    #Evaluation scores, see config.yml for tfrecords path
-    #y_pred, y_true = model.evaluate(model.val_split)
+    #Evaluation on within-between site confusion
+    #site_matrix = site_confusion(model.model, model.val_split)
+    #experiment.log_figure("site_matrix",site_matrix)
+    
     
     #Save model
     model.model.save("{}/{}.h5".format(save_dir,timestamp))
