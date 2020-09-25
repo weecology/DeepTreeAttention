@@ -312,8 +312,8 @@ class AttentionModel():
         else:
             submodel_flag = submodel is not None
             
-            if self.species_classes_file is not None:
-                labeldf = pd.read_csv(self.species_classes_file)                
+            if self.classes_file is not None:
+                labeldf = pd.read_csv(self.classes_file)                
                 label_names = list(labeldf.taxonID.values)
             else:
                 label_names = None
