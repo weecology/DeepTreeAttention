@@ -159,6 +159,8 @@ def test_train_callbacks(tfrecords, mod):
     mod.read_data(validation_split=True)
     mod.train(experiment=experiment)
     
+    assert experiment.get_metric("Within-site Error") > 0
+    
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_field_callbacks(mod):
     mod.config["train"]["tfrecords"] = "data/processed/"

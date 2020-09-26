@@ -68,19 +68,19 @@ def site_confusion(y_true, y_pred, sites):
     df = pd.DataFrame({"site":sites,"species":y_true})
     site_lists = df.groupby("species").site.unique().to_dict()
     
+    within_site = 0
+    cross_site = 0    
     for index, value in enumerate(y_true):
-        within_site = 0
-        cross_site = 0
-        
+
         #If not correctly predicted
         if not value == y_pred[index]:
-                correct_sites = site_lists[y_true[index]]
-                try:
-                    incorrect_site = site_lists[y_pred[index]]
-                except Exception as e:
-                    print(e)
-                    continue
-            
+            correct_sites = site_lists[y_true[index]]
+            try:
+                incorrect_site = site_lists[y_pred[index]]
+            except Exception as e:
+                print(e)
+                continue
+        
             #Do they co-occur?
             site_overlap = any([site in incorrect_site for site in correct_sites])
             if site_overlap:
@@ -97,4 +97,4 @@ def site_confusion(y_true, y_pred, sites):
     #Get proportion of within site error
     proportion_within = within_site/(within_site + cross_site)
     
-    return within_site
+    return proportion_within
