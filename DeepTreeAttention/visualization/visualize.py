@@ -74,11 +74,8 @@ def site_confusion(y_true, y_pred, sites):
         
         #If not correctly predicted
         if not value == y_pred[index]:
-            try:
                 correct_sites = site_lists[y_true[index]]
                 incorrect_site = site_lists[y_pred[index]]
-            except:
-                continue
             
             #Do they co-occur?
             site_overlap = any([site in incorrect_site for site in correct_sites])
