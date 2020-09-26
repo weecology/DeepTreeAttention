@@ -44,6 +44,8 @@ class F1Callback(Callback):
         if not self.submodel:
             sites = np.concatenate(sites)
             sites = np.argmax(sites,1)
+            y_true = np.argmax(y_true, 1)
+            y_pred = np.argmax(y_pred, 1)
             within_site_proportion = visualize.site_confusion(y_true, y_pred, sites)
             self.experiment.log_metric("Within-site Error", within_site_proportion)
         
