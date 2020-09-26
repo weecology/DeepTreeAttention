@@ -71,10 +71,12 @@ def site_confusion(y_true, y_pred, sites):
     for index, value in enumerate(y_true):
         within_site = 0
         cross_site = 0
+        
         #If not correctly predicted
         if not value == y_pred[index]:
-            correct_sites = site_lists[y_true]
-            incorrect_site = site_lists[y_pred]
+            correct_sites = site_lists[y_true[index]]
+            incorrect_site = site_lists[y_pred[index]]
+            
             #Do they co-occur?
             site_overlap = any([site in incorrect_site for site in correct_sites])
             if site_overlap:
@@ -83,6 +85,10 @@ def site_confusion(y_true, y_pred, sites):
                 cross_site +=1   
         else:
             pass
+    
+    #don't divide by zero
+    if within_site + cross_site == 0:
+        return 0
     
     #Get proportion of within site error
     proportion_within = within_site/(within_site + cross_site)
