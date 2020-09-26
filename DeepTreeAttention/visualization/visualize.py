@@ -72,7 +72,7 @@ def site_confusion(y_true, y_pred, sites):
         within_site = 0
         cross_site = 0
         #If not correctly predicted
-        if not value == ypred[index]:
+        if not value == y_pred[index]:
             correct_sites = site_lists[y_true]
             incorrect_site = site_lists[y_pred]
             #Do they co-occur?
