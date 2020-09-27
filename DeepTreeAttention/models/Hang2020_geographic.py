@@ -22,6 +22,6 @@ def create_model(height=11, width=11, channels=48, classes=2, sites=23, weighted
                                           spectral_attention_outputs[2],
                                           weighted_sum=weighted_sum)
     
-    combined_softmax = metadata_layer(metadata_inputs, sensor_softmax, classes) 
+    #combined_softmax = metadata_layer(metadata_inputs, sensor_softmax, classes) 
 
-    return sensor_inputs, metadata_inputs, combined_softmax, spatial_attention_outputs, spectral_attention_outputs
+    return sensor_inputs, metadata_inputs, sensor_softmax, spatial_attention_outputs, spectral_attention_outputs
