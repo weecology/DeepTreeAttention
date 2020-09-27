@@ -223,12 +223,11 @@ def metadata_layer(metadata, sensor_softmax, classes):
     """Learn from a metadata layer and combined with spatial/spectral information. The combined model from Terry et al. 2020 Methods in E&E"""
     x = layers.Dense(classes, activation="relu")(metadata)
     #x = layers.Dropout(0.2)(x)
-    x = layers.Dense(classes, activation="relu")(x)
-    #x = layers.Dropout(0.2)(x)    
+    x = layers.Dense(classes*2, activation="relu")(x)
+    x = layers.Dense(classes*4, activation="relu")(x)    
+    x = layers.Dropout(0.2)(x)    
     x = layers.Dense(classes, activation="softmax")(x)
-    x = layers.Concatenate()([x, sensor_softmax])
-    x = layers.Dense(classes, activation="relu")(x)
-    x = layers.Dense(classes, activation="softmax")(x)
+    x = layers.Multiply()([x, sensor_softmax])
     
     return x
     
