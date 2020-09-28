@@ -231,11 +231,11 @@ def metadata_layer(metadata, classes):
     
 def merge_softmax(layers_to_merge, classes):
     """Merge a series of layers and learn an ensemble softmax"""
-    #x = layers.Multiply()(layers_to_merge)
-    x = layers.Concatenate()(layers_to_merge)
-    x = layers.Dense(classes, activation="relu")(x)
-    x = layers.Dropout(0.2)(x)        
-    x = layers.Dense(classes, activation="softmax")(x)
+    x = layers.Multiply()(layers_to_merge)
+    #x = layers.Concatenate()(layers_to_merge)
+    #x = layers.Dense(classes, activation="relu")(x)
+    #x = layers.Dropout(0.2)(x)        
+    #x = layers.Dense(classes, activation="softmax")(x)
     
     return x
     
