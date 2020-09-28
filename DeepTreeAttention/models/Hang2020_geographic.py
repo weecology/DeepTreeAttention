@@ -1,7 +1,6 @@
 #Create spectral - spatial fusion model
 from .layers import *
 
-
 def create_model(height=11, width=11, channels=48, classes=2, weighted_sum=False):
     """
     Create model and return output layers to allow training at different levels

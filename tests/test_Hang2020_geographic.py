@@ -9,6 +9,7 @@ def image():
     # create fake image input (only shape is used anyway) # logic from https://github.com/fizyr/tf-retinanet/blob/master/tests/layers/test_misc.py
     image = np.zeros((1, 11, 11, 48), dtype=tf.keras.backend.floatx())
     metadata = np.ones((1,1))
+    metadata = metadata.astype(float)
     return image, metadata
 
 #Test full model makes the correct number of predictions.
