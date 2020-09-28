@@ -70,6 +70,7 @@ class AttentionModel():
         created_records = boxes.generate_tfrecords(shapefile=shapefile,
                                                    sensor_path=sensor_path,
                                                    site=site,
+                                                   elevation=100,
                                                    species_label_dict=species_label_dict,
                                                    height=self.height,
                                                    width=self.width,
