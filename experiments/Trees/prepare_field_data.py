@@ -147,11 +147,13 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
     labels = []
     sites = []
     box_index = []
+    elevations = []
     for index, row in merged_boxes.iterrows():
         #Crop and append
         box = row["geometry"]       
         plot_name = row["plotID"] 
         site = row["plotID"].split("_")[0]
+        elevation = row["elevatn"]
         
         #get sensor data
         if sensor == "rgb":
@@ -166,11 +168,12 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         crops.append(crop)
         sites.append(site)
         labels.append(row["taxonID"])
+        elevations.append(elevation)
         box_index.append("{}_{}".format(plot_name,index))
         
-    return crops, labels, sites, box_index
+    return crops, labels, sites, elevations, box_index
 
-def create_records(crops, labels, sites, box_index, savedir, height, width, chunk_size=1000):
+def create_records(crops, labels, sites, elevations, box_index, savedir, height, width, chunk_size=1000):
     #get keys and divide into chunks for a single tfrecor
     filenames = []
     counter = 0
@@ -179,6 +182,7 @@ def create_records(crops, labels, sites, box_index, savedir, height, width, chun
         chunk_index = box_index[i:i + chunk_size]
         chunk_labels = labels[i:i + chunk_size]
         chunk_sites = sites[i:i + chunk_size]
+        chunk_elevations = elevations[i:i + chunk_size]
             
         resized_crops = [resize(x, height, width).astype("int16") for x in chunk_crops]
         
@@ -187,6 +191,7 @@ def create_records(crops, labels, sites, box_index, savedir, height, width, chun
                                             images=resized_crops,
                                             labels=chunk_labels,
                                             sites = chunk_sites,
+                                            elevations=chunk_elevations,
                                             indices=chunk_index,
                                             classes=max(labels)+1)
         
@@ -210,7 +215,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral"
         #Filter data and process
         plot_data = df[df.plotID == plot]
         predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
-        plot_crops, plot_labels, plot_sites, plot_box_index = create_crops(
+        plot_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = create_crops(
             predicted_trees,
             hyperspectral_pool=hyperspectral_pool,
             rgb_pool=rgb_pool,
@@ -222,7 +227,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral"
         print("Plot {} failed".format(plot))
         raise
         
-    return plot_crops, plot_labels, plot_sites, plot_box_index
+    return plot_crops, plot_labels, plot_sites, plot_elevations, plot_box_index
 
 def main(
     field_data,
@@ -273,6 +278,7 @@ def main(
     crops = []
     sites = []
     box_indexes = []    
+    elevations = []
     if use_dask:
         client = start_cluster.start(cpus=n_workers, mem_size="10GB")
         futures = []
@@ -293,30 +299,40 @@ def main(
         wait(futures)
         for x in futures:
             try:
-                plot_crops, plot_labels, plot_sites, plot_box_index = x.result()
+                plot_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = x.result()
                 
                 #Append to general plot list
                 crops.extend(plot_crops)
                 labels.extend(plot_labels)
-                sites.extend(plot_sites)                            
+                sites.extend(plot_sites)
+                elevations.extend(plot_elevations)
                 box_indexes.extend(plot_box_index)            
             except Exception as e:
                 print("Future failed with {}".format(e))        
     else:
         for plot in plot_names:
-            plot_crops, plot_labels, plot_sites, plot_box_index = run(plot=plot, df=df, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, 
-               sensor=sensor, extend_box=extend_box, hyperspectral_savedir=hyperspectral_savedir, saved_model=saved_model) 
+            plot_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = run(
+                plot=plot,
+                df=df,
+                rgb_pool=rgb_pool,
+                hyperspectral_pool=hyperspectral_pool, 
+                sensor=sensor,
+                extend_box=extend_box,
+                hyperspectral_savedir=hyperspectral_savedir,
+                saved_model=saved_model
+            ) 
             
             #Append to general plot list
             crops.extend(plot_crops)
             labels.extend(plot_labels)
             sites.extend(plot_sites)            
+            elevations.extend(plot_elevations)
             box_indexes.extend(plot_box_index)
     
     if shuffle:
-        z = list(zip(crops, sites, box_indexes, labels))
+        z = list(zip(crops, sites, elevations, box_indexes, labels))
         random.shuffle(z)
-        crops, sites, box_indexes, labels = zip(*z)
+        crops, sites,elevations, box_indexes, labels = zip(*z)
                         
     #If passes a species label dict
     if species_classes_file is not None:
@@ -349,7 +365,16 @@ def main(
     numeric_sites = [site_label_dict[x] for x in sites]
     
     #Write tfrecords
-    tfrecords = create_records(crops, numeric_labels, numeric_sites, box_indexes, savedir, height, width, chunk_size=chunk_size)
+    tfrecords = create_records(
+        crops=crops,
+        labels=numeric_labels, 
+        sites=numeric_sites, 
+        elevations=elevations,
+        box_index=box_indexes, 
+        savedir=savedir, 
+        height=height, 
+        width=width, 
+        chunk_size=chunk_size)
     
     return tfrecords
     

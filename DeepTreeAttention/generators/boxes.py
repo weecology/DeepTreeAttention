@@ -24,6 +24,7 @@ def resize(img, height, width):
 def generate_tfrecords(shapefile,
                        sensor_path,
                        site,
+                       elevation,
                        species_label_dict,
                        chunk_size=1000,
                        savedir=".",
@@ -39,6 +40,7 @@ def generate_tfrecords(shapefile,
         chunk_size: number of windows per tfrecord
         savedir: directory to save tfrecords
         site: metadata site label as integer
+        elevation: height above sea level in meters
         label_dict: taxonID -> numeric label
         train: training mode to include yielded labels
         extend_box: units in meters to expand DeepForest bounding box to give crop more context
@@ -95,10 +97,6 @@ def generate_tfrecords(shapefile,
             z = list(zip(crops, indices, numeric_species_labels))
             random.shuffle(z)
             crops, indices, numeric_species_labels = zip(*z)
-        else:
-            z = list(zip(crops, indices))
-            random.shuffle(z)
-            crops, indices = zip(*z)
 
     #get keys and divide into chunks for a single tfrecord
     filenames = []
@@ -109,6 +107,7 @@ def generate_tfrecords(shapefile,
         
         #All records in a single shapefile are the same site
         chunk_sites = np.repeat(site, len(chunk_index))
+        chunk_elevations = np.repeat(elevation, len(chunk_index))
         
         if train:
             chunk_labels = numeric_species_labels[i:i + chunk_size]
@@ -123,6 +122,7 @@ def generate_tfrecords(shapefile,
                        images=resized_crops,
                        labels=chunk_labels,
                        sites=chunk_sites,
+                       elevations= chunk_elevations,
                        indices=chunk_index,
                        number_of_sites=number_of_sites,
                        classes=classes)
@@ -139,7 +139,7 @@ def _int64_feature(value):
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-def write_tfrecord(filename, images, sites, indices, labels=None, classes=21, number_of_sites=23):
+def write_tfrecord(filename, images, sites, elevations, indices, labels=None, classes=21, number_of_sites=23):
     """Write a training or prediction tfrecord
         Args:
             train: True -> create a training record with labels. False -> a prediciton record with raster indices
@@ -153,18 +153,25 @@ def write_tfrecord(filename, images, sites, indices, labels=None, classes=21, nu
                                        site = sites[index],
                                        image=images[index],
                                        label=labels[index],
+                                       elevation=elevations[index],
                                        number_of_sites=number_of_sites,
                                        classes=classes)
             writer.write(tf_example.SerializeToString())
     else:
         for index, image in enumerate(images):
-            tf_example = create_record(index=indices[index], site = sites[index], image=image, number_of_sites=number_of_sites, classes=classes)
+            tf_example = create_record(
+                index=indices[index],
+                site = sites[index],
+                elevation = elevations[index],
+                image=image,
+                number_of_sites=number_of_sites,
+                classes=classes)
             writer.write(tf_example.SerializeToString())
 
     writer.close()
 
 
-def create_record(image, index, site, classes, number_of_sites, label=None):
+def create_record(image, index, site, elevation, classes, number_of_sites, label=None):
     """
     Generate one record from an image 
     Args:
@@ -172,6 +179,7 @@ def create_record(image, index, site, classes, number_of_sites, label=None):
         index: box_index GIS label
         classes: number of classes of labels to train/predict
         sites: number of geographic sites in train/test to one-hot labels
+        elevation: height above sea level in meters
         label: Optional label for training class
     Returns:
         tf example parser
@@ -186,7 +194,8 @@ def create_record(image, index, site, classes, number_of_sites, label=None):
                 'box_index': _bytes_feature(index.encode()),
                 'image/data': _bytes_feature(image.tostring()),
                 'label': _int64_feature(label),
-                'site': _int64_feature(site),                
+                'site': _int64_feature(site),    
+                'elevation': _int64_feature(elevation),                                
                 'image/height': _int64_feature(rows),
                 'image/width': _int64_feature(cols),
                 'image/depth': _int64_feature(depth),
@@ -202,7 +211,8 @@ def create_record(image, index, site, classes, number_of_sites, label=None):
                 'image/width': _int64_feature(cols),
                 'image/depth': _int64_feature(depth),
                 'classes': _int64_feature(classes),
-                'site': _int64_feature(site),                                
+                'site': _int64_feature(site),               
+                'elevation': _int64_feature(elevation),                                                
                 'number_of_sites': _int64_feature(number_of_sites),
             }))
 
@@ -214,14 +224,12 @@ def _train_parse_(tfrecord):
     # Define features
     features = {
         'image/data': tf.io.FixedLenFeature([], tf.string),
-        'box_index': tf.io.FixedLenFeature([], tf.string),
         "label": tf.io.FixedLenFeature([], tf.int64),
-        "site": tf.io.FixedLenFeature([], tf.int64),        
+        "elevation": tf.io.FixedLenFeature([], tf.int64),        
         "image/height": tf.io.FixedLenFeature([], tf.int64),
         "image/width": tf.io.FixedLenFeature([], tf.int64),
         "image/depth": tf.io.FixedLenFeature([], tf.int64),
         "classes": tf.io.FixedLenFeature([], tf.int64),
-        "number_of_sites": tf.io.FixedLenFeature([], tf.int64),        
     }
 
     # Load one example and parse
@@ -231,11 +239,10 @@ def _train_parse_(tfrecord):
     height = tf.cast(example['image/height'], tf.int64)
     width = tf.cast(example['image/width'], tf.int64)
     depth = tf.cast(example['image/depth'], tf.int64)
-    sites = tf.cast(example['number_of_sites'], tf.int32)            
-    site = tf.cast(example['site'], tf.int64)
 
     #recast
     label = tf.cast(example['label'], tf.int64)
+    elevation = tf.cast(example['elevation'], tf.int64)
 
     # Load image from file
     image = tf.io.decode_raw(example['image/data'], tf.uint16)
@@ -247,16 +254,14 @@ def _train_parse_(tfrecord):
 
     #one hot
     one_hot_labels = tf.one_hot(label, classes)
-    one_hot_site = tf.one_hot(site, sites)
 
-    return (loaded_image, one_hot_site), one_hot_labels
+    return (loaded_image, elevation), one_hot_labels
 
 
 def _train_submodel_parse_(tfrecord):
     # Define features
     features = {
         'image/data': tf.io.FixedLenFeature([], tf.string),
-        'box_index': tf.io.FixedLenFeature([], tf.string),
         "label": tf.io.FixedLenFeature([], tf.int64),
         "image/height": tf.io.FixedLenFeature([], tf.int64),
         "image/width": tf.io.FixedLenFeature([], tf.int64),
@@ -304,8 +309,7 @@ def _predict_parse_(tfrecord):
         "image/width": tf.io.FixedLenFeature([], tf.int64),
         "image/depth": tf.io.FixedLenFeature([], tf.int64),
         "classes": tf.io.FixedLenFeature([], tf.int64),
-        "site": tf.io.FixedLenFeature([], tf.int64),
-        "number_of_sites":tf.io.FixedLenFeature([], tf.int64)
+        "elevation": tf.io.FixedLenFeature([], tf.int64),
     }
 
     # Load one example and parse
@@ -314,9 +318,7 @@ def _predict_parse_(tfrecord):
     height = tf.cast(example['image/height'], tf.int64)
     width = tf.cast(example['image/width'], tf.int64)
     depth = tf.cast(example['image/depth'], tf.int64)
-    site = tf.cast(example['site'], tf.int64)
-    sites = tf.cast(example['number_of_sites'], tf.int64)
-    
+    elevation = tf.cast(example['elevation'], tf.int64)
 
     # Load image from file
     image = tf.io.decode_raw(example['image/data'], tf.uint16)
@@ -325,9 +327,8 @@ def _predict_parse_(tfrecord):
     # Reshape to known shape
     loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
     loaded_image = tf.cast(loaded_image, dtype=tf.float32)
-    one_hot_site = tf.one_hot(site, sites)
 
-    return (loaded_image, one_hot_site), example['box_index']
+    return (loaded_image, elevation), example['box_index']
 
 def _metadata_parse_(tfrecord):
     """Tfrecord generator parse for a metadata model only"""

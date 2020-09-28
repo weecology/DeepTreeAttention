@@ -15,6 +15,7 @@ def test_generate_tfrecords(train, tmpdir):
     created_records = boxes.generate_tfrecords(
         shapefile=test_predictions,
         site = 1,
+        elevation=100,
         savedir=tmpdir,
         train=train,
         sensor_path=test_sensor_tile,
