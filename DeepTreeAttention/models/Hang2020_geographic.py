@@ -2,14 +2,14 @@
 from .layers import *
 
 
-def create_model(height=11, width=11, channels=48, classes=2, sites=23, weighted_sum=False):
+def create_model(height=11, width=11, channels=48, classes=2, weighted_sum=False):
     """
     Create model and return output layers to allow training at different levels
     """
     input_shape = (height, width, channels)
     sensor_inputs = layers.Input(shape=input_shape)
     
-    metadata_inputs = layers.Input(shape=(sites,))
+    metadata_inputs = layers.Input(shape=(1,))
 
     #spatial subnetwork and weak attention classifications
     spatial_attention_outputs = spatial_network(sensor_inputs, classes=classes)
@@ -22,7 +22,7 @@ def create_model(height=11, width=11, channels=48, classes=2, sites=23, weighted
                                           spectral_attention_outputs[2],
                                           weighted_sum=weighted_sum)
     
-    metadata_softmax = metadata_layer(metadata_inputs, sensor_softmax, classes) 
+    metadata_softmax = metadata_layer(metadata_inputs, classes)
 
     combined_softmax = merge_softmax([metadata_softmax, sensor_softmax], classes) 
 
