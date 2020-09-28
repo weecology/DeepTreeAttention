@@ -30,10 +30,10 @@ class F1Callback(Callback):
             if self.submodel:
                 y_pred.append(pred[0])
                 y_true.append(label[0])
+                #sites.append(data[1])
             else:
                 y_pred.append(pred)
                 y_true.append(label)       
-                sites.append(data[1])
         
         y_true_list = np.concatenate(y_true)
         y_pred_list = np.concatenate(y_pred)
@@ -44,24 +44,24 @@ class F1Callback(Callback):
         self.experiment.log_metric("MacroF1", macro)
         
         #
-        #gather train site and species matrix
-        for data, label in self.train_dataset:
-            if self.submodel:
-                y_true.append(label[0])
-            else:
-                y_true.append(label)       
-                sites.append(data[1])
+        ##gather train site and species matrix
+        #for data, label in self.train_dataset:
+            #if self.submodel:
+                #y_true.append(label[0])
+            #else:
+                #y_true.append(label)       
+                #sites.append(data[1])
         
-        #Recreate list with full train + test site set.
-        y_true_list = np.concatenate(y_true)
+        ##Recreate list with full train + test site set.
+        #y_true_list = np.concatenate(y_true)
         
-        if not self.submodel:
-            sites = np.concatenate(sites)
-            sites = np.argmax(sites,1)
-            y_true_list = np.argmax(y_true_list, 1)
-            y_pred_list = np.argmax(y_pred_list, 1)
-            within_site_proportion = visualize.site_confusion(y_true_list, y_pred_list, sites)
-            self.experiment.log_metric("Within-site Error", within_site_proportion)
+        #if not self.submodel:
+            #sites = np.concatenate(sites)
+            #sites = np.argmax(sites,1)
+            #y_true_list = np.argmax(y_true_list, 1)
+            #y_pred_list = np.argmax(y_pred_list, 1)
+            #within_site_proportion = visualize.site_confusion(y_true_list, y_pred_list, sites)
+            #self.experiment.log_metric("Within-site Error", within_site_proportion)
         
 class ConfusionMatrixCallback(Callback):
 
