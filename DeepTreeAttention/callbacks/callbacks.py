@@ -12,9 +12,10 @@ from tensorflow.keras.callbacks import Callback, TensorBoard
 
 class F1Callback(Callback):
 
-    def __init__(self, experiment, dataset, label_names, submodel):
+    def __init__(self, experiment, train_dataset, eval_dataset, label_names, submodel):
         self.experiment = experiment
-        self.dataset = dataset
+        self.eval_dataset = eval_dataset
+        self.train_dataset = train_dataset
         self.label_names = label_names
         self.submodel = submodel
 
@@ -22,9 +23,10 @@ class F1Callback(Callback):
         y_true = []
         y_pred = []
         sites = []
-        for data, label in self.dataset:
+        
+        #gather site and species matrix
+        for data, label in self.eval_dataset:
             pred = self.model.predict(data)
-            
             if self.submodel:
                 y_pred.append(pred[0])
                 y_true.append(label[0])
@@ -32,21 +34,33 @@ class F1Callback(Callback):
                 y_pred.append(pred)
                 y_true.append(label)       
                 sites.append(data[1])
-
-        y_true = np.concatenate(y_true)
-        y_pred = np.concatenate(y_pred)
+        
+        y_true_list = np.concatenate(y_true)
+        y_pred_list = np.concatenate(y_pred)
         
         #F1
-        macro, micro = metrics.f1_scores(y_true, y_pred)
+        macro, micro = metrics.f1_scores(y_true_list, y_pred_list)
         self.experiment.log_metric("MicroF1", micro)
         self.experiment.log_metric("MacroF1", macro)
+        
+        #
+        #gather train site and species matrix
+        for data, label in self.train_dataset:
+            if self.submodel:
+                y_true.append(label[0])
+            else:
+                y_true.append(label)       
+                sites.append(data[1])
+        
+        #Recreate list with full train + test site set.
+        y_true_list = np.concatenate(y_true)
         
         if not self.submodel:
             sites = np.concatenate(sites)
             sites = np.argmax(sites,1)
             y_true = np.argmax(y_true, 1)
             y_pred = np.argmax(y_pred, 1)
-            within_site_proportion = visualize.site_confusion(y_true, y_pred, sites)
+            within_site_proportion = visualize.site_confusion(y_true_list, y_pred_list, sites)
             self.experiment.log_metric("Within-site Error", within_site_proportion)
         
 class ConfusionMatrixCallback(Callback):
@@ -140,7 +154,7 @@ class ImageCallback(Callback):
             counter += 1
 
 
-def create(experiment, validation_data, log_dir=None, label_names=None, submodel=False):
+def create(experiment, train_data, validation_data, log_dir=None, label_names=None, submodel=False):
     callback_list = []
     reduce_lr = ReduceLROnPlateau(monitor='val_loss',
                                   factor=0.2,
@@ -152,7 +166,7 @@ def create(experiment, validation_data, log_dir=None, label_names=None, submodel
     confusion_matrix = ConfusionMatrixCallback(experiment, validation_data, label_names, submodel=submodel)
     callback_list.append(confusion_matrix)
     
-    f1 = F1Callback(experiment, validation_data, label_names, submodel=submodel)
+    f1 = F1Callback(experiment=experiment, train_dataset=train_data, eval_dataset=validation_data, label_names=label_names, submodel=submodel)
     callback_list.append(f1)
     
     if not submodel:

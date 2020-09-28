@@ -321,6 +321,7 @@ class AttentionModel():
             callback_list = callbacks.create(log_dir=self.log_dir,
                                              experiment=experiment,
                                              validation_data=self.val_split,
+                                             train_data=self.train_split,
                                              label_names=label_names,
                                              submodel=submodel_flag)
 

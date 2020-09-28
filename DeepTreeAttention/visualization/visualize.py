@@ -70,11 +70,12 @@ def site_confusion(y_true, y_pred, sites):
     
     within_site = 0
     cross_site = 0    
-    for index, value in enumerate(y_true):
+    for index, value in enumerate(y_pred):
 
         #If not correctly predicted
-        if not value == y_pred[index]:
+        if not value == y_true[index]:
             correct_sites = site_lists[y_true[index]]
+            
             try:
                 incorrect_site = site_lists[y_pred[index]]
             except Exception as e:
