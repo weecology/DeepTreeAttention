@@ -195,7 +195,7 @@ def create_record(image, index, site, elevation, classes, number_of_sites, label
                 'image/data': _bytes_feature(image.tostring()),
                 'label': _int64_feature(label),
                 'site': _int64_feature(site),    
-                'elevation': _int64_feature(elevation),                                
+                'elevation': _int64_feature(int(elevation)),                                
                 'image/height': _int64_feature(rows),
                 'image/width': _int64_feature(cols),
                 'image/depth': _int64_feature(depth),
