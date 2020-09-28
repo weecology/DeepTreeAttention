@@ -77,7 +77,7 @@ def test_main():
             assert data[0].shape == (1, height, width, 3)
             assert label.shape  == (1,1)
             
-            plt.imshow(image[0].astype("uint8"))                
+            plt.imshow(data[0].astype("uint8"))                
             labels.append(label)
             counter+=1
             
