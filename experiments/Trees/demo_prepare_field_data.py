@@ -73,17 +73,14 @@ def test_main():
         labels = []
         counter=0        
         while True:
-            try:
-                image, label = sess.run(next_element)
-                assert image.shape == (1, height, width, 3)
-                assert label.shape  == (1,2)
-                
-                plt.imshow(image[0].astype("uint8"))                
-                labels.append(label)
-                counter+=1
-            except Exception as e:
-                print(e)
-                break
+            data, label = sess.run(next_element)
+            assert data[0].shape == (1, height, width, 3)
+            assert label.shape  == (1,1)
+            
+            plt.imshow(image[0].astype("uint8"))                
+            labels.append(label)
+            counter+=1
+            
     assert counter==5 
 
 #Run tests
