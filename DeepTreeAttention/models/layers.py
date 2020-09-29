@@ -221,16 +221,16 @@ def submodule_consensus(spatial_layers, spectral_layers, weighted_sum=True):
 
 def metadata_layer(metadata, classes):
     """Learn from a metadata layer and combined with spatial/spectral information. The combined model from Terry et al. 2020 Methods in E&E"""
-    x = layers.Dense(classes*2, activation="relu")(metadata)
-    x = layers.Dense(classes*4, activation="relu")(x)            
+    x = layers.Dense(classes*2, activation="relu", name = "metadata_learner_1")(metadata)
+    x = layers.Dense(classes*4, activation="relu", name = "metadata_learner_2")(x)            
     
     return x
     
 def merge_softmax(layers_to_merge, classes):
     """Merge a series of layers and learn an ensemble softmax"""
-    x = layers.concatenate(layers_to_merge)
-    x = layers.Dense(classes*2, activation="relu")(x)
-    x = layers.Dense(classes, activation="softmax")(x)
+    x = layers.concatenate(layers_to_merge, name = "concat_activations")
+    x = layers.Dense(classes*2, activation="relu", name = "meta_learner")(x)
+    x = layers.Dense(classes, activation="softmax", "ensemble_softmax")(x)
     
     return x
     
