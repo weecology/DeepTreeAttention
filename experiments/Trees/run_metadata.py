@@ -21,7 +21,7 @@ experiment.add_tag("metadata")
 model.read_data(mode="metadata")
 
 #Cree 
-inputs, outputs = metadata.metadata_model(classes=model.config["train"]["classes"], sites=model.config["train"]["sites"])
+inputs, outputs = metadata.metadata_model(classes=model.config["train"]["classes"])
 meta_model = tf.keras.Model(inputs=inputs,
                                         outputs=outputs,
                                         name="DeepTreeAttention")
