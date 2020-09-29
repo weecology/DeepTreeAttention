@@ -195,7 +195,7 @@ def create_record(image, index, site, elevation, classes, number_of_sites, label
                 'image/data': _bytes_feature(image.tostring()),
                 'label': _int64_feature(label),
                 'site': _int64_feature(site),    
-                'elevation': _int64_feature(int(elevation)),                                
+                'elevation': _int64_feature(elevation),                                
                 'image/height': _int64_feature(rows),
                 'image/width': _int64_feature(cols),
                 'image/depth': _int64_feature(depth),
@@ -338,6 +338,7 @@ def _metadata_parse_(tfrecord):
     features = {
         "label": tf.io.FixedLenFeature([], tf.int64),
         "site": tf.io.FixedLenFeature([], tf.int64),  
+        "elevation": tf.io.FixedLenFeature([], tf.int64),          
         "classes": tf.io.FixedLenFeature([], tf.int64),       
         "number_of_sites": tf.io.FixedLenFeature([], tf.int64)                        
     }
@@ -346,14 +347,16 @@ def _metadata_parse_(tfrecord):
 
     site = tf.cast(example['site'], tf.int64)
     sites = tf.cast(example['number_of_sites'], tf.int32)    
+    
+    elevation = tf.cast(example['elevation'], tf.int64)
+    elevation = elevation/1000 
     label = tf.cast(example['label'], tf.int64)
     classes = tf.cast(example['classes'], tf.int32)    
 
     #one hot
     one_hot_labels = tf.one_hot(label, classes)
-    one_hot_site = tf.one_hot(site, sites)
 
-    return one_hot_site, one_hot_labels
+    return elevation, one_hot_labels
 
 def flip(x: tf.Tensor) -> tf.Tensor:
     """Flip augmentation
