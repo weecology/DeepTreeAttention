@@ -138,7 +138,7 @@ class AttentionModel():
                     x.trainable = False
                                 
                 #unfreeze the following layers
-                layer_name = ["metadata_learner_1","metadata_learner_2","concat_activations","meta_learner","ensemble_softmax"]
+                layer_name = ["metadata_learner_1","metadata_learner_2","metadata_learner_3","concat_activations","meta_learner","ensemble_softmax"]
                 for x in layer_name:
                     layer_x = self.model.get_layer(x) 
                     layer_x.trainable = True
