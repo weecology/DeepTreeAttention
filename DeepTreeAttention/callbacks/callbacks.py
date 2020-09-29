@@ -157,7 +157,7 @@ class ImageCallback(Callback):
 def create(experiment, train_data, validation_data, log_dir=None, label_names=None, submodel=False):
     callback_list = []
     reduce_lr = ReduceLROnPlateau(monitor='val_loss',
-                                  factor=0.8,
+                                  factor=0.2,
                                   patience=5,
                                   min_lr=0.00001,
                                   verbose=1)
