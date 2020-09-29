@@ -133,15 +133,15 @@ class AttentionModel():
                                             outputs=self.combined_output,
                                             name="DeepTreeAttention")
                 
-                #just train the last few layers
-                for x in self.model.layers:
-                    x.trainable = False
+                ##just train the last few layers
+                #for x in self.model.layers:
+                    #x.trainable = False
                                 
-                #unfreeze the following layers
-                layer_name = ["metadata_learner_1","metadata_learner_2","metadata_learner_3","concat_activations","meta_learner","ensemble_softmax"]
-                for x in layer_name:
-                    layer_x = self.model.get_layer(x) 
-                    layer_x.trainable = True
+                ##unfreeze the following layers
+                #layer_name = ["metadata_learner_1","metadata_learner_2","metadata_learner_3","concat_activations","meta_learner","ensemble_softmax"]
+                #for x in layer_name:
+                    #layer_x = self.model.get_layer(x) 
+                    #layer_x.trainable = True
 
                 #compile full model
                 self.model.compile(loss="categorical_crossentropy",
