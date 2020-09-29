@@ -35,21 +35,21 @@ def spatial_network(x, classes=2):
     x = conv_module(x, K=32, maxpool=False)
 
     #Weak attention
-    x, attention_1 = spatial_attention(filters=32, classes=classes, x=x)
+    x, attention_1, pool_1 = spatial_attention(filters=32, classes=classes, x=x)
 
     #Second submodel is 64 filters - 2nd gets maxpool
     x = conv_module(x, K=64, maxpool=True)
 
     #Weak Attention
-    x, attention_2 = spatial_attention(filters=64, classes=classes, x=x)
+    x, attention_2, pool_2 = spatial_attention(filters=64, classes=classes, x=x)
 
     #Third submodel is 128 filters - 3rd gets maxpool
     x = conv_module(x, K=128, maxpool=True)
 
     #Weak Attention
-    x, attention_3 = spatial_attention(filters=128, classes=classes, x=x)
+    x, attention_3, pool_3 = spatial_attention(filters=128, classes=classes, x=x)
 
-    return [attention_1, attention_2, attention_3]
+    return [attention_1, attention_2, attention_3], [pool_1,pool_2,pool_3]
 
 
 def spectral_network(x, classes=2):
@@ -58,17 +58,17 @@ def spectral_network(x, classes=2):
     """
     #First submodel is 32 filter
     x = conv_module(x, K=32, maxpool=False)
-    x, attention_1 = spectral_attention(filters=32, classes=classes, x=x)
+    x, attention_1, pool_1 = spectral_attention(filters=32, classes=classes, x=x)
 
     #Second submodel is 64 filters
     x = conv_module(x, K=64, maxpool=True)
-    x, attention_2 = spectral_attention(filters=64, classes=classes, x=x)
+    x, attention_2, pool_2 = spectral_attention(filters=64, classes=classes, x=x)
 
     #Third submodel is 128 filters
     x = conv_module(x, K=128, maxpool=True)
-    x, attention_3 = spectral_attention(filters=128, classes=classes, x=x)
+    x, attention_3, pool_3 = spectral_attention(filters=128, classes=classes, x=x)
 
-    return [attention_1, attention_2, attention_3]
+    return [attention_1, attention_2, attention_3], [pool_1,pool_2,pool_3]
 
 
 def spectral_attention(filters, classes, x):
@@ -126,7 +126,7 @@ def spectral_attention(filters, classes, x):
                           activation="softmax",
                           name="spectral_attention_{}".format(label))(class_pool)
 
-    return attention_layers, output
+    return attention_layers, output, class_pool
 
 
 def spatial_attention(filters, classes, x):
@@ -183,7 +183,7 @@ def spatial_attention(filters, classes, x):
                           activation="softmax",
                           name="spatial_attention_{}".format(label))(class_pool)
 
-    return attention_layers, output
+    return attention_layers, output, class_pool
 
 
 class WeightedSum(layers.Layer):
@@ -222,18 +222,14 @@ def submodule_consensus(spatial_layers, spectral_layers, weighted_sum=True):
 def metadata_layer(metadata, classes):
     """Learn from a metadata layer and combined with spatial/spectral information. The combined model from Terry et al. 2020 Methods in E&E"""
     x = layers.Dense(classes*2, activation="relu")(metadata)
-    x = layers.Dense(classes*4, activation="relu")(x)        
-    x = layers.Dense(classes*6, activation="relu")(x)            
-    x = layers.Dense(classes, activation="softmax")(x)
+    x = layers.Dense(classes*4, activation="relu")(x)            
     
     return x
     
 def merge_softmax(layers_to_merge, classes):
     """Merge a series of layers and learn an ensemble softmax"""
-    x = tf.stack(layers_to_merge, 1)
-    x = layers.AveragePooling1D(pool_size=(2))(x)
+    x = layers.concatenate(layers_to_merge)
     x = layers.Dense(classes*4, activation="relu")(x)
-    x = layers.Dense(classes*6, activation="relu")(x)    
     x = layers.Dense(classes, activation="softmax")(x)
     
     return x
