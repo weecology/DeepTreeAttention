@@ -35,7 +35,9 @@ def test_generate_tfrecords(train, tmpdir):
         for (image_batch, metadata_batch), label_batch in dataset.take(3):
             assert image_batch.shape == (2,20,20,3)
             assert label_batch.shape == (2,6)
+            assert not sum(metadata_batch) == 0            
     else:
         for (image_batch, metadata_batch), box_index_batch in dataset.take(3):
             assert image_batch.shape == (2,20,20,3)
             assert box_index_batch.shape == (2,)
+            assert not sum(metadata_batch) == 0
