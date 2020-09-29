@@ -228,7 +228,7 @@ def metadata_layer(metadata, classes):
     
 def merge_softmax(layers_to_merge, classes):
     """Merge a series of layers and learn an ensemble softmax"""
-    x = layers.concatenate(layers_to_merge, name = "concat_activations")
+    x = layers.Add()(layers_to_merge)
     x = layers.Dense(classes, activation="relu", name = "meta_learner")(x)
     x = layers.Dense(classes, activation="softmax", name= "ensemble_softmax")(x)
     
