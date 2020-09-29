@@ -230,7 +230,8 @@ def metadata_layer(metadata, classes):
     
 def merge_softmax(layers_to_merge, classes):
     """Merge a series of layers and learn an ensemble softmax"""
-    x = layers.Concatenate()(layers_to_merge)
+    x = tf.stack(layers_to_merge, 1)
+    x = layers.AveragePooling1D(pool_size=(2))(x)
     x = layers.Dense(classes*4, activation="relu")(x)
     x = layers.Dense(classes*6, activation="relu")(x)    
     x = layers.Dense(classes, activation="softmax")(x)
