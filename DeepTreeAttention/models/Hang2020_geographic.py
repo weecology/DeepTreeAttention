@@ -25,7 +25,10 @@ def create_model(height=11, width=11, channels=48, classes=2, weighted_sum=False
 
     #Normalize all inputs before merging ensemble 
     spatial_relu = layers.Dense(classes * 4)(spatial_attention_pool[2])
+    spatial_relu = layers.BatchNormalization()(spatial_relu)
+    
     spectral_relu = layers.Dense(classes * 4)(spectral_attention_pool[2])
+    spectral_relu = layers.BatchNormalization()(spectral_relu)
     
     combined_softmax = merge_softmax([metadata_activation, spatial_relu, spectral_relu], classes) 
 
