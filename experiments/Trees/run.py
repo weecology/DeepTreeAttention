@@ -66,17 +66,17 @@ if __name__ == "__main__":
     model.read_data()
     class_weight = model.calc_class_weight()
     
-    # Train subnetwork
-    #experiment.log_parameter("Train subnetworks", True)
-    #with experiment.context_manager("spatial_subnetwork"):
-        #print("Train spatial subnetwork")
-        #model.read_data(mode="submodel")
-        #model.train(submodel="spatial", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
+    #Train subnetwork
+    experiment.log_parameter("Train subnetworks", True)
+    with experiment.context_manager("spatial_subnetwork"):
+        print("Train spatial subnetwork")
+        model.read_data(mode="submodel")
+        model.train(submodel="spatial", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
     
-    #with experiment.context_manager("spectral_subnetwork"):
-        #print("Train spectral subnetwork")    
-        #model.read_data(mode="submodel")   
-        #model.train(submodel="spectral", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
+    with experiment.context_manager("spectral_subnetwork"):
+        print("Train spectral subnetwork")    
+        model.read_data(mode="submodel")   
+        model.train(submodel="spectral", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
             
     #Train full model
     experiment.log_parameter("Class Weighted", True)
