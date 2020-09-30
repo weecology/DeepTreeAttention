@@ -237,7 +237,7 @@ def main(
     hyperspectral_dir=None,
     sensor="hyperspectral",
     savedir=".", 
-    chunk_size=1000,
+    chunk_size=500,
     extend_box=0, 
     hyperspectral_savedir=".", 
     n_workers=20,
