@@ -153,6 +153,7 @@ def test_evaluate(mod, tfrecords):
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
 
+    experiment.add_tag("testing")
     mod.read_data(validation_split=True, mode="metadata")
     mod.train(experiment=experiment, submodel="metadata")
     

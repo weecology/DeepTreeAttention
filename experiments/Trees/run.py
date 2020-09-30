@@ -90,7 +90,7 @@ if __name__ == "__main__":
     
     #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
     if model.config["train"]["weighted_sum"]:
-        estimate_a = model.model.layers[-1].get_weights()
+        estimate_a = model.model.get_layer("weighted_sum").get_weights()
         experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
         
     ##Evaluate

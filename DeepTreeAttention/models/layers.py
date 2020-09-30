@@ -213,7 +213,7 @@ def submodule_consensus(spatial_layers, spectral_layers, weighted_sum=True):
     """Learned weighted sum among layers"""
 
     if weighted_sum:
-        x = WeightedSum()([spatial_layers, spectral_layers])
+        x = WeightedSum(name="weighted_sum")([spatial_layers, spectral_layers])
     else:
         x = layers.Add()([spatial_layers, spectral_layers])
 
@@ -224,6 +224,7 @@ def metadata_layer(metadata, classes):
     
     x = layers.Dense(classes*2, activation="relu", name = "metadata_learner_1")(metadata)
     x = layers.Dense(classes*2, activation="relu", name = "metadata_learner_2")(x)            
+    x = layers.BatchNormalization(name = "metadata_norm")(x)            
     
     return x
     
