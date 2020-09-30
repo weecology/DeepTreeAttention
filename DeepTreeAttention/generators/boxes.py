@@ -243,7 +243,7 @@ def _train_parse_(tfrecord):
     #recast and scale to km
     label = tf.cast(example['label'], tf.int64)
     elevation = tf.cast(example['elevation'], tf.float32)
-    elevation = (elevation / 1000)-0.5
+    elevation = elevation / 1000
 
     # Load image from file
     image = tf.io.decode_raw(example['image/data'], tf.uint16)
@@ -428,6 +428,6 @@ def tf_dataset(tfrecords,
         raise ValueError(
             "invalid mode, please use train, predict or submodel: {}".format(mode))
     
-    dataset = dataset.prefetch(buffer_size=10)
+    dataset = dataset.prefetch(buffer_size=1)
 
     return dataset
