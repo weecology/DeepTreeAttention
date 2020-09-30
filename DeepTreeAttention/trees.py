@@ -360,7 +360,7 @@ class AttentionModel():
 
         elif submodel == "metadata":
             #one for each loss layer
-            self.metadata_model.fit(self.train_split,
+            self.meta_model.fit(self.train_split,
                                     epochs=int(self.config["train"]["epochs"]*2),
                                     validation_data=self.val_split,
                                     callbacks=callback_list,
