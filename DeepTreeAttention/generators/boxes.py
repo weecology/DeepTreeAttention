@@ -398,7 +398,7 @@ def tf_dataset(tfrecords,
 
     if shuffle:
         print("Shuffling data")
-        dataset = dataset.shuffle(buffer_size=20)
+        dataset = dataset.shuffle(buffer_size=10)
 
     if mode == "train":
         dataset = dataset.map(_train_parse_, num_parallel_calls=cores)
@@ -428,6 +428,6 @@ def tf_dataset(tfrecords,
         raise ValueError(
             "invalid mode, please use train, predict or submodel: {}".format(mode))
     
-    dataset = dataset.prefetch(buffer_size=100)
+    dataset = dataset.prefetch(buffer_size=10)
 
     return dataset

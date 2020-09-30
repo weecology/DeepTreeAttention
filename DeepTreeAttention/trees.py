@@ -15,7 +15,7 @@ from sklearn.utils import class_weight
 #Local Modules
 from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.models import Hang2020_geographic as Hang
-from  DeepTreeAttention.models import metadata
+from  DeepTreeAttention.models import layers
 from DeepTreeAttention.generators import boxes
 from DeepTreeAttention.callbacks import callbacks
 
@@ -125,7 +125,7 @@ class AttentionModel():
                 metric_list = [metrics.CategoricalAccuracy(name="acc")]
 
                 #Create model
-                self._sensor_inputs, self.metadata_inputs, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang.create_model(
+                self._sensor_inputs, self.metadata_inputs, self.metadata_output, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang.create_model(
                     self.height, self.width, self.channels, self.classes,
                     self.weighted_sum)
                 
@@ -178,9 +178,9 @@ class AttentionModel():
                         lr=float(self.config['train']['learning_rate'])),
                     metrics=metric_list)
                 
-                #Metadata model
-                inputs, outputs = metadata.metadata_model(classes=model.config["train"]["classes"])
-                self.meta_model = tf.keras.Model(inputs=self.metadata_inputs,outputs=outputs, name="metadata")                
+                #Metadata model                
+                metadata_softmax = tf.keras.layers.Dense(self.classes)(self.metadata_output)
+                self.meta_model = tf.keras.Model(inputs=self.metadata_inputs,outputs=metadata_softmax, name="metadata")                
                 self.meta_model.compile(
                     loss='categorical_crossentropy',
                     optimizer='adam',
@@ -249,8 +249,9 @@ class AttentionModel():
                     lr=float(self.config['train']['learning_rate'])),
                 metrics=metric_list)
             
-            #Metadata model, add a softmax to 
-            self.meta_model = tf.keras.Model(inputs=self.metadata_inputs, outputs=self.metadata_output, name="metadata")                
+            #Metadata model, add a softmax to top
+            metadata_softmax = tf.keras.layers.Dense(self.classes)(self.metadata_output)            
+            self.meta_model = tf.keras.Model(inputs=self.metadata_inputs, outputs=metadata_softmax, name="metadata")                
             self.meta_model.compile(
                 loss='categorical_crossentropy',
                 optimizer='adam',
