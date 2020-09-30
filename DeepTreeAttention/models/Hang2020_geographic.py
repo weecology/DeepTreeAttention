@@ -24,8 +24,8 @@ def create_model(height=11, width=11, channels=48, classes=2, weighted_sum=False
     metadata_activation = metadata_layer(metadata_inputs, classes)
 
     #Normalize all inputs before merging ensemble 
-    spatial_relu = layers.Dense(classes * 2)(spatial_attention_pool[2])    
-    spectral_relu = layers.Dense(classes * 2)(spectral_attention_pool[2])
+    spatial_relu = layers.Dense(classes)(spatial_attention_pool[2])    
+    spectral_relu = layers.Dense(classes)(spectral_attention_pool[2])
     
     combined_softmax = merge_softmax([metadata_activation, spatial_relu, spectral_relu], classes) 
 
