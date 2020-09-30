@@ -96,7 +96,7 @@ def test_split_data(mod, tfrecords):
     #Assert tfrecords are split
     assert all([x not in mod.train_split_records for x in mod.test_split_records])
     
-@pytest.mark.parametrize("submodel",["spectral","spatial","None"])
+@pytest.mark.parametrize("submodel",["spectral","spatial","metadata","None"])
 def test_AttentionModel(mod, tfrecords, submodel):
     mod.read_data(validation_split=True)
     

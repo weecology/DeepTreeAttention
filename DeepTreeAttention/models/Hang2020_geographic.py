@@ -29,4 +29,4 @@ def create_model(height=11, width=11, channels=48, classes=2, weighted_sum=False
     
     combined_softmax = merge_softmax([metadata_activation, spatial_relu, spectral_relu], classes) 
 
-    return sensor_inputs, metadata_inputs, combined_softmax, spatial_attention_outputs, spectral_attention_outputs
+    return sensor_inputs, metadata_inputs, metadata_activation, combined_softmax, spatial_attention_outputs, spectral_attention_outputs

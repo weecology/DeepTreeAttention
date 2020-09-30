@@ -15,6 +15,7 @@ from sklearn.utils import class_weight
 #Local Modules
 from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.models import Hang2020_geographic as Hang
+from  DeepTreeAttention.models import metadata
 from DeepTreeAttention.generators import boxes
 from DeepTreeAttention.callbacks import callbacks
 
@@ -176,7 +177,16 @@ class AttentionModel():
                     optimizer=tf.keras.optimizers.Adam(
                         lr=float(self.config['train']['learning_rate'])),
                     metrics=metric_list)
-
+                
+                #Metadata model
+                inputs, outputs = metadata.metadata_model(classes=model.config["train"]["classes"])
+                self.meta_model = tf.keras.Model(inputs=self.metadata_inputs,outputs=outputs, name="metadata")                
+                self.meta_model.compile(
+                    loss='categorical_crossentropy',
+                    optimizer='adam',
+                    metrics=["acc"]
+                )
+                
                 if weights:
                     self.model.load_weights(weights)
         else:
@@ -184,7 +194,7 @@ class AttentionModel():
             metric_list = [metrics.CategoricalAccuracy(name="acc")]
 
             #Create model
-            self.sensor_inputs, self.metadata_inputs, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang.create_model(
+            self.sensor_inputs, self.metadata_inputs, self.metadata_output, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang.create_model(
                 height=self.height,
                 width=self.width,
                 channels=self.channels,
@@ -238,7 +248,14 @@ class AttentionModel():
                 optimizer=tf.keras.optimizers.Adam(
                     lr=float(self.config['train']['learning_rate'])),
                 metrics=metric_list)
-
+            
+            #Metadata model, add a softmax to 
+            self.meta_model = tf.keras.Model(inputs=self.metadata_inputs, outputs=self.metadata_output, name="metadata")                
+            self.meta_model.compile(
+                loss='categorical_crossentropy',
+                optimizer='adam',
+                metrics=["acc"])    
+            
             if weights:
                 self.model.load_weights(weights)
 
@@ -340,6 +357,14 @@ class AttentionModel():
                                     validation_data=self.val_split,
                                     callbacks=callback_list,
                                     class_weight=class_weight)
+
+        elif submodel == "metadata":
+            #one for each loss layer
+            self.metadata_model.fit(self.train_split,
+                                    epochs=int(self.config["train"]["epochs"]*2),
+                                    validation_data=self.val_split,
+                                    callbacks=callback_list,
+                                    class_weight=class_weight)        
         else:
             self.model.fit(self.train_split,
                            epochs=self.config["train"]["epochs"],

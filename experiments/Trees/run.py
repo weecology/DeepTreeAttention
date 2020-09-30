@@ -78,6 +78,11 @@ if __name__ == "__main__":
         model.read_data(mode="submodel")   
         model.train(submodel="spectral", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
             
+    with experiment.context_manager("metadata_subnetwork"):
+        print("Train metadata subnetwork")    
+        model.read_data(mode="metadata")   
+        model.train(submodel="metadata", class_weight=class_weight, experiment=experiment)
+                    
     #Train full model
     experiment.log_parameter("Class Weighted", True)
     model.read_data()
