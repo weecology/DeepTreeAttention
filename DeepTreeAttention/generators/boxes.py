@@ -225,16 +225,19 @@ def _train_parse_(tfrecord):
     features = {
         'image/data': tf.io.FixedLenFeature([], tf.string),
         "label": tf.io.FixedLenFeature([], tf.int64),
+        "site": tf.io.FixedLenFeature([], tf.int64),        
         "elevation": tf.io.FixedLenFeature([], tf.int64),        
         "image/height": tf.io.FixedLenFeature([], tf.int64),
         "image/width": tf.io.FixedLenFeature([], tf.int64),
         "image/depth": tf.io.FixedLenFeature([], tf.int64),
         "classes": tf.io.FixedLenFeature([], tf.int64),
+        "number_of_sites": tf.io.FixedLenFeature([], tf.int64),        
     }
 
     # Load one example and parse
     example = tf.io.parse_single_example(tfrecord, features)
     classes = tf.cast(example['classes'], tf.int32)
+    number_of_sites = tf.cast(example['number_of_sites'], tf.int32)
 
     height = tf.cast(example['image/height'], tf.int64)
     width = tf.cast(example['image/width'], tf.int64)
@@ -242,6 +245,8 @@ def _train_parse_(tfrecord):
 
     #recast and scale to km
     label = tf.cast(example['label'], tf.int64)
+    site = tf.cast(example['site'], tf.int64)
+    
     elevation = tf.cast(example['elevation'], tf.float32)
     elevation = elevation / 1000
 
@@ -255,6 +260,7 @@ def _train_parse_(tfrecord):
 
     #one hot
     one_hot_labels = tf.one_hot(label, classes)
+    one_hot_sites = tf.one_hot(site, number_of_sites)
 
     return (loaded_image, elevation), one_hot_labels
 
@@ -311,6 +317,8 @@ def _predict_parse_(tfrecord):
         "image/depth": tf.io.FixedLenFeature([], tf.int64),
         "classes": tf.io.FixedLenFeature([], tf.int64),
         "elevation": tf.io.FixedLenFeature([], tf.int64),
+        "site": tf.io.FixedLenFeature([], tf.int64),        
+        "number_of_sites": tf.io.FixedLenFeature([], tf.int64),        
     }
 
     # Load one example and parse
@@ -319,6 +327,10 @@ def _predict_parse_(tfrecord):
     height = tf.cast(example['image/height'], tf.int64)
     width = tf.cast(example['image/width'], tf.int64)
     depth = tf.cast(example['image/depth'], tf.int64)
+    
+    number_of_sites = tf.cast(example['number_of_sites'], tf.int32)
+    site = tf.cast(example['site'], tf.int64)
+    
     elevation = tf.cast(example['elevation'], tf.float32)
     elevation = elevation/1000
 
@@ -330,6 +342,9 @@ def _predict_parse_(tfrecord):
     loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
     loaded_image = tf.cast(loaded_image, dtype=tf.float32)
 
+    one_hot_sites = tf.one_hot(site, number_of_sites)
+    metadata = [elevation, one_hot_sites]
+    
     return (loaded_image, elevation), example['box_index']
 
 def _metadata_parse_(tfrecord):
