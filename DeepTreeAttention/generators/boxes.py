@@ -243,7 +243,7 @@ def _train_parse_(tfrecord):
     #recast and scale to km
     label = tf.cast(example['label'], tf.int64)
     elevation = tf.cast(example['elevation'], tf.float32)
-    elevation = elevation / 1000
+    elevation = (elevation / 1000)-0.5
 
     # Load image from file
     image = tf.io.decode_raw(example['image/data'], tf.uint16)
@@ -320,7 +320,7 @@ def _predict_parse_(tfrecord):
     width = tf.cast(example['image/width'], tf.int64)
     depth = tf.cast(example['image/depth'], tf.int64)
     elevation = tf.cast(example['elevation'], tf.float32)
-    elevation = elevation / 1000
+    elevation = (elevation/1000) - 0.5
 
     # Load image from file
     image = tf.io.decode_raw(example['image/data'], tf.uint16)
@@ -349,7 +349,8 @@ def _metadata_parse_(tfrecord):
     sites = tf.cast(example['number_of_sites'], tf.int32)    
     
     elevation = tf.cast(example['elevation'], tf.int64)
-    elevation = elevation/1000 
+    elevation = (elevation/1000)-0.5
+    
     label = tf.cast(example['label'], tf.int64)
     classes = tf.cast(example['classes'], tf.int32)    
 
