@@ -21,7 +21,7 @@ train:
     weighted_sum: True
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
     steps:
-    shuffle: False
+    shuffle: True
     training_fraction: 0.9
 
 callbacks:
