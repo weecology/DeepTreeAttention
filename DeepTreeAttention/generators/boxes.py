@@ -428,6 +428,6 @@ def tf_dataset(tfrecords,
         raise ValueError(
             "invalid mode, please use train, predict or submodel: {}".format(mode))
     
-    dataset = dataset.prefetch(buffer_size=1)
+    dataset = dataset.prefetch(buffer_size=100)
 
     return dataset
