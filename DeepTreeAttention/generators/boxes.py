@@ -225,11 +225,13 @@ def _train_parse_(tfrecord):
     features = {
         'image/data': tf.io.FixedLenFeature([], tf.string),
         "label": tf.io.FixedLenFeature([], tf.int64),
+        "site": tf.io.FixedLenFeature([], tf.int64),        
         "elevation": tf.io.FixedLenFeature([], tf.int64),        
         "image/height": tf.io.FixedLenFeature([], tf.int64),
         "image/width": tf.io.FixedLenFeature([], tf.int64),
         "image/depth": tf.io.FixedLenFeature([], tf.int64),
         "classes": tf.io.FixedLenFeature([], tf.int64),
+        "number_of_sites": tf.io.FixedLenFeature([], tf.int64),        
     }
 
     # Load one example and parse
@@ -259,9 +261,8 @@ def _train_parse_(tfrecord):
     #one hot
     one_hot_labels = tf.one_hot(label, classes)
     one_hot_sites = tf.one_hot(site, number_of_sites)
-    metadata = [elevation, one_hot_sites]
 
-    return (loaded_image, metadata), one_hot_labels
+    return (loaded_image, elevation), one_hot_labels
 
 
 def _train_submodel_parse_(tfrecord):
@@ -316,6 +317,8 @@ def _predict_parse_(tfrecord):
         "image/depth": tf.io.FixedLenFeature([], tf.int64),
         "classes": tf.io.FixedLenFeature([], tf.int64),
         "elevation": tf.io.FixedLenFeature([], tf.int64),
+        "site": tf.io.FixedLenFeature([], tf.int64),        
+        "number_of_sites": tf.io.FixedLenFeature([], tf.int64),        
     }
 
     # Load one example and parse
@@ -342,7 +345,7 @@ def _predict_parse_(tfrecord):
     one_hot_sites = tf.one_hot(site, number_of_sites)
     metadata = [elevation, one_hot_sites]
     
-    return (loaded_image, metadata), example['box_index']
+    return (loaded_image, elevation), example['box_index']
 
 def _metadata_parse_(tfrecord):
     """Tfrecord generator parse for a metadata model only"""
