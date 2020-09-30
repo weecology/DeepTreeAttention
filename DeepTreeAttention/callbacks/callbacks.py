@@ -27,7 +27,7 @@ class F1Callback(Callback):
         #gather site and species matrix
         for data, label in self.eval_dataset:
             pred = self.model.predict(data)
-            if self.submodel:
+            if self.submodel in ["spectral","spatial"]:
                 y_pred.append(pred[0])
                 y_true.append(label[0])
                 #sites.append(data[1])
@@ -78,7 +78,7 @@ class ConfusionMatrixCallback(Callback):
         for data, label in self.dataset:
             pred = self.model.predict(data)
             
-            if self.submodel:
+            if self.submodel in ["spectral","spatial"]:
                 y_pred.append(pred[0])
                 y_true.append(label[0])
             else:
@@ -88,7 +88,7 @@ class ConfusionMatrixCallback(Callback):
         y_true = np.concatenate(y_true)
         y_pred = np.concatenate(y_pred)
         
-        if self.submodel:
+        if self.submodel in ["spectral","spatial"]:
             name = "Submodel Confusion Matrix"
         else:
             name = "Confusion Matrix"
@@ -169,7 +169,7 @@ def create(experiment, train_data, validation_data, log_dir=None, label_names=No
     f1 = F1Callback(experiment=experiment, train_dataset=train_data, eval_dataset=validation_data, label_names=label_names, submodel=submodel)
     callback_list.append(f1)
     
-    if not submodel:
+    if submodel is None:
         plot_images = ImageCallback(experiment, validation_data, label_names, submodel=submodel)
         callback_list.append(plot_images)
         

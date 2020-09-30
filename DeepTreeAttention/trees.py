@@ -179,7 +179,7 @@ class AttentionModel():
                     metrics=metric_list)
                 
                 #Metadata model                
-                metadata_softmax = tf.keras.layers.Dense(self.classes)(self.metadata_output)
+                metadata_softmax = tf.keras.layers.Dense(self.classes, activation="softmax")(self.metadata_output)
                 self.meta_model = tf.keras.Model(inputs=self.metadata_inputs,outputs=metadata_softmax, name="metadata")                
                 self.meta_model.compile(
                     loss='categorical_crossentropy',
@@ -250,7 +250,7 @@ class AttentionModel():
                 metrics=metric_list)
             
             #Metadata model, add a softmax to top
-            metadata_softmax = tf.keras.layers.Dense(self.classes)(self.metadata_output)            
+            metadata_softmax = tf.keras.layers.Dense(self.classes, activation="softmax")(self.metadata_output)            
             self.meta_model = tf.keras.Model(inputs=self.metadata_inputs, outputs=metadata_softmax, name="metadata")                
             self.meta_model.compile(
                 loss='categorical_crossentropy',
@@ -327,9 +327,7 @@ class AttentionModel():
         elif experiment is None:
             print("Cannot run callbacks without comet experiment, skipping...")
             callback_list = None
-        else:
-            submodel_flag = submodel is not None
-            
+        else:            
             if self.classes_file is not None:
                 labeldf = pd.read_csv(self.classes_file)                
                 label_names = list(labeldf.taxonID.values)
@@ -341,7 +339,7 @@ class AttentionModel():
                                              validation_data=self.val_split,
                                              train_data=self.train_split,
                                              label_names=label_names,
-                                             submodel=submodel_flag)
+                                             submodel=submodel)
 
         if submodel == "spatial":
             #The spatial model is very shallow compared to spectral, train for longer
