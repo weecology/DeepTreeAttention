@@ -41,7 +41,6 @@ def test_run():
         df=df,
         rgb_pool=rgb_pool,
         hyperspectral_pool=hyperspectral_pool,
-        sensor="rgb",
         extend_box=1,
         hyperspectral_savedir=hyperspectral_savedir
     ) 
@@ -60,12 +59,11 @@ def test_main():
         height=height,
         width=width,
         rgb_dir=rgb_dir,
-        sensor="rgb",
         hyperspectral_savedir=hyperspectral_savedir,
         use_dask=False,
         extend_box=3)
     
-    dataset = boxes.tf_dataset(created_records, batch_size=1)
+    dataset = boxes.tf_dataset(created_records, batch_size=1, mode="RGB_train")
     iterator = dataset.make_one_shot_iterator()
     next_element = iterator.get_next()
     
@@ -74,7 +72,7 @@ def test_main():
         counter=0        
         while True:
             data, label = sess.run(next_element)
-            assert data[0].shape == (1, height, width, 3)
+            assert data.shape == (1, height, width, 3)
             assert label.shape  == (1,1)
             
             plt.imshow(data[0].astype("uint8"))                

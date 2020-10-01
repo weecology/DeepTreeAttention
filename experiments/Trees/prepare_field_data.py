@@ -173,22 +173,25 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         
     return crops, labels, sites, elevations, box_index
 
-def create_records(crops, labels, sites, elevations, box_index, savedir, height, width, chunk_size=1000):
+def create_records(HSI_crops, RGB_crops, labels, sites, elevations, box_index, savedir, height, width, chunk_size=1000):
     #get keys and divide into chunks for a single tfrecor
     filenames = []
     counter = 0
-    for i in range(0, len(crops)+1, chunk_size):
-        chunk_crops = crops[i:i + chunk_size]
+    for i in range(0, len(HSI_crops)+1, chunk_size):
+        chunk_HSI_crops = HSI_crops[i:i + chunk_size]
+        chunk_RGB_crops = RGB_crops[i:i + chunk_size]
         chunk_index = box_index[i:i + chunk_size]
         chunk_labels = labels[i:i + chunk_size]
         chunk_sites = sites[i:i + chunk_size]
         chunk_elevations = elevations[i:i + chunk_size]
             
-        resized_crops = [resize(x, height, width).astype("int16") for x in chunk_crops]
+        resized_RGB_crops = [resize(x, height, width).astype("int16") for x in chunk_RGB_crops]
+        resized_HSI_crops = [resize(x, height, width).astype("int16") for x in chunk_HSI_crops]
         
         filename = "{}/field_data_{}.tfrecord".format(savedir, counter)
         write_tfrecord(filename=filename,
-                                            images=resized_crops,
+                                            HSI_images=resized_HSI_crops,
+                                            RGB_images=resized_RGB_crops,
                                             labels=chunk_labels,
                                             sites = chunk_sites,
                                             elevations=chunk_elevations,
@@ -200,7 +203,7 @@ def create_records(crops, labels, sites, elevations, box_index, savedir, height,
     
     return filenames
 
-def run(plot, df, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral", extend_box=0, hyperspectral_savedir=".",saved_model=None):
+def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspectral_savedir=".",saved_model=None):
     """wrapper function for dask, see main.py"""
     try:
         from deepforest import deepforest
@@ -247,8 +250,8 @@ def main(
     field_data,
     height,
     width,
-    rgb_dir=None, 
-    hyperspectral_dir=None,
+    rgb_dir, 
+    hyperspectral_dir,
     savedir=".", 
     chunk_size=500,
     extend_box=0, 
@@ -273,13 +276,7 @@ def main(
         shuffle: shuffle lists before writing
     Returns:
         tfrecords: list of created tfrecords
-    """
-    #Check sensor type has paths
-    if sensor == "hyperspectral":
-        assert not hyperspectral_dir is None
-    if sensor=="rgb":
-        assert not rgb_dir is None
-        
+    """ 
     df = gpd.read_file(field_data)
     plot_names = df.plotID.unique()
     
@@ -302,7 +299,6 @@ def main(
                 df=df,
                 rgb_pool=rgb_pool,
                 hyperspectral_pool=hyperspectral_pool,
-                sensor=sensor,
                 extend_box=extend_box,
                 hyperspectral_savedir=hyperspectral_savedir,
                 saved_model=saved_model
@@ -330,7 +326,6 @@ def main(
                 df=df,
                 rgb_pool=rgb_pool,
                 hyperspectral_pool=hyperspectral_pool, 
-                sensor=sensor,
                 extend_box=extend_box,
                 hyperspectral_savedir=hyperspectral_savedir,
                 saved_model=saved_model
@@ -338,7 +333,7 @@ def main(
             
             #Append to general plot list
             HSI_crops.extend(plot_HSI_crops)
-            RGB_crops.extent(plot_RGB_crops)
+            RGB_crops.extend(plot_RGB_crops)
             labels.extend(plot_labels)
             sites.extend(plot_sites)            
             elevations.extend(plot_elevations)
@@ -381,8 +376,8 @@ def main(
     
     #Write tfrecords
     tfrecords = create_records(
-        HSI_crops=crops,
-        RGB_crops=crops,
+        HSI_crops=HSI_crops,
+        RGB_crops=RGB_crops,
         labels=numeric_labels, 
         sites=numeric_sites, 
         elevations=elevations,
