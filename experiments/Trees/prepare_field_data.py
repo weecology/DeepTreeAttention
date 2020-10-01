@@ -398,7 +398,7 @@ if __name__ == "__main__":
     main(
         field_data=config["train"]["ground_truth_path"],
         RGB_size=config["train"]["RGB"]["crop_size"],
-        HSI_size=config["train"]["RGB"]["crop_size"],        
+        HSI_size=config["train"]["HSI"]["crop_size"],        
         hyperspectral_dir=config["hyperspectral_sensor_pool"],
         rgb_dir=config["rgb_sensor_pool"],
         extend_box=config["train"]["extend_box"],
@@ -411,8 +411,8 @@ if __name__ == "__main__":
     #test data
     main(
         field_data=config["evaluation"]["ground_truth_path"],
-        height=config["train"]["crop_size"],
-        width=config["train"]["crop_size"],        
+        RGB_size=config["train"]["RGB"]["crop_size"],
+        HSI_size=config["train"]["HSI"]["crop_size"],      
         hyperspectral_dir=config["hyperspectral_sensor_pool"],
         rgb_dir=config["rgb_sensor_pool"],
         extend_box=config["train"]["extend_box"],

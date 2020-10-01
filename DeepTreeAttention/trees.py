@@ -348,29 +348,3 @@ class AttentionModel():
         joined_gdf.to_file(fname)
 
         return fname
-
-    def evaluate(self, tf_dataset):
-        """Evaluate metrics on held out training data. Defaults to reading from config.yml evaluation sensor path
-        Args: 
-            tf_dataset: Optional a tf.dataset that yields data and labels, see make_dataset.py 
-            steps: Optional, how many calls of the genertor to evaluate. None will evaluate until exhausted
-        Returns:
-            results: a dictionary of metrics
-        """
-        #gather y_true
-        labels = []
-        predictions = []
-        for image, label in tf_dataset:
-            try:
-                softmax_batch = self.model.predict_on_batch(image)
-                one_hot_label = label.numpy()
-                predictions.append(softmax_batch)
-                labels.append(label)
-            except tf.errors.OutOfRangeError:
-                print("Completed {} predictions".format(len(predictions)))
-
-        #Create numpy arrays of batches
-        predictions = np.vstack(predictions)
-        labels = np.vstack(labels)
-
-        return predictions, labels

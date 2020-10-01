@@ -130,23 +130,6 @@ def test_train(tfrecords, mod):
 
     assert "loss" in list(mod.RGB_model.history.history.keys())     
          
-def test_evaluate(mod, tfrecords):
-    #Create
-    mod.read_data(validation_split=True, mode="RGB_model")
-    
-    metric_list = [
-        keras_metrics.CategoricalAccuracy(name="acc")
-    ]
-    
-    mod.RGB_model.compile(loss="categorical_crossentropy",
-                               optimizer=tf.keras.optimizers.Adam(
-                                   lr=float(mod.config['train']['learning_rate'])),
-                               metrics=metric_list)
-    
-    #Method 1, class eval method
-    print("Before evaluation")
-    y_pred, y_true = mod.evaluate(mod.val_split)
-
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
 
