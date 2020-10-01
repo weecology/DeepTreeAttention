@@ -173,7 +173,7 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         
     return crops, labels, sites, elevations, box_index
 
-def create_records(HSI_crops, RGB_crops, labels, sites, elevations, box_index, savedir, RGB_size, HSI_size, chunk_size=1000):
+def create_records(HSI_crops, RGB_crops, labels, sites, elevations, box_index, savedir, RGB_size, HSI_size, chunk_size=400):
     #get keys and divide into chunks for a single tfrecor
     filenames = []
     counter = 0
@@ -253,7 +253,7 @@ def main(
     rgb_dir, 
     hyperspectral_dir,
     savedir=".", 
-    chunk_size=500,
+    chunk_size=400,
     extend_box=0, 
     hyperspectral_savedir=".", 
     n_workers=20,

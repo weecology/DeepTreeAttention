@@ -79,9 +79,15 @@ if __name__ == "__main__":
         model.train(submodel="spectral", sensor="RGB", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
             
     #Train full model
-    experiment.log_parameter("Class Weighted", True)
-    model.read_data()
-    model.train(class_weight=class_weight, sensor="RGB", experiment=experiment)
+    with experiment.context_manager("RGB_subnetwork"):
+        experiment.log_parameter("Class Weighted", True)
+        model.read_data(mode="RGB_train")
+        model.train(class_weight=class_weight, sensor="hyperspectral", experiment=experiment)
+        
+        #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
+        if model.config["train"]["weighted_sum"]:
+            estimate_a = model.model.get_layer("weighted_sum").get_weights()
+            experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
     
     ##Train subnetwork
     experiment.log_parameter("Train subnetworks", True)
@@ -96,16 +102,18 @@ if __name__ == "__main__":
         model.train(submodel="spectral", sensor="hyperspectral", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
             
     #Train full model
-    experiment.log_parameter("Class Weighted", True)
-    model.read_data()
-    model.train(class_weight=class_weight, sensor="hyperspectral", experiment=experiment)
-    
-    #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
-    if model.config["train"]["weighted_sum"]:
-        estimate_a = model.model.get_layer("weighted_sum").get_weights()
-        experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
+    with experiment.context_manager("HSI_subnetwork"):
+        experiment.log_parameter("Class Weighted", True)
+        model.read_data(mode="HSI_train")
+        model.train(class_weight=class_weight, sensor="hyperspectral", experiment=experiment)
         
-    ##Evaluate
+        #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
+        if model.config["train"]["weighted_sum"]:
+            estimate_a = model.model.get_layer("weighted_sum").get_weights()
+            experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
+        
+    ##Ensemble
+    model.ensemble(freeze=model.config["ensemble"]["freeze"])
     
     #Save model
     model.model.save("{}/{}.h5".format(save_dir,timestamp))
