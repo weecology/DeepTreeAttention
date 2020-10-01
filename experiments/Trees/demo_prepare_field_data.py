@@ -56,8 +56,8 @@ def test_main():
     created_records = prepare_field_data.main(
         field_data=data_path,
         hyperspectral_dir=hyperspectral_dir,
-        height=height,
-        width=width,
+        RGB_size=height,
+        HSI_size    =width,
         rgb_dir=rgb_dir,
         hyperspectral_savedir=hyperspectral_savedir,
         use_dask=False,
@@ -71,13 +71,16 @@ def test_main():
         labels = []
         counter=0        
         while True:
-            data, label = sess.run(next_element)
-            assert data.shape == (1, height, width, 3)
-            assert label.shape  == (1,1)
-            
-            plt.imshow(data[0].astype("uint8"))                
-            labels.append(label)
-            counter+=1
+            try:
+                data, label = sess.run(next_element)
+                assert data.shape == (1, height, width, 3)
+                assert label.shape  == (1,1)
+                
+                plt.imshow(data[0].astype("uint8"))                
+                labels.append(label)
+                counter+=1
+            except tensorflow.errors.OutOfRangeError:
+                break
             
     assert counter==5 
 

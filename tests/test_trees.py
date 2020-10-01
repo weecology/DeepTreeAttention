@@ -132,7 +132,7 @@ def test_train(tfrecords, mod):
          
 def test_evaluate(mod, tfrecords):
     #Create
-    mod.read_data(validation_split=True)
+    mod.read_data(validation_split=True, mode="RGB_model")
     
     metric_list = [
         keras_metrics.CategoricalAccuracy(name="acc")
@@ -156,7 +156,7 @@ def test_train_callbacks(tfrecords, mod):
     mod.train(sensor="RGB", submodel="spectral",experiment=experiment)
 
     mod.read_data(validation_split=True, mode="RGB_train")
-    mod.train(experiment=experiment)
+    mod.train(experiment=experiment, sensor="RGB")
     
     #assert experiment.get_metric("Within-site Error") > 0
     
