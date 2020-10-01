@@ -29,7 +29,7 @@ def plot_prediction(image, label, prediction):
             plot_image[:, :, band] = normalize(plot_image[:, :, band])
             plot_image.astype("float")
     else:
-        plot_image = image.astype(int)
+        plot_image = image
 
     ax.imshow(plot_image)
     ax.set_title("True: {}, Predicted: {} ".format(label, prediction))
