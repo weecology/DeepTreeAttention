@@ -86,7 +86,7 @@ if __name__ == "__main__":
         
         #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
         if model.config["train"]["RGB"]["weighted_sum"]:
-            estimate_a = model.model.get_layer("weighted_sum").get_weights()
+            estimate_a = model.RGB_model.get_layer("weighted_sum").get_weights()
             experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
     
     ##Train subnetwork
@@ -109,7 +109,7 @@ if __name__ == "__main__":
         
         #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
         if model.config["train"]["HSI"]["weighted_sum"]:
-            estimate_a = model.model.get_layer("weighted_sum").get_weights()
+            estimate_a = model.HSI_model.get_layer("weighted_sum").get_weights()
             experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
         
     ##Ensemble
