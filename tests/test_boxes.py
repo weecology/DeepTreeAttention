@@ -18,10 +18,11 @@ def test_generate_tfrecords(train, tmpdir):
         elevation=100,
         savedir=tmpdir,
         train=train,
-        sensor_path=test_sensor_tile,
+        HSI_sensor_path=test_sensor_tile,
+        RGB_sensor_path=test_sensor_tile,
         species_label_dict=None,
-        height=20,
-        width=20,
+        RGB_size=20,
+        HSI_size=20,
         classes=6)
     
     assert all([os.path.exists(x) for x in created_records])
@@ -32,12 +33,12 @@ def test_generate_tfrecords(train, tmpdir):
         dataset = boxes.tf_dataset(created_records, batch_size=2, mode="predict")
     
     if train:
-        for (image_batch, metadata_batch), label_batch in dataset.take(3):
-            assert image_batch.shape == (2,20,20,3)
+        for (HSI, RGB), label_batch in dataset.take(3):
+            assert HSI.shape == (2,20,20,3)
+            assert RGB.shape == (2,20,20,3)            
             assert label_batch.shape == (2,6)
-            assert not sum(metadata_batch) == 0            
     else:
-        for (image_batch, metadata_batch), box_index_batch in dataset.take(3):
-            assert image_batch.shape == (2,20,20,3)
+        for (HSI, RGB ), box_index_batch in dataset.take(3):
+            assert HSI.shape == (2,20,20,3)
+            assert RGB.shape == (2,20,20,3) 
             assert box_index_batch.shape == (2,)
-            assert not sum(metadata_batch) == 0

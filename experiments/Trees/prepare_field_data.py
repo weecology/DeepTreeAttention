@@ -215,19 +215,33 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral"
         #Filter data and process
         plot_data = df[df.plotID == plot]
         predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
-        plot_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = create_crops(
+        
+        #Crop HSI
+        plot_HSI_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = create_crops(
             predicted_trees,
             hyperspectral_pool=hyperspectral_pool,
             rgb_pool=rgb_pool,
-            sensor=sensor,
+            sensor="hyperspectral",
             expand=extend_box,
-            hyperspectral_savedir=hyperspectral_savedir
-    )
-    except:
-        print("Plot {} failed".format(plot))
+            hyperspectral_savedir=hyperspectral_savedir)
+        
+        #Crop RGB, drop repeated elements, leave one for testing
+        plot_rgb_crops, plot_rgb_labels, _, _, _ = create_crops(
+            predicted_trees,
+            hyperspectral_pool=hyperspectral_pool,
+            rgb_pool=rgb_pool,
+            sensor="rgb",
+            expand=extend_box,
+            hyperspectral_savedir=hyperspectral_savedir)    
+        
+        #Assert they are the same
+        assert len(plot_rgb_crops) == len(plot_HSI_crops)
+        assert all(plot_labels==plot_rgb_labels)
+    except Exception as e:
+        print("Plot {} failed {}".format(plot, e))
         raise
         
-    return plot_crops, plot_labels, plot_sites, plot_elevations, plot_box_index
+    return plot_HSI_crops, plot_rgb_crops, plot_labels, plot_sites, plot_elevations, plot_box_index
 
 def main(
     field_data,
@@ -235,7 +249,6 @@ def main(
     width,
     rgb_dir=None, 
     hyperspectral_dir=None,
-    sensor="hyperspectral",
     savedir=".", 
     chunk_size=500,
     extend_box=0, 
@@ -251,7 +264,6 @@ def main(
         field_data: shp file with location and class of each field collected point
         height: height in meters of the resized training image
         width: width in meters of the resized training image
-        sensor: 'rgb' or 'hyperspecral' image crop
         savedir: direcory to save completed tfrecords
         extend_box: units in meters to add to the edge of a predicted box to give more context
         hyperspectral_savedir: location to save converted .h5 to .tif
@@ -275,7 +287,8 @@ def main(
     rgb_pool = glob.glob(rgb_dir, recursive=True)
     
     labels = []
-    crops = []
+    HSI_crops = []
+    RGB_crops = []
     sites = []
     box_indexes = []    
     elevations = []
@@ -299,19 +312,20 @@ def main(
         wait(futures)
         for x in futures:
             try:
-                plot_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = x.result()
+                plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = x.result()
                 
                 #Append to general plot list
-                crops.extend(plot_crops)
+                HSI_crops.extend(plot_HSI_crops)
+                RGB_crops.extent(plot_RGB_crops)
                 labels.extend(plot_labels)
-                sites.extend(plot_sites)
+                sites.extend(plot_sites)            
                 elevations.extend(plot_elevations)
-                box_indexes.extend(plot_box_index)            
+                box_indexes.extend(plot_box_index)        
             except Exception as e:
                 print("Future failed with {}".format(e))        
     else:
         for plot in plot_names:
-            plot_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = run(
+            plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = run(
                 plot=plot,
                 df=df,
                 rgb_pool=rgb_pool,
@@ -323,16 +337,17 @@ def main(
             ) 
             
             #Append to general plot list
-            crops.extend(plot_crops)
+            HSI_crops.extend(plot_HSI_crops)
+            RGB_crops.extent(plot_RGB_crops)
             labels.extend(plot_labels)
             sites.extend(plot_sites)            
             elevations.extend(plot_elevations)
             box_indexes.extend(plot_box_index)
     
     if shuffle:
-        z = list(zip(crops, sites, elevations, box_indexes, labels))
+        z = list(zip(HSI_crops, RGB_crops, sites, elevations, box_indexes, labels))
         random.shuffle(z)
-        crops, sites,elevations, box_indexes, labels = zip(*z)
+        HSI_crops, RGB_crops, sites, elevations, box_indexes, labels = zip(*z)
                         
     #If passes a species label dict
     if species_classes_file is not None:
@@ -366,7 +381,8 @@ def main(
     
     #Write tfrecords
     tfrecords = create_records(
-        crops=crops,
+        HSI_crops=crops,
+        RGB_crops=crops,
         labels=numeric_labels, 
         sites=numeric_sites, 
         elevations=elevations,
@@ -383,12 +399,12 @@ if __name__ == "__main__":
     ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     config = parse_yaml("{}/conf/tree_config.yml".format(ROOT))
     
+    #Hyperspecral
     #train data
     main(
         field_data=config["train"]["ground_truth_path"],
         height=config["train"]["crop_size"],
         width=config["train"]["crop_size"],        
-        sensor="hyperspectral",
         hyperspectral_dir=config["hyperspectral_sensor_pool"],
         rgb_dir=config["rgb_sensor_pool"],
         extend_box=config["train"]["extend_box"],
@@ -403,7 +419,6 @@ if __name__ == "__main__":
         field_data=config["evaluation"]["ground_truth_path"],
         height=config["train"]["crop_size"],
         width=config["train"]["crop_size"],        
-        sensor="hyperspectral",
         hyperspectral_dir=config["hyperspectral_sensor_pool"],
         rgb_dir=config["rgb_sensor_pool"],
         extend_box=config["train"]["extend_box"],
@@ -412,4 +427,4 @@ if __name__ == "__main__":
         n_workers=config["cpu_workers"],
         species_classes_file = os.path.join(config["train"]["tfrecords"],"species_class_labels.csv"),
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
-    )    
+    )

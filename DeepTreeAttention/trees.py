@@ -43,17 +43,22 @@ class AttentionModel():
             self.log_dir = None
 
         #log some helpful data
-        self.height = self.config["train"]["crop_size"]
-        self.width = self.config["train"]["crop_size"]
-        self.channels = self.config["train"]["sensor_channels"]
-        self.weighted_sum = self.config["train"]["weighted_sum"]
+        
+        self.HSI_size = self.config["train"]["HSI"]["crop_size"]
+        self.HSI_channels = self.config["train"]["HSI"]["sensor_channels"]
+        self.HSI_weighted_sum = self.config["train"]["HSI"]["weighted_sum"]
+        
+        self.RGB_size= self.config["train"]["RGB"]["crop_size"]
+        self.RGB_channels = self.config["train"]["RGB"]["sensor_channels"]
+        self.RGB_weighted_sum = self.config["train"]["RGB"]["weighted_sum"]
+        
         self.extend_box = self.config["train"]["extend_box"]
         self.classes_file = os.path.join(self.config["train"]["tfrecords"],
                                          "species_class_labels.csv")
         self.classes = self.config["train"]["classes"]
         self.sites = self.config["train"]["sites"]
 
-    def generate(self, shapefile, sensor_path, site, species_label_dict=None, train=True, chunk_size=1000):
+    def generate(self, shapefile, HSI_sensor_path, RGB_sensor_path, elevation, site, species_label_dict=None, train=True, chunk_size=1000):
         """Predict species class for each DeepForest bounding box
             Args:
                 shapefile: a DeepForest shapefile (see NeonCrownMaps) with a bounding box and utm projection
@@ -69,12 +74,13 @@ class AttentionModel():
             savedir = self.config["predict"]["tfrecords"]
 
         created_records = boxes.generate_tfrecords(shapefile=shapefile,
-                                                   sensor_path=sensor_path,
+                                                   HSI_sensor_path=HSI_sensor_path,
+                                                   RGB_sensor_path=RGB_sensor_path,                                                   
                                                    site=site,
-                                                   elevation=100,
+                                                   elevation=elevation,
                                                    species_label_dict=species_label_dict,
-                                                   height=self.height,
-                                                   width=self.width,
+                                                   HSI_size=self.HSI_size,
+                                                   RGB_size=self.RGB_size,                                                   
                                                    savedir=savedir,
                                                    train=train,
                                                    number_of_sites=self.sites,
@@ -112,153 +118,8 @@ class AttentionModel():
                 weights: a saved model weights from previous run
                 name: a model name from DeepTreeAttention.models
             """
-        #Tensorflow suggest create on CPU to reduce memory
-        #If more than GPU is requested
-
-        if self.config["train"]["gpu"] > 1:
-            strategy = tf.distribute.MirroredStrategy()
-            print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
-
-            #Store intermediary layers for subtraining
-            with strategy.scope():
-                #metrics
-                metric_list = [metrics.CategoricalAccuracy(name="acc")]
-
-                #Create model
-                self._sensor_inputs, self.metadata_inputs, self.metadata_output, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang.create_model(
-                    self.height, self.width, self.channels, self.classes,
-                    self.weighted_sum)
-                
-                #Full model compile
-                self.model = tf.keras.Model(inputs=[self.sensor_inputs, self.metadata_inputs],
-                                            outputs=self.combined_output,
-                                            name="DeepTreeAttention")
-                
-                #compile full model
-                self.model.compile(loss="categorical_crossentropy",
-                                   optimizer=tf.keras.optimizers.Adam(lr=float(0.0001)),
-                                   metrics=metric_list)
-                #compile
-                loss_dict = {
-                    "spatial_attention_1": "categorical_crossentropy",
-                    "spatial_attention_2": "categorical_crossentropy",
-                    "spatial_attention_3": "categorical_crossentropy"
-                }
-
-                # Spatial Attention softmax model
-                self.spatial_model = tf.keras.Model(
-                    inputs=self.sensor_inputs,
-                    outputs=self.spatial_attention_outputs,
-                    name="DeepTreeAttention")
-
-                self.spatial_model.compile(
-                    loss=loss_dict,
-                    loss_weights=[0.01, 0.1, 1],
-                    optimizer=tf.keras.optimizers.Adam(
-                        lr=float(self.config['train']['learning_rate'])),
-                    metrics=metric_list)
-
-                # Spectral Attention softmax model
-                self.spectral_model = tf.keras.Model(
-                    inputs=self.sensor_inputs,
-                    outputs=self.spectral_attention_outputs,
-                    name="DeepTreeAttention")
-
-                #compile loss dict
-                loss_dict = {
-                    "spectral_attention_1": "categorical_crossentropy",
-                    "spectral_attention_2": "categorical_crossentropy",
-                    "spectral_attention_3": "categorical_crossentropy"
-                }
-
-                self.spectral_model.compile(
-                    loss=loss_dict,
-                    loss_weights=[0.01, 0.1, 1],
-                    optimizer=tf.keras.optimizers.Adam(
-                        lr=float(self.config['train']['learning_rate'])),
-                    metrics=metric_list)
-                
-                #Metadata model                
-                metadata_softmax = tf.keras.layers.Dense(self.classes, activation="softmax")(self.metadata_output)
-                self.meta_model = tf.keras.Model(inputs=self.metadata_inputs,outputs=metadata_softmax, name="metadata")                
-                self.meta_model.compile(
-                    loss='categorical_crossentropy',
-                    optimizer='adam',
-                    metrics=["acc"]
-                )
-                
-                if weights:
-                    self.model.load_weights(weights)
-        else:
-            #metrics
-            metric_list = [metrics.CategoricalAccuracy(name="acc")]
-
-            #Create model
-            self.sensor_inputs, self.metadata_inputs, self.metadata_output, self.combined_output, self.spatial_attention_outputs, self.spectral_attention_outputs = Hang.create_model(
-                height=self.height,
-                width=self.width,
-                channels=self.channels,
-                classes=self.classes,
-                weighted_sum=self.weighted_sum)
-
-            #Full model compile
-            self.model = tf.keras.Model(inputs=[self.sensor_inputs, self.metadata_inputs],
-                                        outputs=self.combined_output,
-                                        name="DeepTreeAttention")
-
-            #compile full model
-            self.model.compile(loss="categorical_crossentropy",
-                               optimizer=tf.keras.optimizers.Adam(
-                                   lr=float(self.config['train']['learning_rate'])),
-                               metrics=metric_list)
-            #compile
-            loss_dict = {
-                "spatial_attention_1": "categorical_crossentropy",
-                "spatial_attention_2": "categorical_crossentropy",
-                "spatial_attention_3": "categorical_crossentropy"
-            }
-
-            # Spatial Attention softmax model
-            self.spatial_model = tf.keras.Model(inputs=self.sensor_inputs,
-                                                outputs=self.spatial_attention_outputs,
-                                                name="DeepTreeAttention")
-
-            self.spatial_model.compile(
-                loss=loss_dict,
-                loss_weights=[0.01, 0.1, 1],
-                optimizer=tf.keras.optimizers.Adam(
-                    lr=float(self.config['train']['learning_rate'])),
-                metrics=metric_list)
-
-            # Spectral Attention softmax model
-            self.spectral_model = tf.keras.Model(inputs=self.sensor_inputs,
-                                                 outputs=self.spectral_attention_outputs,
-                                                 name="DeepTreeAttention")
-
-            #compile loss dict
-            loss_dict = {
-                "spectral_attention_1": "categorical_crossentropy",
-                "spectral_attention_2": "categorical_crossentropy",
-                "spectral_attention_3": "categorical_crossentropy"
-            }
-
-            self.spectral_model.compile(
-                loss=loss_dict,
-                loss_weights=[0.01, 0.1, 1],
-                optimizer=tf.keras.optimizers.Adam(
-                    lr=float(self.config['train']['learning_rate'])),
-                metrics=metric_list)
-            
-            #Metadata model, add a softmax to top
-            metadata_softmax = tf.keras.layers.Dense(self.classes, activation="softmax")(self.metadata_output)            
-            self.meta_model = tf.keras.Model(inputs=self.metadata_inputs, outputs=metadata_softmax, name="metadata")                
-            self.meta_model.compile(
-                loss='categorical_crossentropy',
-                optimizer='adam',
-                metrics=["acc"])    
-            
-            if weights:
-                self.model.load_weights(weights)
+        self.HSI_model, self.HSI_spatial, self.HSI_spectral = Hang.create_models(self.HSI_size, self.HSI_size, self.HSI_channels, self.classes, self.config["train"]["learning_rate"])
+        self.RGB_model, self.RGB_spatial, self.RGB_spectral = Hang.create_models(self.RGB_size, self.RGB_size, self.RGB_channels, self.classes, self.config["train"]["learning_rate"])
 
     def read_data(self, mode="train", validation_split=False):
         """Read tfrecord into datasets from config
@@ -318,7 +179,7 @@ class AttentionModel():
                     mode=mode,
                     cores=self.config["cpu_workers"])
 
-    def train(self, experiment=None, class_weight=None, submodel=None):
+    def train(self, experiment=None, class_weight=None, submodel=None, sensor="hyperspectral"):
         """Train a model with callbacks"""
 
         if self.val_split is None:
@@ -340,37 +201,74 @@ class AttentionModel():
                                              train_data=self.train_split,
                                              label_names=label_names,
                                              submodel=submodel)
-
+        
         if submodel == "spatial":
-            #The spatial model is very shallow compared to spectral, train for longer
-            self.spatial_model.fit(self.train_split,
-                                   epochs=int(self.config["train"]["epochs"]),
-                                   validation_data=self.val_split,
-                                   callbacks=callback_list,
-                                   class_weight=class_weight)
+            if sensor == "hyperspectral":
+                self.HSI_spatial.fit(self.train_split,
+                                       epochs=int(self.config["train"]["epochs"]),
+                                       validation_data=self.val_split,
+                                       callbacks=callback_list,
+                                       class_weight=class_weight)
+            elif sensor == "RGB":
+                self.RGB_spatial.fit(self.train_split,
+                                                 epochs=int(self.config["train"]["epochs"]),
+                                                   validation_data=self.val_split,
+                                                   callbacks=callback_list,
+                                                   class_weight=class_weight)                
 
         elif submodel == "spectral":
-            #one for each loss layer
-            self.spectral_model.fit(self.train_split,
-                                    epochs=int(self.config["train"]["epochs"]),
-                                    validation_data=self.val_split,
-                                    callbacks=callback_list,
-                                    class_weight=class_weight)
-
-        elif submodel == "metadata":
-            #one for each loss layer
-            self.meta_model.fit(self.train_split,
-                                    epochs=int(self.config["train"]["epochs"]*2),
-                                    validation_data=self.val_split,
-                                    callbacks=callback_list,
-                                    class_weight=class_weight)        
+            if sensor == "hyperspectral":
+                self.HSI_spectral.fit(self.train_split,
+                                       epochs=int(self.config["train"]["epochs"]),
+                                       validation_data=self.val_split,
+                                       callbacks=callback_list,
+                                       class_weight=class_weight)
+            elif sensor == "RGB":
+                self.RGB_spectral.fit(self.train_split,
+                                                 epochs=int(self.config["train"]["epochs"]),
+                                                   validation_data=self.val_split,
+                                                   callbacks=callback_list,
+                                                   class_weight=class_weight)      
         else:
-            self.model.fit(self.train_split,
-                           epochs=self.config["train"]["epochs"],
-                           validation_data=self.val_split,
-                           callbacks=callback_list,
-                           class_weight=class_weight)
-
+            if sensor == "hyperspectral":
+                self.HSI_model.fit(self.train_split,
+                               epochs=self.config["train"]["epochs"],
+                               validation_data=self.val_split,
+                               callbacks=callback_list,
+                               class_weight=class_weight)
+            
+            elif sensor == "RGB":
+                self.RGB_model.fit(
+                    self.train_split,
+                    epochs=self.config["train"]["epochs"],
+                    validation_data=self.val_split,
+                    callbacks=callback_list,
+                    class_weight=class_weight)
+        
+    def ensemble(self, freeze = True):
+        self.read_data(mode="ensemble")
+        self.ensemble = Hang.ensemble([self.RGB_model, self.HSI_model], freeze=freeze)
+        
+        self.ensemble.compile(
+            loss="categorical_crossentropy",
+            optimizer=tf.keras.optimizers.Adam(
+            lr=float(self.config["train"]["learning_rate"])),
+            metrics="acc")
+            
+        callback_list = callbacks.create(log_dir=self.log_dir,
+                                         experiment=experiment,
+                                         validation_data=self.val_split,
+                                         train_data=self.train_split,
+                                         label_names=label_names)
+                
+        #Train ensemble layer
+        self.ensemble.fit(
+            self.train_split,
+            epochs=self.config["train"]["epochs"],
+            validation_data=self.val_split,
+            callbacks=callback_list,
+            class_weight=class_weight)
+        
     def predict(self, shapefile, savedir, create_records=True, sensor_path=None):
         """Predict species id for each box in a single shapefile
         Args:
