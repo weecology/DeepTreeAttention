@@ -41,7 +41,6 @@ def mod(tmpdir):
     train_config["steps"] = 2
     train_config["gpu"] = 1
     train_config["crop_size"] = 100
-    train_config["sensor_channels"] = 3
     train_config["shuffle"] = True
     train_config["weighted_sum"] = False
     train_config["classes"] = 2
@@ -64,10 +63,8 @@ def mod(tmpdir):
             mod.config[key][nested_key] = nested_value
     
     #Update the inits
-    mod.height = mod.config["train"]["crop_size"]
-    mod.width = mod.config["train"]["crop_size"]
-    mod.channels = mod.config["train"]["sensor_channels"]
-    mod.weighted_sum = mod.config["train"]["weighted_sum"]
+    mod.RGB_size = mod.config["train"]["RGB"]["crop_size"]
+    mod.HSI_size = mod.config["train"]["HSI"]["crop_size"]
     mod.extend_box = mod.config["train"]["extend_box"]
     mod.classes_file = None
     mod.classes = mod.config["train"]["classes"]
@@ -79,11 +76,11 @@ def mod(tmpdir):
 
 @pytest.fixture()
 def tfrecords(mod, tmpdir):
-    created_records = mod.generate(shapefile=test_predictions, site=0, sensor_path=test_sensor_tile, train=True, chunk_size=100)    
+    created_records = mod.generate(shapefile=test_predictions, site=0, elevation=100, HSI_sensor_path=test_sensor_tile, RGB_sensor_path=test_sensor_tile, train=True, chunk_size=100)    
     return created_records
 
 def test_generate(mod):
-    created_records = mod.generate(shapefile=test_predictions, site=0, sensor_path=test_sensor_tile, train=True, chunk_size=100)  
+    created_records = mod.generate(shapefile=test_predictions, site=0, elevation=100, HSI_sensor_path=test_sensor_tile, RGB_sensor_path=test_sensor_tile, train=True, chunk_size=100)  
     assert all([os.path.exists(x) for x in created_records])
 
 def test_split_data(mod, tfrecords):
@@ -121,17 +118,17 @@ def test_AttentionModel(mod, tfrecords, submodel):
 
 def test_train(tfrecords, mod):
     #initial weights
-    initial_weight = mod.model.layers[1].get_weights()
+    initial_weight = mod.RGB_model.layers[1].get_weights()
     
-    mod.read_data()
-    mod.train()
+    mod.read_data(mode="RGB_train")
+    mod.train(sensor="RGB")
     
-    final_weight = mod.model.layers[1].get_weights()
+    final_weight = mod.RGB_model.layers[1].get_weights()
     
     #assert training took place
     assert not np.array_equal(final_weight,initial_weight)
 
-    assert "loss" in list(mod.model.history.history.keys())     
+    assert "loss" in list(mod.RGB_model.history.history.keys())     
          
 def test_evaluate(mod, tfrecords):
     #Create
@@ -141,7 +138,7 @@ def test_evaluate(mod, tfrecords):
         keras_metrics.CategoricalAccuracy(name="acc")
     ]
     
-    mod.model.compile(loss="categorical_crossentropy",
+    mod.RGB_model.compile(loss="categorical_crossentropy",
                                optimizer=tf.keras.optimizers.Adam(
                                    lr=float(mod.config['train']['learning_rate'])),
                                metrics=metric_list)
@@ -153,13 +150,10 @@ def test_evaluate(mod, tfrecords):
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
 
-    experiment.add_tag("testing")
-    mod.read_data(validation_split=True, mode="metadata")
-    mod.train(experiment=experiment, submodel="metadata")
-    
+    experiment.add_tag("testing")    
     mod.classes_file = "{}/species_class_labels.csv".format(os.path.dirname(tfrecords[0]))
-    mod.read_data(validation_split=True, mode="submodel")
-    mod.train(submodel="spectral",experiment=experiment)
+    mod.read_data(validation_split=True, mode="RGB_submodel")
+    mod.train(sensor="hyperspectral", submodel="spectral",experiment=experiment)
 
     mod.read_data(validation_split=True)
     mod.train(experiment=experiment)

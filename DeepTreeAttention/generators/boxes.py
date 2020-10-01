@@ -7,10 +7,7 @@ import rasterio
 import random
 import tensorflow as tf
 import cv2
-
-from DeepTreeAttention.generators import create_tfrecords
 from rasterio.windows import from_bounds
-
 
 def resize(img, height, width):
     # resize image
@@ -20,16 +17,34 @@ def resize(img, height, width):
 
     return resized
 
+def crop(src, geom, extend_box):
+    left, bottom, right, top = geom.bounds
+    window = from_bounds(left - extend_box,
+                             bottom - extend_box,
+                             right + extend_box,
+                             top + extend_box,
+                             transform=src.transform)
+    masked_image = src.read(window=window)
 
+    #Roll depth to channel last
+    masked_image = np.rollaxis(masked_image, 0, 3)
+
+    #Skip empty frames
+    if masked_image.size == 0:
+        raise ValueError("Empty Frame")
+    
+    return masked_image
+    
 def generate_tfrecords(shapefile,
-                       sensor_path,
+                       HSI_sensor_path,
+                       RGB_sensor_path,
                        site,
                        elevation,
                        species_label_dict,
                        chunk_size=1000,
                        savedir=".",
-                       height=40,
-                       width=40,
+                       HSI_size=40,
+                       RGB_size=40,
                        classes=20,
                        number_of_sites=23,
                        train=True,
@@ -42,42 +57,38 @@ def generate_tfrecords(shapefile,
         site: metadata site label as integer
         elevation: height above sea level in meters
         label_dict: taxonID -> numeric label
+        RGB_size: size in pixels of one side of image
+        HSI_size: size in pixels of one side of image
         train: training mode to include yielded labels
+        number_of_sites: total number of sites used for one-hot encoding
         extend_box: units in meters to expand DeepForest bounding box to give crop more context
     Returns:
         filename: tfrecords path
     """
     gdf = geopandas.read_file(shapefile)
     basename = os.path.splitext(os.path.basename(shapefile))[0]
-    src = rasterio.open(sensor_path)
+    HSI_src = rasterio.open(HSI_sensor_path)
+    RGB_src = rasterio.open(HSI_sensor_path)
 
     gdf["box_index"] = ["{}_{}".format(basename, x) for x in gdf.index.values]
     labels = []
-    crops = []
+    HSI_crops = []
+    RGB_crops = []
     indices = []
+    
     for index, row in gdf.iterrows():
         #Add training label, ignore unclassified 0 class
         if train:
-            if row["label"] == 0:
-                continue
             labels.append(row["label"])
-
-        left, bottom, right, top = row["geometry"].bounds
-        window = from_bounds(left - extend_box,
-                             bottom - extend_box,
-                             right + extend_box,
-                             top + extend_box,
-                             transform=src.transform)
-        masked_image = src.read(window=window)
-
-        #Roll depth to channel last
-        masked_image = np.rollaxis(masked_image, 0, 3)
-
-        #Skip empty frames
-        if masked_image.size == 0:
+        
+        try:
+            HSI_crop = crop(HSI_src, row["geometry"], extend_box)
+            RGB_crop = crop(RGB_src, row["geometry"], extend_box)
+        except ValueError:
             continue
-
-        crops.append(masked_image)
+        
+        HSI_crops.append(HSI_crop)
+        RGB_crops.append(RGB_crop)
         indices.append(row["box_index"])
 
     #If passes a species label dict
@@ -94,15 +105,16 @@ def generate_tfrecords(shapefile,
     #shuffle before writing to help with validation data split
     if shuffle:
         if train:
-            z = list(zip(crops, indices, numeric_species_labels))
+            z = list(zip(HSI_crops, RGB_crops, indices, numeric_species_labels))
             random.shuffle(z)
-            crops, indices, numeric_species_labels = zip(*z)
+            HSI_crops, RGB_crops, indices, numeric_species_labels = zip(*z)
 
     #get keys and divide into chunks for a single tfrecord
     filenames = []
     counter = 0
-    for i in range(0, len(crops) + 1, chunk_size):
-        chunk_crops = crops[i:i + chunk_size]
+    for i in range(0, len(HSI_crops) + 1, chunk_size):
+        chunk_HSI_crops = HSI_crops[i:i + chunk_size]
+        chunk_RGB_crops = RGB_crops[i:i + chunk_size]        
         chunk_index = indices[i:i + chunk_size]
         
         #All records in a single shapefile are the same site
@@ -115,11 +127,14 @@ def generate_tfrecords(shapefile,
             chunk_labels = None
 
         #resize crops
-        resized_crops = [resize(x, height, width).astype("int16") for x in chunk_crops]
+        resized_HSI_crops = [resize(x, HSI_size, HSI_size).astype("int16") for x in chunk_HSI_crops]
+        resized_RGB_crops = [resize(x, RGB_size, RGB_size).astype("int16") for x in chunk_RGB_crops]
 
         filename = "{}/{}_{}.tfrecord".format(savedir, basename, counter)
+        
         write_tfrecord(filename=filename,
-                       images=resized_crops,
+                       HSI_images=resized_HSI_crops,
+                       RGB_images=resized_RGB_crops,
                        labels=chunk_labels,
                        sites=chunk_sites,
                        elevations= chunk_elevations,
@@ -139,7 +154,7 @@ def _int64_feature(value):
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-def write_tfrecord(filename, images, sites, elevations, indices, labels=None, classes=21, number_of_sites=23):
+def write_tfrecord(filename, HSI_images, RGB_images, sites, elevations, indices, labels=None, classes=21, number_of_sites=23):
     """Write a training or prediction tfrecord
         Args:
             train: True -> create a training record with labels. False -> a prediciton record with raster indices
@@ -148,22 +163,25 @@ def write_tfrecord(filename, images, sites, elevations, indices, labels=None, cl
 
     if labels is not None:
         #Write parser
-        for index, image in enumerate(images):
-            tf_example = create_record(index=indices[index],
-                                       site = sites[index],
-                                       image=images[index],
-                                       label=labels[index],
-                                       elevation=elevations[index],
-                                       number_of_sites=number_of_sites,
-                                       classes=classes)
+        for index, image in enumerate(HSI_images):
+            tf_example = create_record(
+                index=indices[index],
+                site = sites[index],
+                HSI_image = HSI_images[index],
+                RGB_image = RGB_images[index],
+                label=labels[index],
+                elevation=elevations[index],
+                number_of_sites=number_of_sites,
+                classes=classes)
             writer.write(tf_example.SerializeToString())
     else:
-        for index, image in enumerate(images):
+        for index, image in enumerate(HSI_images):
             tf_example = create_record(
                 index=indices[index],
                 site = sites[index],
                 elevation = elevations[index],
-                image=image,
+                HSI_image=image,
+                RGB_image = RGB_images[index],
                 number_of_sites=number_of_sites,
                 classes=classes)
             writer.write(tf_example.SerializeToString())
@@ -171,11 +189,12 @@ def write_tfrecord(filename, images, sites, elevations, indices, labels=None, cl
     writer.close()
 
 
-def create_record(image, index, site, elevation, classes, number_of_sites, label=None):
+def create_record(HSI_image, RGB_image, index, site, elevation, classes, number_of_sites, label=None):
     """
     Generate one record from an image 
     Args:
-        image: a numpy arry in the form height, row, depth channels
+        HSI_image: a numpy arry in the form height, row, depth channels
+        RGB_image: a numpy arry in the form height, row, depth channels
         index: box_index GIS label
         classes: number of classes of labels to train/predict
         sites: number of geographic sites in train/test to one-hot labels
@@ -184,21 +203,29 @@ def create_record(image, index, site, elevation, classes, number_of_sites, label
     Returns:
         tf example parser
     """
-    rows = image.shape[0]
-    cols = image.shape[1]
-    depth = image.shape[2]
+    HSI_rows = HSI_image.shape[0]
+    HSI_cols = HSI_image.shape[1]
+    HSI_depth = HSI_image.shape[2]
+    
+    RGB_rows = RGB_image.shape[0]
+    RGB_cols = RGB_image.shape[1]
+    RGB_depth = RGB_image.shape[2]
 
     if label is not None:
         example = tf.train.Example(features=tf.train.Features(
             feature={
                 'box_index': _bytes_feature(index.encode()),
-                'image/data': _bytes_feature(image.tostring()),
+                'HSI_image/data': _bytes_feature(HSI_image.tostring()),
                 'label': _int64_feature(label),
                 'site': _int64_feature(site),    
                 'elevation': _int64_feature(elevation),                                
-                'image/height': _int64_feature(rows),
-                'image/width': _int64_feature(cols),
-                'image/depth': _int64_feature(depth),
+                'HSI_image/height': _int64_feature(HSI_rows),
+                'HSI_image/width': _int64_feature(HSI_cols),
+                'HSI_image/depth': _int64_feature(HSI_depth),
+                'RGB_image/data': _bytes_feature(RGB_image.tostring()),                                
+                'RGB_image/height': _int64_feature(RGB_rows),
+                'RGB_image/width': _int64_feature(RGB_cols),
+                'RGB_image/depth': _int64_feature(RGB_depth),                
                 'classes': _int64_feature(classes),                
                 'number_of_sites': _int64_feature(number_of_sites),
             }))
@@ -206,10 +233,14 @@ def create_record(image, index, site, elevation, classes, number_of_sites, label
         example = tf.train.Example(features=tf.train.Features(
             feature={
                 'box_index': _bytes_feature(index.encode()),
-                'image/data': _bytes_feature(image.tostring()),
-                'image/height': _int64_feature(rows),
-                'image/width': _int64_feature(cols),
-                'image/depth': _int64_feature(depth),
+                'HSI_image/data': _bytes_feature(HSI_image.tostring()),
+                'HSI_image/height': _int64_feature(HSI_rows),
+                'HSI_image/width': _int64_feature(HSI_cols),
+                'HSI_image/depth': _int64_feature(HSI_depth),
+                'RGB_image/data': _bytes_feature(RGB_image.tostring()),                
+                'RGB_image/height': _int64_feature(RGB_rows),
+                'RGB_image/width': _int64_feature(RGB_cols),
+                'RGB_image/depth': _int64_feature(RGB_depth),        
                 'classes': _int64_feature(classes),
                 'site': _int64_feature(site),               
                 'elevation': _int64_feature(elevation),                                                
@@ -223,129 +254,301 @@ def create_record(image, index, site, elevation, classes, number_of_sites, label
 def _train_parse_(tfrecord):
     # Define features
     features = {
-        'image/data': tf.io.FixedLenFeature([], tf.string),
+        'HSI_image/data': tf.io.FixedLenFeature([], tf.string),
+        'RGB_image/data': tf.io.FixedLenFeature([], tf.string),        
         "label": tf.io.FixedLenFeature([], tf.int64),
         "site": tf.io.FixedLenFeature([], tf.int64),        
         "elevation": tf.io.FixedLenFeature([], tf.int64),        
-        "image/height": tf.io.FixedLenFeature([], tf.int64),
-        "image/width": tf.io.FixedLenFeature([], tf.int64),
-        "image/depth": tf.io.FixedLenFeature([], tf.int64),
+        "HSI_image/height": tf.io.FixedLenFeature([], tf.int64),
+        "HSI_image/width": tf.io.FixedLenFeature([], tf.int64),
+        "HSI_image/depth": tf.io.FixedLenFeature([], tf.int64),
+        "RGB_image/height": tf.io.FixedLenFeature([], tf.int64),
+        "RGB_image/width": tf.io.FixedLenFeature([], tf.int64),
+        "RGB_image/depth": tf.io.FixedLenFeature([], tf.int64),        
         "classes": tf.io.FixedLenFeature([], tf.int64),
         "number_of_sites": tf.io.FixedLenFeature([], tf.int64),        
     }
 
     # Load one example and parse
     example = tf.io.parse_single_example(tfrecord, features)
-    classes = tf.cast(example['classes'], tf.int32)
-    number_of_sites = tf.cast(example['number_of_sites'], tf.int32)
 
-    height = tf.cast(example['image/height'], tf.int64)
-    width = tf.cast(example['image/width'], tf.int64)
-    depth = tf.cast(example['image/depth'], tf.int64)
-
-    #recast and scale to km
-    label = tf.cast(example['label'], tf.int64)
-    site = tf.cast(example['site'], tf.int64)
+    # Load HSI image from file
+    HSI_height = tf.cast(example['HSI_image/height'], tf.int64)
+    HSI_width = tf.cast(example['HSI_image/width'], tf.int64)
+    HSI_depth = tf.cast(example['HSI_image/depth'], tf.int64)
+    HSI_image = tf.io.decode_raw(example['HSI_image/data'], tf.uint16)
+    HSI_image_shape = tf.stack([HSI_height,HSI_width, HSI_depth])
     
-    elevation = tf.cast(example['elevation'], tf.float32)
-    elevation = elevation / 1000
-
-    # Load image from file
-    image = tf.io.decode_raw(example['image/data'], tf.uint16)
-    image_shape = tf.stack([height, width, depth])
-
     # Reshape to known shape
-    loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
-    loaded_image = tf.cast(loaded_image, dtype=tf.float32)
-
-    #one hot
+    loaded_HSI_image = tf.reshape(HSI_image, HSI_image_shape, name="cast_loaded_HSI_image")
+    loaded_HSI_image = tf.cast(loaded_HSI_image, dtype=tf.float32)
+    
+    # Load RGB image from file
+    RGB_height = tf.cast(example['RGB_image/height'], tf.int64)
+    RGB_width = tf.cast(example['RGB_image/width'], tf.int64)
+    RGB_depth = tf.cast(example['RGB_image/depth'], tf.int64)
+    RGB_image = tf.io.decode_raw(example['RGB_image/data'], tf.uint16)
+    RGB_image_shape = tf.stack([RGB_height,RGB_width, RGB_depth])
+    
+    # Reshape to known shape
+    loaded_RGB_image = tf.reshape(RGB_image, RGB_image_shape, name="cast_loaded_RGB_image")
+    loaded_RGB_image = tf.cast(loaded_RGB_image, dtype=tf.float32)
+    
+    #Metadata and labels
+    classes = tf.cast(example['classes'], tf.int32)
+    
+    #recast and scale to km    
+    #number_of_sites = tf.cast(example['number_of_sites'], tf.int32)    
+    #site = tf.cast(example['site'], tf.int64)    
+    #elevation = tf.cast(example['elevation'], tf.float32)
+    #elevation = elevation / 1000
+    #metadata = elevation
+    #one_hot_sites = tf.one_hot(site, number_of_sites)
+    
+    #one hot encoding
+    label = tf.cast(example['label'], tf.int64)    
     one_hot_labels = tf.one_hot(label, classes)
-    one_hot_sites = tf.one_hot(site, number_of_sites)
 
-    return (loaded_image, elevation), one_hot_labels
+    return (loaded_HSI_image, loaded_RGB_image), one_hot_labels
 
-
-def _train_submodel_parse_(tfrecord):
+def _RGB_train_parse_(tfrecord):
     # Define features
     features = {
-        'image/data': tf.io.FixedLenFeature([], tf.string),
+        'RGB_image/data': tf.io.FixedLenFeature([], tf.string),        
         "label": tf.io.FixedLenFeature([], tf.int64),
-        "image/height": tf.io.FixedLenFeature([], tf.int64),
-        "image/width": tf.io.FixedLenFeature([], tf.int64),
-        "image/depth": tf.io.FixedLenFeature([], tf.int64),
+        "site": tf.io.FixedLenFeature([], tf.int64),        
+        "elevation": tf.io.FixedLenFeature([], tf.int64),        
+        "RGB_image/height": tf.io.FixedLenFeature([], tf.int64),
+        "RGB_image/width": tf.io.FixedLenFeature([], tf.int64),
+        "RGB_image/depth": tf.io.FixedLenFeature([], tf.int64),        
         "classes": tf.io.FixedLenFeature([], tf.int64),
+        "number_of_sites": tf.io.FixedLenFeature([], tf.int64),        
     }
 
     # Load one example and parse
     example = tf.io.parse_single_example(tfrecord, features)
-    classes = tf.cast(example['classes'], tf.int32)
-
-    height = tf.cast(example['image/height'], tf.int64)
-    width = tf.cast(example['image/width'], tf.int64)
-    depth = tf.cast(example['image/depth'], tf.int64)
-
-    #recast
-    label = tf.cast(example['label'], tf.int64)
-
-    # Load image from file
-    image = tf.io.decode_raw(example['image/data'], tf.uint16)
-    image_shape = tf.stack([height, width, depth])
-
+    
+    # Load RGB image from file
+    RGB_height = tf.cast(example['RGB_image/height'], tf.int64)
+    RGB_width = tf.cast(example['RGB_image/width'], tf.int64)
+    RGB_depth = tf.cast(example['RGB_image/depth'], tf.int64)
+    RGB_image = tf.io.decode_raw(example['RGB_image/data'], tf.uint16)
+    RGB_image_shape = tf.stack([RGB_height,RGB_width, RGB_depth])
+    
     # Reshape to known shape
-    loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
-    loaded_image = tf.cast(loaded_image, dtype=tf.float32)
+    loaded_RGB_image = tf.reshape(RGB_image, RGB_image_shape, name="cast_loaded_RGB_image")
+    loaded_RGB_image = tf.cast(loaded_RGB_image, dtype=tf.float32)
+    
+    #Metadata and labels
+    classes = tf.cast(example['classes'], tf.int32)
+    
+    #recast and scale to km    
+    #number_of_sites = tf.cast(example['number_of_sites'], tf.int32)    
+    #site = tf.cast(example['site'], tf.int64)    
+    #elevation = tf.cast(example['elevation'], tf.float32)
+    #elevation = elevation / 1000
+    #metadata = elevation
+    #one_hot_sites = tf.one_hot(site, number_of_sites)
+    
+    #one hot encoding
+    label = tf.cast(example['label'], tf.int64)    
+    one_hot_labels = tf.one_hot(label, classes)
 
-    #one hot
-    one_hot_labels = tf.one_hot(label, classes)    
+    return loaded_RGB_image, one_hot_labels
 
-    return loaded_image, (one_hot_labels, one_hot_labels, one_hot_labels)
+def _HSI_train_parse_(tfrecord):
+    # Define features
+    features = {
+        'HSI_image/data': tf.io.FixedLenFeature([], tf.string),        
+        "label": tf.io.FixedLenFeature([], tf.int64),
+        "site": tf.io.FixedLenFeature([], tf.int64),        
+        "elevation": tf.io.FixedLenFeature([], tf.int64),        
+        "HSI_image/height": tf.io.FixedLenFeature([], tf.int64),
+        "HSI_image/width": tf.io.FixedLenFeature([], tf.int64),
+        "HSI_image/depth": tf.io.FixedLenFeature([], tf.int64),        
+        "classes": tf.io.FixedLenFeature([], tf.int64),
+        "number_of_sites": tf.io.FixedLenFeature([], tf.int64),        
+    }
+
+    # Load one example and parse
+    example = tf.io.parse_single_example(tfrecord, features)
+    
+    # Load HSI image from file
+    HSI_height = tf.cast(example['HSI_image/height'], tf.int64)
+    HSI_width = tf.cast(example['HSI_image/width'], tf.int64)
+    HSI_depth = tf.cast(example['HSI_image/depth'], tf.int64)
+    HSI_image = tf.io.decode_raw(example['HSI_image/data'], tf.uint16)
+    HSI_image_shape = tf.stack([HSI_height,HSI_width, HSI_depth])
+    
+    # Reshape to known shape
+    loaded_HSI_image = tf.reshape(HSI_image, HSI_image_shape, name="cast_loaded_HSI_image")
+    loaded_HSI_image = tf.cast(loaded_HSI_image, dtype=tf.float32)
+    
+    #Metadata and labels
+    classes = tf.cast(example['classes'], tf.int32)
+    
+    #recast and scale to km    
+    #number_of_sites = tf.cast(example['number_of_sites'], tf.int32)    
+    #site = tf.cast(example['site'], tf.int64)    
+    #elevation = tf.cast(example['elevation'], tf.float32)
+    #elevation = elevation / 1000
+    #metadata = elevation
+    #one_hot_sites = tf.one_hot(site, number_of_sites)
+    
+    #one hot encoding
+    label = tf.cast(example['label'], tf.int64)    
+    one_hot_labels = tf.one_hot(label, classes)
+
+    return loaded_HSI_image, one_hot_labels
+
+def _train_HSI_submodel_parse_(tfrecord):
+    # Define features
+    features = {
+        'HSI_image/data': tf.io.FixedLenFeature([], tf.string),
+        'RGB_image/data': tf.io.FixedLenFeature([], tf.string),        
+        "label": tf.io.FixedLenFeature([], tf.int64),
+        "site": tf.io.FixedLenFeature([], tf.int64),        
+        "elevation": tf.io.FixedLenFeature([], tf.int64),        
+        "HSI_image/height": tf.io.FixedLenFeature([], tf.int64),
+        "HSI_image/width": tf.io.FixedLenFeature([], tf.int64),
+        "HSI_image/depth": tf.io.FixedLenFeature([], tf.int64),
+        "RGB_image/height": tf.io.FixedLenFeature([], tf.int64),
+        "RGB_image/width": tf.io.FixedLenFeature([], tf.int64),
+        "RGB_image/depth": tf.io.FixedLenFeature([], tf.int64),        
+        "classes": tf.io.FixedLenFeature([], tf.int64),
+        "number_of_sites": tf.io.FixedLenFeature([], tf.int64),        
+    }
+
+    # Load one example and parse
+    example = tf.io.parse_single_example(tfrecord, features)
+
+    # Load HSI image from file
+    HSI_height = tf.cast(example['HSI_image/height'], tf.int64)
+    HSI_width = tf.cast(example['HSI_image/width'], tf.int64)
+    HSI_depth = tf.cast(example['HSI_image/depth'], tf.int64)
+    HSI_image = tf.io.decode_raw(example['HSI_image/data'], tf.uint16)
+    HSI_image_shape = tf.stack([HSI_height, HSI_width, HSI_depth])
+    
+    # Reshape to known shape
+    loaded_HSI_image = tf.reshape(HSI_image, HSI_image_shape, name="cast_loaded_HSI_image")
+    loaded_HSI_image = tf.cast(loaded_HSI_image, dtype=tf.float32)
+    
+    #Metadata and labels
+    classes = tf.cast(example['classes'], tf.int32)
+    
+    #recast and scale to km    
+    #number_of_sites = tf.cast(example['number_of_sites'], tf.int32)    
+    #site = tf.cast(example['site'], tf.int64)    
+    #elevation = tf.cast(example['elevation'], tf.float32)
+    #elevation = elevation / 1000
+    #metadata = elevation
+    #one_hot_sites = tf.one_hot(site, number_of_sites)
+    
+    #one hot encoding
+    label = tf.cast(example['label'], tf.int64)    
+    one_hot_labels = tf.one_hot(label, classes)
+
+    return loaded_HSI_image, (one_hot_labels,one_hot_labels,one_hot_labels)
+
+def _train_RGB_submodel_parse_(tfrecord):
+    # Define features
+    features = {
+        'RGB_image/data': tf.io.FixedLenFeature([], tf.string),        
+        "label": tf.io.FixedLenFeature([], tf.int64),
+        "site": tf.io.FixedLenFeature([], tf.int64),        
+        "elevation": tf.io.FixedLenFeature([], tf.int64),        
+        "RGB_image/height": tf.io.FixedLenFeature([], tf.int64),
+        "RGB_image/width": tf.io.FixedLenFeature([], tf.int64),
+        "RGB_image/depth": tf.io.FixedLenFeature([], tf.int64),        
+        "classes": tf.io.FixedLenFeature([], tf.int64),
+        "number_of_sites": tf.io.FixedLenFeature([], tf.int64),        
+    }
+
+    # Load one example and parse
+    example = tf.io.parse_single_example(tfrecord, features)
+    
+    # Load RGB image from file
+    RGB_height = tf.cast(example['RGB_image/height'], tf.int64)
+    RGB_width = tf.cast(example['RGB_image/width'], tf.int64)
+    RGB_depth = tf.cast(example['RGB_image/depth'], tf.int64)
+    RGB_image = tf.io.decode_raw(example['RGB_image/data'], tf.uint16)
+    RGB_image_shape = tf.stack([RGB_height,RGB_width, RGB_depth])
+    
+    # Reshape to known shape
+    loaded_RGB_image = tf.reshape(RGB_image, RGB_image_shape, name="cast_loaded_RGB_image")
+    loaded_RGB_image = tf.cast(loaded_RGB_image, dtype=tf.float32)
+    
+    #Metadata and labels
+    classes = tf.cast(example['classes'], tf.int32)
+    
+    #recast and scale to km    
+    #number_of_sites = tf.cast(example['number_of_sites'], tf.int32)    
+    #site = tf.cast(example['site'], tf.int64)    
+    #elevation = tf.cast(example['elevation'], tf.float32)
+    #elevation = elevation / 1000
+    #metadata = elevation
+    #one_hot_sites = tf.one_hot(site, number_of_sites)
+    
+    #one hot encoding
+    label = tf.cast(example['label'], tf.int64)    
+    one_hot_labels = tf.one_hot(label, classes)
+
+    return loaded_RGB_image, (one_hot_labels,one_hot_labels,one_hot_labels)
 
 def _predict_parse_(tfrecord):
-    """Tfrecord parser for prediction. No labels available
-        Args:
-            tfrecord: path to tfrecord
-        Returns:
-            indices: x,y index of row, col position in original raster
-            loaded_image: image data crop
-        """
     # Define features
     features = {
-        'image/data': tf.io.FixedLenFeature([], tf.string),
-        'box_index': tf.io.FixedLenFeature([], tf.string),
-        "image/height": tf.io.FixedLenFeature([], tf.int64),
-        "image/width": tf.io.FixedLenFeature([], tf.int64),
-        "image/depth": tf.io.FixedLenFeature([], tf.int64),
-        "classes": tf.io.FixedLenFeature([], tf.int64),
-        "elevation": tf.io.FixedLenFeature([], tf.int64),
+        'HSI_image/data': tf.io.FixedLenFeature([], tf.string),
+        'RGB_image/data': tf.io.FixedLenFeature([], tf.string),        
         "site": tf.io.FixedLenFeature([], tf.int64),        
+        "elevation": tf.io.FixedLenFeature([], tf.int64),        
+        "HSI_image/height": tf.io.FixedLenFeature([], tf.int64),
+        "HSI_image/width": tf.io.FixedLenFeature([], tf.int64),
+        "HSI_image/depth": tf.io.FixedLenFeature([], tf.int64),
+        "RGB_image/height": tf.io.FixedLenFeature([], tf.int64),
+        "RGB_image/width": tf.io.FixedLenFeature([], tf.int64),
+        "RGB_image/depth": tf.io.FixedLenFeature([], tf.int64),        
+        "classes": tf.io.FixedLenFeature([], tf.int64),
         "number_of_sites": tf.io.FixedLenFeature([], tf.int64),        
+        'box_index': tf.io.FixedLenFeature([], tf.string)
     }
 
     # Load one example and parse
     example = tf.io.parse_single_example(tfrecord, features)
 
-    height = tf.cast(example['image/height'], tf.int64)
-    width = tf.cast(example['image/width'], tf.int64)
-    depth = tf.cast(example['image/depth'], tf.int64)
+    # Load HSI image from file
+    HSI_height = tf.cast(example['HSI_image/height'], tf.int64)
+    HSI_width = tf.cast(example['HSI_image/width'], tf.int64)
+    HSI_depth = tf.cast(example['HSI_image/depth'], tf.int64)
+    HSI_image = tf.io.decode_raw(example['HSI_image/data'], tf.uint16)
+    HSI_image_shape = tf.stack([HSI_height,HSI_width, HSI_depth])
     
-    number_of_sites = tf.cast(example['number_of_sites'], tf.int32)
-    site = tf.cast(example['site'], tf.int64)
-    
-    elevation = tf.cast(example['elevation'], tf.float32)
-    elevation = elevation/1000
-
-    # Load image from file
-    image = tf.io.decode_raw(example['image/data'], tf.uint16)
-    image_shape = tf.stack([height, width, depth])
-
     # Reshape to known shape
-    loaded_image = tf.reshape(image, image_shape, name="cast_loaded_image")
-    loaded_image = tf.cast(loaded_image, dtype=tf.float32)
-
-    one_hot_sites = tf.one_hot(site, number_of_sites)
-    metadata = [elevation, one_hot_sites]
+    loaded_HSI_image = tf.reshape(HSI_image, HSI_image_shape, name="cast_loaded_HSI_image")
+    loaded_HSI_image = tf.cast(loaded_HSI_image, dtype=tf.float32)
     
-    return (loaded_image, elevation), example['box_index']
+    # Load RGB image from file
+    RGB_height = tf.cast(example['RGB_image/height'], tf.int64)
+    RGB_width = tf.cast(example['RGB_image/width'], tf.int64)
+    RGB_depth = tf.cast(example['RGB_image/depth'], tf.int64)
+    RGB_image = tf.io.decode_raw(example['RGB_image/data'], tf.uint16)
+    RGB_image_shape = tf.stack([RGB_height,RGB_width, RGB_depth])
+    
+    # Reshape to known shape
+    loaded_RGB_image = tf.reshape(RGB_image, RGB_image_shape, name="cast_loaded_RGB_image")
+    loaded_RGB_image = tf.cast(loaded_RGB_image, dtype=tf.float32)
+    
+    #Metadata and labels
+    
+    #recast and scale to km    
+    #number_of_sites = tf.cast(example['number_of_sites'], tf.int32)        
+    #site = tf.cast(example['site'], tf.int64)    
+    #elevation = tf.cast(example['elevation'], tf.float32)    
+    #elevation = elevation / 1000
+    #metadata = elevation
+
+    return (loaded_HSI_image, loaded_RGB_image), example["box_index"]
+
 
 def _metadata_parse_(tfrecord):
     """Tfrecord generator parse for a metadata model only"""
@@ -390,8 +593,6 @@ def flip(x: tf.Tensor) -> tf.Tensor:
 
 def tf_dataset(tfrecords,
                batch_size=2,
-               height=20,
-               width=20,
                shuffle=True,
                mode="train",
                cores=10):
@@ -399,8 +600,6 @@ def tf_dataset(tfrecords,
     Args:
         tfrecords: path to tfrecords, see generate.py
         mode:  "train" mode records include training labels, "submodel" triples the layers to match number of softmax layers,  "predict" is just image data and coordinates
-        height: crop resized height
-        width: crop resized width
     Returns:
         dataset: a tf.data dataset yielding crops and labels for train: True, crops and raster indices for train: False
         """
@@ -415,33 +614,56 @@ def tf_dataset(tfrecords,
         print("Shuffling data")
         dataset = dataset.shuffle(buffer_size=10)
 
-    if mode == "train":
-        dataset = dataset.map(_train_parse_, num_parallel_calls=cores)
+    if mode == "HSI_train":
+        dataset = dataset.map(_HSI_train_parse_, num_parallel_calls=cores)
         #normalize and batch
-        dataset = dataset.map(lambda inputs, label: ((tf.image.per_image_standardization(inputs[0]),inputs[1]), label))
-        dataset = dataset.map(lambda inputs, label: ((flip(inputs[0]),inputs[1]), label))        
+        dataset = dataset.map(lambda inputs, label: (tf.image.per_image_standardization(inputs), label))
+        dataset = dataset.map(lambda inputs, label: (flip(inputs), label))   
         dataset = dataset.shuffle(buffer_size=batch_size * 2)
         dataset = dataset.batch(batch_size=batch_size)
-
+    
+    elif mode == "RGB_train":
+        dataset = dataset.map(_RGB_train_parse_, num_parallel_calls=cores)
+        #normalize and batch
+        dataset = dataset.map(lambda inputs, label: (tf.image.per_image_standardization(inputs), label))
+        dataset = dataset.map(lambda inputs, label: (flip(inputs), label))        
+        dataset = dataset.shuffle(buffer_size=batch_size * 2)
+        dataset = dataset.batch(batch_size=batch_size)
+     
+    elif mode == "ensemble":
+        dataset = dataset.map(_train_parse_, num_parallel_calls=cores)
+        #normalize and batch
+        dataset = dataset.map(lambda inputs, label: (
+            (tf.image.per_image_standardization(inputs[0]),tf.image.per_image_standardization(inputs[1])), label))
+        dataset = dataset.map(lambda inputs, label: (flip(inputs[0]),flip(inputs[1])), label)       
+        dataset = dataset.shuffle(buffer_size=batch_size * 2)
+        dataset = dataset.batch(batch_size=batch_size)
+            
     elif mode == "predict":
         dataset = dataset.map(_predict_parse_, num_parallel_calls=cores)
-        dataset = dataset.map(lambda inputs, index: ((tf.image.per_image_standardization(inputs[0]),inputs[1]), index))
+        dataset = dataset.map(lambda inputs, index: (tf.image.per_image_standardization(inputs), index))
         dataset = dataset.batch(batch_size=batch_size)
     
     elif mode == "metadata":
         dataset = dataset.map(_metadata_parse_, num_parallel_calls=cores)
         dataset = dataset.batch(batch_size=batch_size)
         
-    elif mode == "submodel":
-        dataset = dataset.map(create_tfrecords._train_submodel_parse_,
-                              num_parallel_calls=cores)
+    elif mode == "HSI_submodel":
+        dataset = dataset.map(_train_HSI_submodel_parse_, num_parallel_calls=cores)
         dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
         dataset = dataset.map(lambda image, label: (flip(image), label))        
         dataset = dataset.shuffle(buffer_size=batch_size * 2)
         dataset = dataset.batch(batch_size=batch_size)
+      
+    elif mode == "RGB_submodel":
+        dataset = dataset.map(_train_RGB_submodel_parse_, num_parallel_calls=cores)
+        dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
+        dataset = dataset.map(lambda image, label: (flip(image), label))        
+        dataset = dataset.shuffle(buffer_size=batch_size * 2)
+        dataset = dataset.batch(batch_size=batch_size)        
     else:
         raise ValueError(
-            "invalid mode, please use train, predict or submodel: {}".format(mode))
+            "invalid mode, please use HSI_train, RGB_train, ensemble, predict or submodel: {}".format(mode))
     
     dataset = dataset.prefetch(buffer_size=1)
 

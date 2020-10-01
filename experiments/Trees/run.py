@@ -68,25 +68,37 @@ if __name__ == "__main__":
     
     ##Train subnetwork
     experiment.log_parameter("Train subnetworks", True)
-    with experiment.context_manager("spatial_subnetwork"):
+    with experiment.context_manager("RGB_spatial_subnetwork"):
         print("Train spatial subnetwork")
-        model.read_data(mode="submodel")
-        model.train(submodel="spatial", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
+        model.read_data(mode="RGB_submodel")
+        model.train(submodel="spatial", sensor="RGB", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
     
-    with experiment.context_manager("spectral_subnetwork"):
-        print("Train spectral subnetwork")    
-        model.read_data(mode="submodel")   
-        model.train(submodel="spectral", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
+    with experiment.context_manager("RGB_spectral_subnetwork"):
+        print("Train RGB spectral subnetwork")    
+        model.read_data(mode="RGB_submodel")   
+        model.train(submodel="spectral", sensor="RGB", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
             
-    with experiment.context_manager("metadata_subnetwork"):
-        print("Train metadata subnetwork")    
-        model.read_data(mode="metadata")   
-        model.train(submodel="metadata", class_weight=class_weight, experiment=experiment)
-                    
     #Train full model
     experiment.log_parameter("Class Weighted", True)
     model.read_data()
-    model.train(class_weight=class_weight, experiment=experiment)
+    model.train(class_weight=class_weight, sensor="RGB", experiment=experiment)
+    
+    ##Train subnetwork
+    experiment.log_parameter("Train subnetworks", True)
+    with experiment.context_manager("HSI_spatial_subnetwork"):
+        print("Train spatial subnetwork")
+        model.read_data(mode="HSI_submodel")
+        model.train(submodel="spatial", sensor="hyperspectral",class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
+    
+    with experiment.context_manager("HSI_spectral_subnetwork"):
+        print("Train spectral subnetwork")    
+        model.read_data(mode="HSI_submodel")   
+        model.train(submodel="spectral", sensor="hyperspectral", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
+            
+    #Train full model
+    experiment.log_parameter("Class Weighted", True)
+    model.read_data()
+    model.train(class_weight=class_weight, sensor="hyperspectral", experiment=experiment)
     
     #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
     if model.config["train"]["weighted_sum"]:
@@ -94,7 +106,6 @@ if __name__ == "__main__":
         experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
         
     ##Evaluate
-    
     
     #Save model
     model.model.save("{}/{}.h5".format(save_dir,timestamp))
