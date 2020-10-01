@@ -155,7 +155,7 @@ def test_train_callbacks(tfrecords, mod):
     mod.read_data(validation_split=True, mode="RGB_submodel")
     mod.train(sensor="RGB", submodel="spectral",experiment=experiment)
 
-    mod.read_data(validation_split=True)
+    mod.read_data(validation_split=True, mode="RGB_train")
     mod.train(experiment=experiment)
     
     #assert experiment.get_metric("Within-site Error") > 0

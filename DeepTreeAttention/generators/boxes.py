@@ -594,7 +594,7 @@ def flip(x: tf.Tensor) -> tf.Tensor:
 def tf_dataset(tfrecords,
                batch_size=2,
                shuffle=True,
-               mode="train",
+               mode="HSI_train",
                cores=10):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
