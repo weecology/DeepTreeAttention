@@ -101,10 +101,12 @@ def ensemble(models, classes, freeze=True):
     inputs = [x.inputs for x in models]
     
     #remove softmax layer and get last pooling layer.
-    decap = [x.get_layer("pooling_filters_128") for x in models]
-    
+    decap = []
+    for model in models:
+        decap.append(model.get_layer("pooling_filters_128"))
+            
     #concat and learn ensemble weights
-    merged_layers = tf.keras.layers.Concatenate(decap)
+    merged_layers = tf.keras.layers.Concatenate()(decap)
     merged_layers = tf.keras.layers.Dense(classes * 4, activation="relu")(merged_layers)
     merged_layers = tf.keras.layers.Dense(classes, activation="softmax")(merged_layers)
     
