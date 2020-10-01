@@ -122,7 +122,7 @@ class ImageCallback(Callback):
         for data, label in self.dataset:
             if num_images < limit:
                 pred = self.model.predict(data)
-                images.append(data[0])
+                images.append(data)
                 
                 if self.submodel:
                     y_pred.append(pred[0])

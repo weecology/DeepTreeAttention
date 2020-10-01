@@ -173,7 +173,7 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         
     return crops, labels, sites, elevations, box_index
 
-def create_records(HSI_crops, RGB_crops, labels, sites, elevations, box_index, savedir, height, width, chunk_size=1000):
+def create_records(HSI_crops, RGB_crops, labels, sites, elevations, box_index, savedir, RGB_size, HSI_size, chunk_size=1000):
     #get keys and divide into chunks for a single tfrecor
     filenames = []
     counter = 0
@@ -185,8 +185,8 @@ def create_records(HSI_crops, RGB_crops, labels, sites, elevations, box_index, s
         chunk_sites = sites[i:i + chunk_size]
         chunk_elevations = elevations[i:i + chunk_size]
             
-        resized_RGB_crops = [resize(x, height, width).astype("int16") for x in chunk_RGB_crops]
-        resized_HSI_crops = [resize(x, height, width).astype("int16") for x in chunk_HSI_crops]
+        resized_RGB_crops = [resize(x, RGB_size, RGB_size).astype("int16") for x in chunk_RGB_crops]
+        resized_HSI_crops = [resize(x, HSI_size, HSI_size).astype("int16") for x in chunk_HSI_crops]
         
         filename = "{}/field_data_{}.tfrecord".format(savedir, counter)
         write_tfrecord(filename=filename,
@@ -248,8 +248,8 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspe
 
 def main(
     field_data,
-    height,
-    width,
+    RGB_size,
+    HSI_size,
     rgb_dir, 
     hyperspectral_dir,
     savedir=".", 
@@ -383,8 +383,8 @@ def main(
         elevations=elevations,
         box_index=box_indexes, 
         savedir=savedir, 
-        height=height, 
-        width=width, 
+        RGB_size=RGB_size,
+        HSI_size=HSI_size, 
         chunk_size=chunk_size)
     
     return tfrecords
@@ -397,8 +397,8 @@ if __name__ == "__main__":
     #train data
     main(
         field_data=config["train"]["ground_truth_path"],
-        height=config["train"]["crop_size"],
-        width=config["train"]["crop_size"],        
+        RGB_size=config["train"]["RGB"]["crop_size"],
+        HSI_size=config["train"]["RGB"]["crop_size"],        
         hyperspectral_dir=config["hyperspectral_sensor_pool"],
         rgb_dir=config["rgb_sensor_pool"],
         extend_box=config["train"]["extend_box"],
