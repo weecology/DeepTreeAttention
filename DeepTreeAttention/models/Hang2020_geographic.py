@@ -21,7 +21,14 @@ def create_model(height=11, width=11, channels=48, classes=2, weighted_sum=False
                                           spectral_attention_outputs[2],
                                           weighted_sum=weighted_sum)
     
-    metadata_activation = metadata_layer(metadata_inputs, classes)    
-    combined_softmax = merge_softmax([metadata_activation, sensor_softmax], classes) 
+    metadata_activation = metadata_layer(metadata_inputs, classes)
+
+    #Normalize all inputs before merging ensemble 
+    spatial_relu = layers.Dense(classes*4)(spatial_attention_outputs[2])
+    spatial_relu = layers.BatchNormalization(name="spatial_concat_norm")(spatial_relu)
+    spectral_relu = layers.Dense(classes*4)(spectral_attention_outputs[2])
+    spectral_relu = layers.BatchNormalization(name="spectral_concat_norm")(spectral_relu)
+    
+    combined_softmax = merge_softmax([metadata_activation, spatial_relu, spectral_relu], classes) 
 
     return sensor_inputs, metadata_inputs, metadata_activation, combined_softmax, spatial_attention_outputs, spectral_attention_outputs
