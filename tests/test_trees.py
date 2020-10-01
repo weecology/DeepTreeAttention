@@ -102,12 +102,12 @@ def test_AttentionModel(mod, tfrecords, submodel):
     test_image_data = []
     
     train_counter=0
-    for (data,site), label in mod.train_split:
+    for data, label in mod.train_split:
         train_image_data.append(data)
         train_counter+=data.shape[0]
             
     test_counter=0
-    for (data,site), label in mod.val_split:
+    for data, label in mod.val_split:
         test_image_data.append(data)            
         test_counter+=data.shape[0]
     
@@ -129,7 +129,10 @@ def test_train(tfrecords, mod):
     assert not np.array_equal(final_weight,initial_weight)
 
     assert "loss" in list(mod.RGB_model.history.history.keys())     
-         
+ 
+def test_ensemble(tfrecords, mod):
+    mod.ensemble()
+     
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
 

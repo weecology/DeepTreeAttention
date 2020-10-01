@@ -42,8 +42,7 @@ class AttentionModel():
         else:
             self.log_dir = None
 
-        #log some helpful data
-        
+        #log config
         self.HSI_size = self.config["train"]["HSI"]["crop_size"]
         self.HSI_channels = self.config["train"]["HSI"]["sensor_channels"]
         self.HSI_weighted_sum = self.config["train"]["HSI"]["weighted_sum"]
@@ -121,7 +120,7 @@ class AttentionModel():
         self.HSI_model, self.HSI_spatial, self.HSI_spectral = Hang.create_models(self.HSI_size, self.HSI_size, self.HSI_channels, self.classes, self.config["train"]["learning_rate"])
         self.RGB_model, self.RGB_spatial, self.RGB_spectral = Hang.create_models(self.RGB_size, self.RGB_size, self.RGB_channels, self.classes, self.config["train"]["learning_rate"])
 
-    def read_data(self, mode="train", validation_split=False):
+    def read_data(self, mode="HSI_train", validation_split=False):
         """Read tfrecord into datasets from config
             Args:
                 validation_split: True -> split tfrecords into train test. This overrides the evaluation config!
@@ -209,6 +208,7 @@ class AttentionModel():
                                        validation_data=self.val_split,
                                        callbacks=callback_list,
                                        class_weight=class_weight)
+            
             elif sensor == "RGB":
                 self.RGB_spatial.fit(self.train_split,
                                                  epochs=int(self.config["train"]["epochs"]),

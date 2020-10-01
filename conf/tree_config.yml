@@ -15,6 +15,8 @@ train:
         sensor_channels: 3
         crop_size: 20
         weighted_sum: True
+    ensemble:
+        freeze: False
     classes: 74
     sites: 23
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
@@ -27,6 +29,7 @@ train:
     steps:
     shuffle: True
     training_fraction: 0.9
+    
 
 callbacks:
     snapshots_path: /../models/

@@ -633,8 +633,8 @@ def tf_dataset(tfrecords,
     elif mode == "ensemble":
         dataset = dataset.map(_train_parse_, num_parallel_calls=cores)
         #normalize and batch
-        dataset = dataset.map(lambda inputs, label: (
-            (tf.image.per_image_standardization(inputs[0]),tf.image.per_image_standardization(inputs[1])), label))
+        dataset = dataset.map(lambda inputs, label: ((tf.image.per_image_standardization(inputs[0]),
+                                                     tf.image.per_image_standardization(inputs[1]))), label)
         dataset = dataset.map(lambda inputs, label: (flip(inputs[0]),flip(inputs[1])), label)       
         dataset = dataset.shuffle(buffer_size=batch_size * 2)
         dataset = dataset.batch(batch_size=batch_size)
