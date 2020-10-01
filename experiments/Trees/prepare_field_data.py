@@ -236,7 +236,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, sensor="hyperspectral"
         
         #Assert they are the same
         assert len(plot_rgb_crops) == len(plot_HSI_crops)
-        assert all(plot_labels==plot_rgb_labels)
+        assert plot_labels==plot_rgb_labels
     except Exception as e:
         print("Plot {} failed {}".format(plot, e))
         raise
@@ -399,7 +399,6 @@ if __name__ == "__main__":
     ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     config = parse_yaml("{}/conf/tree_config.yml".format(ROOT))
     
-    #Hyperspecral
     #train data
     main(
         field_data=config["train"]["ground_truth_path"],

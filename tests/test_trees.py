@@ -153,7 +153,7 @@ def test_train_callbacks(tfrecords, mod):
     experiment.add_tag("testing")    
     mod.classes_file = "{}/species_class_labels.csv".format(os.path.dirname(tfrecords[0]))
     mod.read_data(validation_split=True, mode="RGB_submodel")
-    mod.train(sensor="hyperspectral", submodel="spectral",experiment=experiment)
+    mod.train(sensor="RGB", submodel="spectral",experiment=experiment)
 
     mod.read_data(validation_split=True)
     mod.train(experiment=experiment)
