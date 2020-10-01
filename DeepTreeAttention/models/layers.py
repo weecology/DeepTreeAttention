@@ -121,7 +121,7 @@ def spectral_attention(filters, classes, x):
         raise ValueError("Unknown filter size for max pooling")
 
     class_pool = layers.MaxPool2D(pool_size)(attention_layers)
-    class_pool = layers.Flatten()(class_pool)
+    class_pool = layers.Flatten(name="pooling_filters_{}".format(filters))(class_pool)
     output = layers.Dense(classes,
                           activation="softmax",
                           name="spectral_attention_{}".format(label))(class_pool)
