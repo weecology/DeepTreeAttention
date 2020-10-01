@@ -7,6 +7,7 @@ is_travis = 'TRAVIS' in os.environ
 if not is_travis:
     from comet_ml import Experiment 
     experiment = Experiment(project_name="neontrees", workspace="bw4sz")
+    experiment.add_tag("testing")        
 
 import pytest
 import rasterio
