@@ -247,7 +247,7 @@ class AttentionModel():
         
     def ensemble(self, freeze = True):
         self.read_data(mode="ensemble")
-        self.ensemble = Hang.ensemble([self.RGB_model, self.HSI_model], freeze=freeze)
+        self.ensemble = Hang.ensemble([self.RGB_model, self.HSI_model], freeze=freeze, classes=self.classes)
         
         self.ensemble.compile(
             loss="categorical_crossentropy",

@@ -117,6 +117,7 @@ def test_AttentionModel(mod, tfrecords, submodel):
     assert all([not np.array_equal(y,x) for x in train_image_data for y in test_image_data])
 
 def test_train(tfrecords, mod):
+    experiment.add_tag("testing")        
     #initial weights
     initial_weight = mod.RGB_model.layers[1].get_weights()
     
@@ -135,9 +136,9 @@ def test_ensemble(tfrecords, mod):
      
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
-
     experiment.add_tag("testing")    
     mod.classes_file = "{}/species_class_labels.csv".format(os.path.dirname(tfrecords[0]))
+    
     mod.read_data(validation_split=True, mode="RGB_submodel")
     mod.train(sensor="RGB", submodel="spectral",experiment=experiment)
 

@@ -89,7 +89,7 @@ def create_models(height, width, channels, classes, learning_rate, weighted_sum=
     
     return model, spatial_model, spectral_model
 
-def ensemble(models, freeze=True):
+def ensemble(models, classes, freeze=True):
     
     #freeze orignal model layers
     if freeze:
@@ -100,11 +100,11 @@ def ensemble(models, freeze=True):
     #Take joint inputs
     inputs = [x.inputs for x in models]
     
-    #remove softmax layer
-    decap = [x.layers[0:-1] for x in models]
+    #remove softmax layer and get last pooling layer.
+    decap = [x.get_layer("pooling_filters_128") for x in models]
     
     #concat and learn ensemble weights
-    merged_layers = tf.keras.layers.Concatenate()([decap])
+    merged_layers = tf.keras.layers.Concatenate(decap)
     merged_layers = tf.keras.layers.Dense(classes * 4, activation="relu")(merged_layers)
     merged_layers = tf.keras.layers.Dense(classes, activation="softmax")(merged_layers)
     
