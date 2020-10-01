@@ -312,7 +312,7 @@ def main(
                 
                 #Append to general plot list
                 HSI_crops.extend(plot_HSI_crops)
-                RGB_crops.extent(plot_RGB_crops)
+                RGB_crops.extend(plot_RGB_crops)
                 labels.extend(plot_labels)
                 sites.extend(plot_sites)            
                 elevations.extend(plot_elevations)
