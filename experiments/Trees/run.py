@@ -113,7 +113,8 @@ if __name__ == "__main__":
             experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
         
     ##Ensemble
-    model.ensemble(freeze=model.config["ensemble"]["freeze"])
+    with experiment.context_manager("ensemble"):    
+        model.ensemble(freeze=model.config["ensemble"]["freeze"])
     
     #Save model
     model.model.save("{}/{}.h5".format(save_dir,timestamp))
