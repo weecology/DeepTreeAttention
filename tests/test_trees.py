@@ -122,7 +122,6 @@ def test_AttentionModel(mod, tfrecords, submodel):
     assert all([not np.array_equal(y,x) for x in train_image_data for y in test_image_data])
 
 def test_train(tfrecords, mod):
-    experiment.add_tag("testing")        
     #initial weights
     initial_weight = mod.RGB_model.layers[1].get_weights()
     
