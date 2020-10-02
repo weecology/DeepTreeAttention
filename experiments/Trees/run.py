@@ -76,13 +76,13 @@ if __name__ == "__main__":
         dirname = model.config["train"]["checkpoint_dir"]
         model.RGB_model = load_model("{}/RGB_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum})
         metric_list = [keras_metrics.CategoricalAccuracy(name="acc")]  
-        model.compile(loss="categorical_crossentropy",
+        model.RGB_model.compile(loss="categorical_crossentropy",
                       optimizer=tf.keras.optimizers.Adam(
                                lr=float(model.config["train"]["learning_rate"])),
                            metrics=metric_list)
         
         model.HSI_model = load_model("{}/RGB_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum})
-        model.compile(loss="categorical_crossentropy",
+        model.HSI_model.compile(loss="categorical_crossentropy",
                       optimizer=tf.keras.optimizers.Adam(
                                lr=float(model.config["train"]["learning_rate"])),
                            metrics=metric_list)        
