@@ -77,7 +77,7 @@ if __name__ == "__main__":
         ##Train subnetworks
         experiment.log_parameter("Train subnetworks", True)
         with experiment.context_manager("RGB_spatial_subnetwork"):
-            print("Train RGBspatial subnetwork")
+            print("Train RGB spatial subnetwork")
             model.read_data(mode="RGB_submodel")
             model.train(submodel="spatial", sensor="RGB", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
             
@@ -124,6 +124,7 @@ if __name__ == "__main__":
             
     ##Ensemble
     with experiment.context_manager("ensemble"):    
+        print("Train Ensemble")
         model.ensemble(freeze=model.config["train"]["ensemble"]["freeze"], experiment=experiment)
     
     #Save model
