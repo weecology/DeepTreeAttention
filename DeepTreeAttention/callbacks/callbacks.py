@@ -12,14 +12,23 @@ from tensorflow.keras.callbacks import Callback, TensorBoard
 
 class F1Callback(Callback):
 
-    def __init__(self, experiment, train_dataset, eval_dataset, label_names, submodel):
+    def __init__(self, experiment, train_dataset, eval_dataset, label_names, submodel, n=4):
+        """F1 callback
+        Args:
+            n: number of epochs to run. If n=2, function will run every 2 epochs
+        """
         self.experiment = experiment
         self.eval_dataset = eval_dataset
         self.train_dataset = train_dataset
         self.label_names = label_names
         self.submodel = submodel
+        self.n = n
 
     def on_epoch_end(self, epoch, logs={}):
+        
+        if not epoch % self.n == 0:
+            return None
+            
         y_true = []
         y_pred = []
         sites = []
