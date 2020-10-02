@@ -135,11 +135,10 @@ def test_train(tfrecords, mod):
     assert "loss" in list(mod.RGB_model.history.history.keys())     
  
 def test_ensemble(tfrecords, mod):
-    mod.ensemble(experiment=experiment)
+    mod.ensemble(experiment=None)
      
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
-    experiment.add_tag("testing")    
     mod.classes_file = "{}/species_class_labels.csv".format(os.path.dirname(tfrecords[0]))
     
     mod.read_data(validation_split=True, mode="RGB_submodel")
