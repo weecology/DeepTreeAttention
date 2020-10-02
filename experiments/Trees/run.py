@@ -5,6 +5,7 @@ from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.utils import metrics, resample, start_cluster
 from DeepTreeAttention.visualization import visualize
 from tensorflow.keras import metrics as keras_metrics
+from tensorflow.keras.models import load_model
 from random import randint
 from time import sleep
 from distributed import wait
@@ -66,58 +67,66 @@ if __name__ == "__main__":
     model.read_data()
     class_weight = model.calc_class_weight()
     
-    ##Train subnetwork
-    experiment.log_parameter("Train subnetworks", True)
-    with experiment.context_manager("RGB_spatial_subnetwork"):
-        print("Train RGBspatial subnetwork")
-        model.read_data(mode="RGB_submodel")
-        model.train(submodel="spatial", sensor="RGB", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
-    
-    with experiment.context_manager("RGB_spectral_subnetwork"):
-        print("Train RGB spectral subnetwork")    
-        model.read_data(mode="RGB_submodel")   
-        model.train(submodel="spectral", sensor="RGB", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
+    #Load from file or train new models
+    if model.config["train"]["checkpoint_dir"] is not None:
+        dirname = model.config["train"]["checkpoint_dir"]
+        model.RGB_model = load_model("{}/RGB_model.h5".format(dirname))
+        model.HSI_model = load_model("{}/RGB_model.h5".format(dirname))
+    else:
+        ##Train subnetworks
+        experiment.log_parameter("Train subnetworks", True)
+        with experiment.context_manager("RGB_spatial_subnetwork"):
+            print("Train RGBspatial subnetwork")
+            model.read_data(mode="RGB_submodel")
+            model.train(submodel="spatial", sensor="RGB", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
             
-    #Train full model
-    with experiment.context_manager("RGB_model"):
-        experiment.log_parameter("Class Weighted", True)
-        model.read_data(mode="RGB_train")
-        model.train(class_weight=class_weight, sensor="RGB", experiment=experiment)
-        
-        #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
-        if model.config["train"]["RGB"]["weighted_sum"]:
-            estimate_a = model.RGB_model.get_layer("weighted_sum").get_weights()
-            experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
-    
-    ##Train subnetwork
-    experiment.log_parameter("Train subnetworks", True)
-    with experiment.context_manager("HSI_spatial_subnetwork"):
-        print("Train HSI spatial subnetwork")
-        model.read_data(mode="HSI_submodel")
-        model.train(submodel="spatial", sensor="hyperspectral",class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
-    
-    with experiment.context_manager("HSI_spectral_subnetwork"):
-        print("Train HSI spectral subnetwork")    
-        model.read_data(mode="HSI_submodel")   
-        model.train(submodel="spectral", sensor="hyperspectral", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
+        with experiment.context_manager("RGB_spectral_subnetwork"):
+            print("Train RGB spectral subnetwork")    
+            model.read_data(mode="RGB_submodel")   
+            model.train(submodel="spectral", sensor="RGB", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
+                
+        #Train full RGB model
+        with experiment.context_manager("RGB_model"):
+            experiment.log_parameter("Class Weighted", True)
+            model.read_data(mode="RGB_train")
+            model.train(class_weight=class_weight, sensor="RGB", experiment=experiment)
+            model.RGB_model.save("{}/RGB_model.h5".format(save_dir))
             
-    #Train full model
-    with experiment.context_manager("HSI_model"):
-        experiment.log_parameter("Class Weighted", True)
-        model.read_data(mode="HSI_train")
-        model.train(class_weight=class_weight, sensor="hyperspectral", experiment=experiment)
+            #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
+            if model.config["train"]["RGB"]["weighted_sum"]:
+                estimate_a = model.RGB_model.get_layer("weighted_sum").get_weights()
+                experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
         
-        #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
-        if model.config["train"]["HSI"]["weighted_sum"]:
-            estimate_a = model.HSI_model.get_layer("weighted_sum").get_weights()
-            experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
+        ##Train subnetwork
+        experiment.log_parameter("Train subnetworks", True)
+        with experiment.context_manager("HSI_spatial_subnetwork"):
+            print("Train HSI spatial subnetwork")
+            model.read_data(mode="HSI_submodel")
+            model.train(submodel="spatial", sensor="hyperspectral",class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
         
+        with experiment.context_manager("HSI_spectral_subnetwork"):
+            print("Train HSI spectral subnetwork")    
+            model.read_data(mode="HSI_submodel")   
+            model.train(submodel="spectral", sensor="hyperspectral", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
+                
+        #Train full model
+        with experiment.context_manager("HSI_model"):
+            experiment.log_parameter("Class Weighted", True)
+            model.read_data(mode="HSI_train")
+            model.train(class_weight=class_weight, sensor="hyperspectral", experiment=experiment)
+            model.HSI_model.save("{}/HSI_model.h5".format(save_dir))
+            
+            #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
+            if model.config["train"]["HSI"]["weighted_sum"]:
+                estimate_a = model.HSI_model.get_layer("weighted_sum").get_weights()
+                experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
+            
     ##Ensemble
     with experiment.context_manager("ensemble"):    
         model.ensemble(freeze=model.config["ensemble"]["freeze"])
     
     #Save model
-    model.model.save("{}/{}.h5".format(save_dir,timestamp))
+    model.ensemble.save("{}/Ensemble.h5".format(save_dir))
 
 
     
