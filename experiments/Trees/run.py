@@ -3,6 +3,7 @@ from comet_ml import Experiment
 from datetime import datetime
 from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.utils import metrics, resample, start_cluster
+from DeepTreeAttention.models.layers import WeightedSum
 from DeepTreeAttention.visualization import visualize
 from tensorflow.keras import metrics as keras_metrics
 from tensorflow.keras.models import load_model
@@ -70,8 +71,8 @@ if __name__ == "__main__":
     #Load from file or train new models
     if model.config["train"]["checkpoint_dir"] is not None:
         dirname = model.config["train"]["checkpoint_dir"]
-        model.RGB_model = load_model("{}/RGB_model.h5".format(dirname))
-        model.HSI_model = load_model("{}/RGB_model.h5".format(dirname))
+        model.RGB_model = load_model("{}/RGB_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum})
+        model.HSI_model = load_model("{}/RGB_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum})
     else:
         ##Train subnetworks
         experiment.log_parameter("Train subnetworks", True)
