@@ -259,24 +259,27 @@ class AttentionModel():
             metrics=[tf.keras.metrics.CategoricalAccuracy(
                                                          name='acc')])
         
-        #if self.val_split is None:
-            #print("Cannot run callbacks without validation data, skipping...")
-            #callback_list = None
-        #elif experiment is None:
-            #print("Cannot run callbacks without comet experiment, skipping...")
-            #callback_list = None
-        #else:            
-            #if self.classes_file is not None:
-                #labeldf = pd.read_csv(self.classes_file)                
-                #label_names = list(labeldf.taxonID.values)
-            #else:
-                #label_names = None
+        if self.val_split is None:
+            print("Cannot run callbacks without validation data, skipping...")
+            callback_list = None
+            label_names = None
+        elif experiment is None:
+            print("Cannot run callbacks without comet experiment, skipping...")
+            callback_list = None
+            label_names = None
+        else:            
+            if self.classes_file is not None:
+                labeldf = pd.read_csv(self.classes_file)                
+                label_names = list(labeldf.taxonID.values)
+            else:
+                label_names = None
                 
-        #callback_list = callbacks.create(log_dir=self.log_dir,
-                                         #experiment=experiment,
-                                         #validation_data=self.val_split,
-                                         #train_data=self.train_split,
-                                         #label_names=label_names)
+        callback_list = callbacks.create(log_dir=self.log_dir,
+                                         experiment=experiment,
+                                         validation_data=self.val_split,
+                                         train_data=self.train_split,
+                                         label_names=label_names,
+                                         submodel="ensemble")
                 
         #Train ensemble layer
         self.ensemble.fit(
