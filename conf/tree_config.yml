@@ -14,7 +14,7 @@ train:
         weighted_sum: True
     RGB:
         sensor_channels: 3
-        crop_size: 20
+        crop_size: 100
         weighted_sum: True
     ensemble:
         freeze: False

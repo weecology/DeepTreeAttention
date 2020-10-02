@@ -123,7 +123,7 @@ if __name__ == "__main__":
             
     ##Ensemble
     with experiment.context_manager("ensemble"):    
-        model.ensemble(freeze=model.config["ensemble"]["freeze"])
+        model.ensemble(freeze=model.config["train"]["ensemble"]["freeze"])
     
     #Save model
     model.ensemble.save("{}/Ensemble.h5".format(save_dir))
