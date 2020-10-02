@@ -21,24 +21,24 @@ def test_generate_tfrecords(train, tmpdir):
         HSI_sensor_path=test_sensor_tile,
         RGB_sensor_path=test_sensor_tile,
         species_label_dict=None,
-        RGB_size=20,
+        RGB_size=100,
         HSI_size=20,
         classes=6)
     
     assert all([os.path.exists(x) for x in created_records])
     
     if train:
-        dataset = boxes.tf_dataset(created_records, batch_size=2, mode="train")
+        dataset = boxes.tf_dataset(created_records, batch_size=2, mode="ensemble")
     else:
         dataset = boxes.tf_dataset(created_records, batch_size=2, mode="predict")
     
     if train:
         for (HSI, RGB), label_batch in dataset.take(3):
             assert HSI.shape == (2,20,20,3)
-            assert RGB.shape == (2,20,20,3)            
+            assert RGB.shape == (2,100,100,3)            
             assert label_batch.shape == (2,6)
     else:
         for (HSI, RGB ), box_index_batch in dataset.take(3):
             assert HSI.shape == (2,20,20,3)
-            assert RGB.shape == (2,20,20,3) 
+            assert RGB.shape == (2,100,100,3) 
             assert box_index_batch.shape == (2,)

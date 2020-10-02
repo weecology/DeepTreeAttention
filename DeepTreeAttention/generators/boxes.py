@@ -643,7 +643,7 @@ def tf_dataset(tfrecords,
             
     elif mode == "predict":
         dataset = dataset.map(_predict_parse_, num_parallel_calls=cores)
-        dataset = dataset.map(lambda inputs, index: (tf.image.per_image_standardization(inputs), index))
+        dataset = dataset.map(lambda inputs, label: ((tf.image.per_image_standardization(inputs[0]),inputs[1]), index))
         dataset = dataset.batch(batch_size=batch_size)
     
     elif mode == "metadata":
