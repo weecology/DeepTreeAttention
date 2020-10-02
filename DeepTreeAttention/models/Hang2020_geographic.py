@@ -104,7 +104,7 @@ def ensemble(models, classes, freeze=True):
     decap_models = []
     for index, model in enumerate(models):
         relu_layer = model.get_layer("pooling_filters_128").output
-        relu_layer = layers.BatchNormalization(relu_layer)
+        relu_layer = layers.BatchNormalization()(relu_layer)
         new_model = tf.keras.Model(inputs=model.inputs, outputs = relu_layer)
         for x in new_model.layers:
             x._name = x.name + str(index)
