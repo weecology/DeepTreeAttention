@@ -90,6 +90,8 @@ class ConfusionMatrixCallback(Callback):
         
         if self.submodel in ["spectral","spatial"]:
             name = "Submodel Confusion Matrix"
+        elif self.submodel in ["ensemble"]:
+            name = "Ensemble Matrix"
         else:
             name = "Confusion Matrix"
 
@@ -134,7 +136,7 @@ class ImageCallback(Callback):
                 num_images += label[0].shape[0]
             else:
                 break
-
+        
         images = np.vstack(images)
         y_true = np.concatenate(y_true)
         y_pred = np.concatenate(y_pred)
