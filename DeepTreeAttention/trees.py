@@ -245,7 +245,7 @@ class AttentionModel():
                     callbacks=callback_list,
                     class_weight=class_weight)
         
-    def ensemble(self, freeze = True):
+    def ensemble(self, experiment, freeze = True):
         self.read_data(mode="ensemble")
         self.ensemble = Hang.ensemble([self.RGB_model, self.HSI_model], freeze=freeze, classes=self.classes)
         
@@ -253,20 +253,34 @@ class AttentionModel():
             loss="categorical_crossentropy",
             optimizer=tf.keras.optimizers.Adam(
             lr=float(self.config["train"]["learning_rate"])),
-            metrics="acc")
-            
-        callback_list = callbacks.create(log_dir=self.log_dir,
-                                         experiment=experiment,
-                                         validation_data=self.val_split,
-                                         train_data=self.train_split,
-                                         label_names=label_names)
+            metrics=[tf.keras.metrics.CategoricalAccuracy(
+                                                         name='acc')])
+        
+        #if self.val_split is None:
+            #print("Cannot run callbacks without validation data, skipping...")
+            #callback_list = None
+        #elif experiment is None:
+            #print("Cannot run callbacks without comet experiment, skipping...")
+            #callback_list = None
+        #else:            
+            #if self.classes_file is not None:
+                #labeldf = pd.read_csv(self.classes_file)                
+                #label_names = list(labeldf.taxonID.values)
+            #else:
+                #label_names = None
+                
+        #callback_list = callbacks.create(log_dir=self.log_dir,
+                                         #experiment=experiment,
+                                         #validation_data=self.val_split,
+                                         #train_data=self.train_split,
+                                         #label_names=label_names)
                 
         #Train ensemble layer
         self.ensemble.fit(
             self.train_split,
             epochs=self.config["train"]["epochs"],
             validation_data=self.val_split,
-            callbacks=callback_list,
+            callbacks=None,
             class_weight=class_weight)
         
     def predict(self, shapefile, savedir, create_records=True, sensor_path=None):
