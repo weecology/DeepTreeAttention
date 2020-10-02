@@ -149,6 +149,8 @@ def test_train_callbacks(tfrecords, mod):
     mod.read_data(validation_split=True, mode="RGB_train")
     mod.train(experiment=experiment, sensor="RGB")
     
+    with experiment.context_manager("ensemble"):
+        mod.ensemble(experiment=experiment)    
     #assert experiment.get_metric("Within-site Error") > 0
     
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
