@@ -595,11 +595,13 @@ def tf_dataset(tfrecords,
                batch_size=2,
                shuffle=True,
                mode="HSI_train",
+               normalize=True,
                cores=10):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
         tfrecords: path to tfrecords, see generate.py
         mode:  "train" mode records include training labels, "submodel" triples the layers to match number of softmax layers,  "predict" is just image data and coordinates
+        normalize: Whether to normalize RGB data. 
     Returns:
         dataset: a tf.data dataset yielding crops and labels for train: True, crops and raster indices for train: False
         """
@@ -625,7 +627,7 @@ def tf_dataset(tfrecords,
     elif mode == "RGB_train":
         dataset = dataset.map(_RGB_train_parse_, num_parallel_calls=cores)
         #normalize and batch
-        dataset = dataset.map(lambda inputs, label: (tf.image.per_image_standardization(inputs), label))
+        #dataset = dataset.map(lambda inputs, label: (tf.image.per_image_standardization(inputs), label))
         dataset = dataset.map(lambda inputs, label: (flip(inputs), label))        
         dataset = dataset.shuffle(buffer_size=batch_size * 2)
         dataset = dataset.batch(batch_size=batch_size)
@@ -633,7 +635,8 @@ def tf_dataset(tfrecords,
     elif mode == "ensemble":
         dataset = dataset.map(_train_parse_, num_parallel_calls=cores)
         #normalize and batch
-        dataset = dataset.map(lambda inputs, label: ((tf.image.per_image_standardization(inputs[0]),tf.image.per_image_standardization(inputs[1])), label))
+        #TODO re-add RGB norm once visualizations are confirmed
+        dataset = dataset.map(lambda inputs, label: ((tf.image.per_image_standardization(inputs[0]),inputs[1]), label))
         dataset = dataset.map(lambda inputs, label: ((flip(inputs[0]),flip(inputs[1])), label))       
         dataset = dataset.shuffle(buffer_size=batch_size * 2)
         dataset = dataset.batch(batch_size=batch_size)
@@ -656,7 +659,7 @@ def tf_dataset(tfrecords,
       
     elif mode == "RGB_submodel":
         dataset = dataset.map(_train_RGB_submodel_parse_, num_parallel_calls=cores)
-        dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
+        #dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
         dataset = dataset.map(lambda image, label: (flip(image), label))        
         dataset = dataset.shuffle(buffer_size=batch_size * 2)
         dataset = dataset.batch(batch_size=batch_size)        
