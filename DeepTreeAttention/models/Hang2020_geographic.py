@@ -102,7 +102,7 @@ def ensemble(models, classes, freeze=True):
     
     decap_models = []
     for model in models:
-        decap_models.append(tf.keras.Model(inputs=model.input, output = model.get_layer("pooling_filters_128")))
+        decap_models.append(tf.keras.Model(input=model.input, output = model.get_layer("pooling_filters_128")))
         
     #concat and learn ensemble weights
     merged_layers = tf.keras.layers.Concatenate()([decap_models])
