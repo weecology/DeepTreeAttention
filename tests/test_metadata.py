@@ -16,6 +16,5 @@ import tensorflow as tf
     #classes=74
     #inputs, outputs= metadata_model(classes=classes, sites=23)  
     #model = tf.keras.Model(inputs=inputs, outputs=outputs)
-    #prediction = model.predict(sites)
-    
-    assert prediction.shape == (1, classes)
+    #prediction = model.predict(sites)    
+    #assert prediction.shape == (1, classes)
