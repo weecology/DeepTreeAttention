@@ -103,7 +103,9 @@ def ensemble(models, classes, freeze=True):
     #Reduce bottleneck layer
     decap_models = []
     for index, model in enumerate(models):
-        new_model = tf.keras.Model(inputs=model.inputs, outputs = model.get_layer("pooling_filters_128").output)
+        relu_layer = model.get_layer("pooling_filters_128").output
+        relu_layer = layers.BatchNormalization(relu_layer)
+        new_model = tf.keras.Model(inputs=model.inputs, outputs = relu_layer)
         for x in new_model.layers:
             x._name = x.name + str(index)
         decap_models.append(new_model.output)
