@@ -1,19 +1,36 @@
 import glob
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
+#local
 from DeepTreeAttention.generators import boxes
-created_records = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/train/*.tfrecord")
-dataset = boxes.tf_dataset(created_records, batch_size=100)
+created_records = glob.glob("data/processed/*.tfrecord")
+dataset = boxes.tf_dataset(created_records, mode="ensemble",batch_size=1)
 counter=0
 labels=[]
-elevations =[]
-for (image, elevation), label in dataset:
+data =[]
+for (HSI, RGB), label in dataset:
+    counter+=RGB.shape[0]
+    labels.append(label)
+    data.append(RGB)
+
+labels = np.vstack(labels)
+labels = np.argmax(labels,1)
+print("There are {} train labels".format(len(np.unique(labels))))
+
+#Hypergator
+from DeepTreeAttention.generators import boxes
+created_records = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/train/*.tfrecord")
+dataset = boxes.tf_dataset(created_records, mode="ensemble",batch_size=100)
+counter=0
+labels=[]
+data =[]
+for (HSI, RGB), label in dataset:
     counter+=image.shape[0]
     labels.append(label)
-    elevations.append(elevation)
+    data.append(RGB)
 
-elevations = np.concatenate(elevations)
 labels = np.vstack(labels)
 labels = np.argmax(labels,1)
 print("There are {} train labels".format(len(np.unique(labels))))
