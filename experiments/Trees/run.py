@@ -65,6 +65,7 @@ if __name__ == "__main__":
     experiment.log_parameters(model.config["train"])
     experiment.log_parameters(model.config["evaluation"])    
     experiment.log_parameters(model.config["predict"])
+    experiment.log_parameters(model.config["ensemble"])
     
     ##Train
     #Train see config.yml for tfrecords path with weighted classes in cross entropy

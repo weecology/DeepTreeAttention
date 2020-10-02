@@ -15,7 +15,7 @@ class F1Callback(Callback):
     def __init__(self, experiment, train_dataset, eval_dataset, label_names, submodel, n=4):
         """F1 callback
         Args:
-            n: number of epochs to run. If n=2, function will run every 2 epochs
+            n: number of epochs to run. If n=4, function will run every 4 epochs
         """
         self.experiment = experiment
         self.eval_dataset = eval_dataset
@@ -142,7 +142,7 @@ class ImageCallback(Callback):
                     y_pred.append(pred)
                     y_true.append(label)                    
 
-                num_images += label[0].shape[0]
+                num_images += label.shape[0]
             else:
                 break
         
