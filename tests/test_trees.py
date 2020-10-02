@@ -66,6 +66,8 @@ def mod(tmpdir):
     #Update the inits
     mod.RGB_size = mod.config["train"]["RGB"]["crop_size"]
     mod.HSI_size = mod.config["train"]["HSI"]["crop_size"]
+    mod.HSI_channels = 3
+    mod.RGB_channels = 3
     mod.extend_box = mod.config["train"]["extend_box"]
     mod.classes_file = None
     mod.classes = mod.config["train"]["classes"]

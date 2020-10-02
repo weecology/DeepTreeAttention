@@ -246,6 +246,9 @@ class AttentionModel():
                     class_weight=class_weight)
         
     def ensemble(self, experiment, freeze = True):
+        
+        #Manually override batch size
+        self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"]
         self.read_data(mode="ensemble")
         self.ensemble = Hang.ensemble([self.RGB_model, self.HSI_model], freeze=freeze, classes=self.classes)
         
