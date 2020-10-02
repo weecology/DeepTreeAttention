@@ -250,7 +250,7 @@ class AttentionModel():
         #Manually override batch size
         self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"]
         self.read_data(mode="ensemble")
-        self.ensemble = Hang.ensemble([self.RGB_model, self.HSI_model], freeze=freeze, classes=self.classes)
+        self.ensemble = Hang.ensemble([self.HSI_model, self.RGB_model], freeze=freeze, classes=self.classes)
         
         self.ensemble.compile(
             loss="categorical_crossentropy",
