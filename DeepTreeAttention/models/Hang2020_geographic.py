@@ -97,11 +97,10 @@ def ensemble(models, classes, freeze=True):
             for x in model.layers:
                 x.trainable = False
     
-    #Take joint inputs
-    inputs = [x.inputs for x in models]
+    #Take joint inputs, ASSUMES that this is a single input model 
+    inputs = [x.inputs[0] for x in models]
     
     #Reduce bottleneck layer
-    
     decap_models = []
     for index, model in enumerate(models):
         new_model = tf.keras.Model(inputs=model.inputs, outputs = model.get_layer("pooling_filters_128").output)

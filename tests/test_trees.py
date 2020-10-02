@@ -7,7 +7,9 @@ is_travis = 'TRAVIS' in os.environ
 if not is_travis:
     from comet_ml import Experiment 
     experiment = Experiment(project_name="neontrees", workspace="bw4sz")
-    experiment.add_tag("testing")        
+    experiment.add_tag("testing") 
+else:
+    experiment = None
 
 import pytest
 import rasterio
@@ -135,7 +137,7 @@ def test_train(tfrecords, mod):
     assert "loss" in list(mod.RGB_model.history.history.keys())     
  
 def test_ensemble(tfrecords, mod):
-    mod.ensemble(experiment=None)
+    mod.ensemble(experiment=experiment)
      
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
