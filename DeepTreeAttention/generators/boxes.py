@@ -638,12 +638,12 @@ def tf_dataset(tfrecords,
         #TODO re-add RGB norm once visualizations are confirmed
         dataset = dataset.map(lambda inputs, label: ((tf.image.per_image_standardization(inputs[0]),inputs[1]), label))
         dataset = dataset.map(lambda inputs, label: ((flip(inputs[0]),flip(inputs[1])), label))       
-        dataset = dataset.shuffle(buffer_size=batch_size * 2)
+        dataset = dataset.shuffle(buffer_size=batch_size)
         dataset = dataset.batch(batch_size=batch_size)
             
     elif mode == "predict":
         dataset = dataset.map(_predict_parse_, num_parallel_calls=cores)
-        dataset = dataset.map(lambda inputs, label: ((tf.image.per_image_standardization(inputs[0]),inputs[1]), index))
+        dataset = dataset.map(lambda inputs, index: ((tf.image.per_image_standardization(inputs[0]),inputs[1]), index))
         dataset = dataset.batch(batch_size=batch_size)
     
     elif mode == "metadata":
