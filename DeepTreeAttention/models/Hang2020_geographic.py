@@ -112,6 +112,7 @@ def ensemble(models, classes, freeze=True):
     #concat and learn ensemble weights
     concat_layer = tf.keras.layers.Concatenate()(decap_models)
     merged_layers = tf.keras.layers.Dense(classes, activation="relu")(concat_layer)
+    merged_layers = tf.keras.layers.Dropout(rate=0.2)(merged_layers)
     merged_layers = tf.keras.layers.Dense(classes, activation="softmax")(merged_layers)
     
     ensemble_model = tf.keras.Model(inputs=inputs,
