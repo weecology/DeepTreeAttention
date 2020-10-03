@@ -103,14 +103,17 @@ def ensemble(models, classes, freeze=True):
     #Reduce bottleneck layer
     decap_models = []
     for index, model in enumerate(models):
-        new_model = tf.keras.Model(inputs=model.inputs, outputs = model.outputs[0])
+        spectral_relu_layer = model.get_layer("spectral_pooling_filters_128").output
+        spatial_relu_layer = model.get_layer("spatial_pooling_filters_128").output
+        joined_head = layers.Concatenate()([spatial_relu_layer, spectral_relu_layer])
+        new_model = tf.keras.Model(inputs=model.inputs, outputs = joined_head)
         for x in new_model.layers:
             x._name = x.name + str(index)
         decap_models.append(new_model.output)
         
     #concat and learn ensemble weights
     concat_layer = tf.keras.layers.Concatenate()(decap_models)
-    merged_layers = tf.keras.layers.Dense(classes*4, activation="relu")(concat_layer)
+    merged_layers = tf.keras.layers.Dense(classes*2, activation="relu")(concat_layer)
     merged_layers = tf.keras.layers.Dense(classes, activation="softmax")(merged_layers)
     
     ensemble_model = tf.keras.Model(inputs=inputs,
