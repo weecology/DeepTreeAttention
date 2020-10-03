@@ -18,7 +18,7 @@ train:
         weighted_sum: True
     ensemble:
         freeze: True
-        batch_size: 128
+        batch_size: 256
     classes: 74
     sites: 23
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
