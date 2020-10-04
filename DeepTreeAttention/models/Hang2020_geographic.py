@@ -36,7 +36,7 @@ def create_models(height, width, channels, classes, learning_rate, weighted_sum=
         width = width,
         channels = channels,
         classes = classes,
-        weighted_sum=weighted_sum, softmax=False)
+        weighted_sum=weighted_sum, softmax=True)
 
     #Full model compile
     model = tf.keras.Model(inputs=sensor_inputs,
@@ -103,7 +103,10 @@ def ensemble(models, classes, freeze=True):
     #Reduce bottleneck layer
     decap_models = []
     for index, model in enumerate(models):
-        norm_layer = layers.BatchNormalization()(model.outputs)
+        spectral_relu_layer = model.get_layer("spectral_pooling_filters_128").output
+        spatial_relu_layer = model.get_layer("spatial_pooling_filters_128").output
+        weighted_relu = WeightedSum()([spectral_relu_layer, spatial_relu_layer])
+        norm_layer = layers.BatchNormalization()(weighted_relu)
         new_model = tf.keras.Model(inputs=model.inputs, outputs = norm_layer)
         for x in new_model.layers:
             x._name = x.name + str(index)
