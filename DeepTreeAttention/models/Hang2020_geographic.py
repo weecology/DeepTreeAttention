@@ -106,7 +106,7 @@ def ensemble(models, classes, freeze=True):
         spectral_relu_layer = model.get_layer("spectral_pooling_filters_128").output
         spatial_relu_layer = model.get_layer("spatial_pooling_filters_128").output
         weighted_relu = WeightedSum()([spectral_relu_layer, spatial_relu_layer])
-        new_model = tf.keras.Model(inputs=model.inputs, outputs = norm_layer)
+        new_model = tf.keras.Model(inputs=model.inputs, outputs = weighted_relu)
         for x in new_model.layers:
             x._name = x.name + str(index)
         decap_models.append(new_model.output)
