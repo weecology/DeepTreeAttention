@@ -249,7 +249,7 @@ class AttentionModel():
         
         #Manually override batch size
         self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"]
-        self.read_data(mode="ensemble")
+        self.read_data(mode="ensemble",validation_split=True)
         self.ensemble = Hang.ensemble([self.HSI_model, self.RGB_model], freeze=freeze, classes=self.classes)
         
         if train:
