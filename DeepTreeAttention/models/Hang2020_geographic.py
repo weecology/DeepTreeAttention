@@ -106,9 +106,9 @@ def ensemble(models, classes, freeze=True):
         spectral_relu_layer = model.get_layer("spectral_pooling_filters_128").output
         spatial_relu_layer = model.get_layer("spatial_pooling_filters_128").output
         weighted_relu = WeightedSum(name="within_model_weighted")([spectral_relu_layer, spatial_relu_layer])
-        weighted_softmax = layers.Dense(classes, activation="relu")(weighted_relu)                
+        weighted_relu = layers.Dense(classes, activation="relu")(weighted_relu)                
         #squeeze into same dimensions
-        new_model = tf.keras.Model(inputs=model.inputs, outputs = weighted_softmax)
+        new_model = tf.keras.Model(inputs=model.inputs, outputs = weighted_relu)
         for x in new_model.layers:
             x._name = x.name + str(index)
         decap_models.append(new_model.output)

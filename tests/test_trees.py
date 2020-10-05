@@ -121,6 +121,14 @@ def test_AttentionModel(mod, tfrecords, submodel):
     #No test in train batches
     assert all([not np.array_equal(y,x) for x in train_image_data for y in test_image_data])
 
+#Test that the composition of the validation split is the same no matter the data
+def test_read_data(mod, tfrecords):
+    mod.read_data(mode="RGB_submodel", validation_split=True)    
+    before = mod.test_split_records
+    mod.read_data(mode="ensemble",validation_split=True)   
+    after = mod.test_split_records
+    assert before == after
+    
 def test_train(tfrecords, mod):
     #initial weights
     initial_weight = mod.RGB_model.layers[1].get_weights()

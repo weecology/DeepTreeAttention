@@ -17,14 +17,14 @@ train:
         crop_size: 100
         weighted_sum: True
     ensemble:
-        freeze: True
+        freeze: False
         batch_size: 256
     classes: 74
     sites: 23
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/train_data.shp  #path to ground truth class shapefile   
     extend_box: 0 #expand DeepForest bounding boxes by x meters at edge
-    epochs: 50
+    epochs: 40
     learning_rate: .001
     batch_size: 512
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
