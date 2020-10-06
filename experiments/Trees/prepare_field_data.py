@@ -111,6 +111,10 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     #If there are multiple boxes, take the center box
     grouped = merged_boxes.groupby("indvdID")
     
+    #If no remaining boxes yield error
+    if merged_boxes.empty:
+        raise ValueError("No matching deepforest boxes for {}".format(plot_data.head()))
+    
     cleaned_boxes = []
     for value, group in grouped:
         choosen_box = choose_box(group, plot_data)
@@ -118,10 +122,6 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     
     merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_boxes),crs=merged_boxes.crs)
     merged_boxes = merged_boxes.drop(columns=["xmin","xmax","ymin","ymax"])
-    
-    #If no remaining boxes yield error
-    if merged_boxes.empty:
-        raise ValueError("No matching deepforest boxes for {}".format(plot_data.head()))
     
     return merged_boxes
 
