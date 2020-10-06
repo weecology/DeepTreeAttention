@@ -82,6 +82,17 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=10):
     boxes.geometry = boxes.geometry.buffer(1)
     return boxes
 
+def choose_box(group, plot_data):
+    """Given a set of overlapping bounding boxes and predictions, just choose a closest to stem box by centroid if there are multiples"""
+    if group.shape[0] == 1:
+        return  group
+    else:
+        #Find centroid
+        individual_id = group.indvdID.unique()[0]
+        stem_location = plot_data[plot_data["indvdID"]==individual_id].geometry.iloc[0]
+        closest_stem = group.centroid.distance(stem_location).sort_values().index[0]
+        return group.loc[[closest_stem]]
+    
 def process_plot(plot_data, rgb_pool, deepforest_model):
     """For a given NEON plot, find the correct sensor data, predict trees and associate bounding boxes with field data
     Args:
@@ -96,6 +107,16 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
 
     #Merge results with field data, buffer on edge 
     merged_boxes = gpd.sjoin(boxes, plot_data)
+    
+    #If there are multiple boxes, take the center box
+    grouped = merged_boxes.groupby("indvdID")
+    
+    cleaned_boxes = []
+    for value, group in grouped:
+        choosen_box = choose_box(group, plot_data)
+        cleaned_boxes.append(choosen_box)
+    
+    merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_boxes),crs=merged_boxes.crs)
     merged_boxes = merged_boxes.drop(columns=["xmin","xmax","ymin","ymax"])
     
     #If no remaining boxes yield error

@@ -136,3 +136,5 @@ if __name__ == "__main__":
     experiment.log_figure("{}/Ensemble.png".format(save_dir))
     model.ensemble.save("{}/Ensemble.h5".format(save_dir))
     
+    #save predictions
+    

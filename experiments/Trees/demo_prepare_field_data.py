@@ -82,7 +82,7 @@ def test_main():
             except tensorflow.errors.OutOfRangeError:
                 break
             
-    assert counter==5 
+    assert counter==2 
 
 #Run tests
 test_process_plot()
