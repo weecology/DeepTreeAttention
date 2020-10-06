@@ -34,3 +34,4 @@ dependencies:
     - distributed
     - dask_jobqueue
     - tensorboard_plugin_profile
+    - pydot
