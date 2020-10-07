@@ -241,15 +241,18 @@ def create_records(HSI_crops, RGB_crops, labels, sites, elevations, box_index, s
     
     return filenames
 
-def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspectral_savedir=".",deepforest_model=None):
+def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspectral_savedir=".",saved_model=None, deepforest_model=None):
     """wrapper function for dask, see main.py"""
     try:
         from deepforest import deepforest
     
         #create deepforest model
         if deepforest_model is None:
-            deepforest_model = deepforest.deepforest()
-            deepforest_model.use_release()
+            if saved_model is None:
+                deepforest_model = deepforest.deepforest()
+                deepforest_model.use_release()
+            else:
+                deepforest_model = deepforest.deepforest(saved_model=saved_model)
             
         #Filter data and process
         plot_data = df[df.plotID == plot]
@@ -293,7 +296,7 @@ def main(
     extend_box=0, 
     hyperspectral_savedir=".", 
     n_workers=20,
-    deepforest_model=None, 
+    saved_model=None, 
     use_dask=True, 
     shuffle=True,
     species_classes_file=None,
@@ -357,10 +360,8 @@ def main(
                 print("Future failed with {}".format(e))      
                 traceback.print_exc()
     else:
-        
         deepforest_model = deepforest.deepforest()
-        deepforest_model.use_release()
-        
+        deepforest_model.use_release()        
         for plot in plot_names:
             plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = run(
                 plot=plot,
@@ -369,6 +370,7 @@ def main(
                 hyperspectral_pool=hyperspectral_pool, 
                 extend_box=extend_box,
                 hyperspectral_savedir=hyperspectral_savedir,
+                saved_model=saved_model,
                 deepforest_model=deepforest_model
             ) 
             
