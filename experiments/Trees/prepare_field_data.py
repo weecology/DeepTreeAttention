@@ -100,6 +100,7 @@ def create_boxes(plot_data, size=2):
     #Mimic the existing structure
     fixed_boxes.score = None
     fixed_boxes.label = "Tree"
+    fixed_boxes = gpd.sjoin(fixed_boxes, plot_data)
     
     return fixed_boxes
     
