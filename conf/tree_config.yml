@@ -32,7 +32,6 @@ train:
     shuffle: True
     training_fraction: 0.9
     
-
 callbacks:
     snapshots_path: /../models/
     project_name: DeepTreeAttention

@@ -241,18 +241,16 @@ def create_records(HSI_crops, RGB_crops, labels, sites, elevations, box_index, s
     
     return filenames
 
-def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspectral_savedir=".",saved_model=None):
+def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspectral_savedir=".",deepforest_model=None):
     """wrapper function for dask, see main.py"""
     try:
         from deepforest import deepforest
     
         #create deepforest model
-        if saved_model is None:
+        if deepforest_model is None:
             deepforest_model = deepforest.deepforest()
             deepforest_model.use_release()
-        else:
-            deepforest_model = deepforest.deepforest(saved_model=saved_model)
-
+            
         #Filter data and process
         plot_data = df[df.plotID == plot]
         predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
@@ -295,7 +293,7 @@ def main(
     extend_box=0, 
     hyperspectral_savedir=".", 
     n_workers=20,
-    saved_model=None, 
+    deepforest_model=None, 
     use_dask=True, 
     shuffle=True,
     species_classes_file=None,
@@ -356,8 +354,13 @@ def main(
                 elevations.extend(plot_elevations)
                 box_indexes.extend(plot_box_index)        
             except Exception as e:
-                print("Future failed with {}".format(e))        
+                print("Future failed with {}".format(e))      
+                traceback.print_exc()
     else:
+        
+        deepforest_model = deepforest.deepforest()
+        deepforest_model.use_release()
+        
         for plot in plot_names:
             plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = run(
                 plot=plot,
@@ -366,7 +369,7 @@ def main(
                 hyperspectral_pool=hyperspectral_pool, 
                 extend_box=extend_box,
                 hyperspectral_savedir=hyperspectral_savedir,
-                saved_model=saved_model
+                deepforest_model=deepforest_model
             ) 
             
             #Append to general plot list
