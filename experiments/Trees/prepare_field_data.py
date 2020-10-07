@@ -98,11 +98,16 @@ def create_boxes(plot_data, size=2):
     fixed_boxes = plot_data.buffer(size).envelope
     
     fixed_boxes = gpd.GeoDataFrame(geometry=fixed_boxes)
+    
     #Mimic the existing structure
     fixed_boxes = gpd.sjoin(fixed_boxes, plot_data)
     fixed_boxes["score"] = None
     fixed_boxes["label"] = "Tree" 
-                
+    fixed_boxes["xmin"] = None 
+    fixed_boxes["xmax"] = None
+    fixed_boxes["ymax"] = None
+    fixed_boxes["ymin"] = None
+    
     return fixed_boxes
     
 def process_plot(plot_data, rgb_pool, deepforest_model):

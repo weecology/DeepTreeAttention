@@ -250,10 +250,10 @@ class AttentionModel():
         #Manually override batch size
         self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"]
         self.read_data(mode="ensemble")
-        self.ensemble = Hang.ensemble([self.HSI_model, self.RGB_model], freeze=freeze, classes=self.classes)
+        self.ensemble_model = Hang.ensemble([self.HSI_model, self.RGB_model], freeze=freeze, classes=self.classes)
         
         if train:
-            self.ensemble.compile(
+            self.ensemble_model.compile(
                 loss="categorical_crossentropy",
                 optimizer=tf.keras.optimizers.Adam(
                 lr=float(self.config["train"]["learning_rate"])),
@@ -284,7 +284,7 @@ class AttentionModel():
                     
             #Train ensemble layer
             class_weight = self.calc_class_weight()
-            self.ensemble.fit(
+            self.ensemble_model.fit(
                 self.train_split,
                 epochs=self.config["train"]["epochs"],
                 validation_data=self.val_split,
