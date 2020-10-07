@@ -366,11 +366,11 @@ def main(
                 print("Future failed with {}".format(e))      
                 traceback.print_exc()
     else:
-        try:
-            from deepforest import deepforest        
-            deepforest_model = deepforest.deepforest()
-            deepforest_model.use_release()        
-            for plot in plot_names:
+        from deepforest import deepforest        
+        deepforest_model = deepforest.deepforest()
+        deepforest_model.use_release()        
+        for plot in plot_names:
+            try:
                 plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = run(
                     plot=plot,
                     df=df,
@@ -381,19 +381,20 @@ def main(
                     saved_model=saved_model,
                     deepforest_model=deepforest_model
                 )
-                
+            except Exception as e:
+                print("Plot failed with {}".format(e))      
+                traceback.print_exc()  
+                continue
+    
+            #Append to general plot list
+            HSI_crops.extend(plot_HSI_crops)
+            RGB_crops.extend(plot_RGB_crops)
+            labels.extend(plot_labels)
+            sites.extend(plot_sites)            
+            elevations.extend(plot_elevations)
+            box_indexes.extend(plot_box_index)
             
-                #Append to general plot list
-                HSI_crops.extend(plot_HSI_crops)
-                RGB_crops.extend(plot_RGB_crops)
-                labels.extend(plot_labels)
-                sites.extend(plot_sites)            
-                elevations.extend(plot_elevations)
-                box_indexes.extend(plot_box_index)
-                
-        except Exception as e:
-            print("Future failed with {}".format(e))      
-            traceback.print_exc()            
+
 
     if shuffle:
         z = list(zip(HSI_crops, RGB_crops, sites, elevations, box_indexes, labels))
