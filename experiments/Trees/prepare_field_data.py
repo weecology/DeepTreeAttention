@@ -93,7 +93,7 @@ def choose_box(group, plot_data):
         closest_stem = group.centroid.distance(stem_location).sort_values().index[0]
         return group.loc[[closest_stem]]
 
-def create_box(plot_data, size=2):
+def create_boxes(plot_data, size=2):
     """If there are no deepforest boxes, fall back on selecting a fixed area around stem point"""
     fixed_boxes = plot_data.buffer(size).envelope
     
