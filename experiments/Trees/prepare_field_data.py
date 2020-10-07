@@ -59,6 +59,9 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=10):
     resized = resize(img, 400, 400)
     boxes = deepforest_model.predict_image(numpy_image = resized, return_plot=False)
     
+    if boxes.empty:
+        return boxes
+    
     #tranform boxes to original size
     x_scale = 400/img.shape[0]
     y_scale = 400/img.shape[1]
@@ -122,6 +125,9 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     rgb_sensor_path = find_sensor_path(bounds=plot_data.total_bounds, lookup_pool=rgb_pool, sensor="rgb")
     boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
 
+    if boxes.empty:
+        raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
+        
     #Merge results with field data, buffer on edge 
     merged_boxes = gpd.sjoin(boxes, plot_data)
     
