@@ -360,6 +360,7 @@ def main(
                 print("Future failed with {}".format(e))      
                 traceback.print_exc()
     else:
+        from deepforest import deepforest        
         deepforest_model = deepforest.deepforest()
         deepforest_model.use_release()        
         for plot in plot_names:
