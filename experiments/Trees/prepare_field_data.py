@@ -97,11 +97,12 @@ def create_boxes(plot_data, size=2):
     """If there are no deepforest boxes, fall back on selecting a fixed area around stem point"""
     fixed_boxes = plot_data.buffer(size).envelope
     
+    fixed_boxes = gpd.GeoDataFrame(geometry=fixed_boxes)
     #Mimic the existing structure
-    fixed_boxes.score = None
-    fixed_boxes.label = "Tree"
     fixed_boxes = gpd.sjoin(fixed_boxes, plot_data)
-    
+    fixed_boxes["score"] = None
+    fixed_boxes["label"] = "Tree" 
+                
     return fixed_boxes
     
 def process_plot(plot_data, rgb_pool, deepforest_model):
