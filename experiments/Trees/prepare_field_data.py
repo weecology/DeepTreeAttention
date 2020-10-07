@@ -381,7 +381,7 @@ def main(
                     saved_model=saved_model,
                     deepforest_model=deepforest_model
                 )
-        except:
+        except Exception as e:
             print("Future failed with {}".format(e))      
             traceback.print_exc()            
             
