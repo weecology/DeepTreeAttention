@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 #local
 from DeepTreeAttention.generators import boxes
-created_records = glob.glob("data/processed/*.tfrecord")
+created_records = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/train/*.tfrecord")
 dataset = boxes.tf_dataset(created_records, mode="ensemble",batch_size=1)
 counter=0
 labels=[]

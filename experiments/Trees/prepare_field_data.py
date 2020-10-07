@@ -92,6 +92,16 @@ def choose_box(group, plot_data):
         stem_location = plot_data[plot_data["indvdID"]==individual_id].geometry.iloc[0]
         closest_stem = group.centroid.distance(stem_location).sort_values().index[0]
         return group.loc[[closest_stem]]
+
+def create_box(plot_data, size=2):
+    """If there are no deepforest boxes, fall back on selecting a fixed area around stem point"""
+    fixed_boxes = plot_data.buffer(size).envelope
+    
+    #Mimic the existing structure
+    fixed_boxes.score = None
+    fixed_boxes.label = "Tree"
+    
+    return fixed_boxes
     
 def process_plot(plot_data, rgb_pool, deepforest_model):
     """For a given NEON plot, find the correct sensor data, predict trees and associate bounding boxes with field data
@@ -108,12 +118,12 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     #Merge results with field data, buffer on edge 
     merged_boxes = gpd.sjoin(boxes, plot_data)
     
+    #If no remaining boxes just take a box around center
+    if merged_boxes.empty:
+        merged_boxes= create_boxes(plot_data)
+        
     #If there are multiple boxes, take the center box
     grouped = merged_boxes.groupby("indvdID")
-    
-    #If no remaining boxes yield error
-    if merged_boxes.empty:
-        raise ValueError("No matching deepforest boxes for {}".format(plot_data.head()))
     
     cleaned_boxes = []
     for value, group in grouped:
