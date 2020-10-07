@@ -381,18 +381,20 @@ def main(
                     saved_model=saved_model,
                     deepforest_model=deepforest_model
                 )
+                
+            
+                #Append to general plot list
+                HSI_crops.extend(plot_HSI_crops)
+                RGB_crops.extend(plot_RGB_crops)
+                labels.extend(plot_labels)
+                sites.extend(plot_sites)            
+                elevations.extend(plot_elevations)
+                box_indexes.extend(plot_box_index)
+                
         except Exception as e:
             print("Future failed with {}".format(e))      
             traceback.print_exc()            
-            
-        #Append to general plot list
-        HSI_crops.extend(plot_HSI_crops)
-        RGB_crops.extend(plot_RGB_crops)
-        labels.extend(plot_labels)
-        sites.extend(plot_sites)            
-        elevations.extend(plot_elevations)
-        box_indexes.extend(plot_box_index)
-    
+
     if shuffle:
         z = list(zip(HSI_crops, RGB_crops, sites, elevations, box_indexes, labels))
         random.shuffle(z)
