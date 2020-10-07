@@ -476,5 +476,6 @@ if __name__ == "__main__":
         savedir=config["evaluation"]["tfrecords"],
         n_workers=config["cpu_workers"],
         species_classes_file = os.path.join(config["train"]["tfrecords"],"species_class_labels.csv"),
+        site_classes_file =  os.path.join(config["train"]["tfrecords"],"site_class_labels.csv"),
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )
