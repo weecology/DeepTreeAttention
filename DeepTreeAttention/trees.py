@@ -275,12 +275,12 @@ class AttentionModel():
                 else:
                     label_names = None
                     
-            callback_list = callbacks.create(log_dir=self.log_dir,
-                                             experiment=experiment,
-                                             validation_data=self.val_split,
-                                             train_data=self.train_split,
-                                             label_names=label_names,
-                                             submodel="ensemble")
+                callback_list = callbacks.create(log_dir=self.log_dir,
+                                                 experiment=experiment,
+                                                 validation_data=self.val_split,
+                                                 train_data=self.train_split,
+                                                 label_names=label_names,
+                                                 submodel="ensemble")
                     
             #Train ensemble layer
             class_weight = self.calc_class_weight()
