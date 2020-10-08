@@ -145,7 +145,7 @@ def test_train(tfrecords, mod):
  
 def test_ensemble(tfrecords, mod):    
     mod.read_data("ensemble",validation_split=True)
-    mod.ensemble(experiment=None)
+    mod.ensemble(experiment=None, class_weight=None)
      
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):

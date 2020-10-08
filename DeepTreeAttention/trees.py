@@ -283,7 +283,6 @@ class AttentionModel():
                                                  submodel="ensemble")
                     
             #Train ensemble layer
-            class_weight = self.calc_class_weight()
             self.ensemble_model.fit(
                 self.train_split,
                 epochs=self.config["train"]["epochs"],
