@@ -129,7 +129,7 @@ if __name__ == "__main__":
     ##Ensemble
     with experiment.context_manager("ensemble"):    
         print("Train Ensemble")
-        model.ensemble(freeze=model.config["train"]["ensemble"]["freeze"], experiment=experiment)
+        model.ensemble(freeze=model.config["train"]["ensemble"]["freeze"], experiment=experiment, class_weight=class_weight)
     
     #Save model and figure
     tf.keras.utils.plot_model(model.ensemble_model, to_file="{}/Ensemble.png".format(save_dir))

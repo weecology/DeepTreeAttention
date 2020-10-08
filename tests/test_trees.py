@@ -143,7 +143,7 @@ def test_train(tfrecords, mod):
 
     assert "loss" in list(mod.RGB_model.history.history.keys())     
  
-def test_ensemble(tfrecords, mod):
+def test_ensemble(tfrecords, mod):    
     mod.read_data("ensemble",validation_split=True)
     mod.ensemble(experiment=None)
      

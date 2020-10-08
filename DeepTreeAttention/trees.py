@@ -245,7 +245,7 @@ class AttentionModel():
                     callbacks=callback_list,
                     class_weight=class_weight)
         
-    def ensemble(self, experiment, freeze = True, train=True):
+    def ensemble(self, experiment, class_weight=None, freeze = True, train=True):
         
         #Manually override batch size
         self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"]
