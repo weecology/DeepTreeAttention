@@ -15,6 +15,7 @@ from sklearn.utils import class_weight
 #Local Modules
 from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.models import Hang2020_geographic as Hang
+from DeepTreeAttention.models import metadata
 from  DeepTreeAttention.models import layers
 from DeepTreeAttention.generators import boxes
 from DeepTreeAttention.callbacks import callbacks
@@ -119,7 +120,10 @@ class AttentionModel():
             """
         self.HSI_model, self.HSI_spatial, self.HSI_spectral = Hang.create_models(self.HSI_size, self.HSI_size, self.HSI_channels, self.classes, self.config["train"]["learning_rate"])
         self.RGB_model, self.RGB_spatial, self.RGB_spectral = Hang.create_models(self.RGB_size, self.RGB_size, self.RGB_channels, self.classes, self.config["train"]["learning_rate"])
-
+        
+        #create a metadata model
+        self.metadata_model = metadata.create(self.classes, self.config["train"]["learning_rate"])
+        
     def read_data(self, mode="HSI_train", validation_split=False):
         """Read tfrecord into datasets from config
             Args:
@@ -200,7 +204,12 @@ class AttentionModel():
                                              train_data=self.train_split,
                                              label_names=label_names,
                                              submodel=submodel)
-        
+        if submodel == "metadata":
+            self.metadata_model.fit(self.train_split,
+                           epochs=int(self.config["train"]["epochs"]),
+                           validation_data=self.val_split,
+                           callbacks=callback_list,
+                           class_weight=class_weight)
         if submodel == "spatial":
             if sensor == "hyperspectral":
                 self.HSI_spatial.fit(self.train_split,

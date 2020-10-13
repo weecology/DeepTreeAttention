@@ -1,20 +1,21 @@
 #test create model
-from DeepTreeAttention.models.metadata import metadata_model
+from DeepTreeAttention.models import metadata
 import pytest
 import numpy as np
 import tensorflow as tf
 
-#@pytest.fixture()
-#def sites():
-    ##simulate data
-    #metadata = [0.1, np.zeros((1,23))]
-    #metadata[1][0,10] = 1
-    #return metadata
+@pytest.fixture()
+def classes():
+    return 74
 
-##Test full model makes the correct number of predictions.
-#def test_model(sites):
-    #classes=74
-    #inputs, outputs= metadata_model(classes=classes, sites=23)  
-    #model = tf.keras.Model(inputs=inputs, outputs=outputs)
-    #prediction = model.predict(sites)    
-    #assert prediction.shape == (1, classes)
+@pytest.fixture()
+def data(classes):
+    #simulate data
+    metadata = np.random.random(1)
+    return metadata
+
+#Test full model makes the correct number of predictions.
+def test_model(data, classes):
+    model = metadata.create(classes,learning_rate=0.001)
+    prediction = model.predict(data)    
+    assert prediction.shape == (1, classes)

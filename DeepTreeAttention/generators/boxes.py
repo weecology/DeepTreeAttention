@@ -311,6 +311,29 @@ def _train_parse_(tfrecord):
 
     return (loaded_HSI_image, loaded_RGB_image), one_hot_labels
 
+def _metadata_parse_(tfrecord):
+    # Define features
+    features = {
+        "label": tf.io.FixedLenFeature([], tf.int64),
+        "site": tf.io.FixedLenFeature([], tf.int64),        
+        "elevation": tf.io.FixedLenFeature([], tf.int64),        
+        "classes": tf.io.FixedLenFeature([], tf.int64),
+    }
+
+    # Load one example and parse
+    example = tf.io.parse_single_example(tfrecord, features)
+    
+    #Metadata and labels
+    classes = tf.cast(example['classes'], tf.int32)
+    elevation = tf.cast(example['elevation'], tf.float32)
+    elevation = elevation / 1000
+    
+    #one hot encoding
+    label = tf.cast(example['label'], tf.int64)    
+    one_hot_labels = tf.one_hot(label, classes)
+
+    return elevation, one_hot_labels
+
 def _RGB_train_parse_(tfrecord):
     # Define features
     features = {
