@@ -119,9 +119,9 @@ class AttentionModel():
                 name: a model name from DeepTreeAttention.models
             """
         if self.config["train"]["gpus"] > 1:
-            strategy = tf.distribute.MirroredStrategy()
+            self.strategy = tf.distribute.MirroredStrategy()
             self.config["train"]["batch_size"] = self.config["train"]["batch_size"] * strategy.num_replicas_in_sync
-            with strategy.scope():
+            with self.strategy.scope():
                 self.HSI_model, self.HSI_spatial, self.HSI_spectral = Hang.create_models(self.HSI_size, self.HSI_size, self.HSI_channels, self.classes, self.config["train"]["learning_rate"])
                 self.RGB_model, self.RGB_spatial, self.RGB_spectral = Hang.create_models(self.RGB_size, self.RGB_size, self.RGB_channels, self.classes, self.config["train"]["learning_rate"])
             
@@ -267,8 +267,7 @@ class AttentionModel():
     def ensemble(self, experiment, class_weight=None, freeze = True, train=True):
         #Manually override batch size
         if self.config["train"]["gpus"] > 1:
-            strategy = tf.distribute.MirroredStrategy()
-            with strategy.scope():        
+            with self.strategy.scope():        
                 self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"] * strategy.num_replicas_in_sync
                 self.read_data(mode="ensemble")
                 self.ensemble_model = Hang.ensemble([self.HSI_model, self.RGB_model], freeze=freeze, classes=self.classes)
