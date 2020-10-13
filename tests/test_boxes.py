@@ -42,3 +42,20 @@ def test_generate_tfrecords(train, tmpdir):
             assert HSI.shape == (2,20,20,3)
             assert RGB.shape == (2,100,100,3) 
             assert box_index_batch.shape == (2,)
+
+def test_metadata(tmpdir):
+    created_records = boxes.generate_tfrecords(
+        shapefile=test_predictions,
+        site = 1,
+        elevation=100,
+        savedir=tmpdir,
+        HSI_sensor_path=test_sensor_tile,
+        RGB_sensor_path=test_sensor_tile,
+        species_label_dict=None,
+        RGB_size=100,
+        HSI_size=20,
+        classes=6)
+    
+    dataset = boxes.tf_dataset(created_records, batch_size=2, mode="metadata")
+    for metadata, label_batch in dataset.take(3):
+        assert metadata.numpy().shape == (2)

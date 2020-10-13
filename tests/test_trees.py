@@ -40,7 +40,7 @@ def mod(tmpdir):
     train_config = { }
     train_config["tfrecords"] = train_dir
     train_config["batch_size"] = 32
-    train_config["epochs"] = 1
+    train_config["epochs"] = 2
     train_config["steps"] = 2
     train_config["gpus"] = 1
     train_config["crop_size"] = 100
@@ -115,7 +115,7 @@ def test_AttentionModel(mod, tfrecords, submodel):
     for data, label in mod.val_split:
         test_image_data.append(data)            
         test_counter+=data.shape[0]
-    
+
     assert train_counter > test_counter
     
     #No test in train batches
