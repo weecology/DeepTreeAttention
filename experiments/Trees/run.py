@@ -75,10 +75,10 @@ if __name__ == "__main__":
     #Load from file and compile or train new models
     if model.config["train"]["checkpoint_dir"] is not None:
         dirname = model.config["train"]["checkpoint_dir"]        
-        if self.config["train"]["gpus"] > 1:
-            self.strategy = tf.distribute.MirroredStrategy()
-            self.config["train"]["batch_size"] = self.config["train"]["batch_size"] * self.strategy.num_replicas_in_sync
-            with self.strategy.scope():        
+        if model.config["train"]["gpus"] > 1:
+            model.strategy = tf.distribute.MirroredStrategy()
+            model.config["train"]["batch_size"] = model.config["train"]["batch_size"] * model.strategy.num_replicas_in_sync
+            with model.strategy.scope():        
                 model.RGB_model = load_model("{}/RGB_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum})
                 model.HSI_model = load_model("{}/HSI_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum})  
         else:
