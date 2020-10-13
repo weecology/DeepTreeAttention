@@ -118,11 +118,21 @@ class AttentionModel():
                 weights: a saved model weights from previous run
                 name: a model name from DeepTreeAttention.models
             """
-        self.HSI_model, self.HSI_spatial, self.HSI_spectral = Hang.create_models(self.HSI_size, self.HSI_size, self.HSI_channels, self.classes, self.config["train"]["learning_rate"])
-        self.RGB_model, self.RGB_spatial, self.RGB_spectral = Hang.create_models(self.RGB_size, self.RGB_size, self.RGB_channels, self.classes, self.config["train"]["learning_rate"])
-        
-        #create a metadata model
-        self.metadata_model = metadata.create(self.classes, self.config["train"]["learning_rate"])
+        if self.config["train"]["gpus"] > 1:
+            strategy = tf.distribute.MirroredStrategy()
+            self.config["train"]["batch_size"] = self.config["train"]["batch_size"] * strategy.num_replicas_in_sync
+            with strategy.scope():
+                self.HSI_model, self.HSI_spatial, self.HSI_spectral = Hang.create_models(self.HSI_size, self.HSI_size, self.HSI_channels, self.classes, self.config["train"]["learning_rate"])
+                self.RGB_model, self.RGB_spatial, self.RGB_spectral = Hang.create_models(self.RGB_size, self.RGB_size, self.RGB_channels, self.classes, self.config["train"]["learning_rate"])
+            
+                #create a metadata model
+                self.metadata_model = metadata.create(self.classes, self.config["train"]["learning_rate"])
+        else:
+            self.HSI_model, self.HSI_spatial, self.HSI_spectral = Hang.create_models(self.HSI_size, self.HSI_size, self.HSI_channels, self.classes, self.config["train"]["learning_rate"])
+            self.RGB_model, self.RGB_spatial, self.RGB_spectral = Hang.create_models(self.RGB_size, self.RGB_size, self.RGB_channels, self.classes, self.config["train"]["learning_rate"])
+            
+            #create a metadata model
+            self.metadata_model = metadata.create(self.classes, self.config["train"]["learning_rate"])
         
     def read_data(self, mode="HSI_train", validation_split=False):
         """Read tfrecord into datasets from config
@@ -256,47 +266,58 @@ class AttentionModel():
         
     def ensemble(self, experiment, class_weight=None, freeze = True, train=True):
         #Manually override batch size
-        self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"]
-        self.read_data(mode="ensemble")
-        self.ensemble_model = Hang.ensemble([self.HSI_model, self.RGB_model], freeze=freeze, classes=self.classes)
-        
-        if train:
-            self.ensemble_model.compile(
-                loss="categorical_crossentropy",
-                optimizer=tf.keras.optimizers.Adam(
-                lr=float(self.config["train"]["learning_rate"])),
-                metrics=[tf.keras.metrics.CategoricalAccuracy(
-                                                             name='acc')])
-            
-            if self.val_split is None:
-                print("Cannot run callbacks without validation data, skipping...")
-                callback_list = None
+        if self.config["train"]["gpus"] > 1:
+            strategy = tf.distribute.MirroredStrategy()
+            with strategy.scope():        
+                self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"] * strategy.num_replicas_in_sync
+                self.read_data(mode="ensemble")
+                self.ensemble_model = Hang.ensemble([self.HSI_model, self.RGB_model], freeze=freeze, classes=self.classes)
+            if train:
+                self.ensemble_model.compile(
+                    loss="categorical_crossentropy",
+                    optimizer=tf.keras.optimizers.Adam(
+                    lr=float(self.config["train"]["learning_rate"])),
+                    metrics=[tf.keras.metrics.CategoricalAccuracy(
+                                                                 name='acc')])
+        else:
+            self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"]      
+            self.ensemble_model = Hang.ensemble([self.HSI_model, self.RGB_model], freeze=freeze, classes=self.classes)
+            if train:
+                self.ensemble_model.compile(
+                    loss="categorical_crossentropy",
+                    optimizer=tf.keras.optimizers.Adam(
+                    lr=float(self.config["train"]["learning_rate"])),
+                    metrics=[tf.keras.metrics.CategoricalAccuracy(
+                                                                 name='acc')])            
+        if self.val_split is None:
+            print("Cannot run callbacks without validation data, skipping...")
+            callback_list = None
+            label_names = None
+        elif experiment is None:
+            print("Cannot run callbacks without comet experiment, skipping...")
+            callback_list = None
+            label_names = None
+        else:            
+            if self.classes_file is not None:
+                labeldf = pd.read_csv(self.classes_file)                
+                label_names = list(labeldf.taxonID.values)
+            else:
                 label_names = None
-            elif experiment is None:
-                print("Cannot run callbacks without comet experiment, skipping...")
-                callback_list = None
-                label_names = None
-            else:            
-                if self.classes_file is not None:
-                    labeldf = pd.read_csv(self.classes_file)                
-                    label_names = list(labeldf.taxonID.values)
-                else:
-                    label_names = None
-                    
-                callback_list = callbacks.create(log_dir=self.log_dir,
-                                                 experiment=experiment,
-                                                 validation_data=self.val_split,
-                                                 train_data=self.train_split,
-                                                 label_names=label_names,
-                                                 submodel="ensemble")
-                    
-            #Train ensemble layer
-            self.ensemble_model.fit(
-                self.train_split,
-                epochs=self.config["train"]["epochs"],
-                validation_data=self.val_split,
-                callbacks=callback_list,
-                class_weight=class_weight)
+                
+            callback_list = callbacks.create(log_dir=self.log_dir,
+                                             experiment=experiment,
+                                             validation_data=self.val_split,
+                                             train_data=self.train_split,
+                                             label_names=label_names,
+                                             submodel="ensemble")
+                
+        #Train ensemble layer
+        self.ensemble_model.fit(
+            self.train_split,
+            epochs=self.config["train"]["epochs"],
+            validation_data=self.val_split,
+            callbacks=callback_list,
+            class_weight=class_weight)
         
     def predict(self, shapefile, savedir, create_records=True, sensor_path=None):
         """Predict species id for each box in a single shapefile

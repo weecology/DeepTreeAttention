@@ -42,7 +42,7 @@ def mod(tmpdir):
     train_config["batch_size"] = 32
     train_config["epochs"] = 1
     train_config["steps"] = 2
-    train_config["gpu"] = 1
+    train_config["gpus"] = 1
     train_config["crop_size"] = 100
     train_config["shuffle"] = True
     train_config["weighted_sum"] = False
