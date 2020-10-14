@@ -303,7 +303,7 @@ def main(
     hyperspectral_savedir=".", 
     n_workers=20,
     saved_model=None, 
-    use_dask=False, 
+    use_dask=True, 
     shuffle=True,
     species_classes_file=None,
     site_classes_file=None):

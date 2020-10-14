@@ -19,7 +19,7 @@ train:
     ensemble:
         freeze: False
         batch_size: 256
-    classes: 76
+    classes: 70
     sites: 23
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/train_data.shp  #path to ground truth class shapefile   
