@@ -12,7 +12,7 @@ from tensorflow.keras.callbacks import Callback, TensorBoard
 
 class F1Callback(Callback):
 
-    def __init__(self, experiment, train_dataset, eval_dataset, label_names, submodel, n=8):
+    def __init__(self, experiment, train_dataset, eval_dataset, label_names, submodel, n=5):
         """F1 callback
         Args:
             n: number of epochs to run. If n=4, function will run every 4 epochs

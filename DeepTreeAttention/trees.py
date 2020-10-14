@@ -271,13 +271,14 @@ class AttentionModel():
                 self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"] * self.strategy.num_replicas_in_sync
                 self.read_data(mode="ensemble")
                 self.ensemble_model = Hang.ensemble([self.HSI_model, self.RGB_model], freeze=freeze, classes=self.classes)
-            if train:
-                self.ensemble_model.compile(
-                    loss="categorical_crossentropy",
-                    optimizer=tf.keras.optimizers.Adam(
-                    lr=float(self.config["train"]["learning_rate"])),
-                    metrics=[tf.keras.metrics.CategoricalAccuracy(
-                                                                 name='acc')])
+                
+                if train:
+                    self.ensemble_model.compile(
+                        loss="categorical_crossentropy",
+                        optimizer=tf.keras.optimizers.Adam(
+                        lr=float(self.config["train"]["learning_rate"])),
+                        metrics=[tf.keras.metrics.CategoricalAccuracy(
+                                                                     name='acc')])
         else:
             self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"]      
             self.ensemble_model = Hang.ensemble([self.HSI_model, self.RGB_model], freeze=freeze, classes=self.classes)
