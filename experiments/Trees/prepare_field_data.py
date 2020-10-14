@@ -158,10 +158,10 @@ def crop_image(sensor_path, box, expand=0):
         masked_image: a crop of sensor data at specified bounds
     """
     #Read data and mask
-    src = rasterio.open(sensor_path)
-    left, bottom, right, top = box.bounds
-    window=rasterio.windows.from_bounds(left-expand, bottom-expand, right+expand, top+expand, transform=src.transform)
-    try:
+    try:    
+        src = rasterio.open(sensor_path)
+        left, bottom, right, top = box.bounds
+        window=rasterio.windows.from_bounds(left-expand, bottom-expand, right+expand, top+expand, transform=src.transform)
         masked_image = src.read(window=window)
     except Exception as e:
         raise ValueError("sensor path: {} failed at reading window {} with error {}".format(sensor_path, box.bounds,e))

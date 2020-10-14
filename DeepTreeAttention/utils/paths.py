@@ -41,7 +41,7 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None, sensor="hyperspec
         try:
             year_match = match[-1]
         except Exception as e:
-            print("No matches for {} in {}: {}".format(bounds, os.path.dirname(lookup_pool)))
+            raise ValueError("No matches for {} in {}: {}".format(bounds, os.path.dirname(lookup_pool)))
     else:
 
         #Get file metadata from name string
