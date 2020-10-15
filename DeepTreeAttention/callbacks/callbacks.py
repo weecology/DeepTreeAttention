@@ -9,6 +9,7 @@ from DeepTreeAttention.utils import metrics
 from DeepTreeAttention.visualization import visualize
 from tensorflow.keras.callbacks import ReduceLROnPlateau
 from tensorflow.keras.callbacks import Callback, TensorBoard
+from tensorflow import expand_dims
 
 class F1Callback(Callback):
 
@@ -97,6 +98,8 @@ class ConfusionMatrixCallback(Callback):
         y_true = np.concatenate(y_true)
         y_pred = np.concatenate(y_pred)
         
+        if self.submodel is "metadata":
+            name = "Metadata Confusion Matrix"        
         if self.submodel in ["spectral","spatial"]:
             name = "Submodel Confusion Matrix"
         elif self.submodel in ["ensemble"]:
@@ -166,9 +169,6 @@ class ImageCallback(Callback):
 
 
 def create(experiment, train_data, validation_data, log_dir=None, label_names=None, submodel=False):
-    
-    if submodel == "metadata":
-        return None
     
     #turn off callbacks for metadata
     callback_list = []

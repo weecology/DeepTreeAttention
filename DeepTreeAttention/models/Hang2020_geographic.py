@@ -7,7 +7,7 @@ def define_model(height=11, width=11, channels=48, classes=2, weighted_sum=False
     Create model and return output layers to allow training at different levels
     """
     input_shape = (height, width, channels)
-    sensor_inputs = layers.Input(shape=input_shape)
+    sensor_inputs = layers.Input(shape=input_shape, name="data_input")
     
     #spatial subnetwork and weak attention classifications
     spatial_attention_outputs, spatial_attention_pool = spatial_network(sensor_inputs, classes=classes)
