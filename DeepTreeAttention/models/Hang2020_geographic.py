@@ -109,8 +109,7 @@ def ensemble(RGB_model, HSI_model, metadata_model, classes, freeze=True):
             for x in model.layers:
                 x.trainable = False
     
-    #Take joint inputs, ASSUMES that this is a single input model 
-    inputs = [x.inputs[0] for x in [HSI_model, RGB_model, metadata_model]]
+
     
     #pad names with an index so they aren't duplicate
     stripped_RGB_model = strip_sensor_softmax(RGB_model,classes, index="RGB")
@@ -121,6 +120,9 @@ def ensemble(RGB_model, HSI_model, metadata_model, classes, freeze=True):
     #concat and learn ensemble weights
     merged_layers = layers.Concatenate(name="submodel_concat")([stripped_HSI_model.output, stripped_RGB_model.output, stripped_metadata.output])
     ensemble_softmax = layers.Dense(classes,name="ensemble_learn",activation="softmax")(merged_layers)
+    
+    #Take joint inputs, ASSUMES that this is a single input model 
+    inputs = [x.inputs[0] for x in [HSI_model, RGB_model, metadata_model]]
     
     ensemble_model = tf.keras.Model(inputs=inputs,
                            outputs=ensemble_softmax,
