@@ -133,7 +133,7 @@ def test_train_metadata(tfrecords, mod):
     #initial weights
     initial_weight = mod.metadata_model.layers[1].get_weights()
     
-    mod.read_data(mode="metadata")
+    mod.read_data(mode="metadata", validation_split=True)
     class_weight = mod.calc_class_weight()
     mod.train(sensor="metadata", experiment=experiment, class_weight=class_weight)
     
