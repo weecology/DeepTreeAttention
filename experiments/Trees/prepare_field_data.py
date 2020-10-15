@@ -122,7 +122,11 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
         merged_boxes: geodataframe of bounding box predictions with species labels
     """
     #DeepForest prediction
-    rgb_sensor_path = find_sensor_path(bounds=plot_data.total_bounds, lookup_pool=rgb_pool, sensor="rgb")
+    try:
+        rgb_sensor_path = find_sensor_path(bounds=plot_data.total_bounds, lookup_pool=rgb_pool, sensor="rgb")
+    except Exception as e:
+        raise ValueError("cannot find sensor for {}".format(plot_data.plotID.unique()))
+    
     boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
 
     if boxes.empty:
