@@ -221,49 +221,50 @@ class AttentionModel():
                            validation_data=self.val_split,
                            callbacks=callback_list,
                            class_weight=class_weight)
-        if submodel == "spatial":
-            if sensor == "hyperspectral":
-                self.HSI_spatial.fit(self.train_split,
-                                       epochs=int(self.config["train"]["epochs"]),
-                                       validation_data=self.val_split,
-                                       callbacks=callback_list,
-                                       class_weight=class_weight)
-            
-            elif sensor == "RGB":
-                self.RGB_spatial.fit(self.train_split,
-                                                 epochs=int(self.config["train"]["epochs"]),
-                                                   validation_data=self.val_split,
-                                                   callbacks=callback_list,
-                                                   class_weight=class_weight)                
-
-        elif submodel == "spectral":
-            if sensor == "hyperspectral":
-                self.HSI_spectral.fit(self.train_split,
-                                       epochs=int(self.config["train"]["epochs"]),
-                                       validation_data=self.val_split,
-                                       callbacks=callback_list,
-                                       class_weight=class_weight)
-            elif sensor == "RGB":
-                self.RGB_spectral.fit(self.train_split,
-                                                 epochs=int(self.config["train"]["epochs"]),
-                                                   validation_data=self.val_split,
-                                                   callbacks=callback_list,
-                                                   class_weight=class_weight)      
         else:
-            if sensor == "hyperspectral":
-                self.HSI_model.fit(self.train_split,
-                               epochs=self.config["train"]["epochs"],
-                               validation_data=self.val_split,
-                               callbacks=callback_list,
-                               class_weight=class_weight)
-            
-            elif sensor == "RGB":
-                self.RGB_model.fit(
-                    self.train_split,
-                    epochs=self.config["train"]["epochs"],
-                    validation_data=self.val_split,
-                    callbacks=callback_list,
-                    class_weight=class_weight)
+            if submodel == "spatial":
+                if sensor == "hyperspectral":
+                    self.HSI_spatial.fit(self.train_split,
+                                           epochs=int(self.config["train"]["epochs"]),
+                                           validation_data=self.val_split,
+                                           callbacks=callback_list,
+                                           class_weight=class_weight)
+                
+                elif sensor == "RGB":
+                    self.RGB_spatial.fit(self.train_split,
+                                                     epochs=int(self.config["train"]["epochs"]),
+                                                       validation_data=self.val_split,
+                                                       callbacks=callback_list,
+                                                       class_weight=class_weight)                
+    
+            elif submodel == "spectral":
+                if sensor == "hyperspectral":
+                    self.HSI_spectral.fit(self.train_split,
+                                           epochs=int(self.config["train"]["epochs"]),
+                                           validation_data=self.val_split,
+                                           callbacks=callback_list,
+                                           class_weight=class_weight)
+                elif sensor == "RGB":
+                    self.RGB_spectral.fit(self.train_split,
+                                                     epochs=int(self.config["train"]["epochs"]),
+                                                       validation_data=self.val_split,
+                                                       callbacks=callback_list,
+                                                       class_weight=class_weight)      
+            else:
+                if sensor == "hyperspectral":
+                    self.HSI_model.fit(self.train_split,
+                                   epochs=self.config["train"]["epochs"],
+                                   validation_data=self.val_split,
+                                   callbacks=callback_list,
+                                   class_weight=class_weight)
+                
+                elif sensor == "RGB":
+                    self.RGB_model.fit(
+                        self.train_split,
+                        epochs=self.config["train"]["epochs"],
+                        validation_data=self.val_split,
+                        callbacks=callback_list,
+                        class_weight=class_weight)
         
     def ensemble(self, experiment, class_weight=None, freeze = True, train=True):
         #Manually override batch size
