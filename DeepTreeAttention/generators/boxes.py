@@ -300,8 +300,8 @@ def _train_parse_(tfrecord):
     #recast and scale to km    
     #number_of_sites = tf.cast(example['number_of_sites'], tf.int32)    
     #site = tf.cast(example['site'], tf.int64)    
-    #elevation = tf.cast(example['elevation'], tf.float32)
-    #elevation = elevation / 1000
+    elevation = tf.cast(example['elevation'], tf.float32)
+    elevation = elevation / 1000
     #metadata = elevation
     #one_hot_sites = tf.one_hot(site, number_of_sites)
     
@@ -309,7 +309,7 @@ def _train_parse_(tfrecord):
     label = tf.cast(example['label'], tf.int64)    
     one_hot_labels = tf.one_hot(label, classes)
 
-    return (loaded_HSI_image, loaded_RGB_image), one_hot_labels
+    return (loaded_HSI_image, loaded_RGB_image, elevation), one_hot_labels
 
 def _metadata_parse_(tfrecord):
     # Define features
@@ -614,6 +614,15 @@ def flip(x: tf.Tensor) -> tf.Tensor:
 
     return x
 
+def preproccess_images(data):
+    """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
+    HSI, RGB, metadata = data 
+    HSI = tf.image.per_image_standardization(HSI)
+    HSI = flip(HSI)
+    RGB = flip(RGB)
+    
+    return HSI, RGB, metadata
+
 def tf_dataset(tfrecords,
                batch_size=2,
                shuffle=True,
@@ -659,8 +668,7 @@ def tf_dataset(tfrecords,
         dataset = dataset.map(_train_parse_, num_parallel_calls=cores)
         #normalize and batch
         #TODO re-add RGB norm once visualizations are confirmed
-        dataset = dataset.map(lambda inputs, label: ((tf.image.per_image_standardization(inputs[0]),inputs[1]), label))
-        dataset = dataset.map(lambda inputs, label: ((flip(inputs[0]),flip(inputs[1])), label))       
+        dataset = dataset.map(lambda data, label: (preproccess_images(data),label))
         dataset = dataset.shuffle(buffer_size=batch_size)
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
             
