@@ -214,6 +214,7 @@ class AttentionModel():
                                              train_data=self.train_split,
                                              label_names=label_names,
                                              submodel=submodel)
+            
         if submodel == "metadata":
             self.metadata_model.fit(self.train_split,
                            epochs=int(self.config["train"]["epochs"]),
