@@ -84,11 +84,11 @@ if __name__ == "__main__":
             model.HSI_model = load_model("{}/HSI_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum})              
     else:
         
-        ###metadata network
-        #with experiment.context_manager("metadata"):
-            #print("Train metadata")
-            #model.read_data(mode="metadata")
-            #model.train(submodel="metadata", class_weight=class_weight, experiment=experiment)
+        ##metadata network
+        with experiment.context_manager("metadata"):
+            print("Train metadata")
+            model.read_data(mode="metadata")
+            model.train(submodel="metadata", class_weight=class_weight, experiment=experiment)
                 
         ##Train subnetworks
         experiment.log_parameter("Train subnetworks", True)

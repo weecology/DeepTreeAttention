@@ -226,4 +226,23 @@ def metadata_layer(metadata, classes):
     x = layers.BatchNormalization(name = "metadata_norm")(x)            
     
     return x
+
+class Wt_Add(tf.keras.layers.Layer):
+    def __init__(self, units=1, input_dim=1):
+        super(Wt_Add, self).__init__()
+        w_init = tf.random_normal_initializer()
+        self.w1 = tf.Variable(
+            initial_value=w_init(shape=(input_dim, units), dtype="float32"),
+            trainable=True,
+        )
+        self.w2 = tf.Variable(
+            initial_value=w_init(shape=(input_dim, units), dtype="float32"),
+            trainable=True,
+        )  
+        self.w3 = tf.Variable(
+            initial_value=w_init(shape=(input_dim, units), dtype="float32"),
+            trainable=True,
+        )       
     
+    def call(self, input1, input2, input3):
+        return tf.multiply(input1,self.w1) + tf.multiply(input2, self.w2) + tf.multiply(input3, self.w3)

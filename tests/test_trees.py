@@ -129,6 +129,20 @@ def test_read_data(mod, tfrecords):
     after = mod.test_split_records
     assert before == after
     
+def test_train_metadata(tfrecords, mod):
+    #initial weights
+    initial_weight = mod.metadata_model.layers[1].get_weights()
+    
+    mod.read_data(mode="metadata")
+    mod.train(sensor="metadata")
+    
+    final_weight = mod.metadata_model.layers[1].get_weights()
+    
+    #assert training took place
+    assert not np.array_equal(final_weight,initial_weight)
+
+    assert "loss" in list(mod.metadata_model.history.history.keys())     
+    
 def test_train(tfrecords, mod):
     #initial weights
     initial_weight = mod.RGB_model.layers[1].get_weights()
