@@ -85,10 +85,10 @@ if __name__ == "__main__":
     else:
         
         ##metadata network
-        with experiment.context_manager("metadata"):
-            print("Train metadata")
-            model.read_data(mode="metadata")
-            model.train(submodel="metadata", class_weight=class_weight, experiment=experiment)
+        #with experiment.context_manager("metadata"):
+            #print("Train metadata")
+            #model.read_data(mode="metadata")
+            #model.train(submodel="metadata", class_weight=class_weight, experiment=experiment)
                 
         ##Train subnetworks
         experiment.log_parameter("Train subnetworks", True)
