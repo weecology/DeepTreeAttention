@@ -89,32 +89,37 @@ def create_models(height, width, channels, classes, learning_rate, weighted_sum=
     
     return model, spatial_model, spectral_model
 
-def ensemble(models, classes, freeze=True):
+def strip_sensor_softmax(model, classes, index):
+    #prepare RGB model
+    spectral_relu_layer = model.get_layer("spectral_pooling_filters_128").output
+    spatial_relu_layer = model.get_layer("spatial_pooling_filters_128").output
+    weighted_relu = WeightedSum(name="within_model_weighted_" + index)([spectral_relu_layer, spatial_relu_layer])
+    weighted_relu = layers.Dense(classes, activation="relu")(weighted_relu)                
+    stripped_model = tf.keras.Model(inputs=model.inputs, outputs = weighted_relu)
+    for x in model.layers:
+        x._name = x.name + str(index)
+    
+    return stripped_model
+
+def ensemble(RGB_model, HSI_model, metadata_model, classes, freeze=True):
     
     #freeze orignal model layers
     if freeze:
-        for model in models:
+        for model in [RGB_model, HSI_model, metadata_model]:
             for x in model.layers:
                 x.trainable = False
     
     #Take joint inputs, ASSUMES that this is a single input model 
-    inputs = [x.inputs[0] for x in models]
+    inputs = [x.inputs[0] for x in [HSI_model, RGB_model, metadata_model]]
     
-    #Reduce bottleneck layer
-    decap_models = []
-    for index, model in enumerate(models):
-        spectral_relu_layer = model.get_layer("spectral_pooling_filters_128").output
-        spatial_relu_layer = model.get_layer("spatial_pooling_filters_128").output
-        weighted_relu = WeightedSum(name="within_model_weighted")([spectral_relu_layer, spatial_relu_layer])
-        weighted_relu = layers.Dense(classes, activation="relu")(weighted_relu)                
-        #squeeze into same dimensions
-        new_model = tf.keras.Model(inputs=model.inputs, outputs = weighted_relu)
-        for x in new_model.layers:
-            x._name = x.name + str(index)
-        decap_models.append(new_model.output)
-        
+    #pad names with an index so they aren't duplicate
+    stripped_RGB_model = strip_sensor_softmax(RGB_model,classes, index="RGB")
+    stripped_HSI_model = strip_sensor_softmax(HSI_model, classes, index = "HSI")
+            
+    stripped_metadata = tf.keras.Model(inputs=metadata_model.inputs, outputs = metadata_model.get_layer("last_relu").output)
+    
     #concat and learn ensemble weights
-    merged_layers = layers.Concatenate(name="submodel_concat")(decap_models)
+    merged_layers = layers.Concatenate(name="submodel_concat")([stripped_HSI_model.output, stripped_RGB_model.output, stripped_metadata.output])
     ensemble_softmax = layers.Dense(classes,name="ensemble_learn",activation="softmax")(merged_layers)
     
     ensemble_model = tf.keras.Model(inputs=inputs,

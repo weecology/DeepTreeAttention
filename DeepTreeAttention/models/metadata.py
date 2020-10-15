@@ -6,7 +6,7 @@ def model(classes):
     # create model
     metadata_inputs = Input(shape=(1,), name="metadata_input")    
     x = Dense(classes*2, activation='relu')(metadata_inputs)
-    x = Dense(classes, activation='relu')(x)
+    x = Dense(classes, activation='relu', name="last_relu")(x)
     output = Dense(classes, activation="softmax")(x)
     
     # Compile model

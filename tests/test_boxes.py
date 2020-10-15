@@ -33,9 +33,10 @@ def test_generate_tfrecords(train, tmpdir):
         dataset = boxes.tf_dataset(created_records, batch_size=2, mode="predict")
     
     if train:
-        for (HSI, RGB), label_batch in dataset.take(3):
+        for (HSI, RGB, metadata), label_batch in dataset.take(3):
             assert HSI.shape == (2,20,20,3)
-            assert RGB.shape == (2,100,100,3)            
+            assert RGB.shape == (2,100,100,3)    
+            assert metadata.shape == (2)
             assert label_batch.shape == (2,6)
     else:
         for (HSI, RGB ), box_index_batch in dataset.take(3):
