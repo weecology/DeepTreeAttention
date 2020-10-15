@@ -7,7 +7,7 @@ hyperspectral_sensor_pool: /orange/ewhite/NeonData/**/Reflectance/*.h5  #path to
 rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif  #path to sensor data regex, recursive wildcards allowed
 
 train:
-    checkpoint_dir: /orange/idtrees-collab/DeepTreeAttention/snapshots/20201003_174802/ #Load RGB and HSI sub models from dir
+    checkpoint_dir: #Load RGB and HSI sub models from dir
     HSI:
         sensor_channels: 369
         crop_size: 20
@@ -26,7 +26,7 @@ train:
     extend_box: 3 #expand DeepForest bounding boxes by x meters at edge
     epochs: 50
     learning_rate: .001
-    batch_size: 512
+    batch_size: 256
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
     steps:
     shuffle: True
