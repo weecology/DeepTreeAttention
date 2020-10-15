@@ -134,14 +134,13 @@ def test_train_metadata(tfrecords, mod):
     initial_weight = mod.metadata_model.layers[1].get_weights()
     
     mod.read_data(mode="metadata")
-    mod.train(sensor="metadata")
+    class_weight = mod.calc_class_weight()
+    mod.train(sensor="metadata", experiment=experiment, class_weight=class_weight)
     
     final_weight = mod.metadata_model.layers[1].get_weights()
     
     #assert training took place
     assert not np.array_equal(final_weight,initial_weight)
-
-    assert "loss" in list(mod.metadata_model.history.history.keys())     
     
 def test_train(tfrecords, mod):
     #initial weights
