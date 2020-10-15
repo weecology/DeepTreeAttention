@@ -166,6 +166,8 @@ class ImageCallback(Callback):
 
 
 def create(experiment, train_data, validation_data, log_dir=None, label_names=None, submodel=False):
+    
+    #turn off callbacks for metadata
     callback_list = []
     reduce_lr = ReduceLROnPlateau(monitor='val_loss',
                                   factor=0.2,

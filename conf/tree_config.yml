@@ -32,6 +32,7 @@ train:
     shuffle: True
     training_fraction: 0.9
     gpus: 2
+    pretrain: True #Train the submodels before ensembling all together
     
 callbacks:
     snapshots_path: /../models/

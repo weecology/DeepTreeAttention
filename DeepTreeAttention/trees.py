@@ -219,6 +219,7 @@ class AttentionModel():
                            epochs=int(self.config["train"]["epochs"]),
                            validation_data=self.val_split,
                            callbacks=callback_list,
+                           steps_per_epoch=50,
                            class_weight=class_weight)
         if submodel == "spatial":
             if sensor == "hyperspectral":
