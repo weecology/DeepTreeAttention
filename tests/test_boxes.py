@@ -35,12 +35,11 @@ def test_generate_tfrecords(train, tmpdir):
     
     if train:
         #Yield a batch of data and confirm its shape
-        for (HSI, RGB, metadata), label_batch in dataset.take(3):
+        for (HSI, RGB, elevation, site), label_batch in dataset.take(3):
             assert HSI.shape == (2,20,20,3)
             assert RGB.shape == (2,100,100,3)    
-            assert len(metadata) == (2)
-            assert metadata[0].shape == (2,1)
-            assert metadata[1].shape == (2,10)            
+            assert elevation.shape == (2,1)
+            assert site.shape == (2,10)            
             assert label_batch.shape == (2,6)
     else:
         for (HSI, RGB ), box_index_batch in dataset.take(3):
