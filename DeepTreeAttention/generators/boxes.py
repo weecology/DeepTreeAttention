@@ -655,7 +655,7 @@ def tf_dataset(tfrecords,
         #normalize and batch
         dataset = dataset.map(lambda inputs, label: (tf.image.per_image_standardization(inputs), label))
         dataset = dataset.map(lambda inputs, label: (flip(inputs), label))   
-        dataset = dataset.shuffle(buffer_size=batch_size * 2)
+        dataset = dataset.shuffle(buffer_size=batch_size)
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
     
     elif mode == "RGB_train":
@@ -687,7 +687,7 @@ def tf_dataset(tfrecords,
         dataset = dataset.map(_train_HSI_submodel_parse_, num_parallel_calls=cores)
         dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
         dataset = dataset.map(lambda image, label: (flip(image), label))        
-        dataset = dataset.shuffle(buffer_size=batch_size * 2)
+        dataset = dataset.shuffle(buffer_size=batch_size)
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
       
     elif mode == "RGB_submodel":
