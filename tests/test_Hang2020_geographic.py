@@ -6,10 +6,13 @@ import numpy as np
 import tensorflow as tf
 
 @pytest.fixture()
-def elevation():
-    elevation = np.ones((1,1))
-    elevation = elevation.astype(float)/1000
-    return elevation
+def metadata_data():
+    #simulate data
+    elevation = np.random.random(1)
+    sites = np.zeros(10)
+    sites[8] = 1
+    sites = np.expand_dims(sites,0)
+    return [elevation, sites]
 
 @pytest.fixture()
 def RGB_image():
@@ -30,7 +33,7 @@ def test_model(RGB_image, classes):
     prediction = model.predict(RGB_image)
     assert prediction.shape == (1, classes)
 
-def test_ensemble(RGB_image, HSI_image, elevation):    
+def test_ensemble(RGB_image, HSI_image, metadata_data):    
     batch, height, width, channels = HSI_image.shape     
     sensor_inputs, sensor_outputs, spatial, spectral = Hang.define_model(classes=2, height=height, width=width, channels=channels)    
     model1 = tf.keras.Model(inputs=sensor_inputs, outputs=sensor_outputs)
@@ -39,8 +42,10 @@ def test_ensemble(RGB_image, HSI_image, elevation):
     sensor_inputs, sensor_outputs, spatial, spectral = Hang.define_model(classes=2, height=height, width=width, channels=channels)    
     model2 = tf.keras.Model(inputs=sensor_inputs, outputs=sensor_outputs)    
     
-    metadata_model = metadata.create(classes=2,learning_rate=0.001)
+    metadata_model = metadata.create(classes=2, sites=10, learning_rate=0.001)
     ensemble = Hang.ensemble(HSI_model=model1, RGB_model=model2, metadata_model=metadata_model, classes=2)
-    prediction = ensemble.predict([HSI_image, RGB_image, elevation])
+    prediction = ensemble.predict([HSI_image, RGB_image] + metadata_data)
     assert prediction.shape == (1, 2)
+    
+    HSI_weight, RGB_weight, metadata_weight = ensemble.get_layer("ensemble_weight").get_weights()
     

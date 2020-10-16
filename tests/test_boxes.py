@@ -23,7 +23,8 @@ def test_generate_tfrecords(train, tmpdir):
         species_label_dict=None,
         RGB_size=100,
         HSI_size=20,
-        classes=6)
+        classes=6,
+        number_of_sites=10)
     
     assert all([os.path.exists(x) for x in created_records])
     
@@ -33,10 +34,13 @@ def test_generate_tfrecords(train, tmpdir):
         dataset = boxes.tf_dataset(created_records, batch_size=2, mode="predict")
     
     if train:
+        #Yield a batch of data and confirm its shape
         for (HSI, RGB, metadata), label_batch in dataset.take(3):
             assert HSI.shape == (2,20,20,3)
             assert RGB.shape == (2,100,100,3)    
-            assert metadata.shape == (2)
+            assert len(metadata) == (2)
+            assert metadata[0].shape == (2,1)
+            assert metadata[1].shape == (2,10)            
             assert label_batch.shape == (2,6)
     else:
         for (HSI, RGB ), box_index_batch in dataset.take(3):
