@@ -39,7 +39,6 @@ with experiment.context_manager("RGB_model"):
     experiment.log_parameter("Class Weighted", True)
     model.read_data(mode="RGB_train")
     model.train(class_weight=class_weight, sensor="rgb", experiment=experiment)
-    model.RGB_model.save("{}/RGB_model.h5".format(save_dir))
     
     #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
     if model.config["train"]["RGB"]["weighted_sum"]:
