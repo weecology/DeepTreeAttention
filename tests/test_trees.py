@@ -166,15 +166,6 @@ def test_ensemble(tfrecords, mod):
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
     mod.classes_file = "{}/species_class_labels.csv".format(os.path.dirname(tfrecords[0]))
-    
-    with experiment.context_manager("metadata`"):
-        mod.ensemble(experiment=experiment)     
-    
-    mod.read_data(validation_split=True, mode="RGB_submodel")
-    
-    with experiment.context_manager("ensemble"):
-        mod.ensemble(experiment=experiment) 
-    
     mod.read_data(validation_split=True, mode="RGB_submodel")
     mod.train(sensor="RGB", submodel="spectral",experiment=experiment)
 
