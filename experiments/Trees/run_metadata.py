@@ -18,5 +18,7 @@ experiment.add_tag("metadata")
 
 ##Train
 #Train see config.yml for tfrecords path with weighted classes in cross entropy
-model.read_data(mode="metadata")
-model.train(submodel="metadata", experiment=experiment)
+with experiment.context_manager("metadata"):
+    model.read_data(mode="metadata")
+    class_weight = model.calc_class_weight()    
+    model.train(submodel="metadata", experiment=experiment, class_weight=class_weight)
