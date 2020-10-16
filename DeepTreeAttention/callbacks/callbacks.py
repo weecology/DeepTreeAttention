@@ -68,7 +68,7 @@ class ConfusionMatrixCallback(Callback):
             y_pred = y_pred[0]
                 
         #gather true labels
-        for data, label in self.eval_dataset:
+        for data, label in self.dataset:
             if self.submodel in ["spectral","spatial"]:            
                 y_true.append(label[0])
             else:
