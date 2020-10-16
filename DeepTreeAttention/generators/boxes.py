@@ -298,18 +298,18 @@ def _train_parse_(tfrecord):
     classes = tf.cast(example['classes'], tf.int32)
     
     #recast and scale to km    
-    #number_of_sites = tf.cast(example['number_of_sites'], tf.int32)    
-    #site = tf.cast(example['site'], tf.int64)    
+    number_of_sites = tf.cast(example['number_of_sites'], tf.int32)    
+    site = tf.cast(example['site'], tf.int64)    
     elevation = tf.cast(example['elevation'], tf.float32)
     elevation = elevation / 1000
     #metadata = elevation
-    #one_hot_sites = tf.one_hot(site, number_of_sites)
+    one_hot_sites = tf.one_hot(site, number_of_sites)
     
     #one hot encoding
     label = tf.cast(example['label'], tf.int64)    
     one_hot_labels = tf.one_hot(label, classes)
 
-    return (loaded_HSI_image, loaded_RGB_image, elevation), one_hot_labels
+    return (loaded_HSI_image, loaded_RGB_image, elevation, one_hot_sites), one_hot_labels
 
 def _metadata_parse_(tfrecord):
     # Define features
@@ -564,11 +564,11 @@ def _predict_parse_(tfrecord):
     #Metadata and labels
     
     #recast and scale to km    
-    #number_of_sites = tf.cast(example['number_of_sites'], tf.int32)        
-    #site = tf.cast(example['site'], tf.int64)    
-    #elevation = tf.cast(example['elevation'], tf.float32)    
-    #elevation = elevation / 1000
-    #metadata = elevation
+    number_of_sites = tf.cast(example['number_of_sites'], tf.int32)        
+    site = tf.cast(example['site'], tf.int64)    
+    elevation = tf.cast(example['elevation'], tf.float32)    
+    elevation = elevation / 1000
+    metadata = elevation
 
     return (loaded_HSI_image, loaded_RGB_image), example["box_index"]
 
@@ -617,13 +617,13 @@ def flip(x: tf.Tensor) -> tf.Tensor:
 
 def preproccess_images(data):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
-    HSI, RGB, metadata = data 
+    HSI, RGB, elevation, site = data 
     #HSI = tf.image.per_image_standardization(HSI)
     #RGB = tf.image.per_image_standardization(RGB)
     HSI = flip(HSI)
     RGB = flip(RGB)
     
-    return HSI, RGB, metadata
+    return HSI, RGB, elevation, site
 
 def tf_dataset(tfrecords,
                batch_size=2,

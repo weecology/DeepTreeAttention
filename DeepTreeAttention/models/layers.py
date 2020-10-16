@@ -227,22 +227,41 @@ def metadata_layer(metadata, classes):
     
     return x
 
-class Wt_Add(tf.keras.layers.Layer):
-    def __init__(self, units=1, input_dim=1):
-        super(Wt_Add, self).__init__()
-        w_init = tf.random_normal_initializer()
-        self.w1 = tf.Variable(
-            initial_value=w_init(shape=(input_dim, units), dtype="float32"),
-            trainable=True,
-        )
-        self.w2 = tf.Variable(
-            initial_value=w_init(shape=(input_dim, units), dtype="float32"),
-            trainable=True,
-        )  
-        self.w3 = tf.Variable(
-            initial_value=w_init(shape=(input_dim, units), dtype="float32"),
-            trainable=True,
-        )       
-    
-    def call(self, input1, input2, input3):
-        return tf.multiply(input1,self.w1) + tf.multiply(input2, self.w2) + tf.multiply(input3, self.w3)
+class Weighted3Sum(layers.Layer):
+    """A custom keras layer to learn a weighted sum of 3 tensors"""
+
+    def __init__(self, **kwargs):
+        super(Weighted3Sum, self).__init__(**kwargs)
+
+    def build(self, input_shape=1):
+        self.a = self.add_weight(name='alpha',
+                                 shape=(1),
+                                 initializer=tf.keras.initializers.Constant(0.5),
+                                 dtype='float32',
+                                 trainable=True,
+                                 constraint=tf.keras.constraints.min_max_norm(
+                                     max_value=1, min_value=0))
+        
+        self.b = self.add_weight(name='beta',
+                                     shape=(1),
+                                     initializer=tf.keras.initializers.Constant(0.5),
+                                     dtype='float32',
+                                     trainable=True,
+                                     constraint=tf.keras.constraints.min_max_norm(
+                                         max_value=1, min_value=0))
+        
+        self.g = self.add_weight(name='gamma',
+                                     shape=(1),
+                                         initializer=tf.keras.initializers.Constant(0.5),
+                                         dtype='float32',
+                                         trainable=True,
+                                         constraint=tf.keras.constraints.min_max_norm(
+                                             max_value=1, min_value=0))
+        
+        super(Weighted3Sum, self).build(input_shape)
+
+    def call(self, model_outputs):
+        return (self.a * model_outputs[0]) +  (self.b * model_outputs[1]) + (self.g * model_outputs[2])
+
+    def compute_output_shape(self, input_shape):
+        return input_shape[0]
