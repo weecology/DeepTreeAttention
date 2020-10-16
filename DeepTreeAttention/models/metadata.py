@@ -4,9 +4,17 @@ from tensorflow.keras.layers import Dense, Input
 
 def model(classes):
     # create model
+    #site label
+    site_input = Input(shape(classes,),name="site_input")
+    site_layers = Dense(classes*2, activation='relu')(site_input)
+    
+    
+    #elevation
     metadata_inputs = Input(shape=(1,), name="metadata_input")    
-    x = Dense(classes*2, activation='relu')(metadata_inputs)
-    x = Dense(classes, activation='relu', name="last_relu")(x)
+    metadata_layer = Dense(classes*2, activation='relu')(metadata_inputs)
+    
+    joined_layer = tf.keras.layers.Concatenate()([metadata_layer, site_layers])
+    x = Dense(classes, activation='relu', name="last_relu")(joined_layer)
     output = Dense(classes, activation="softmax")(x)
     
     # Compile model

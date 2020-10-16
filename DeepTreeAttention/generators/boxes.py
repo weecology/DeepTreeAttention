@@ -597,8 +597,9 @@ def _metadata_parse_(tfrecord):
 
     #one hot
     one_hot_labels = tf.one_hot(label, classes)
+    one_hot_sites = tf.one_hot(site, sites)
 
-    return elevation, one_hot_labels
+    return (elevation, one_hot_sites), one_hot_labels
 
 def flip(x: tf.Tensor) -> tf.Tensor:
     """Flip augmentation
