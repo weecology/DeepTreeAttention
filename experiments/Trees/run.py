@@ -84,7 +84,7 @@ if __name__ == "__main__":
                 with experiment.context_manager("metadata"):
                     print("Train metadata")
                     model.read_data(mode="metadata")
-                    model.train(submodel="metadata", experiment=experiment, class_weight=class_weight)                
+                    model.train(submodel="metadata", experiment=experiment)                
         else:
             model.RGB_model = load_model("{}/RGB_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum})
             model.HSI_model = load_model("{}/HSI_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum})     
@@ -93,7 +93,7 @@ if __name__ == "__main__":
             with experiment.context_manager("metadata"):
                 print("Train metadata")
                 model.read_data(mode="metadata")
-                model.train(submodel="metadata", experiment=experiment, class_weight=class_weight)
+                model.train(submodel="metadata", experiment=experiment)
                 
     else:
         
