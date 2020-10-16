@@ -120,6 +120,7 @@ class AttentionModel():
             """
         if self.config["train"]["gpus"] > 1:
             self.strategy = tf.distribute.MirroredStrategy()
+            print("Running in parallel on {} GPUs".format(self.strategy.num_replicas_in_sync))            
             self.config["train"]["batch_size"] = self.config["train"]["batch_size"] * self.strategy.num_replicas_in_sync
             with self.strategy.scope():
                 self.HSI_model, self.HSI_spatial, self.HSI_spectral = Hang.create_models(self.HSI_size, self.HSI_size, self.HSI_channels, self.classes, self.config["train"]["learning_rate"])

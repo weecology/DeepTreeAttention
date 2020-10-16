@@ -669,33 +669,32 @@ def tf_dataset(tfrecords,
     elif mode == "ensemble":
         dataset = dataset.map(_train_parse_, num_parallel_calls=cores)
         #normalize and batch
-        #TODO re-add RGB norm once visualizations are confirmed
         dataset = dataset.map(lambda data, label: (preproccess_images(data),label))
         dataset = dataset.shuffle(buffer_size=batch_size)
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
+        dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)
             
     elif mode == "predict":
         dataset = dataset.map(_predict_parse_, num_parallel_calls=cores)
         dataset = dataset.map(lambda inputs, index: ((tf.image.per_image_standardization(inputs[0]),inputs[1]), index))
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
+        dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)
     
     elif mode == "metadata":
         dataset = dataset.map(_metadata_parse_, num_parallel_calls=cores)
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
+        dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)
         
     elif mode == "HSI_submodel":
         dataset = dataset.map(_train_HSI_submodel_parse_, num_parallel_calls=cores)
         dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
         dataset = dataset.map(lambda image, label: (flip(image), label))        
         dataset = dataset.shuffle(buffer_size=batch_size)
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
+        dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)
       
     elif mode == "RGB_submodel":
         dataset = dataset.map(_train_RGB_submodel_parse_, num_parallel_calls=cores)
         #dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
         dataset = dataset.map(lambda image, label: (flip(image), label))        
         dataset = dataset.shuffle(buffer_size=batch_size * 2)
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)        
+        dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)        
     else:
         raise ValueError(
             "invalid mode, please use HSI_train, RGB_train, ensemble, predict or submodel: {}".format(mode))

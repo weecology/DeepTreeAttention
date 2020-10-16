@@ -38,7 +38,7 @@ def test_generate_tfrecords(train, tmpdir):
         for (HSI, RGB, elevation, site), label_batch in dataset.take(3):
             assert HSI.shape == (2,20,20,3)
             assert RGB.shape == (2,100,100,3)    
-            assert elevation.shape == (2,1)
+            assert elevation.shape == (2)
             assert site.shape == (2,10)            
             assert label_batch.shape == (2,6)
     else:

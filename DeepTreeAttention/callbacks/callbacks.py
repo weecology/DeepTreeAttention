@@ -32,46 +32,23 @@ class F1Callback(Callback):
             
         y_true = []
         y_pred = []
-        sites = []
         
-        #gather site and species matrix
+        y_pred = self.model.predict(self.eval_dataset)
+        
+        if self.submodel in ["spectral","spatial"]:
+            y_pred = y_pred[0]
+                
+        #gather true labels
         for data, label in self.eval_dataset:
-            pred = self.model.predict(data)
-            if self.submodel in ["spectral","spatial"]:
-                y_pred.append(pred[0])
+            if self.submodel in ["spectral","spatial"]:            
                 y_true.append(label[0])
-                #sites.append(data[1])
             else:
-                y_pred.append(pred)
                 y_true.append(label)       
         
-        y_true_list = np.concatenate(y_true)
-        y_pred_list = np.concatenate(y_pred)
-        
-        #F1
-        macro, micro = metrics.f1_scores(y_true_list, y_pred_list)
+        y_true = np.concatenate(y_true)
+        macro, micro = metrics.f1_scores(y_true, y_pred)
         self.experiment.log_metric("MicroF1", micro)
         self.experiment.log_metric("MacroF1", macro)
-        
-        #
-        ##gather train site and species matrix
-        #for data, label in self.train_dataset:
-            #if self.submodel:
-                #y_true.append(label[0])
-            #else:
-                #y_true.append(label)       
-                #sites.append(data[1])
-        
-        ##Recreate list with full train + test site set.
-        #y_true_list = np.concatenate(y_true)
-        
-        #if not self.submodel:
-            #sites = np.concatenate(sites)
-            #sites = np.argmax(sites,1)
-            #y_true_list = np.argmax(y_true_list, 1)
-            #y_pred_list = np.argmax(y_pred_list, 1)
-            #within_site_proportion = visualize.site_confusion(y_true_list, y_pred_list, sites)
-            #self.experiment.log_metric("Within-site Error", within_site_proportion)
         
 class ConfusionMatrixCallback(Callback):
 
@@ -85,18 +62,19 @@ class ConfusionMatrixCallback(Callback):
         y_true = []
         y_pred = []
 
-        for data, label in self.dataset:
-            pred = self.model.predict(data)
-            
-            if self.submodel in ["spectral","spatial"]:
-                y_pred.append(pred[0])
+        y_pred = self.model.predict(self.dataset)
+        
+        if self.submodel in ["spectral","spatial"]:
+            y_pred = y_pred[0]
+                
+        #gather true labels
+        for data, label in self.eval_dataset:
+            if self.submodel in ["spectral","spatial"]:            
                 y_true.append(label[0])
             else:
-                y_pred.append(pred)
                 y_true.append(label)       
-
+        
         y_true = np.concatenate(y_true)
-        y_pred = np.concatenate(y_pred)
         
         if self.submodel is "metadata":
             name = "Metadata Confusion Matrix"        
@@ -127,13 +105,13 @@ class ImageCallback(Callback):
         """Plot sample images with labels annotated"""
 
         images = []
-        y_pred = []
         y_true = []
+        y_pred = []        
 
         #fill until there is atleast 20 images
         limit = 20
         num_images = 0
-        for data, label in self.dataset:
+        for data, label in self.dataset.unbatch().batch(1):
             if num_images < limit:
                 pred = self.model.predict(data)
                 images.append(data)
