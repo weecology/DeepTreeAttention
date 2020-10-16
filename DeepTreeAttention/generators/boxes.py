@@ -617,7 +617,7 @@ def flip(x: tf.Tensor) -> tf.Tensor:
 def preproccess_images(data):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
     HSI, RGB, metadata = data 
-    HSI = tf.image.per_image_standardization(HSI)
+    #HSI = tf.image.per_image_standardization(HSI)
     #RGB = tf.image.per_image_standardization(RGB)
     HSI = flip(HSI)
     RGB = flip(RGB)
@@ -652,7 +652,7 @@ def tf_dataset(tfrecords,
     if mode == "HSI_train":
         dataset = dataset.map(_HSI_train_parse_, num_parallel_calls=cores)
         #normalize and batch
-        dataset = dataset.map(lambda inputs, label: (tf.image.per_image_standardization(inputs), label))
+        #dataset = dataset.map(lambda inputs, label: (tf.image.per_image_standardization(inputs), label))
         dataset = dataset.map(lambda inputs, label: (flip(inputs), label))   
         dataset = dataset.shuffle(buffer_size=batch_size * 2)
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
@@ -684,14 +684,14 @@ def tf_dataset(tfrecords,
         
     elif mode == "HSI_submodel":
         dataset = dataset.map(_train_HSI_submodel_parse_, num_parallel_calls=cores)
-        dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
+        #dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
         dataset = dataset.map(lambda image, label: (flip(image), label))        
         dataset = dataset.shuffle(buffer_size=batch_size * 2)
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
       
     elif mode == "RGB_submodel":
         dataset = dataset.map(_train_RGB_submodel_parse_, num_parallel_calls=cores)
-        dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
+        #dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
         dataset = dataset.map(lambda image, label: (flip(image), label))        
         dataset = dataset.shuffle(buffer_size=batch_size * 2)
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)        
