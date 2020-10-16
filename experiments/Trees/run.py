@@ -79,31 +79,21 @@ if __name__ == "__main__":
             with model.strategy.scope():        
                 model.RGB_model = load_model("{}/RGB_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum}, compile=False)
                 model.HSI_model = load_model("{}/HSI_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum}, compile=False)  
-                
-                #metadata network hasn't been trained yet
-                with experiment.context_manager("metadata"):
-                    print("Train metadata")
-                    model.read_data(mode="metadata")
-                    model.train(submodel="metadata", experiment=experiment)                
+                model.metadata_model = load_model("{}/metadata_model.h5".format(dirname), compile=False)  
         else:
             model.RGB_model = load_model("{}/RGB_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum})
             model.HSI_model = load_model("{}/HSI_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum})     
-            
-            #metadata network hasn't been trained yet
-            with experiment.context_manager("metadata"):
-                print("Train metadata")
-                model.read_data(mode="metadata")
-                model.train(submodel="metadata", experiment=experiment)
+            model.metadata_model = load_model("{}/metadata_model.h5".format(dirname), compile=False)  
                 
     else:
-        
         if model.config["train"]["pretrain"]:
             #metadata network
             with experiment.context_manager("metadata"):
                 print("Train metadata")
                 model.read_data(mode="metadata")
-                model.train(submodel="metadata", experiment=experiment)
-                    
+                model.train(submodel="metadata", experiment=experiment, class_weight=class_weight)
+                model.metadata_model.save("{}/metadata_model.h5".format(save_dir))
+                
             ##Train subnetworks
             experiment.log_parameter("Train subnetworks", True)
             with experiment.context_manager("RGB_spatial_subnetwork"):
