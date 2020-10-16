@@ -55,8 +55,11 @@ def test_metadata(tmpdir):
         species_label_dict=None,
         RGB_size=100,
         HSI_size=20,
-        classes=6)
+        classes=6,
+        number_of_sites=10)
     
     dataset = boxes.tf_dataset(created_records, batch_size=2, mode="metadata")
-    for metadata, label_batch in dataset.take(3):
-        assert metadata.numpy().shape == (2,)
+    for data, label_batch in dataset.take(3):
+        elevation, site = data
+        assert elevation.numpy().shape == (2,)
+        assert site.numpy().shape == (2,10)

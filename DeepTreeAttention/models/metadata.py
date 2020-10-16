@@ -2,12 +2,11 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Input
 
-def model(classes):
+def model(classes, sites):
     # create model
     #site label
-    site_input = Input(shape(classes,),name="site_input")
+    site_input = Input(shape=(sites,),name="site_input")
     site_layers = Dense(classes*2, activation='relu')(site_input)
-    
     
     #elevation
     metadata_inputs = Input(shape=(1,), name="metadata_input")    
@@ -17,13 +16,12 @@ def model(classes):
     x = Dense(classes, activation='relu', name="last_relu")(joined_layer)
     output = Dense(classes, activation="softmax")(x)
     
-    # Compile model
-    return metadata_inputs, output
+    return metadata_inputs, site_input, output
 
 
-def create(classes, learning_rate):
-    inputs, outputs = model(classes)
-    keras_model = tf.keras.Model(inputs,outputs)
+def create(classes, sites, learning_rate):
+    metadata_input, site_input, outputs= model(classes, sites)
+    keras_model = tf.keras.Model([metadata_input, site_input],outputs)
     
     metric_list = [tf.keras.metrics.CategoricalAccuracy(name="acc")]    
     keras_model.compile(
