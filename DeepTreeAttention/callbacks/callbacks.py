@@ -33,7 +33,9 @@ class F1Callback(Callback):
         y_true = []
         y_pred = []
         
+        
         y_pred = self.model.predict(self.eval_dataset)
+        y_pred = np.argmax(y_pred,1)
         
         if self.submodel in ["spectral","spatial"]:
             y_pred = y_pred[0]
@@ -63,7 +65,7 @@ class ConfusionMatrixCallback(Callback):
         y_pred = []
 
         y_pred = self.model.predict(self.dataset)
-        
+        y_pred = np.argmax(y_pred,1)
         if self.submodel in ["spectral","spatial"]:
             y_pred = y_pred[0]
                 
