@@ -230,25 +230,19 @@ class Weighted3Sum(layers.Layer):
                                  shape=(1),
                                  initializer=tf.keras.initializers.Constant(0.5),
                                  dtype='float32',
-                                 trainable=True,
-                                 constraint=tf.keras.constraints.min_max_norm(
-                                     max_value=1, min_value=0))
+                                 trainable=True)
         
         self.b = self.add_weight(name='beta',
                                      shape=(1),
                                      initializer=tf.keras.initializers.Constant(0.5),
                                      dtype='float32',
-                                     trainable=True,
-                                     constraint=tf.keras.constraints.min_max_norm(
-                                         max_value=1, min_value=0))
+                                     trainable=True)
         
         self.g = self.add_weight(name='gamma',
                                      shape=(1),
                                          initializer=tf.keras.initializers.Constant(0.5),
                                          dtype='float32',
-                                         trainable=True,
-                                         constraint=tf.keras.constraints.min_max_norm(
-                                             max_value=1, min_value=0))
+                                         trainable=True)
         
         super(Weighted3Sum, self).build(input_shape)
 
