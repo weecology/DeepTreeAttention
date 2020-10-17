@@ -150,8 +150,8 @@ if __name__ == "__main__":
         HSI_weight, RGB_weight, metadata_weight = model.ensemble_model.get_layer("ensemble_weight").get_weights()
         
         experiment.log_metric(name="ensemble HSI weight", value=HSI_weight[0])
-        experiment.log_metric(name="ensemble RGB weight", value=RGB_weight[1])
-        experiment.log_metric(name="ensemble metadata weight", value=metadata_weight[2])
+        experiment.log_metric(name="ensemble RGB weight", value=RGB_weight[0])
+        experiment.log_metric(name="ensemble metadata weight", value=metadata_weight[0])
         
     #Save model and figure
     tf.keras.utils.plot_model(model.ensemble_model, to_file="{}/Ensemble.png".format(save_dir))
