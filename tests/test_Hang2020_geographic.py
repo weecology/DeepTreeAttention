@@ -43,7 +43,7 @@ def test_ensemble(RGB_image, HSI_image, metadata_data):
     model2 = tf.keras.Model(inputs=sensor_inputs, outputs=sensor_outputs)    
     
     metadata_model = metadata.create(classes=2, sites=10, learning_rate=0.001)
-    ensemble = Hang.ensemble(HSI_model=model1, RGB_model=model2, metadata_model=metadata_model, classes=2)
+    ensemble = Hang.weighted_ensemble(HSI_model=model1, RGB_model=model2, metadata_model=metadata_model, classes=2)
     prediction = ensemble.predict([HSI_image, RGB_image] + metadata_data)
     assert prediction.shape == (1, 2)
     

@@ -39,9 +39,9 @@ def mod(tmpdir):
     config = {}
     train_config = { }
     train_config["tfrecords"] = train_dir
-    train_config["batch_size"] = 32
-    train_config["epochs"] = 2
-    train_config["steps"] = 2
+    train_config["batch_size"] = 48
+    train_config["epochs"] = 1
+    train_config["steps"] = 1
     train_config["gpus"] = 1
     train_config["crop_size"] = 100
     train_config["shuffle"] = True

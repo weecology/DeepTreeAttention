@@ -33,16 +33,13 @@ class F1Callback(Callback):
         y_true = []
         y_pred = []
         
-        
-        y_pred = self.model.predict(self.eval_dataset)
-        y_pred = np.argmax(y_pred,1)
-        
+        y_pred = self.model.predict(self.eval_dataset.unbatch().batch(1))
         if self.submodel in ["spectral","spatial"]:
             y_pred = y_pred[0]
-                
+                    
         #gather true labels
-        for data, label in self.eval_dataset:
-            if self.submodel in ["spectral","spatial"]:            
+        for data, label in self.eval_dataset.unbatch().batch(1):
+            if self.submodel in ["spectral","spatial"]:         
                 y_true.append(label[0])
             else:
                 y_true.append(label)       
@@ -64,13 +61,12 @@ class ConfusionMatrixCallback(Callback):
         y_true = []
         y_pred = []
 
-        y_pred = self.model.predict(self.dataset)
-        y_pred = np.argmax(y_pred,1)
+        y_pred = self.model.predict(self.dataset.unbatch().batch(1))
         if self.submodel in ["spectral","spatial"]:
             y_pred = y_pred[0]
                 
         #gather true labels
-        for data, label in self.dataset:
+        for data, label in self.dataset.unbatch().batch(1):
             if self.submodel in ["spectral","spatial"]:            
                 y_true.append(label[0])
             else:
