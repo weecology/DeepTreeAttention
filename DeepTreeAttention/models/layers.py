@@ -226,21 +226,27 @@ class Weighted3Sum(layers.Layer):
         super(Weighted3Sum, self).__init__(**kwargs)
 
     def build(self, input_shape=1):
+        
+        tfpl.DistributionLambda(
+            make_distribution_fn=lambda t: tfd.Normal(
+                loc=t[..., 0], scale=tf.exp(t[..., 1])),
+            convert_to_tensor_fn=lambda s: s.sample(5))
+        
         self.a = self.add_weight(name='alpha',
                                  shape=(1),
-                                 initializer=tf.keras.initializers.Constant(1.0),
+                                 initializer=tf.keras.initializers.Constant(0.5),
                                  dtype='float32',
                                  trainable=True)
         
         self.b = self.add_weight(name='beta',
                                      shape=(1),
-                                     initializer=tf.keras.initializers.Constant(1.0),
+                                     initializer=tf.keras.initializers.Constant(0.5),
                                      dtype='float32',
                                      trainable=True)
         
         self.g = self.add_weight(name='gamma',
                                      shape=(1),
-                                         initializer=tf.keras.initializers.Constant(1.0),
+                                         initializer=tf.keras.initializers.Constant(0.5),
                                          dtype='float32',
                                          trainable=True)
         
