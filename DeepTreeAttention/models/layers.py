@@ -227,11 +227,6 @@ class Weighted3Sum(layers.Layer):
 
     def build(self, input_shape=1):
         
-        tfpl.DistributionLambda(
-            make_distribution_fn=lambda t: tfd.Normal(
-                loc=t[..., 0], scale=tf.exp(t[..., 1])),
-            convert_to_tensor_fn=lambda s: s.sample(5))
-        
         self.a = self.add_weight(name='alpha',
                                  shape=(1),
                                  initializer=tf.keras.initializers.Constant(0.5),
