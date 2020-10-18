@@ -228,16 +228,19 @@ class Weighted3Sum(layers.Layer):
     def build(self, input_shape=1):
         self.a = self.add_weight(name='alpha',
                                  shape=(1),
+                                 initializer=tf.keras.initializers.Constant(1.0),
                                  dtype='float32',
                                  trainable=True)
         
         self.b = self.add_weight(name='beta',
                                      shape=(1),
+                                     initializer=tf.keras.initializers.Constant(1.0),
                                      dtype='float32',
                                      trainable=True)
         
         self.g = self.add_weight(name='gamma',
                                      shape=(1),
+                                         initializer=tf.keras.initializers.Constant(1.0),
                                          dtype='float32',
                                          trainable=True)
         
