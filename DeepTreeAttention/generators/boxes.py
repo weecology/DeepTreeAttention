@@ -309,7 +309,7 @@ def _train_parse_(tfrecord):
     label = tf.cast(example['label'], tf.int64)    
     one_hot_labels = tf.one_hot(label, classes)
 
-    return (loaded_HSI_image, loaded_RGB_image, elevation, one_hot_sites), one_hot_labels
+    return (loaded_HSI_image, loaded_RGB_image), one_hot_labels
 
 def _metadata_parse_(tfrecord):
     # Define features
