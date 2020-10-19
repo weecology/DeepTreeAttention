@@ -94,7 +94,6 @@ def strip_sensor_softmax(model, classes, index):
     spectral_relu_layer = model.get_layer("spectral_pooling_filters_128").output
     spatial_relu_layer = model.get_layer("spatial_pooling_filters_128").output
     weighted_relu = WeightedSum(name="within_model_weighted_" + index)([spectral_relu_layer, spatial_relu_layer])
-    weighted_relu = layers.Dense(classes, activation="relu")(weighted_relu)   
     stripped_model = tf.keras.Model(inputs=model.inputs, outputs = weighted_relu)
     for x in model.layers:
         x._name = x.name + str(index)
