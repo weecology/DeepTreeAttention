@@ -109,6 +109,7 @@ def learned_ensemble(RGB_model, HSI_model, metadata_model, classes, freeze=True)
     #concat and learn ensemble weights
     weighted_sensor_data = WeightedSum(name="sensor_ensemble_model_weighted_")([stripped_RGB_model.output, stripped_HSI_model.output])
     merged_layers = layers.Concatenate(name="submodel_concat")([weighted_sensor_data, stripped_metadata.output])    
+    merged_layers = layers.Dense(classes*2,name="hidden ensemble layer",activation="relu")(merged_layers)    
     ensemble_softmax = layers.Dense(classes,name="ensemble_learn",activation="softmax")(merged_layers)
 
     #Take joint inputs    
