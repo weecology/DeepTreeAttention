@@ -617,13 +617,13 @@ def flip(x: tf.Tensor) -> tf.Tensor:
 
 def preproccess_images(data):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
-    HSI, RGB, elevation, site = data 
+    HSI, RGB = data 
     HSI = tf.image.per_image_standardization(HSI)
     #RGB = tf.image.per_image_standardization(RGB)
     HSI = flip(HSI)
     RGB = flip(RGB)
     
-    return HSI, RGB, elevation, site
+    return HSI, RGB
 
 def tf_dataset(tfrecords,
                batch_size=2,
