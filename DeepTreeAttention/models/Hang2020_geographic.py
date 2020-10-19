@@ -94,7 +94,6 @@ def strip_sensor_softmax(model, classes, index):
     spectral_relu_layer = model.get_layer("spectral_pooling_filters_128").output
     spatial_relu_layer = model.get_layer("spatial_pooling_filters_128").output
     weighted_relu = WeightedSum(name="within_model_weighted_" + index)([spectral_relu_layer, spatial_relu_layer])
-    weighted_relu = layers.Dense(classes, activation="relu")(weighted_relu)   
     stripped_model = tf.keras.Model(inputs=model.inputs, outputs = weighted_relu)
     for x in model.layers:
         x._name = x.name + str(index)
@@ -109,7 +108,6 @@ def learned_ensemble(RGB_model, HSI_model, metadata_model, classes, freeze=True)
     
     #concat and learn ensemble weights
     merged_layers = layers.Concatenate(name="submodel_concat")([stripped_HSI_model.output, stripped_RGB_model.output, stripped_metadata.output])    
-    ensemble_softmax = layers.Dense(classes*2,name="ensemble_learn",activation="relu")(merged_layers)    
     ensemble_softmax = layers.Dense(classes,name="ensemble_learn",activation="softmax")(merged_layers)
 
     #Take joint inputs    
