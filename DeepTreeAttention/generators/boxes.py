@@ -309,7 +309,7 @@ def _train_parse_(tfrecord):
     label = tf.cast(example['label'], tf.int64)    
     one_hot_labels = tf.one_hot(label, classes)
 
-    return (loaded_HSI_image, loaded_RGB_image), one_hot_labels
+    return (loaded_HSI_image, loaded_RGB_image, elevation, one_hot_sites), one_hot_labels
 
 def _metadata_parse_(tfrecord):
     # Define features
@@ -617,13 +617,13 @@ def flip(x: tf.Tensor) -> tf.Tensor:
 
 def preproccess_images(data):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
-    HSI, RGB = data 
+    HSI, RGB, elevation, site = data 
     HSI = tf.image.per_image_standardization(HSI)
     #RGB = tf.image.per_image_standardization(RGB)
     HSI = flip(HSI)
     RGB = flip(RGB)
     
-    return HSI, RGB
+    return HSI, RGB, elevation, site
 
 def tf_dataset(tfrecords,
                batch_size=2,
