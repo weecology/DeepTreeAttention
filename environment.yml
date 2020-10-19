@@ -26,6 +26,7 @@ dependencies:
   - yapf
   - pip:
     - geopandas
+    - rasterstats
     - opencv-python
     - sphinx-markdown-tables
     - bumpversion
