@@ -30,7 +30,7 @@ def test_empty_plot():
     deepforest_model = deepforest.deepforest()
     deepforest_model.use_release()
     plot_data = gpd.read_file(data_path)    
-    rgb_sensor_path = prepare_field_data.find_sensor_path(bounds=plot_data.total_bounds, lookup_pool=rgb_pool, sensor="rgb")
+    rgb_sensor_path = prepare_field_data.find_sensor_path(bounds=plot_data.total_bounds, lookup_pool=rgb_pool)
     boxes = prepare_field_data.predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
 
     #fake offset boxes by adding a scalar to the geometry
@@ -44,7 +44,7 @@ def test_empty_plot():
         merged_boxes= prepare_field_data.create_boxes(plot_data)
         
     #If there are multiple boxes, take the center box
-    grouped = merged_boxes.groupby("indvdID")
+    grouped = merged_boxes.groupby("individual")
     
     cleaned_boxes = []
     for value, group in grouped:

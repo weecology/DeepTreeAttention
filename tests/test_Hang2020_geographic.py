@@ -27,7 +27,7 @@ def HSI_image():
 #Test full model makes the correct number of predictions.
 @pytest.mark.parametrize("classes", [3, 10, 20])
 def test_model(RGB_image, classes):
-    batch, height, width, channels = RGB_image[0].shape 
+    batch, height, width, channels = RGB_image.shape 
     sensor_inputs, sensor_outputs, spatial, spectral = Hang.define_model(classes=classes, height=height, width=width, channels=channels)    
     model = tf.keras.Model(inputs=sensor_inputs, outputs=sensor_outputs)
     prediction = model.predict(RGB_image)
@@ -47,5 +47,5 @@ def test_ensemble(RGB_image, HSI_image, metadata_data):
     prediction = ensemble.predict([HSI_image, RGB_image] + metadata_data)
     assert prediction.shape == (1, 2)
     
-    HSI_weight, RGB_weight, metadata_weight = ensemble.get_layer("ensemble_weight").get_weights()
+    #HSI_weight, RGB_weight, metadata_weight = ensemble.get_layer("ensemble_weight").get_weights()
     

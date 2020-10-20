@@ -91,8 +91,8 @@ def choose_box(group, plot_data):
         return  group
     else:
         #Find centroid
-        individual_id = group.individualID.unique()[0]
-        stem_location = plot_data[plot_data["individualID"]==individual_id].geometry.iloc[0]
+        individual_id = group.individual.unique()[0]
+        stem_location = plot_data[plot_data["individual"]==individual_id].geometry.iloc[0]
         closest_stem = group.centroid.distance(stem_location).sort_values().index[0]
         return group.loc[[closest_stem]]
 
@@ -123,7 +123,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     """
     #DeepForest prediction
     try:
-        rgb_sensor_path = find_sensor_path(bounds=plot_data.total_bounds, lookup_pool=rgb_pool, sensor="rgb")
+        rgb_sensor_path = find_sensor_path(bounds=plot_data.total_bounds, lookup_pool=rgb_pool)
     except Exception as e:
         raise ValueError("cannot find sensor for {}".format(plot_data.plotID.unique()))
     
@@ -140,7 +140,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
         merged_boxes= create_boxes(plot_data)
         
     #If there are multiple boxes, take the center box
-    grouped = merged_boxes.groupby("individualID")
+    grouped = merged_boxes.groupby("individual")
     
     cleaned_boxes = []
     for value, group in grouped:
@@ -205,10 +205,10 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         
         #get sensor data
         if sensor == "rgb":
-            sensor_path = find_sensor_path(bounds=box.bounds, lookup_pool=rgb_pool, sensor="rgb")
+            sensor_path = find_sensor_path(bounds=box.bounds, lookup_pool=rgb_pool)
         elif sensor == "hyperspectral":
-            rgb_path = find_sensor_path(bounds=box.bounds, lookup_pool=rgb_pool, sensor="rgb")
-            hyperspectral_h5_path = find_sensor_path(bounds=box.bounds, lookup_pool=hyperspectral_pool, sensor="hyperspectral")
+            rgb_path = find_sensor_path(bounds=box.bounds, lookup_pool=rgb_pool)
+            hyperspectral_h5_path = find_sensor_path(bounds=box.bounds, lookup_pool=hyperspectral_pool)
             sensor_path = convert_h5(hyperspectral_h5_path, rgb_path, savedir=hyperspectral_savedir)
         
         crop = crop_image(sensor_path=sensor_path, box=box, expand=expand)
@@ -456,7 +456,7 @@ if __name__ == "__main__":
     
     lookup_glob = "/orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif"
     test = create_training_shp.test_split("{}/data/raw/test_with_uid.csv".format(ROOT))
-    train = create_training_shp.train_split("{}/data/raw/latest_full_veg_structure.csv".format(ROOT), test.individualID, test.taxonID.unique())
+    train = create_training_shp.train_split("{}/data/raw/latest_full_veg_structure.csv".format(ROOT), test.individual, test.taxonID.unique())
     
     #sample test data
     sample_data = train[train.plotID=="HARV_026"]
