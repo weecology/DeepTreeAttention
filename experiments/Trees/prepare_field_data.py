@@ -465,9 +465,9 @@ if __name__ == "__main__":
     ))
     
     print("There are {} records for {} species for {} sites in test".format(
-        train.shape[0],
-        len(train.taxonID.unique()),
-        len(train.siteID.unique())
+        test.shape[0],
+        len(test.taxonID.unique()),
+        len(test.siteID.unique())
     ))
     
     filtered_train = create_training_shp.filter_CHM(train, lookup_glob)

@@ -78,7 +78,7 @@ def train_split(path, test_ids, test_species, debug = False):
 def filter_CHM(train_shp, lookup_glob):
         """For each plotID extract the heights from LiDAR derived CHM"""    
         filtered_results = []
-        lookup_pool = glob.glob(lookup_glob)        
+        lookup_pool = glob.glob(lookup_glob, recursive=True)        
         for name, group in train_shp.groupby("plotID"):
             try:
                 result = postprocess_CHM(group, lookup_pool=lookup_pool, min_diff=4)
