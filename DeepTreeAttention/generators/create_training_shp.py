@@ -80,7 +80,10 @@ def filter_CHM(train_shp, lookup_glob):
         filtered_results = []
         lookup_pool = glob.glob(lookup_glob)        
         for name, group in train_shp.groupby("plotID"):
-            result = postprocess_CHM(group, lookup_pool=lookup_pool, min_diff=4)
+            try:
+                result = postprocess_CHM(group, lookup_pool=lookup_pool, min_diff=4)
+            except Exception as e:
+                print("plotID: {} failed with {}".format(group.plotID.unique(),e))
             filtered_results.append(result)
         filtered_shp = gpd.GeoDataFrame(pd.concat(filtered_results,ignore_index=True))
         
