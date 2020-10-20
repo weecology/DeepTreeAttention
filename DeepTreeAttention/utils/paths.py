@@ -41,7 +41,8 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None):
         try:
             year_match = match[-1]
         except Exception as e:
-            raise ValueError("No matches for geoindex {} in {}".format(geo_index,lookup_pool ))
+            raise ValueError("No matches for geoindex {} in {}".format(geo_index, os.path.dirname(
+                lookup_pool[0]) ))
     else:
 
         #Get file metadata from name string
