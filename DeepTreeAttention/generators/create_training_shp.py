@@ -73,6 +73,9 @@ def train_split(path, test_ids, test_species, debug = False):
     
     shp = shp[["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"]]
     
+    #drop and reset
+    shp = shp.drop(columns="individualID").reset_index()
+    
     return shp
         
 def filter_CHM(train_shp, lookup_glob):
