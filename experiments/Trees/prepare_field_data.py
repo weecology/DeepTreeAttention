@@ -455,8 +455,8 @@ if __name__ == "__main__":
     ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
     lookup_glob = "/orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif"
-    test = create_training_shp.test_split(path = "data/raw/test_with_uid.csv")
-    train = create_training_shp.train_split(path = "data/raw/latest_full_veg_structure.csv", test.individualID, test.taxonID.unique())
+    test = create_training_shp.test_split("data/raw/test_with_uid.csv")
+    train = create_training_shp.train_split("data/raw/latest_full_veg_structure.csv", test.individualID, test.taxonID.unique())
     
     print("There are {} records for {} species for {} sites in train".format(
         train.shape[0],
@@ -470,7 +470,7 @@ if __name__ == "__main__":
         len(train.siteID.unique())
     ))
     
-    filtered_train = create_training_shp.filter_CHM(train, lookup_glob=lookup_glob)
+    filtered_train = create_training_shp.filter_CHM(train, lookup_glob)
     
     #just to be safe, assert no test in train
     check_empty = test[test.individualID.isin(train.individualID.unique())]
