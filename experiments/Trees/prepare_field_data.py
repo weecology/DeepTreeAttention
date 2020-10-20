@@ -460,7 +460,7 @@ if __name__ == "__main__":
     
     #sample test data
     sample_data = train[train.plotID=="HARV_026"]
-    sample_data.to_file("{}/experiments/Trees/test_data/sample.shp")
+    sample_data.to_file("{}/experiments/Trees/test_data/sample.shp".format(ROOT))
     
     print("There are {} records for {} species for {} sites in train".format(
         train.shape[0],
