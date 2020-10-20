@@ -16,7 +16,7 @@ from DeepTreeAttention.generators.boxes import write_tfrecord
 from DeepTreeAttention.utils.paths import find_sensor_path, convert_h5
 from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.utils import start_cluster
-
+from DeepTreeAttention.generators import create_training_shp
 from distributed import wait
 from random import randint
 from time import sleep
@@ -451,8 +451,36 @@ def main(
     return tfrecords
     
 if __name__ == "__main__":
-    #Read config from top level dir
+    #Generate the training data shapefiles
     ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    
+    lookup_glob = "/orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif"
+    test = create_training_shp.test_split(path = "data/raw/test_with_uid.csv")
+    train = create_training_shp.train_split(path = "data/raw/latest_full_veg_structure.csv", test.individualID, test.taxonID.unique())
+    
+    print("There are {} records for {} species for {} sites in train".format(
+        train.shape[0],
+        len(train.taxonID.unique()),
+        len(train.siteID.unique())
+    ))
+    
+    print("There are {} records for {} species for {} sites in test".format(
+        train.shape[0],
+        len(train.taxonID.unique()),
+        len(train.siteID.unique())
+    ))
+    
+    filtered_train = create_training_shp.filter_CHM(train, lookup_glob=lookup_glob)
+    
+    #just to be safe, assert no test in train
+    check_empty = test[test.individualID.isin(train.individualID.unique())]
+    assert check_empty
+    
+    test.to_file("{}/data/processed/test.shp".format(ROOT))
+    train.to_file("{}/data/processed/train.shp".format(ROOT))    
+    filtered_train.to_file("{}/data/processed/CHM_filtered_train.shp".format(ROOT))
+        
+    #Read config from top level dir
     config = parse_yaml("{}/conf/tree_config.yml".format(ROOT))
     
     #train data

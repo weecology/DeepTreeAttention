@@ -85,30 +85,3 @@ def filter_CHM(train_shp, lookup_glob):
         filtered_shp = gpd.GeoDataFrame(pd.concat(filtered_results,ignore_index=True))
         
         return filtered_shp
-        
-if __name__ == "__main__":
-    lookup_pool = "/orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif"
-    test = test_split()
-    train = train_split(test.individualID, test.taxonID.unique())
-    
-    print("There are {} records for {} species for {} sites in train".format(
-        train.shape[0],
-        len(train.taxonID.unique()),
-        len(train.siteID.unique())
-    ))
-    
-    print("There are {} records for {} species for {} sites in test".format(
-        train.shape[0],
-        len(train.taxonID.unique()),
-        len(train.siteID.unique())
-    ))
-    
-    filtered_train = filter_CHM(train, lookup_pool)
-    
-    #just to be safe, assert no test in train
-    check_empty = test[test.individualID.isin(train.individualID.unique())]
-    assert check_empty
-    
-    test.to_file("data/processed/test.shp")
-    filtered_train.to_file("data/processed/train.shp")
-    
