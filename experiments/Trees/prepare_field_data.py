@@ -91,8 +91,8 @@ def choose_box(group, plot_data):
         return  group
     else:
         #Find centroid
-        individual_id = group.indvdID.unique()[0]
-        stem_location = plot_data[plot_data["indvdID"]==individual_id].geometry.iloc[0]
+        individual_id = group.individualID.unique()[0]
+        stem_location = plot_data[plot_data["individualID"]==individual_id].geometry.iloc[0]
         closest_stem = group.centroid.distance(stem_location).sort_values().index[0]
         return group.loc[[closest_stem]]
 
@@ -140,7 +140,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
         merged_boxes= create_boxes(plot_data)
         
     #If there are multiple boxes, take the center box
-    grouped = merged_boxes.groupby("indvdID")
+    grouped = merged_boxes.groupby("individualID")
     
     cleaned_boxes = []
     for value, group in grouped:
@@ -201,7 +201,7 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         box = row["geometry"]       
         plot_name = row["plotID"] 
         site = row["plotID"].split("_")[0]
-        elevation = int(row["elevatn"])
+        elevation = int(row["elevation"])
         
         #get sensor data
         if sensor == "rgb":
