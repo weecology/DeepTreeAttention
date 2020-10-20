@@ -455,8 +455,8 @@ if __name__ == "__main__":
     ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
     lookup_glob = "/orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif"
-    test = create_training_shp.test_split("data/raw/test_with_uid.csv")
-    train = create_training_shp.train_split("data/raw/latest_full_veg_structure.csv", test.individualID, test.taxonID.unique())
+    test = create_training_shp.test_split("{}/data/raw/test_with_uid.csv".format(ROOT))
+    train = create_training_shp.train_split("{}/data/raw/latest_full_veg_structure.csv".format(ROOT), test.individualID, test.taxonID.unique())
     
     print("There are {} records for {} species for {} sites in train".format(
         train.shape[0],
