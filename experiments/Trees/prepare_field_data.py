@@ -474,7 +474,7 @@ if __name__ == "__main__":
     
     #just to be safe, assert no test in train
     check_empty = test[test.individualID.isin(train.individualID.unique())]
-    assert check_empty
+    assert check_empty.empty
     
     test.to_file("{}/data/processed/test.shp".format(ROOT))
     train.to_file("{}/data/processed/train.shp".format(ROOT))    
