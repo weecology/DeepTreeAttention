@@ -219,6 +219,8 @@ def submodule_consensus(spatial_layers, spectral_layers, weighted_sum=True):
 
     return x
 
+
+
 class Weighted3Sum(layers.Layer):
     """A custom keras layer to learn a weighted sum of 3 tensors"""
 

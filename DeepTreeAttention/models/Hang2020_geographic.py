@@ -131,8 +131,8 @@ def weighted_ensemble(RGB_model, HSI_model, metadata_model, classes, freeze=True
     for x in HSI_model.layers:
         x._name = x.name + str("HSI")
            
-    merged_layers = Weighted3Sum(name="ensemble_weight")([HSI_model.output, RGB_model.output, metadata_model.output])
-    ensemble_softmax = layers.Softmax(name="ensemble_softmax")(merged_layers)
+    merged_layers = layers.Concatenate()(name="ensemble_weight")([HSI_model.output, RGB_model.output, metadata_model.output])
+    ensemble_softmax = layers.Dense(classes, name="ensemble_softmax")(merged_layers)
     
     #Take joint inputs    
     ensemble_model = tf.keras.Model(inputs=HSI_model.inputs+RGB_model.inputs+metadata_model.inputs,

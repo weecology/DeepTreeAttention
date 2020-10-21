@@ -457,15 +457,19 @@ if __name__ == "__main__":
     lookup_glob = "/orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif"
     test = create_training_shp.test_split("{}/data/raw/test_with_uid.csv".format(ROOT))
     
-    #drop a couple species bp hand
     train = create_training_shp.train_split("{}/data/raw/latest_full_veg_structure.csv".format(ROOT), test.individualID, test.taxonID.unique())
     
     #sample test data
     sample_data = train[train.plotID=="HARV_026"]
     sample_data.to_file("{}/experiments/Trees/test_data/sample.shp".format(ROOT))
     
-    print("There are {} records for {} species for {} sites in train".format(
-        train.shape[0],
+    filtered_train = create_training_shp.filter_CHM(train, lookup_glob)
+
+    filtered_train = filtered_train[filtered_train.taxonID.isin(test.taxonID.unique())]
+    test = test[test.taxonID.isin(filtered_train.taxonID.unique())]
+
+    print("There are {} records for {} species for {} sites in filtered train".format(
+        filtered_train.shape[0],
         len(train.taxonID.unique()),
         len(train.siteID.unique())
     ))
@@ -476,7 +480,7 @@ if __name__ == "__main__":
         len(test.siteID.unique())
     ))
     
-    filtered_train = create_training_shp.filter_CHM(train, lookup_glob)
+    
     
     #just to be safe, assert no test in train
     check_empty = test[test.individualID.isin(train.individualID.unique())]
