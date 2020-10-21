@@ -470,8 +470,8 @@ if __name__ == "__main__":
 
     print("There are {} records for {} species for {} sites in filtered train".format(
         filtered_train.shape[0],
-        len(train.taxonID.unique()),
-        len(train.siteID.unique())
+        len(filtered_train.taxonID.unique()),
+        len(filtered_train.siteID.unique())
     ))
     
     print("There are {} records for {} species for {} sites in test".format(
