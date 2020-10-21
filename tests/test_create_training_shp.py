@@ -47,3 +47,4 @@ def test_filter_CHM():
     traindata = gpd.GeoDataFrame([good_point, bad_point, null_point])
     filtered_data = create_training_shp.filter_CHM(traindata, lookup_glob=lookup_glob)
     assert filtered_data.shape[0] == 2
+    assert list(filtered_data.height.astype(int).values) == [12,12]

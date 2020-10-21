@@ -24,9 +24,11 @@ def postprocess_CHM(df, lookup_pool, min_diff=4):
                                            add_stats={'q99': non_zero_99_quantile})
     df["CHM_height"] = [x["q99"] for x in draped_boxes]
 
+    #if height is null, assign it
+    df.height.fillna(df["CHM_height"], inplace=True)
     
     #Rename column
-    df = df[(abs(df.height - df.CHM_height) < min_diff) | df.height.isnull()]
+    df = df[(abs(df.height - df.CHM_height) < min_diff)]
 
     return df
 
@@ -88,6 +90,7 @@ def filter_CHM(train_shp, lookup_glob):
                 result = postprocess_CHM(group, lookup_pool=lookup_pool, min_diff=4)
             except Exception as e:
                 print("plotID: {} failed with {}".format(group.plotID.unique(),e))
+                continue
             filtered_results.append(result)
         filtered_shp = gpd.GeoDataFrame(pd.concat(filtered_results,ignore_index=True))
         
