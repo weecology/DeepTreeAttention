@@ -56,7 +56,7 @@ def train_split(path, test_ids, test_species, debug = False):
     alive = has_elevation[has_elevation.plantStatus=="Live"]
     trees = alive[~alive.growthForm.isin(["liana","small shrub"])]
     trees = trees[~trees.growthForm.isnull()]
-    latest_year = trees.groupby("individualID").apply(lambda x: x.sort_values(["eventID"]).head(1))
+    latest_year = trees.groupby("individualID").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1))
     sun_position = latest_year[~(latest_year.canopyPosition.isin(["Full shade", "Mostly shaded"]))]
     min_height = sun_position[(sun_position.height > 3) | (sun_position.height.isnull())]
     min_size = min_height[min_height.stemDiameter > 5]

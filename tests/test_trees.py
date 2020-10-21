@@ -159,10 +159,7 @@ def test_train(tfrecords, mod):
 def test_ensemble(tfrecords, mod):    
     mod.read_data("ensemble",validation_split=True)
     mod.ensemble(experiment=experiment, class_weight=None)
-    
-    #get weights
-    mod.ensemble_model.get_weights("ensemble_weight")
-     
+         
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
     mod.classes_file = "{}/species_class_labels.csv".format(os.path.dirname(tfrecords[0]))

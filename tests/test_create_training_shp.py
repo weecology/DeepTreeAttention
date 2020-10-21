@@ -28,7 +28,7 @@ def test_train_split(testdata):
     path = "data/raw/latest_full_veg_structure.csv"
     shp = create_training_shp.train_split(path, testdata.individualID, testdata.taxonID, debug=True)
     assert not shp.empty
-    assert all([x in ["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"] for x in shp.columns])
+    assert all([x in ["siteID","plotID","height","level_1","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"] for x in shp.columns])
     
     print("There are {} records for {} species for {} sites in test".format(
         shp.shape[0],
