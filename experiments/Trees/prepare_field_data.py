@@ -458,7 +458,7 @@ if __name__ == "__main__":
     test = create_training_shp.test_split("{}/data/raw/test_with_uid.csv".format(ROOT))
     
     #drop a couple species bp hand
-    test = test[~test.taxonID=="PIPO"]
+    test = test[~(test.taxonID=="PIPO")]
     train = create_training_shp.train_split("{}/data/raw/latest_full_veg_structure.csv".format(ROOT), test.individualID, test.taxonID.unique())
     
     #sample test data
