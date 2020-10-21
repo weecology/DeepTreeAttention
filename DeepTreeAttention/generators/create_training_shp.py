@@ -24,8 +24,9 @@ def postprocess_CHM(df, lookup_pool, min_diff=4):
                                            add_stats={'q99': non_zero_99_quantile})
     df["CHM_height"] = [x["q99"] for x in draped_boxes]
 
+    
     #Rename column
-    df = df[abs(df.height - df.CHM_height) < min_diff]
+    df = df[(abs(df.height - df.CHM_height) < min_diff) | df.height.isnull()]
 
     return df
 
