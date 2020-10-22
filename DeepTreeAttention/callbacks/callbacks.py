@@ -147,8 +147,10 @@ def create(experiment, train_data, validation_data, log_dir=None, label_names=No
     #Get the true labels since they are not shuffled
     y_true = [ ]
     for data, label in validation_data:
+        if submodel in ["spatial","spectral"]:
+            label = label[0]
         y_true.append(label)
-    
+            
     y_true = np.concatenate(y_true)
     
     confusion_matrix = ConfusionMatrixCallback(experiment=experiment, y_true=y_true, dataset=validation_data, label_names=label_names, submodel=submodel)
