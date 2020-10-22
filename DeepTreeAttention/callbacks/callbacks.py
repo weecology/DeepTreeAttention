@@ -14,77 +14,57 @@ from tensorflow import expand_dims
 
 class F1Callback(Callback):
 
-    def __init__(self, experiment, train_dataset, eval_dataset, label_names, submodel, n=6):
+    def __init__(self, experiment, eval_dataset, y_true, label_names, submodel, n=6):
         """F1 callback
         Args:
             n: number of epochs to run. If n=4, function will run every 4 epochs
+            y_true: instead of iterating through the dataset every time, just do it once and pass the true labels to the function
         """
         self.experiment = experiment
         self.eval_dataset = eval_dataset
-        self.train_dataset = train_dataset
         self.label_names = label_names
         self.submodel = submodel
         self.n = n
-
+        self.y_true = y_true
+ 
     def on_epoch_end(self, epoch, logs={}):
         
         if not epoch % self.n == 0:
             return None
             
-        y_true = []
         y_pred = []
         sites = []
         
         #gather site and species matrix
-        for data, label in self.eval_dataset:
-            pred = self.model.predict(data)
-            if self.submodel in ["spectral","spatial"]:
-                y_pred.append(pred[0])
-                y_true.append(label[0])
-            else:
-                y_pred.append(pred)
-                y_true.append(label)       
+        y_pred = self.model.predict(self.eval_dataset)
         
-        y_true_list = np.concatenate(y_true)
-        y_pred_list = np.concatenate(y_pred)
+        if self.submodel in ["spectral","spatial"]:
+            y_pred = y_pred[0]
         
         #F1
-        macro, micro = metrics.f1_scores(y_true_list, y_pred_list)
+        macro, micro = metrics.f1_scores(self.y_true, y_pred)
         self.experiment.log_metric("MicroF1", micro)
         self.experiment.log_metric("MacroF1", macro)
         
         #Log number of predictions to make sure its constant
-        self.experiment.log_metric("Training Samples",len(y_true_list))
-        self.experiment.log_metric("Prediction Samples",len(y_pred_list))
-        results = pd.DataFrame({"true":np.argmax(y_true_list, 1),"predicted":np.argmax(y_pred_list, 1)})
+        self.experiment.log_metric("Training shape",self.y_true.shape)
+        self.experiment.log_metric("Prediction shape",y_pred.shape)
+        results = pd.DataFrame({"true":np.argmax(self.y_true, 1),"predicted":np.argmax(y_pred, 1)})
         self.experiment.log_table("results_{}.csv".format(epoch),results.values)
                                
-        
 class ConfusionMatrixCallback(Callback):
 
-    def __init__(self, experiment, dataset, label_names, submodel):
+    def __init__(self, experiment, dataset, label_names, y_true, submodel):
         self.experiment = experiment
         self.dataset = dataset
         self.label_names = label_names
         self.submodel = submodel
+        self.y_true = y_true
         
     def on_train_end(self, epoch, logs={}):
-        y_true = []
-        y_pred = []
-
-        for data, label in self.dataset:
-            pred = self.model.predict(data)
-            
-            if self.submodel in ["spectral","spatial"]:
-                y_pred.append(pred[0])
-                y_true.append(label[0])
-            else:
-                y_pred.append(pred)
-                y_true.append(label)       
-
-        y_true = np.concatenate(y_true)
-        y_pred = np.concatenate(y_pred)
         
+        y_pred = self.model.predict(self.dataset)
+
         if self.submodel is "metadata":
             name = "Metadata Confusion Matrix"        
         if self.submodel in ["spectral","spatial"]:
@@ -95,7 +75,7 @@ class ConfusionMatrixCallback(Callback):
             name = "Confusion Matrix"
 
         cm = self.experiment.log_confusion_matrix(
-            y_true,
+            self.y_true,
             y_pred,
             title=name,
             file_name= name,
@@ -104,7 +84,6 @@ class ConfusionMatrixCallback(Callback):
             max_example_per_cell=1)
         
         
-
 class ImageCallback(Callback):
 
     def __init__(self, experiment, dataset, label_names, submodel=False):
@@ -115,10 +94,6 @@ class ImageCallback(Callback):
 
     def on_train_end(self, epoch, logs={}):
         """Plot sample images with labels annotated"""
-
-        images = []
-        y_pred = []
-        y_true = []
 
         #fill until there is atleast 20 images
         limit = 20
@@ -169,10 +144,18 @@ def create(experiment, train_data, validation_data, log_dir=None, label_names=No
                                   verbose=1)
     callback_list.append(reduce_lr)
 
-    confusion_matrix = ConfusionMatrixCallback(experiment, validation_data, label_names, submodel=submodel)
+    #Get the true labels since they are not shuffled
+    y_true = [ ]
+    for data, label in validation_data:
+        y_true.append(label)
+    
+    y_true = np.concatenate(y_true)
+    
+    confusion_matrix = ConfusionMatrixCallback(experiment=experiment, y_true=y_true, dataset=validation_data, label_names=label_names, submodel=submodel)
     callback_list.append(confusion_matrix)
     
-    f1 = F1Callback(experiment=experiment, train_dataset=train_data, eval_dataset=validation_data, label_names=label_names, submodel=submodel)
+
+    f1 = F1Callback(experiment=experiment, y_true=y_true, eval_dataset=validation_data, label_names=label_names, submodel=submodel)
     callback_list.append(f1)
     
     if submodel is None:

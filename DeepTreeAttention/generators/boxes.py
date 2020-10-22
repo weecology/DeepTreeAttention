@@ -641,7 +641,6 @@ def tf_dataset(tfrecords,
         """
     AUTO = tf.data.experimental.AUTOTUNE
     ignore_order = tf.data.Options()
-    ignore_order.experimental_deterministic = False
 
     dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)
     dataset = dataset.with_options(ignore_order)
@@ -655,22 +654,25 @@ def tf_dataset(tfrecords,
         #normalize and batch
         dataset = dataset.map(lambda inputs, label: (tf.image.per_image_standardization(inputs), label))
         dataset = dataset.map(lambda inputs, label: (flip(inputs), label))   
-        dataset = dataset.shuffle(buffer_size=batch_size)
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
+        if shuffle:
+            dataset = dataset.shuffle(buffer_size=batch_size)
+        dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)
     
     elif mode == "RGB_train":
         dataset = dataset.map(_RGB_train_parse_, num_parallel_calls=cores)
         #normalize and batch
         #dataset = dataset.map(lambda inputs, label: (tf.image.per_image_standardization(inputs), label))
         dataset = dataset.map(lambda inputs, label: (flip(inputs), label))        
-        dataset = dataset.shuffle(buffer_size=batch_size * 2)
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
+        if shuffle:
+            dataset = dataset.shuffle(buffer_size=batch_size * 2)
+        dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)
      
     elif mode == "ensemble":
         dataset = dataset.map(_train_parse_, num_parallel_calls=cores)
         #normalize and batch
         dataset = dataset.map(lambda data, label: (preproccess_images(data),label))
-        dataset = dataset.shuffle(buffer_size=batch_size)
+        if shuffle:
+            dataset = dataset.shuffle(buffer_size=batch_size)
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)
             
     elif mode == "predict":
@@ -686,14 +688,16 @@ def tf_dataset(tfrecords,
         dataset = dataset.map(_train_HSI_submodel_parse_, num_parallel_calls=cores)
         dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
         dataset = dataset.map(lambda image, label: (flip(image), label))        
-        dataset = dataset.shuffle(buffer_size=batch_size)
+        if shuffle:
+            dataset = dataset.shuffle(buffer_size=batch_size)
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)
       
     elif mode == "RGB_submodel":
         dataset = dataset.map(_train_RGB_submodel_parse_, num_parallel_calls=cores)
         #dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
         dataset = dataset.map(lambda image, label: (flip(image), label))        
-        dataset = dataset.shuffle(buffer_size=batch_size * 2)
+        if shuffle:
+            dataset = dataset.shuffle(buffer_size=batch_size * 2)
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)        
     else:
         raise ValueError(
