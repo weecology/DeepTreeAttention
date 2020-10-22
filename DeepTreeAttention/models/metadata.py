@@ -9,19 +9,23 @@ def model(classes, sites):
     site_layers = Dense(classes*2, activation='relu')(site_input)
     
     #elevation
-    metadata_inputs = Input(shape=(1,), name="metadata_input")    
-    metadata_layer = Dense(classes*2, activation='relu')(metadata_inputs)
+    elevation_input = Input(shape=(1,), name="elevation_input")    
+    elevation_layer = Dense(classes*2, activation='relu')(elevation_input)
     
-    joined_layer = tf.keras.layers.Concatenate()([metadata_layer, site_layers])
+    #height
+    height_input = Input(shape=(1,), name="height_input")    
+    height_layer = Dense(classes*2, activation='relu')(height_input)
+    
+    joined_layer = tf.keras.layers.Concatenate()([elevation_layer, height_layer, site_layers])
     x = Dense(classes, activation='relu', name="last_relu")(joined_layer)
     output = Dense(classes, activation="softmax")(x)
     
-    return metadata_inputs, site_input, output
+    return elevation_input, height_input, site_input, output
 
 
 def create(classes, sites, learning_rate):
-    metadata_input, site_input, outputs= model(classes, sites)
-    keras_model = tf.keras.Model([metadata_input, site_input],outputs)
+    elevation_input, height_input, site_input, output= model(classes, sites)
+    keras_model = tf.keras.Model([elevation_input, height_input, site_input],output)
     
     metric_list = [tf.keras.metrics.CategoricalAccuracy(name="acc")]    
     keras_model.compile(

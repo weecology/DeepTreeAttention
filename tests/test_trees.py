@@ -1,7 +1,7 @@
 #Test main tree module, only run comet experiment locally to debug callbacks
-import os
-import pandas as pd
 import glob
+import geopandas as gpd
+import os
 
 is_travis = 'TRAVIS' in os.environ
 if not is_travis:
@@ -11,9 +11,10 @@ if not is_travis:
 else:
     experiment = None
 
-import pytest
-import rasterio
 import numpy as np
+import pytest
+import pandas as pd
+import rasterio
 import tensorflow as tf
 
 from DeepTreeAttention.utils import metrics
@@ -81,7 +82,14 @@ def mod(tmpdir):
 
 @pytest.fixture()
 def tfrecords(mod, tmpdir):
-    created_records = mod.generate(shapefile=test_predictions, site=0, elevation=100, HSI_sensor_path=test_sensor_tile, RGB_sensor_path=test_sensor_tile, train=True, chunk_size=100)    
+    shp = gpd.read_file(test_predictions)
+    
+    created_records = mod.generate(shapefile=test_predictions, site=0, elevation=100,
+                                   heights=np.random.random(shp.shape[0])*10,
+                                   HSI_sensor_path=test_sensor_tile,
+                                   RGB_sensor_path=test_sensor_tile,
+                                   train=True,
+                                   chunk_size=100)    
     return created_records
 
 def test_generate(mod):

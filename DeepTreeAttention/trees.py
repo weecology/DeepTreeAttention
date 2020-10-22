@@ -58,12 +58,13 @@ class AttentionModel():
         self.classes = self.config["train"]["classes"]
         self.sites = self.config["train"]["sites"]
 
-    def generate(self, shapefile, HSI_sensor_path, RGB_sensor_path, elevation, site, species_label_dict=None, train=True, chunk_size=1000):
+    def generate(self, shapefile, HSI_sensor_path, RGB_sensor_path, elevation, heights, site, species_label_dict=None, train=True, chunk_size=1000):
         """Predict species class for each DeepForest bounding box
             Args:
                 shapefile: a DeepForest shapefile (see NeonCrownMaps) with a bounding box and utm projection
                 train: generate a training record that yields, image, label, or a prediction record with metadata? Default True
                 site: site metadata label
+                height: list of heights in the shapefile
                 sensor_path: supply a known path to a sensor geoTIFF tile. 
                 chunk_size: number of crops per tfrecord
             """
@@ -78,6 +79,7 @@ class AttentionModel():
                                                    RGB_sensor_path=RGB_sensor_path,                                                   
                                                    site=site,
                                                    elevation=elevation,
+                                                   heights=heights,
                                                    species_label_dict=species_label_dict,
                                                    HSI_size=self.HSI_size,
                                                    RGB_size=self.RGB_size,                                                   
