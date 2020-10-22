@@ -464,40 +464,9 @@ if __name__ == "__main__":
     ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
     lookup_glob = "/orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif"
-    test = create_training_shp.test_split("{}/data/raw/test_with_uid.csv".format(ROOT))
     
-    train = create_training_shp.train_split("{}/data/raw/latest_full_veg_structure.csv".format(ROOT), test.individualID, test.taxonID.unique())
-    
-    #sample test data
-    sample_data = train[train.plotID=="HARV_026"]
-    sample_data.to_file("{}/experiments/Trees/test_data/sample.shp".format(ROOT))
-    
-    filtered_train = create_training_shp.filter_CHM(train, lookup_glob)
-
-    filtered_train = filtered_train[filtered_train.taxonID.isin(test.taxonID.unique())]
-    test = test[test.taxonID.isin(filtered_train.taxonID.unique())]
-
-    print("There are {} records for {} species for {} sites in filtered train".format(
-        filtered_train.shape[0],
-        len(filtered_train.taxonID.unique()),
-        len(filtered_train.siteID.unique())
-    ))
-    
-    print("There are {} records for {} species for {} sites in test".format(
-        test.shape[0],
-        len(test.taxonID.unique()),
-        len(test.siteID.unique())
-    ))
-    
-    
-    
-    #just to be safe, assert no test in train
-    check_empty = test[test.individualID.isin(train.individualID.unique())]
-    assert check_empty.empty
-    
-    test.to_file("{}/data/processed/test.shp".format(ROOT))
-    train.to_file("{}/data/processed/train.shp".format(ROOT))    
-    filtered_train.to_file("{}/data/processed/CHM_filtered_train.shp".format(ROOT))
+    #Create train test split
+    create_training_shp.train_test_split(ROOT, lookup_glob)
         
     #Read config from top level dir
     config = parse_yaml("{}/conf/tree_config.yml".format(ROOT))

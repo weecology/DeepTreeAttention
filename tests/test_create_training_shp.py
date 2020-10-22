@@ -6,7 +6,8 @@ from shapely.geometry import Point
 @pytest.fixture()
 def testdata():
     path = "data/raw/test_with_uid.csv"
-    shp = create_training_shp.test_split(path)
+    field_data_path = "data/raw/latest_full_veg_structure.csv"    
+    shp = create_training_shp.test_split(path, field_data_path)
     
     assert not shp.empty
     
@@ -14,9 +15,11 @@ def testdata():
 
 def test_test_split():
     path = "data/raw/test_with_uid.csv"
-    shp = create_training_shp.test_split(path)
+    field_data_path = "data/raw/latest_full_veg_structure.csv"
+    
+    shp = create_training_shp.test_split(path, field_data_path)
     assert not shp.empty
-    assert all([x in ["siteID","plotID","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"] for x in shp.columns])
+    assert all([x in ["siteID","plotID","elevation","domainID","individualID","height","taxonID","itcEasting","itcNorthing","geometry"] for x in shp.columns])
     
     print("There are {} records for {} species for {} sites in train".format(
         shp.shape[0],
