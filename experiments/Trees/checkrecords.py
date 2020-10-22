@@ -2,7 +2,6 @@ import glob
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
 from DeepTreeAttention.generators import boxes
 
 #metadata
@@ -49,13 +48,13 @@ print("There are {} train labels".format(len(np.unique(labels))))
 
 
 created_records = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/*.tfrecord")
-dataset = boxes.tf_dataset(created_records, batch_size=100)
+dataset = boxes.tf_dataset(created_records, mode="ensemble", batch_size=100)
 counter=0
+
 test_labels = []
 test_elevation = []
 for (HSI, RGB, elevation, sites), label in dataset:
     test_elevation.append(elevation)
-    counter+=image.shape[0]
     test_labels.append(label)
 
 test_elevation = np.concatenate(test_elevation)

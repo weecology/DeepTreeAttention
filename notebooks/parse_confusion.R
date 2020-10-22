@@ -17,7 +17,7 @@ parse_file<-function(path){
 
 HSI<-parse_file("/Users/Ben/Downloads/HSIMatrix")
 RGB<-parse_file("/Users/Ben/Downloads/RGBMatrix")
-
+ensemble<-parse_file("/Users/Ben/Downloads/Ensemble Matrix")
 #nested temp 0 = perfectly nested
 nestedness(HSI, RGB)$temperature
 
@@ -31,7 +31,12 @@ mRGB<-melt(RGB)
 colnames(mRGB)<-c("true","predicted","count")
 mRGB$Method<-"RGB"
 
-df<-bind_rows(list(mRGB,mHSI))
+sum(ensemble)/
+mensemble<-melt(ensemble)
+colnames(mensemble)<-c("true","predicted","count")
+mensemble$Method<-"ensemble"
+
+df<-bind_rows(list(mRGB,mHSI,mensemble))
 
 #Accuracy
 sum_total = sum(HSI)

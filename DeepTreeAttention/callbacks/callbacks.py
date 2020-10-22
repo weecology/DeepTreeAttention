@@ -3,6 +3,7 @@
 
 import os
 import numpy as np
+import pandas as pd
 
 from datetime import datetime
 from DeepTreeAttention.utils import metrics
@@ -52,6 +53,13 @@ class F1Callback(Callback):
         self.experiment.log_metric("MicroF1", micro)
         self.experiment.log_metric("MacroF1", macro)
         
+        #Log number of predictions to make sure its constant
+        self.experiment.log_metric("Training Samples",len(y_true_list))
+        self.experiment.log_metric("Prediction Samples",len(y_pred_list))
+        results = pd.DataFrame({"true":np.argmax(y_true_list, 1),"predicted":np.argmax(y_pred_list, 1)})
+        self.experiment.log_table("results_{}.csv".format(epoch),results.values)
+                               
+        
 class ConfusionMatrixCallback(Callback):
 
     def __init__(self, experiment, dataset, label_names, submodel):
@@ -92,7 +100,10 @@ class ConfusionMatrixCallback(Callback):
             title=name,
             file_name= name,
             labels=self.label_names,
-            max_categories=77)
+            max_categories=80,
+            max_example_per_cell=1)
+        
+        
 
 class ImageCallback(Callback):
 
