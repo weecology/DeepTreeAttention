@@ -66,7 +66,7 @@ def test_process_plot():
 def test_run():
     df = gpd.read_file(data_path)
     
-    plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = prepare_field_data.run(
+    plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index = prepare_field_data.run(
         plot=df.plotID[0],
         df=df,
         rgb_pool=rgb_pool,
@@ -104,7 +104,7 @@ def test_main():
             try:
                 data, label = sess.run(next_element)
                 assert data.shape == (1, height, width, 3)
-                assert label.shape  == (1,1)
+                assert label.shape  == (1,3)
                 
                 plt.imshow(data[0].astype("uint8"))                
                 labels.append(label)

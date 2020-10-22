@@ -40,6 +40,7 @@ def generate_tfrecords(shapefile,
                        RGB_sensor_path,
                        site,
                        elevation,
+                       heights,
                        species_label_dict,
                        chunk_size=1000,
                        savedir=".",
@@ -56,6 +57,7 @@ def generate_tfrecords(shapefile,
         savedir: directory to save tfrecords
         site: metadata site label as integer
         elevation: height above sea level in meters
+        heights: height in m
         label_dict: taxonID -> numeric label
         RGB_size: size in pixels of one side of image
         HSI_size: size in pixels of one side of image
@@ -105,9 +107,9 @@ def generate_tfrecords(shapefile,
     #shuffle before writing to help with validation data split
     if shuffle:
         if train:
-            z = list(zip(HSI_crops, RGB_crops, indices, numeric_species_labels))
+            z = list(zip(HSI_crops, RGB_crops, heights, indices, numeric_species_labels))
             random.shuffle(z)
-            HSI_crops, RGB_crops, indices, numeric_species_labels = zip(*z)
+            HSI_crops, RGB_crops, heights, indices, numeric_species_labels = zip(*z)
 
     #get keys and divide into chunks for a single tfrecord
     filenames = []
@@ -116,6 +118,7 @@ def generate_tfrecords(shapefile,
         chunk_HSI_crops = HSI_crops[i:i + chunk_size]
         chunk_RGB_crops = RGB_crops[i:i + chunk_size]        
         chunk_index = indices[i:i + chunk_size]
+        chunk_height = heights[i:i + chunk_size]
         
         #All records in a single shapefile are the same site
         chunk_sites = np.repeat(site, len(chunk_index))
@@ -137,6 +140,7 @@ def generate_tfrecords(shapefile,
                        RGB_images=resized_RGB_crops,
                        labels=chunk_labels,
                        sites=chunk_sites,
+                       heights=chunk_height,
                        elevations= chunk_elevations,
                        indices=chunk_index,
                        number_of_sites=number_of_sites,
@@ -148,13 +152,16 @@ def generate_tfrecords(shapefile,
     return filenames
 
 
+def _float32_feature(value):
+    return tf.train.Feature(float_list=tf.train.FloatList(value=[value]))
+
 def _int64_feature(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-def write_tfrecord(filename, HSI_images, RGB_images, sites, elevations, indices, labels=None, classes=21, number_of_sites=23):
+def write_tfrecord(filename, HSI_images, RGB_images, sites, elevations, heights, indices, labels=None, classes=21, number_of_sites=23):
     """Write a training or prediction tfrecord
         Args:
             train: True -> create a training record with labels. False -> a prediciton record with raster indices
@@ -170,6 +177,7 @@ def write_tfrecord(filename, HSI_images, RGB_images, sites, elevations, indices,
                 HSI_image = HSI_images[index],
                 RGB_image = RGB_images[index],
                 label=labels[index],
+                height=heights[index],                
                 elevation=elevations[index],
                 number_of_sites=number_of_sites,
                 classes=classes)
@@ -181,6 +189,7 @@ def write_tfrecord(filename, HSI_images, RGB_images, sites, elevations, indices,
                 site = sites[index],
                 elevation = elevations[index],
                 HSI_image=image,
+                height=heights[index],
                 RGB_image = RGB_images[index],
                 number_of_sites=number_of_sites,
                 classes=classes)
@@ -189,7 +198,7 @@ def write_tfrecord(filename, HSI_images, RGB_images, sites, elevations, indices,
     writer.close()
 
 
-def create_record(HSI_image, RGB_image, index, site, elevation, classes, number_of_sites, label=None):
+def create_record(HSI_image, RGB_image, index, site, elevation, height, classes, number_of_sites, label=None):
     """
     Generate one record from an image 
     Args:
@@ -228,6 +237,7 @@ def create_record(HSI_image, RGB_image, index, site, elevation, classes, number_
                 'RGB_image/depth': _int64_feature(RGB_depth),                
                 'classes': _int64_feature(classes),                
                 'number_of_sites': _int64_feature(number_of_sites),
+                'height': _float32_feature(height)
             }))
     else:
         example = tf.train.Example(features=tf.train.Features(
@@ -245,6 +255,7 @@ def create_record(HSI_image, RGB_image, index, site, elevation, classes, number_
                 'site': _int64_feature(site),               
                 'elevation': _int64_feature(elevation),                                                
                 'number_of_sites': _int64_feature(number_of_sites),
+                'height': _float32_feature(height)
             }))
 
     # Serialize to string and write to file
@@ -267,6 +278,7 @@ def _train_parse_(tfrecord):
         "RGB_image/depth": tf.io.FixedLenFeature([], tf.int64),        
         "classes": tf.io.FixedLenFeature([], tf.int64),
         "number_of_sites": tf.io.FixedLenFeature([], tf.int64),        
+        "height": tf.io.FixedLenFeature([], tf.float32),        
     }
 
     # Load one example and parse
@@ -302,37 +314,16 @@ def _train_parse_(tfrecord):
     site = tf.cast(example['site'], tf.int64)    
     elevation = tf.cast(example['elevation'], tf.float32)
     elevation = elevation / 1000
-    #metadata = elevation
     one_hot_sites = tf.one_hot(site, number_of_sites)
     
-    #one hot encoding
-    label = tf.cast(example['label'], tf.int64)    
-    one_hot_labels = tf.one_hot(label, classes)
-
-    return (loaded_HSI_image, loaded_RGB_image, elevation, one_hot_sites), one_hot_labels
-
-def _metadata_parse_(tfrecord):
-    # Define features
-    features = {
-        "label": tf.io.FixedLenFeature([], tf.int64),
-        "site": tf.io.FixedLenFeature([], tf.int64),        
-        "elevation": tf.io.FixedLenFeature([], tf.int64),        
-        "classes": tf.io.FixedLenFeature([], tf.int64),
-    }
-
-    # Load one example and parse
-    example = tf.io.parse_single_example(tfrecord, features)
-    
-    #Metadata and labels
-    classes = tf.cast(example['classes'], tf.int32)
-    elevation = tf.cast(example['elevation'], tf.float32)
-    elevation = elevation / 1000
+    #tree height
+    height = tf.cast(example['height'], tf.float32)
     
     #one hot encoding
     label = tf.cast(example['label'], tf.int64)    
     one_hot_labels = tf.one_hot(label, classes)
 
-    return elevation, one_hot_labels
+    return (loaded_HSI_image, loaded_RGB_image, elevation, height, one_hot_sites), one_hot_labels
 
 def _RGB_train_parse_(tfrecord):
     # Define features
@@ -504,14 +495,6 @@ def _train_RGB_submodel_parse_(tfrecord):
     #Metadata and labels
     classes = tf.cast(example['classes'], tf.int32)
     
-    #recast and scale to km    
-    #number_of_sites = tf.cast(example['number_of_sites'], tf.int32)    
-    #site = tf.cast(example['site'], tf.int64)    
-    #elevation = tf.cast(example['elevation'], tf.float32)
-    #elevation = elevation / 1000
-    #metadata = elevation
-    #one_hot_sites = tf.one_hot(site, number_of_sites)
-    
     #one hot encoding
     label = tf.cast(example['label'], tf.int64)    
     one_hot_labels = tf.one_hot(label, classes)
@@ -532,6 +515,7 @@ def _predict_parse_(tfrecord):
         "RGB_image/width": tf.io.FixedLenFeature([], tf.int64),
         "RGB_image/depth": tf.io.FixedLenFeature([], tf.int64),        
         "classes": tf.io.FixedLenFeature([], tf.int64),
+        "height": tf.io.FixedLenFeature([], tf.float32),        
         "number_of_sites": tf.io.FixedLenFeature([], tf.int64),        
         'box_index': tf.io.FixedLenFeature([], tf.string)
     }
@@ -581,10 +565,12 @@ def _metadata_parse_(tfrecord):
         "site": tf.io.FixedLenFeature([], tf.int64),  
         "elevation": tf.io.FixedLenFeature([], tf.int64),          
         "classes": tf.io.FixedLenFeature([], tf.int64),       
+        "height": tf.io.FixedLenFeature([], tf.float32),
         "number_of_sites": tf.io.FixedLenFeature([], tf.int64)                        
     }
 
     example = tf.io.parse_single_example(tfrecord, features)
+    height = tf.cast(example['height'], tf.float32)
 
     site = tf.cast(example['site'], tf.int64)
     sites = tf.cast(example['number_of_sites'], tf.int32)    
@@ -599,7 +585,7 @@ def _metadata_parse_(tfrecord):
     one_hot_labels = tf.one_hot(label, classes)
     one_hot_sites = tf.one_hot(site, sites)
 
-    return (elevation, one_hot_sites), one_hot_labels
+    return (elevation, height, one_hot_sites), one_hot_labels
 
 def flip(x: tf.Tensor) -> tf.Tensor:
     """Flip augmentation
@@ -617,13 +603,13 @@ def flip(x: tf.Tensor) -> tf.Tensor:
 
 def preproccess_images(data):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
-    HSI, RGB, elevation, site = data 
+    HSI, RGB, elevation, height, site = data 
     HSI = tf.image.per_image_standardization(HSI)
     #RGB = tf.image.per_image_standardization(RGB)
     HSI = flip(HSI)
     RGB = flip(RGB)
     
-    return HSI, RGB, elevation, site
+    return HSI, RGB, elevation, height, site
 
 def tf_dataset(tfrecords,
                batch_size=2,

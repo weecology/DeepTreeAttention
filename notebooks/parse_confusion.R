@@ -14,7 +14,7 @@ parse_file<-function(path){
   rownames(m)<-label_names
   return(m)
 }
-
+metadata<-parse_file("/Users/Ben/Downloads/MetadataMatrix")
 HSI<-parse_file("/Users/Ben/Downloads/HSIMatrix")
 RGB<-parse_file("/Users/Ben/Downloads/RGBMatrix")
 ensemble<-parse_file("/Users/Ben/Downloads/Ensemble Matrix")

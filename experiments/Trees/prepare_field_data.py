@@ -196,12 +196,14 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
     sites = []
     box_index = []
     elevations = []
+    heights = []
     for index, row in merged_boxes.iterrows():
         #Crop and append
         box = row["geometry"]       
         plot_name = row["plotID"] 
         site = row["plotID"].split("_")[0]
         elevation = int(row["elevation"])
+        height = row["height"]
         
         #get sensor data
         if sensor == "rgb":
@@ -217,11 +219,12 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         sites.append(site)
         labels.append(row["taxonID"])
         elevations.append(elevation)
+        heights.append(height)
         box_index.append("{}_{}".format(plot_name,index))
         
-    return crops, labels, sites, elevations, box_index
+    return crops, labels, sites, heights, elevations, box_index
 
-def create_records(HSI_crops, RGB_crops, labels, sites, elevations, box_index, savedir, RGB_size, HSI_size, chunk_size=400):
+def create_records(HSI_crops, RGB_crops, labels, sites, heights, elevations, box_index, savedir, RGB_size, HSI_size, chunk_size=400):
     #get keys and divide into chunks for a single tfrecor
     filenames = []
     counter = 0
@@ -232,6 +235,7 @@ def create_records(HSI_crops, RGB_crops, labels, sites, elevations, box_index, s
         chunk_labels = labels[i:i + chunk_size]
         chunk_sites = sites[i:i + chunk_size]
         chunk_elevations = elevations[i:i + chunk_size]
+        chunk_heights = heights[i:i + chunk_size]
             
         resized_RGB_crops = [resize(x, RGB_size, RGB_size).astype("int16") for x in chunk_RGB_crops]
         resized_HSI_crops = [resize(x, HSI_size, HSI_size).astype("int16") for x in chunk_HSI_crops]
@@ -242,6 +246,7 @@ def create_records(HSI_crops, RGB_crops, labels, sites, elevations, box_index, s
                                             RGB_images=resized_RGB_crops,
                                             labels=chunk_labels,
                                             sites = chunk_sites,
+                                            heights = chunk_heights,
                                             elevations=chunk_elevations,
                                             indices=chunk_index,
                                             classes=max(labels)+1)
@@ -269,7 +274,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspe
         predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
         
         #Crop HSI
-        plot_HSI_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = create_crops(
+        plot_HSI_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index = create_crops(
             predicted_trees,
             hyperspectral_pool=hyperspectral_pool,
             rgb_pool=rgb_pool,
@@ -278,7 +283,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspe
             hyperspectral_savedir=hyperspectral_savedir)
         
         #Crop RGB, drop repeated elements, leave one for testing
-        plot_rgb_crops, plot_rgb_labels, _, _, _ = create_crops(
+        plot_rgb_crops, plot_rgb_labels, _, _, _, _ = create_crops(
             predicted_trees,
             hyperspectral_pool=hyperspectral_pool,
             rgb_pool=rgb_pool,
@@ -293,7 +298,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspe
         print("Plot {} failed {}".format(plot, e))
         raise
         
-    return plot_HSI_crops, plot_rgb_crops, plot_labels, plot_sites, plot_elevations, plot_box_index
+    return plot_HSI_crops, plot_rgb_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index
 
 def main(
     field_data,
@@ -338,6 +343,7 @@ def main(
     sites = []
     box_indexes = []    
     elevations = []
+    heights = []
     if use_dask:
         client = start_cluster.start(cpus=n_workers, mem_size="10GB")
         futures = []
@@ -357,13 +363,14 @@ def main(
         wait(futures)
         for x in futures:
             try:
-                plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = x.result()
+                plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index = x.result()
                 
                 #Append to general plot list
                 HSI_crops.extend(plot_HSI_crops)
                 RGB_crops.extend(plot_RGB_crops)
                 labels.extend(plot_labels)
-                sites.extend(plot_sites)            
+                sites.extend(plot_sites)           
+                heights.extent(plot_heights)
                 elevations.extend(plot_elevations)
                 box_indexes.extend(plot_box_index)        
             except Exception as e:
@@ -375,7 +382,7 @@ def main(
         deepforest_model.use_release()        
         for plot in plot_names:
             try:
-                plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_elevations, plot_box_index = run(
+                plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index = run(
                     plot=plot,
                     df=df,
                     rgb_pool=rgb_pool,
@@ -394,16 +401,17 @@ def main(
             HSI_crops.extend(plot_HSI_crops)
             RGB_crops.extend(plot_RGB_crops)
             labels.extend(plot_labels)
-            sites.extend(plot_sites)            
+            sites.extend(plot_sites)    
+            heights.extend(plot_heights)                        
             elevations.extend(plot_elevations)
             box_indexes.extend(plot_box_index)
             
 
 
     if shuffle:
-        z = list(zip(HSI_crops, RGB_crops, sites, elevations, box_indexes, labels))
+        z = list(zip(HSI_crops, RGB_crops, sites, heights, elevations, box_indexes, labels))
         random.shuffle(z)
-        HSI_crops, RGB_crops, sites, elevations, box_indexes, labels = zip(*z)
+        HSI_crops, RGB_crops, sites, heights, elevations, box_indexes, labels = zip(*z)
                         
     #If passes a species label dict
     if species_classes_file is not None:
@@ -444,6 +452,7 @@ def main(
         elevations=elevations,
         box_index=box_indexes, 
         savedir=savedir, 
+        heights=heights,
         RGB_size=RGB_size,
         HSI_size=HSI_size, 
         chunk_size=chunk_size)
