@@ -370,7 +370,7 @@ def main(
                 RGB_crops.extend(plot_RGB_crops)
                 labels.extend(plot_labels)
                 sites.extend(plot_sites)           
-                heights.extent(plot_heights)
+                heights.extend(plot_heights)
                 elevations.extend(plot_elevations)
                 box_indexes.extend(plot_box_index)        
             except Exception as e:
