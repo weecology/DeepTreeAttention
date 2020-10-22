@@ -97,6 +97,9 @@ class ImageCallback(Callback):
 
         #fill until there is atleast 20 images
         images = []
+        y_pred = []
+        y_true = []
+        
         limit = 20
         num_images = 0
         for data, label in self.dataset:
