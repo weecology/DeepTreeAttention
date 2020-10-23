@@ -10,7 +10,7 @@
 #SBATCH --error=/home/b.weinstein/logs/DeepTreeAttention_%j.err
 #SBATCH --partition=gpu
 #SBATCH --nodes=1
-#SBATCH --gpus=4
+#SBATCH --gpus=8
 
 module load tensorflow/2.1.0
 
