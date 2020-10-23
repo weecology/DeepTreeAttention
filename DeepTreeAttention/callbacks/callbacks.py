@@ -142,8 +142,8 @@ def create(experiment, train_data, validation_data, log_dir=None, label_names=No
     #turn off callbacks for metadata
     callback_list = []
     reduce_lr = ReduceLROnPlateau(monitor='val_loss',
-                                  factor=0.5,
-                                  patience=10,
+                                  factor=0.2,
+                                  patience=5,
                                   min_lr=0.0001,
                                   verbose=1)
     callback_list.append(reduce_lr)
