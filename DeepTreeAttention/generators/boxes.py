@@ -318,6 +318,7 @@ def _train_parse_(tfrecord):
     
     #tree height
     height = tf.cast(example['height'], tf.float32)
+    height = height / 100
     
     #one hot encoding
     label = tf.cast(example['label'], tf.int64)    
@@ -561,6 +562,8 @@ def _metadata_parse_(tfrecord):
     
     elevation = tf.cast(example['elevation'], tf.int64)
     elevation = elevation/1000
+    height = height / 100
+    
     
     label = tf.cast(example['label'], tf.int64)
     classes = tf.cast(example['classes'], tf.int32)    

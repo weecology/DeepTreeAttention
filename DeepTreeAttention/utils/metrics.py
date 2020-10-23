@@ -4,7 +4,7 @@ from sklearn.metrics import f1_score
 
 
 def f1_scores(y_true, y_pred):
-    """Calculate micro, macro and weighted f1 scores
+    """Calculate micro, macro
     Args:
         y_true: one_hot ground truth labels
         y_pred: softmax classes 
