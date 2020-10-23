@@ -356,14 +356,6 @@ def _RGB_train_parse_(tfrecord):
     #Metadata and labels
     classes = tf.cast(example['classes'], tf.int32)
     
-    #recast and scale to km    
-    #number_of_sites = tf.cast(example['number_of_sites'], tf.int32)    
-    #site = tf.cast(example['site'], tf.int64)    
-    #elevation = tf.cast(example['elevation'], tf.float32)
-    #elevation = elevation / 1000
-    #metadata = elevation
-    #one_hot_sites = tf.one_hot(site, number_of_sites)
-    
     #one hot encoding
     label = tf.cast(example['label'], tf.int64)    
     one_hot_labels = tf.one_hot(label, classes)
@@ -400,14 +392,6 @@ def _HSI_train_parse_(tfrecord):
     
     #Metadata and labels
     classes = tf.cast(example['classes'], tf.int32)
-    
-    #recast and scale to km    
-    #number_of_sites = tf.cast(example['number_of_sites'], tf.int32)    
-    #site = tf.cast(example['site'], tf.int64)    
-    #elevation = tf.cast(example['elevation'], tf.float32)
-    #elevation = elevation / 1000
-    #metadata = elevation
-    #one_hot_sites = tf.one_hot(site, number_of_sites)
     
     #one hot encoding
     label = tf.cast(example['label'], tf.int64)    

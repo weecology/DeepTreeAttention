@@ -7,14 +7,17 @@ def model(classes, sites):
     #site label
     site_input = Input(shape=(sites,),name="site_input")
     site_layers = Dense(classes*2, activation='relu')(site_input)
+    site_layers = tf.keras.layers.BatchNormalization()(site_layers)
     
     #elevation
     elevation_input = Input(shape=(1,), name="elevation_input")    
     elevation_layer = Dense(classes*2, activation='relu')(elevation_input)
+    elevation_layer = tf.keras.layers.BatchNormalization()(elevation_layer)
     
     #height
     height_input = Input(shape=(1,), name="height_input")    
     height_layer = Dense(classes*2, activation='relu')(height_input)
+    height_layer = tf.keras.layers.BatchNormalization()(height_layer)
     
     joined_layer = tf.keras.layers.Concatenate()([elevation_layer, height_layer, site_layers])
     x = Dense(classes, activation='relu', name="last_relu")(joined_layer)
