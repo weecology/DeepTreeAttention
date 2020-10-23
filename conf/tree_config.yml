@@ -19,7 +19,7 @@ train:
     ensemble:
         freeze: True
         batch_size: 256
-    classes: 79
+    classes: 78
     sites: 23
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/CHM_filtered_train.shp  #path to ground truth class shapefile   
@@ -31,7 +31,7 @@ train:
     steps:
     shuffle: True
     training_fraction: 0.9
-    gpus: 4
+    gpus: 6
     pretrain: True #Train the submodels before ensembling all together
     
 callbacks:
