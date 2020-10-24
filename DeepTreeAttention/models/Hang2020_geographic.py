@@ -89,11 +89,15 @@ def create_models(height, width, channels, classes, learning_rate, weighted_sum=
     
     return model, spatial_model, spectral_model
 
-def strip_sensor_softmax(model, classes, index):
+def strip_sensor_softmax(model, classes, index, squeeze=False, squeeze_size=3200):
     #prepare RGB model
     spectral_relu_layer = model.get_layer("spectral_pooling_filters_128").output
     spatial_relu_layer = model.get_layer("spatial_pooling_filters_128").output
     weighted_relu = WeightedSum(name="within_model_weighted_" + index)([spectral_relu_layer, spatial_relu_layer])
+    
+    if squeeze:
+        weighted_relu = layers.Dense(squeeze_size)(weighted_relu)
+        
     stripped_model = tf.keras.Model(inputs=model.inputs, outputs = weighted_relu)
     for x in model.layers:
         x._name = x.name + str(index)
@@ -101,7 +105,7 @@ def strip_sensor_softmax(model, classes, index):
     return stripped_model
 
 def learned_ensemble(RGB_model, HSI_model, metadata_model, classes, freeze=True):
-    stripped_RGB_model = strip_sensor_softmax(RGB_model,classes, index="RGB")
+    stripped_RGB_model = strip_sensor_softmax(RGB_model,classes, index="RGB", squeeze=True)    
     stripped_HSI_model = strip_sensor_softmax(HSI_model, classes, index = "HSI")      
     normalized_metadata = layers.BatchNormalization()(metadata_model.get_layer("last_relu").output)
     stripped_metadata = tf.keras.Model(inputs=metadata_model.inputs, outputs = normalized_metadata)
