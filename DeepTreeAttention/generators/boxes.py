@@ -645,7 +645,7 @@ def tf_dataset(tfrecords,
         #normalize and batch
         dataset = dataset.map(lambda data, label: (preproccess_images(data),label))
         if shuffle:
-            dataset = dataset.shuffle(buffer_size=batch_size*5)
+            dataset = dataset.shuffle(buffer_size=batch_size)
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)
             
     elif mode == "predict":
