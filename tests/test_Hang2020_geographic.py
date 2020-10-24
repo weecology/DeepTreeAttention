@@ -9,10 +9,12 @@ import tensorflow as tf
 def metadata_data():
     #simulate data
     elevation = np.random.random(1)
+    height = np.random.random(1)
+    
     sites = np.zeros(10)
     sites[8] = 1
     sites = np.expand_dims(sites,0)
-    return [elevation, sites]
+    return [elevation, height, sites]
 
 @pytest.fixture()
 def RGB_image():

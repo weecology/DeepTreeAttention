@@ -15,7 +15,7 @@ def non_zero_99_quantile(x):
     percentile = np.nanpercentile(mdata, 99)
     return (percentile)
 
-def postprocess_CHM(df, lookup_pool, min_diff=2, remove=True):
+def postprocess_CHM(df, lookup_pool, min_diff=4, remove=True):
     """Field measured height must be within min_diff meters of canopy model"""
     #Extract zonal stats
     CHM_path = find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds)
