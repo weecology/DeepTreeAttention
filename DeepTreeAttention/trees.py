@@ -220,7 +220,7 @@ class AttentionModel():
                 
         if submodel == "metadata":
             self.metadata_model.fit(self.train_split,
-                           epochs=int(self.config["train"]["epochs"]),
+                           epochs=int(self.config["train"]["metadata"]["epochs"]),
                            validation_data=self.val_split,
                            callbacks=callback_list,
                            class_weight=class_weight)
@@ -228,14 +228,14 @@ class AttentionModel():
             if submodel == "spatial":
                 if sensor == "hyperspectral":
                     self.HSI_spatial.fit(self.train_split,
-                                           epochs=int(self.config["train"]["epochs"]),
+                                           epochs=int(self.config["train"]["HSI"]["epochs"]),
                                            validation_data=self.val_split,
                                            callbacks=callback_list,
                                            class_weight=class_weight)
                 
                 elif sensor == "RGB":
                     self.RGB_spatial.fit(self.train_split,
-                                                     epochs=int(self.config["train"]["epochs"]),
+                                                     epochs=int(self.config["train"]["RGB"]["epochs"]),
                                                        validation_data=self.val_split,
                                                        callbacks=callback_list,
                                                        class_weight=class_weight)                
@@ -243,20 +243,20 @@ class AttentionModel():
             elif submodel == "spectral":
                 if sensor == "hyperspectral":
                     self.HSI_spectral.fit(self.train_split,
-                                           epochs=int(self.config["train"]["epochs"]),
+                                           epochs=int(self.config["train"]["HSI"]["epochs"]),
                                            validation_data=self.val_split,
                                            callbacks=callback_list,
                                            class_weight=class_weight)
                 elif sensor == "RGB":
                     self.RGB_spectral.fit(self.train_split,
-                                                     epochs=int(self.config["train"]["epochs"]),
+                                                     epochs=int(self.config["train"]["RGB"]["epochs"]),
                                                        validation_data=self.val_split,
                                                        callbacks=callback_list,
                                                        class_weight=class_weight)      
             else:
                 if sensor == "hyperspectral":
                     self.HSI_model.fit(self.train_split,
-                                   epochs=self.config["train"]["epochs"],
+                                   epochs=self.config["train"]["HSI"]["epochs"],
                                    validation_data=self.val_split,
                                    callbacks=callback_list,
                                    class_weight=class_weight)
@@ -264,7 +264,7 @@ class AttentionModel():
                 elif sensor == "RGB":
                     self.RGB_model.fit(
                         self.train_split,
-                        epochs=self.config["train"]["epochs"],
+                        epochs=self.config["train"]["RGB"]["epochs"],
                         validation_data=self.val_split,
                         callbacks=callback_list,
                         class_weight=class_weight)
@@ -319,7 +319,7 @@ class AttentionModel():
         #Train ensemble layer
         self.ensemble_model.fit(
             self.train_split,
-            epochs=self.config["train"]["epochs"],
+            epochs=self.config["train"]["ensemble"]["epochs"],
             validation_data=self.val_split,
             callbacks=callback_list,
             class_weight=class_weight)
