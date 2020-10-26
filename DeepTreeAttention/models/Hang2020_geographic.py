@@ -89,7 +89,7 @@ def create_models(height, width, channels, classes, learning_rate, weighted_sum=
     
     return model, spatial_model, spectral_model
 
-def strip_sensor_softmax(model, classes, index, squeeze=False, squeeze_size=256):
+def strip_sensor_softmax(model, classes, index, squeeze=False, squeeze_size=128):
     #prepare RGB model
     spectral_relu_layer = model.get_layer("spectral_pooling_filters_128").output
     spatial_relu_layer = model.get_layer("spatial_pooling_filters_128").output
