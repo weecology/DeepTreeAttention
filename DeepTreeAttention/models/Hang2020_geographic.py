@@ -107,7 +107,7 @@ def strip_sensor_softmax(model, classes, index, squeeze=False, squeeze_size=128)
 def learned_ensemble(RGB_model, HSI_model, metadata_model, classes, freeze=True):
     stripped_RGB_model = strip_sensor_softmax(RGB_model,classes, index="RGB", squeeze=True, squeeze_size=classes)    
     stripped_HSI_model = strip_sensor_softmax(HSI_model, classes, index = "HSI", squeeze=True, squeeze_size=classes)      
-    #normalized_metadata = layers.BatchNormalization()(metadata_model.get_layer("last_relu").output)
+    normalized_metadata = layers.BatchNormalization()(metadata_model.get_layer("last_relu").output)
     stripped_metadata = tf.keras.Model(inputs=metadata_model.inputs, outputs = normalized_metadata)
     
     #concat and learn ensemble weights
