@@ -21,7 +21,7 @@ def model(classes, sites):
     
     joined_layer = tf.keras.layers.Concatenate()([elevation_layer, height_layer, site_layers])
     #Bottleneck layer size should be the same as the concat features
-    x = Dense(128, activation='relu', name="last_relu")(joined_layer)
+    x = Dense(classes, activation='relu', name="last_relu")(joined_layer)
     output = Dense(classes, activation="softmax")(x)
     
     return elevation_input, height_input, site_input, output
