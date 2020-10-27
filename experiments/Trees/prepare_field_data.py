@@ -50,6 +50,7 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=10):
     src = rasterio.open(rgb_path)
     pixelSizeX, pixelSizeY  = src.res    
     img = src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform))
+    src.close()
     
     #roll to bgr channel order, bgr
     img = np.rollaxis(img, 0,3)
@@ -167,6 +168,7 @@ def crop_image(sensor_path, box, expand=0):
         left, bottom, right, top = box.bounds
         window=rasterio.windows.from_bounds(left-expand, bottom-expand, right+expand, top+expand, transform=src.transform)
         masked_image = src.read(window=window)
+        src.close()
     except Exception as e:
         raise ValueError("sensor path: {} failed at reading window {} with error {}".format(sensor_path, box.bounds,e))
         

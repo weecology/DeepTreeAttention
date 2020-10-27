@@ -48,6 +48,6 @@ def test_filter_CHM():
     null_point = {"geometry":Point(320224.5, 4881567.7), "height": None, "plotID": "BART_000"}
     
     traindata = gpd.GeoDataFrame([good_point, bad_point, null_point])
-    filtered_data = create_training_shp.filter_CHM(traindata, lookup_glob=lookup_glob)
+    filtered_data = create_training_shp.filter_CHM(traindata, lookup_glob=lookup_glob, min_diff=2)
     assert filtered_data.shape[0] == 2
     assert list(filtered_data.height.astype(int).values) == [12,12]

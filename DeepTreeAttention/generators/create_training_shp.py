@@ -63,7 +63,7 @@ def train_split(path, test_ids, test_species, debug = False):
     
     if debug:
         #field = field.sample(n=2000)
-        field = field[field.siteID=="WOOD"]
+        field = field[field.siteID=="BLAN"]
         
     #Inclusion criteria 
     train_field = field[~(field.individualID.isin(test_ids))]
