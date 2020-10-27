@@ -47,7 +47,6 @@ class F1Callback(Callback):
         self.experiment.log_metric("MacroF1", macro)
         
         #Log number of predictions to make sure its constant
-        self.experiment.log_metric("Training samples",self.y_true.shape[0])
         self.experiment.log_metric("Prediction samples",y_pred.shape[0])
         results = pd.DataFrame({"true":np.argmax(self.y_true, 1),"predicted":np.argmax(y_pred, 1)})
         self.experiment.log_table("results_{}.csv".format(epoch),results.values)
