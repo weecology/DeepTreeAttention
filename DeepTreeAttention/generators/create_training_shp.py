@@ -45,8 +45,9 @@ def test_split(path, field_data_path):
 
     ids = ids.merge(merge_height)
     
-    #One invalid tile species
+    # invalid tile species and plots
     ids = ids[~(ids.taxonID == "GYDI")]
+    ids = ids[~(ids.plotID == "KONZ_049")]
     
     ids["geometry"] = [Point(x,y) for x,y in zip(ids["itcEasting"], ids["itcNorthing"])]
     shp = gpd.GeoDataFrame(ids)
@@ -73,6 +74,8 @@ def train_split(path, test_ids, test_species, debug = False):
     min_date = min_size[~(min_size.eventID.str.contains("2014"))]
     
     #drop one species on invalid data
+    
+    #KONZ_049 is empty.
     min_date = min_date[~(min_date.taxonID == "GYDI")]
     
     #ensure that species set matches
@@ -89,13 +92,18 @@ def train_split(path, test_ids, test_species, debug = False):
     
     return shp
         
-def filter_CHM(train_shp, lookup_glob, remove=True):
-        """For each plotID extract the heights from LiDAR derived CHM"""    
+def filter_CHM(train_shp, lookup_glob, min_diff, remove=True):
+        """For each plotID extract the heights from LiDAR derived CHM
+        Args:
+            train_shp: shapefile of data to filter
+            lookup_glob: recursive glob search for CHM files
+            min_diff: min height diff between field and CHM data
+        """    
         filtered_results = []
         lookup_pool = glob.glob(lookup_glob, recursive=True)        
         for name, group in train_shp.groupby("plotID"):
             try:
-                result = postprocess_CHM(group, lookup_pool=lookup_pool, min_diff=4, remove = remove)
+                result = postprocess_CHM(group, lookup_pool=lookup_pool, min_diff=min_diff, remove = remove)
             except Exception as e:
                 print("plotID: {} failed with {}".format(group.plotID.unique(),e))
                 continue
@@ -104,22 +112,23 @@ def filter_CHM(train_shp, lookup_glob, remove=True):
         
         return filtered_shp
     
-def train_test_split(ROOT, lookup_glob):
+def train_test_split(ROOT, lookup_glob, min_diff):
     """Create the train test split
     Args:
         ROOT: 
         lookup_glob: The recursive glob path for the canopy height models to create a pool of .tif to search
+        min_diff: minimum height diff between field and CHM data
         """
     test = test_split("{}/data/raw/test_with_uid.csv".format(ROOT), field_data_path="{}/data/raw/latest_full_veg_structure.csv".format(ROOT))
     #Interpolate CHM height
-    test = filter_CHM(test, lookup_glob, remove=False)
+    test = filter_CHM(test, lookup_glob, min_diff=min_diff, remove=False)
     train = train_split("{}/data/raw/latest_full_veg_structure.csv".format(ROOT), test.individualID, test.taxonID.unique())
     
     #write sample test data
     sample_data = train[train.plotID=="HARV_026"]
     sample_data.to_file("{}/experiments/Trees/test_data/sample.shp".format(ROOT))
     
-    filtered_train = filter_CHM(train, lookup_glob, remove=True)
+    filtered_train = filter_CHM(train, lookup_glob, min_diff=min_diff, remove=True)
     filtered_train = filtered_train[filtered_train.taxonID.isin(test.taxonID.unique())]
     test = test[test.taxonID.isin(filtered_train.taxonID.unique())]
 

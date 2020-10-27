@@ -7,6 +7,7 @@ hyperspectral_sensor_pool: /orange/ewhite/NeonData/**/Reflectance/*.h5  #path to
 rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif  #path to sensor data regex, recursive wildcards allowed
 
 train:
+    min_height_diff: 2 #minimum height diffs
     checkpoint_dir: /orange/idtrees-collab/DeepTreeAttention/snapshots/20201025_211158/  #Load RGB and HSI sub models from dir
     HSI:
         sensor_channels: 369
