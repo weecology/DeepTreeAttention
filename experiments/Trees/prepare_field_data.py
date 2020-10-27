@@ -207,10 +207,21 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         
         #get sensor data
         if sensor == "rgb":
-            sensor_path = find_sensor_path(bounds=box.bounds, lookup_pool=rgb_pool)
+            try:
+                sensor_path = find_sensor_path(bounds=box.bounds, lookup_pool=rgb_pool)
+            except:
+                raise ValueError("Cannot find RGB data path for box bounds {} for plot_name {}".format(box.bounds,plot_name))
         elif sensor == "hyperspectral":
-            rgb_path = find_sensor_path(bounds=box.bounds, lookup_pool=rgb_pool)
-            hyperspectral_h5_path = find_sensor_path(bounds=box.bounds, lookup_pool=hyperspectral_pool)
+            try:
+                rgb_path = find_sensor_path(bounds=box.bounds, lookup_pool=rgb_pool)
+            except:
+                raise ValueError("Cannot find RGB data path for box bounds {} for plot_name {}".format(box.bounds,plot_name))
+                
+            try:
+                hyperspectral_h5_path = find_sensor_path(bounds=box.bounds, lookup_pool=hyperspectral_pool)
+            except:
+                raise ValueError("Cannot find hyperspectral data path for box bounds {} for plot_name {}".format(box.bounds,plot_name))
+                
             sensor_path = convert_h5(hyperspectral_h5_path, rgb_path, savedir=hyperspectral_savedir)
         
         crop = crop_image(sensor_path=sensor_path, box=box, expand=expand)

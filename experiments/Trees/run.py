@@ -50,7 +50,7 @@ if __name__ == "__main__":
     
     #Create output folder
     #Sleep for a moment to allow queries to build up in SLURM queue
-    sleep(randint(0,10))
+    sleep(randint(0,30))
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     save_dir = "{}/{}".format("/orange/idtrees-collab/DeepTreeAttention/snapshots/",timestamp)
     os.mkdir(save_dir)
