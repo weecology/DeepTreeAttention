@@ -464,11 +464,11 @@ if __name__ == "__main__":
     
     lookup_glob = "/orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif"
     
-    #Create train test split
-    create_training_shp.train_test_split(ROOT, lookup_glob, min_diff=config["train"]["min_height_diff"])
-        
     #Read config from top level dir
     config = parse_yaml("{}/conf/tree_config.yml".format(ROOT))
+    
+    #Create train test split
+    create_training_shp.train_test_split(ROOT, lookup_glob, min_diff=config["train"]["min_height_diff"])
     
     #train data
     main(
