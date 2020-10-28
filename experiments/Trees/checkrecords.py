@@ -19,7 +19,7 @@ for metadata, label in dataset:
 
 
 created_records = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/train/*.tfrecord")
-dataset = boxes.tf_dataset(created_records, mode="ensemble",batch_size=1)
+dataset = boxes.tf_dataset(created_records, mode="ensemble",batch_size=256)
 counter=0
 labels=[]
 data =[]

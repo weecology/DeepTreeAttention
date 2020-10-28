@@ -417,7 +417,6 @@ def main(
             elevations.extend(plot_elevations)
             box_indexes.extend(plot_box_index)
             
-    #close client
     if shuffle:
         z = list(zip(HSI_crops, RGB_crops, sites, heights, elevations, box_indexes, labels))
         random.shuffle(z)
@@ -453,6 +452,12 @@ def main(
     numeric_labels = [species_label_dict[x] for x in labels]
     numeric_sites = [site_label_dict[x] for x in sites]
     
+    print("Writing records of {} HSI samples, RGB samples from {} species and {} sites".format(
+        len(HSI_crops),
+        len(RGB_crops),
+        len(np.unique(numeric_labels)),
+        len(np.unique(numeric_sites))))
+    
     #Write tfrecords
     tfrecords = create_records(
         HSI_crops=HSI_crops,
@@ -482,7 +487,7 @@ if __name__ == "__main__":
     #create_training_shp.train_test_split(ROOT, lookup_glob, min_diff=config["train"]["min_height_diff"])
     
     #create dask client
-    #client = start_cluster.start(cpus=config["cpu_workers"], mem_size="15GB")
+    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="15GB")
     ##train data
     #main(
         #field_data=config["train"]["ground_truth_path"],
@@ -507,7 +512,7 @@ if __name__ == "__main__":
         extend_box=config["train"]["extend_box"],
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["evaluation"]["tfrecords"],
-        client=None,
+        client=client,
         species_classes_file = os.path.join(config["train"]["tfrecords"],"species_class_labels.csv"),
         site_classes_file =  os.path.join(config["train"]["tfrecords"],"site_class_labels.csv"),
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
