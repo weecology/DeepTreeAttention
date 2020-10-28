@@ -23,7 +23,7 @@ dataset = boxes.tf_dataset(created_records, mode="ensemble",batch_size=1)
 counter=0
 labels=[]
 data =[]
-for (HSI, RGB, elevation, sites), label in dataset:
+for (HSI, RGB, elevation, height, sites), label in dataset:
     counter+=RGB.shape[0]
     labels.append(label)
     data.append(RGB)
@@ -31,6 +31,7 @@ for (HSI, RGB, elevation, sites), label in dataset:
 labels = np.vstack(labels)
 labels = np.argmax(labels,1)
 print("There are {} train labels".format(len(np.unique(labels))))
+labels.shape
 
 created_records = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/train/*.tfrecord")
 dataset = boxes.tf_dataset(created_records, mode="ensemble",batch_size=1)
@@ -53,7 +54,7 @@ counter=0
 
 test_labels = []
 test_elevation = []
-for (HSI, RGB, elevation, sites), label in dataset:
+for (HSI, RGB, elevation,height, sites), label in dataset:
     test_elevation.append(elevation)
     test_labels.append(label)
 
@@ -61,6 +62,25 @@ test_elevation = np.concatenate(test_elevation)
 test_labels = np.vstack(test_labels)
 test_labels = np.argmax(test_labels,1)
 print("There are {} test labels".format(len(np.unique(test_labels))))
+test_labels.shape
+
+
+#now with batch size 1
+created_records = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/*.tfrecord")
+dataset = boxes.tf_dataset(created_records, mode="ensemble", batch_size=1)
+counter=0
+
+test_labels = []
+test_elevation = []
+for (HSI, RGB, elevation,height, sites), label in dataset:
+    test_elevation.append(elevation)
+    test_labels.append(label)
+
+test_elevation = np.concatenate(test_elevation)
+test_labels = np.vstack(test_labels)
+test_labels = np.argmax(test_labels,1)
+print("There are {} test labels".format(len(np.unique(test_labels))))
+test_labels.shape
 
 df=pd.DataFrame({"label":test_labels,"elevation":test_elevation})
 df[df.label==17].elevation.unique()

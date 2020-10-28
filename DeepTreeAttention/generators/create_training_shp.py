@@ -49,7 +49,6 @@ def test_split(path, field_data_path):
     ids = ids.merge(merge_height)
     
     # invalid tile species and plots
-    ids = ids[~(ids.taxonID == "GYDI")]
     ids = ids[~(ids.plotID == "KONZ_049")]
     
     ids["geometry"] = [Point(x,y) for x,y in zip(ids["itcEasting"], ids["itcNorthing"])]
@@ -75,10 +74,7 @@ def train_split(path, test_ids, test_species, debug = False):
     min_height = sun_position[(sun_position.height > 3) | (sun_position.height.isnull())]
     min_size = min_height[min_height.stemDiameter > 5]
     min_date = min_size[~(min_size.eventID.str.contains("2014"))]
-    
-    #drop one species on invalid data
-    min_date = min_date[~(min_date.taxonID == "GYDI")]
-    
+        
     #ensure that species set matches
     min_date = min_date[min_date.taxonID.isin(test_species)]
     
