@@ -487,23 +487,23 @@ if __name__ == "__main__":
     config = parse_yaml("{}/conf/tree_config.yml".format(ROOT))
     
     #Create train test split
-    #create_training_shp.train_test_split(ROOT, lookup_glob, min_diff=config["train"]["min_height_diff"])
+    create_training_shp.train_test_split(ROOT, lookup_glob, min_diff=config["train"]["min_height_diff"])
     
     #create dask client
     client = start_cluster.start(cpus=config["cpu_workers"], mem_size="15GB")
     ##train data
-    #main(
-        #field_data=config["train"]["ground_truth_path"],
-        #RGB_size=config["train"]["RGB"]["crop_size"],
-        #HSI_size=config["train"]["HSI"]["crop_size"],        
-        #hyperspectral_dir=config["hyperspectral_sensor_pool"],
-        #rgb_dir=config["rgb_sensor_pool"],
-        #extend_box=config["train"]["extend_box"],
-        #hyperspectral_savedir=config["hyperspectral_tif_dir"],
-        #savedir=config["train"]["tfrecords"],
-        #client=client,
-        #saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
-    #)
+    main(
+        field_data=config["train"]["ground_truth_path"],
+        RGB_size=config["train"]["RGB"]["crop_size"],
+        HSI_size=config["train"]["HSI"]["crop_size"],        
+        hyperspectral_dir=config["hyperspectral_sensor_pool"],
+        rgb_dir=config["rgb_sensor_pool"],
+        extend_box=config["train"]["extend_box"],
+        hyperspectral_savedir=config["hyperspectral_tif_dir"],
+        savedir=config["train"]["tfrecords"],
+        client=client,
+        saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
+    )
     
     #test data
     main(
