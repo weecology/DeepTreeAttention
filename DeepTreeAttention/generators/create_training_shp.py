@@ -50,6 +50,7 @@ def test_split(path, field_data_path):
     
     # invalid tile species and plots
     ids = ids[~(ids.plotID == "KONZ_049")]
+    ids = ids[~(ids.individualID == "NEON.PLA.D17.SOAP.03458")]
     
     ids["geometry"] = [Point(x,y) for x,y in zip(ids["itcEasting"], ids["itcNorthing"])]
     shp = gpd.GeoDataFrame(ids)
@@ -97,6 +98,7 @@ def train_split(path, test_ids, test_species, debug = False):
     
     #Oak Right Lab has no AOP data
     shp = shp[~(shp.siteID=="ORNL")]
+    
     
     shp = shp[["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"]]
     

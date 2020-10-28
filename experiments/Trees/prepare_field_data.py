@@ -137,8 +137,11 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     merged_boxes = gpd.sjoin(boxes, plot_data)
     
     #If no remaining boxes just take a box around center
-    if merged_boxes.empty:
-        merged_boxes= create_boxes(plot_data)
+    missing_ids = plot_data[~plot_data.individual.isin(merged_boxes.individual)]
+    
+    if not missing_ids.empty:
+        created_boxes= create_boxes(missing_ids)
+        merged_boxes = merged_boxes.append(created_boxes)
         
     #If there are multiple boxes, take the center box
     grouped = merged_boxes.groupby("individual")
