@@ -151,6 +151,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_boxes),crs=merged_boxes.crs)
     merged_boxes = merged_boxes.drop(columns=["xmin","xmax","ymin","ymax"])
     
+    assert plot_data.shape[0] == merged_boxes.shape[0]
     return merged_boxes
 
 def crop_image(sensor_path, box, expand=0): 
@@ -308,9 +309,8 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspe
         assert len(plot_rgb_crops) == len(plot_HSI_crops)
         assert plot_labels==plot_rgb_labels
     except Exception as e:
-        print("Plot {} failed {}".format(plot, e))
-        raise
-        
+        raise ValueError("Plot {} failed {}".format(plot, e))
+
     return plot_HSI_crops, plot_rgb_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index
 
 def main(

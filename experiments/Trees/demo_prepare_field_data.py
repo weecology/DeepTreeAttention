@@ -90,7 +90,6 @@ def test_main():
         HSI_size    =width,
         rgb_dir=rgb_dir,
         hyperspectral_savedir=hyperspectral_savedir,
-        use_dask=False,
         extend_box=3)
     
     dataset = boxes.tf_dataset(created_records, batch_size=1, mode="RGB_train")
@@ -111,8 +110,8 @@ def test_main():
                 counter+=1
             except tensorflow.errors.OutOfRangeError:
                 break
-            
-    assert counter==2 
+    input_data = gpd.read_file(data_path)
+    assert counter == input_data.shape[0]
 
 #Run tests
 test_empty_plot()
