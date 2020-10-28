@@ -323,9 +323,8 @@ def main(
     chunk_size=400,
     extend_box=0, 
     hyperspectral_savedir=".", 
-    n_workers=20,
     saved_model=None, 
-    use_dask=True, 
+    client=None, 
     shuffle=True,
     species_classes_file=None,
     site_classes_file=None):
@@ -337,7 +336,7 @@ def main(
         savedir: direcory to save completed tfrecords
         extend_box: units in meters to add to the edge of a predicted box to give more context
         hyperspectral_savedir: location to save converted .h5 to .tif
-        n_workers: number of dask workers
+        client: dask client object to use
         species_classes_file: optional path to a two column csv file with index and species labels
         site_classes_file: optional path to a two column csv file with index and site labels
         shuffle: shuffle lists before writing
@@ -357,8 +356,7 @@ def main(
     box_indexes = []    
     elevations = []
     heights = []
-    if use_dask:
-        client = start_cluster.start(cpus=n_workers, mem_size="10GB")
+    if client is not None:
         futures = []
         for plot in plot_names:
             future = client.submit(
@@ -419,7 +417,8 @@ def main(
             elevations.extend(plot_elevations)
             box_indexes.extend(plot_box_index)
             
-
+    #close client
+    client.close()
     if shuffle:
         z = list(zip(HSI_crops, RGB_crops, sites, heights, elevations, box_indexes, labels))
         random.shuffle(z)
@@ -483,6 +482,8 @@ if __name__ == "__main__":
     #Create train test split
     create_training_shp.train_test_split(ROOT, lookup_glob, min_diff=config["train"]["min_height_diff"])
     
+    #create dask client
+    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="15GB")
     #train data
     main(
         field_data=config["train"]["ground_truth_path"],
@@ -493,7 +494,7 @@ if __name__ == "__main__":
         extend_box=config["train"]["extend_box"],
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["train"]["tfrecords"],
-        n_workers=config["cpu_workers"],
+        client=client,
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )
     
@@ -507,7 +508,7 @@ if __name__ == "__main__":
         extend_box=config["train"]["extend_box"],
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["evaluation"]["tfrecords"],
-        n_workers=config["cpu_workers"],
+        client=client,
         species_classes_file = os.path.join(config["train"]["tfrecords"],"species_class_labels.csv"),
         site_classes_file =  os.path.join(config["train"]["tfrecords"],"site_class_labels.csv"),
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
