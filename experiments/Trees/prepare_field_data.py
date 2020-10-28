@@ -418,7 +418,6 @@ def main(
             box_indexes.extend(plot_box_index)
             
     #close client
-    client.close()
     if shuffle:
         z = list(zip(HSI_crops, RGB_crops, sites, heights, elevations, box_indexes, labels))
         random.shuffle(z)
