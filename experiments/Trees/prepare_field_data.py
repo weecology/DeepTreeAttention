@@ -321,6 +321,8 @@ def main(
     RGB_size,
     HSI_size,
     rgb_dir, 
+    species_classes_file,
+    site_classes_file,
     hyperspectral_dir,
     savedir=".", 
     chunk_size=400,
@@ -328,9 +330,7 @@ def main(
     hyperspectral_savedir=".", 
     saved_model=None, 
     client=None, 
-    shuffle=True,
-    species_classes_file=None,
-    site_classes_file=None):
+    shuffle=True):
     """Prepare NEON field data into tfrecords
     Args:
         field_data: shp file with location and class of each field collected point
@@ -426,17 +426,8 @@ def main(
         HSI_crops, RGB_crops, sites, heights, elevations, box_indexes, labels = zip(*z)
                         
     #If passes a species label dict
-    if species_classes_file is not None:
-        species_classdf  = pd.read_csv(species_classes_file)
-        species_label_dict = species_classdf.set_index("taxonID").label.to_dict()
-    else:
-        #Create and save a new species and site label dict
-        unique_species_labels = np.unique(labels)
-        species_label_dict = {}
-        
-        for index, label in enumerate(unique_species_labels):
-            species_label_dict[label] = index
-        pd.DataFrame(species_label_dict.items(), columns=["taxonID","label"]).to_csv("{}/species_class_labels.csv".format(savedir))
+    species_classdf  = pd.read_csv(species_classes_file)
+    species_label_dict = species_classdf.set_index("taxonID").label.to_dict()
 
     #If passes a site label dict
     if site_classes_file is not None:
@@ -502,6 +493,8 @@ if __name__ == "__main__":
         extend_box=config["train"]["extend_box"],
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["evaluation"]["tfrecords"],
+        species_classes_file = "{}/data/processed/species_class_labels.csv".format(ROOT),
+        site_classes_file =  "{}/data/processed/site_class_labels.csv".format(ROOT),        
         client=client,
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )
@@ -517,8 +510,8 @@ if __name__ == "__main__":
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["train"]["tfrecords"],
         client=client,
-        species_classes_file = os.path.join(config["evaluation"]["tfrecords"],"species_class_labels.csv"),
-        site_classes_file =  os.path.join(config["evaluation"]["tfrecords"],"site_class_labels.csv"),        
+        species_classes_file = "{}/data/processed/species_class_labels.csv".format(ROOT),
+        site_classes_file =  "{}/data/processed/site_class_labels.csv".format(ROOT),        
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )
     
