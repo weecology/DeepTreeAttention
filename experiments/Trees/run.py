@@ -70,7 +70,6 @@ if __name__ == "__main__":
     ##Train
     #Train see config.yml for tfrecords path with weighted classes in cross entropy
     model.read_data()
-    class_weight = model.calc_class_weight()
     
     #Load from file and compile or train new models
     if model.config["train"]["checkpoint_dir"] is not None:
@@ -92,7 +91,7 @@ if __name__ == "__main__":
             with experiment.context_manager("metadata"):
                 print("Train metadata")
                 model.read_data(mode="metadata")
-                model.train(submodel="metadata", experiment=experiment, class_weight=class_weight)
+                model.train(submodel="metadata", experiment=experiment)
                 model.metadata_model.save("{}/metadata_model.h5".format(save_dir))
                 
             ##Train subnetworks
@@ -100,18 +99,18 @@ if __name__ == "__main__":
             with experiment.context_manager("RGB_spatial_subnetwork"):
                 print("Train RGB spatial subnetwork")
                 model.read_data(mode="RGB_submodel")
-                model.train(submodel="spatial", sensor="RGB", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
+                model.train(submodel="spatial", sensor="RGB", experiment=experiment)
                 
             with experiment.context_manager("RGB_spectral_subnetwork"):
                 print("Train RGB spectral subnetwork")    
                 model.read_data(mode="RGB_submodel")   
-                model.train(submodel="spectral", sensor="RGB", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
+                model.train(submodel="spectral", sensor="RGB", experiment=experiment)
                     
             #Train full RGB model
             with experiment.context_manager("RGB_model"):
                 experiment.log_parameter("Class Weighted", True)
                 model.read_data(mode="RGB_train")
-                model.train(class_weight=class_weight, sensor="RGB", experiment=experiment)
+                model.train(sensor="RGB", experiment=experiment)
                 model.RGB_model.save("{}/RGB_model.h5".format(save_dir))
                 
                 #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
@@ -124,18 +123,18 @@ if __name__ == "__main__":
             with experiment.context_manager("HSI_spatial_subnetwork"):
                 print("Train HSI spatial subnetwork")
                 model.read_data(mode="HSI_submodel")
-                model.train(submodel="spatial", sensor="hyperspectral",class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
+                model.train(submodel="spatial", sensor="hyperspectral", experiment=experiment)
             
             with experiment.context_manager("HSI_spectral_subnetwork"):
                 print("Train HSI spectral subnetwork")    
                 model.read_data(mode="HSI_submodel")   
-                model.train(submodel="spectral", sensor="hyperspectral", class_weight=[class_weight, class_weight, class_weight], experiment=experiment)
+                model.train(submodel="spectral", sensor="hyperspectral", experiment=experiment)
                     
             #Train full model
             with experiment.context_manager("HSI_model"):
                 experiment.log_parameter("Class Weighted", True)
                 model.read_data(mode="HSI_train")
-                model.train(class_weight=class_weight, sensor="hyperspectral", experiment=experiment)
+                model.train(sensor="hyperspectral", experiment=experiment)
                 model.HSI_model.save("{}/HSI_model.h5".format(save_dir))
                 
                 #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
@@ -146,12 +145,7 @@ if __name__ == "__main__":
     ##Ensemble
     with experiment.context_manager("ensemble"):    
         print("Train Ensemble")
-        model.ensemble(freeze=model.config["train"]["ensemble"]["freeze"], experiment=experiment, class_weight=class_weight)
-        #HSI_weight, RGB_weight, metadata_weight = model.ensemble_model.get_layer("ensemble_weight").get_weights()
-        
-        #experiment.log_metric(name="ensemble HSI weight", value=HSI_weight[0])
-        #experiment.log_metric(name="ensemble RGB weight", value=RGB_weight[0])
-        #experiment.log_metric(name="ensemble metadata weight", value=metadata_weight[0])
+        model.ensemble(freeze=model.config["train"]["ensemble"]["freeze"], experiment=experiment)
         
     #Save model and figure
     tf.keras.utils.plot_model(model.ensemble_model, to_file="{}/Ensemble.png".format(save_dir))

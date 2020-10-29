@@ -487,7 +487,7 @@ if __name__ == "__main__":
     config = parse_yaml("{}/conf/tree_config.yml".format(ROOT))
     
     #Create train test split
-    create_training_shp.train_test_split(ROOT, lookup_glob, min_diff=config["train"]["min_height_diff"])
+    create_training_shp.train_test_split(ROOT, lookup_glob, min_diff=config["train"]["min_height_diff"], n=config["train"]["resampled_per_taxa"])
     
     #create dask client
     client = start_cluster.start(cpus=config["cpu_workers"], mem_size="15GB")

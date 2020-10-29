@@ -9,6 +9,7 @@ rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif  #path to sensor dat
 train:
     min_height_diff: 4 #minimum height diffs
     checkpoint_dir:  #Load RGB and HSI sub models from dir
+    resampled_per_taxa: 200
     HSI:
         sensor_channels: 369
         crop_size: 20
