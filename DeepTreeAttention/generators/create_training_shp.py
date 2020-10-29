@@ -59,7 +59,7 @@ def test_split(path, field_data_path):
     
     return shp
 
-def train_split(path, test_ids, test_species, debug = False, n=200):
+def train_split(path, test_ids, test_species, debug = False):
     """Create a train split from a larger pool of data, excluding any test ids"""
     field = pd.read_csv(path)
     
@@ -102,7 +102,6 @@ def train_split(path, test_ids, test_species, debug = False, n=200):
     shp = shp[~(shp.siteID=="ORNL")]
     
     #resample to N examples
-    shp  =  shp.groupby("taxonID").apply(lambda x: x.sample(n=n, replace=True)).reset_index(drop=True)
     shp = shp[["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"]]
     
     return shp
@@ -127,7 +126,7 @@ def filter_CHM(train_shp, lookup_glob, min_diff, remove=True):
         
         return filtered_shp
     
-def train_test_split(ROOT, lookup_glob, min_diff, n):
+def train_test_split(ROOT, lookup_glob, min_diff, n=None):
     """Create the train test split
     Args:
         ROOT: 
@@ -138,12 +137,15 @@ def train_test_split(ROOT, lookup_glob, min_diff, n):
     test = test_split("{}/data/raw/test_with_uid.csv".format(ROOT), field_data_path="{}/data/raw/latest_full_veg_structure.csv".format(ROOT))
     #Interpolate CHM height
     test = filter_CHM(test, lookup_glob, min_diff=min_diff, remove=False)
-    train = train_split("{}/data/raw/latest_full_veg_structure.csv".format(ROOT), test.individualID, test.taxonID.unique(), n)
+    train = train_split("{}/data/raw/latest_full_veg_structure.csv".format(ROOT), test.individualID, test.taxonID.unique())
     
     filtered_train = filter_CHM(train, lookup_glob, min_diff=min_diff, remove=True)
     filtered_train = filtered_train[filtered_train.taxonID.isin(test.taxonID.unique())]
     test = test[test.taxonID.isin(filtered_train.taxonID.unique())]
 
+    if n is not None:
+        filtered_train  =  filtered_train.groupby("taxonID").apply(lambda x: x.sample(n=n, replace=True)).reset_index(drop=True)
+        
     print("There are {} records for {} species for {} sites in filtered train".format(
         filtered_train.shape[0],
         len(filtered_train.taxonID.unique()),
