@@ -30,11 +30,10 @@ def postprocess_CHM(df, lookup_pool, min_diff=1, remove=True):
     #if height is null, assign it
     df.height.fillna(df["CHM_height"], inplace=True)
     
-    #drop points with less than 1 m height
-    df = df[df.CHM_height>1]
-    
     #Rename column
     if remove:
+        #drop points with less than 1 m height        
+        df = df[df.CHM_height>1]        
         df = df[(abs(df.height - df.CHM_height) < min_diff)]
 
     return df
