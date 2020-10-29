@@ -33,7 +33,7 @@ def test_train_split(testdata):
     assert not shp.empty
     assert all([x in ["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"] for x in shp.columns])
     
-    print("There are {} records for {} species for {} sites in test".format(
+    print("There are {} records for {} species for {} sites in train".format(
         shp.shape[0],
         len(shp.taxonID.unique()),
         len(shp.siteID.unique())
@@ -45,11 +45,6 @@ def test_resampled_train_split(testdata):
     assert not shp.empty
     assert all([x in ["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"] for x in shp.columns])
     
-    print("There are {} records for {} species for {} sites in test".format(
-        shp.shape[0],
-        len(shp.taxonID.unique()),
-        len(shp.siteID.unique())
-    ))
     species_sizes = shp.groupby("taxonID").size()
     assert all(species_sizes == 10)
     
