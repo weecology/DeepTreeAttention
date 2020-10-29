@@ -53,8 +53,8 @@ class AttentionModel():
         self.RGB_weighted_sum = self.config["train"]["RGB"]["weighted_sum"]
         
         self.extend_box = self.config["train"]["extend_box"]
-        self.classes_file = self.config["train"]["species_class_file"],
-        self.classes = self.config["train"]["classes"]
+        self.classes_file = pd.read_csv(self.config["train"]["species_class_file"])
+        self.classes = self.classes_file.shape[0]
         self.sites = self.config["train"]["sites"]
 
     def generate(self, shapefile, HSI_sensor_path, RGB_sensor_path, elevation, heights, site, species_label_dict=None, train=True, chunk_size=1000):
@@ -205,8 +205,7 @@ class AttentionModel():
             callback_list = None
         else:            
             if self.classes_file is not None:
-                labeldf = pd.read_csv(self.classes_file)                
-                label_names = list(labeldf.taxonID.values)
+                label_names = list(self.classes_file.taxonID.values)
             else:
                 label_names = None
                 
@@ -303,8 +302,7 @@ class AttentionModel():
             label_names = None
         else:            
             if self.classes_file is not None:
-                labeldf = pd.read_csv(self.classes_file)                
-                label_names = list(labeldf.taxonID.values)
+                label_names = list(self.classes_file.taxonID.values)
             else:
                 label_names = None
                 
@@ -374,9 +372,8 @@ class AttentionModel():
         indices = np.concatenate(indices)
 
         #Read class labels
-        labeldf = pd.read_csv(self.classes_file)
         labels = [
-            labeldf.loc[labeldf.index == x, "taxonID"].values[0] for x in predictions
+            self.classes_file.loc[self.classes_file.index == x, "taxonID"].values[0] for x in predictions
         ]
         results = pd.DataFrame({"label": labels, "box_index": indices})
 
