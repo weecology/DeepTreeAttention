@@ -103,7 +103,7 @@ def train_split(path, test_ids, test_species, debug = False, n=200):
     shp = shp[~(shp.siteID=="ORNL")]
     
     #resample to N examples
-    shp  =  shp.groupby("taxonID").apply(lambda x: x.sample(n=n, replace=True)).reset_index(drop=True)
+    #shp  =  shp.groupby("taxonID").apply(lambda x: x.sample(n=n, replace=True)).reset_index(drop=True)
     shp = shp[["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"]]
     
     return shp
