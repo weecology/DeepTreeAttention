@@ -169,12 +169,15 @@ def train_test_split(ROOT, lookup_glob, min_diff, n=None):
     #Create files for indexing
     #Create and save a new species and site label dict
     unique_species_labels = np.concatenate([filtered_train.taxonID.unique(), test.taxonID.unique()])
+    unique_species_labels = np.unique(unique_species_labels)
+    
     species_label_dict = {}
     for index, label in enumerate(unique_species_labels):
         species_label_dict[label] = index
     pd.DataFrame(species_label_dict.items(), columns=["taxonID","label"]).to_csv("{}/data/processed/species_class_labels.csv".format(ROOT))    
     
     unique_site_labels = np.concatenate([filtered_train.siteID.unique(), test.siteID.unique()])
+    unique_site_labels = np.unique(unique_site_labels)
     site_label_dict = {}
     for index, label in enumerate(unique_site_labels):
         site_label_dict[label] = index
