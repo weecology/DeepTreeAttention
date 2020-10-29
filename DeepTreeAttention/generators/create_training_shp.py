@@ -134,16 +134,12 @@ def train_test_split(ROOT, lookup_glob, min_diff, n):
         ROOT: 
         lookup_glob: The recursive glob path for the canopy height models to create a pool of .tif to search
         min_diff: minimum height diff between field and CHM data
-        n: Resampled imbalanced data to n samples
+        n: number of resampled points per class
         """
     test = test_split("{}/data/raw/test_with_uid.csv".format(ROOT), field_data_path="{}/data/raw/latest_full_veg_structure.csv".format(ROOT))
     #Interpolate CHM height
     test = filter_CHM(test, lookup_glob, min_diff=min_diff, remove=False)
     train = train_split("{}/data/raw/latest_full_veg_structure.csv".format(ROOT), test.individualID, test.taxonID.unique(), n)
-    
-    #write sample test data
-    sample_data = train[train.plotID=="HARV_026"]
-    sample_data.to_file("{}/experiments/Trees/test_data/sample.shp".format(ROOT))
     
     filtered_train = filter_CHM(train, lookup_glob, min_diff=min_diff, remove=True)
     filtered_train = filtered_train[filtered_train.taxonID.isin(test.taxonID.unique())]
