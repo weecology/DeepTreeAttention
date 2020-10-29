@@ -455,7 +455,7 @@ def main(
     numeric_labels = [species_label_dict[x] for x in labels]
     numeric_sites = [site_label_dict[x] for x in sites]
     
-    print("Writing records of {} HSI samples, RGB samples from {} species and {} sites".format(
+    print("Writing records of {} HSI samples, {} RGB samples from {} species and {} sites".format(
         len(HSI_crops),
         len(RGB_crops),
         len(np.unique(numeric_labels)),
