@@ -103,7 +103,7 @@ def train_split(path, test_ids, test_species, debug = False):
     
     #resample to N examples
     shp = shp[["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"]]
-    
+    shp = shp.reset_index(drop=True)
     return shp
         
 def filter_CHM(train_shp, lookup_glob, min_diff, remove=True):
