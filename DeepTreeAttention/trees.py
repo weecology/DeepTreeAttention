@@ -53,8 +53,7 @@ class AttentionModel():
         self.RGB_weighted_sum = self.config["train"]["RGB"]["weighted_sum"]
         
         self.extend_box = self.config["train"]["extend_box"]
-        self.classes_file = os.path.join(self.config["train"]["tfrecords"],
-                                         "species_class_labels.csv")
+        self.classes_file = self.config["train"]["species_class_file"],
         self.classes = self.config["train"]["classes"]
         self.sites = self.config["train"]["sites"]
 
