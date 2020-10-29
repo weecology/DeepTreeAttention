@@ -491,19 +491,6 @@ if __name__ == "__main__":
     
     #create dask client
     client = start_cluster.start(cpus=config["cpu_workers"], mem_size="15GB")
-    ##train data
-    main(
-        field_data=config["train"]["ground_truth_path"],
-        RGB_size=config["train"]["RGB"]["crop_size"],
-        HSI_size=config["train"]["HSI"]["crop_size"],        
-        hyperspectral_dir=config["hyperspectral_sensor_pool"],
-        rgb_dir=config["rgb_sensor_pool"],
-        extend_box=config["train"]["extend_box"],
-        hyperspectral_savedir=config["hyperspectral_tif_dir"],
-        savedir=config["train"]["tfrecords"],
-        client=client,
-        saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
-    )
     
     #test data
     main(
@@ -516,7 +503,22 @@ if __name__ == "__main__":
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["evaluation"]["tfrecords"],
         client=client,
-        species_classes_file = os.path.join(config["train"]["tfrecords"],"species_class_labels.csv"),
-        site_classes_file =  os.path.join(config["train"]["tfrecords"],"site_class_labels.csv"),
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )
+    
+    ##train data
+    main(
+        field_data=config["train"]["ground_truth_path"],
+        RGB_size=config["train"]["RGB"]["crop_size"],
+        HSI_size=config["train"]["HSI"]["crop_size"],        
+        hyperspectral_dir=config["hyperspectral_sensor_pool"],
+        rgb_dir=config["rgb_sensor_pool"],
+        extend_box=config["train"]["extend_box"],
+        hyperspectral_savedir=config["hyperspectral_tif_dir"],
+        savedir=config["train"]["tfrecords"],
+        client=client,
+        species_classes_file = os.path.join(config["train"]["tfrecords"],"species_class_labels.csv"),
+        site_classes_file =  os.path.join(config["train"]["tfrecords"],"site_class_labels.csv"),        
+        saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
+    )
+    

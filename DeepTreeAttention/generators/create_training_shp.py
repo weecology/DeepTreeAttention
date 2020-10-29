@@ -157,7 +157,6 @@ def train_test_split(ROOT, lookup_glob, min_diff, n):
         len(test.siteID.unique())
     ))
     
-    
     #just to be safe, assert no test in train
     check_empty = test[test.individualID.isin(train.individualID.unique())]
     assert check_empty.empty
