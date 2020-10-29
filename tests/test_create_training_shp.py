@@ -31,14 +31,28 @@ def test_train_split(testdata):
     path = "data/raw/latest_full_veg_structure.csv"
     shp = create_training_shp.train_split(path, testdata.individualID, testdata.taxonID, debug=True)
     assert not shp.empty
-    assert all([x in ["siteID","plotID","height","level_1","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"] for x in shp.columns])
+    assert all([x in ["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"] for x in shp.columns])
     
     print("There are {} records for {} species for {} sites in test".format(
         shp.shape[0],
         len(shp.taxonID.unique()),
         len(shp.siteID.unique())
     ))    
-        
+
+def test_resampled_train_split(testdata):
+    path = "data/raw/latest_full_veg_structure.csv"
+    shp = create_training_shp.train_split(path, testdata.individualID, testdata.taxonID, debug=True, n= 10)
+    assert not shp.empty
+    assert all([x in ["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"] for x in shp.columns])
+    
+    print("There are {} records for {} species for {} sites in test".format(
+        shp.shape[0],
+        len(shp.taxonID.unique()),
+        len(shp.siteID.unique())
+    ))
+    species_sizes = shp.groupby("taxonID").size()
+    assert all(species_sizes == 10)
+    
 def test_filter_CHM():
     lookup_glob = "data/raw/*CHM*"
     

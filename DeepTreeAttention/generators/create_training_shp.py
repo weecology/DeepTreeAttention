@@ -60,7 +60,7 @@ def test_split(path, field_data_path):
     
     return shp
 
-def train_split(path, test_ids, test_species, debug = False):
+def train_split(path, test_ids, test_species, debug = False, n=200):
     """Create a train split from a larger pool of data, excluding any test ids"""
     field = pd.read_csv(path)
     
@@ -102,12 +102,10 @@ def train_split(path, test_ids, test_species, debug = False):
     #Oak Right Lab has no AOP data
     shp = shp[~(shp.siteID=="ORNL")]
     
-    
+    #resample to N examples
+    shp  =  shp.groupby("taxonID").apply(lambda x: x.sample(n=n, replace=True)).reset_index(drop=True)
     shp = shp[["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"]]
     
-    #drop and reset
-    shp = shp.drop(columns="individualID").reset_index()
-
     return shp
         
 def filter_CHM(train_shp, lookup_glob, min_diff, remove=True):
@@ -130,17 +128,18 @@ def filter_CHM(train_shp, lookup_glob, min_diff, remove=True):
         
         return filtered_shp
     
-def train_test_split(ROOT, lookup_glob, min_diff):
+def train_test_split(ROOT, lookup_glob, min_diff, n):
     """Create the train test split
     Args:
         ROOT: 
         lookup_glob: The recursive glob path for the canopy height models to create a pool of .tif to search
         min_diff: minimum height diff between field and CHM data
+        n: Resampled imbalanced data to n samples
         """
     test = test_split("{}/data/raw/test_with_uid.csv".format(ROOT), field_data_path="{}/data/raw/latest_full_veg_structure.csv".format(ROOT))
     #Interpolate CHM height
     test = filter_CHM(test, lookup_glob, min_diff=min_diff, remove=False)
-    train = train_split("{}/data/raw/latest_full_veg_structure.csv".format(ROOT), test.individualID, test.taxonID.unique())
+    train = train_split("{}/data/raw/latest_full_veg_structure.csv".format(ROOT), test.individualID, test.taxonID.unique(), n)
     
     #write sample test data
     sample_data = train[train.plotID=="HARV_026"]
