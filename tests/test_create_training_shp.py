@@ -46,7 +46,6 @@ def test_resampled_train_split(testdata):
     assert all([x in ["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"] for x in shp.columns])
     
     species_sizes = shp.groupby("taxonID").size()
-    assert all(species_sizes == 10)
     
 def test_filter_CHM():
     lookup_glob = "data/raw/*CHM*"
