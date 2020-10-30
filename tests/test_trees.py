@@ -48,6 +48,7 @@ def mod(tmpdir):
     train_config["shuffle"] = True
     train_config["weighted_sum"] = False
     train_config["classes"] = 2
+    train_config["species_class_file"] = "data/processed/species_class_labels.csv"
         
     #evaluation
     eval_config = { }
@@ -72,9 +73,7 @@ def mod(tmpdir):
     mod.HSI_channels = 3
     mod.RGB_channels = 3
     mod.extend_box = mod.config["train"]["extend_box"]
-    mod.classes_file = None
-    mod.classes = mod.config["train"]["classes"]
-    
+    mod.classes_file = "data/processed/species_class_labels.csv"
     #Create a model with input sizes
     mod.create()
             
@@ -93,7 +92,16 @@ def tfrecords(mod, tmpdir):
     return created_records
 
 def test_generate(mod):
-    created_records = mod.generate(shapefile=test_predictions, site=0, elevation=100, HSI_sensor_path=test_sensor_tile, RGB_sensor_path=test_sensor_tile, train=True, chunk_size=100)  
+    shp = gpd.read_file(test_predictions)    
+    created_records = mod.generate(
+        shapefile=test_predictions,
+        site=0,
+        heights=np.random.random(shp.shape[0])*10,
+        elevation=100,
+        HSI_sensor_path=test_sensor_tile,
+        RGB_sensor_path=test_sensor_tile,
+        train=True, chunk_size=100)  
+    
     assert all([os.path.exists(x) for x in created_records])
 
 def test_split_data(mod, tfrecords):

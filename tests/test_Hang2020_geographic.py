@@ -48,6 +48,4 @@ def test_ensemble(RGB_image, HSI_image, metadata_data):
     ensemble = Hang.learned_ensemble(HSI_model=model1, RGB_model=model2, metadata_model=metadata_model, classes=2)
     prediction = ensemble.predict([HSI_image, RGB_image] + metadata_data)
     assert prediction.shape == (1, 2)
-    
-    #HSI_weight, RGB_weight, metadata_weight = ensemble.get_layer("ensemble_weight").get_weights()
-    
+        

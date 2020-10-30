@@ -53,8 +53,7 @@ class AttentionModel():
         self.RGB_weighted_sum = self.config["train"]["RGB"]["weighted_sum"]
         
         self.extend_box = self.config["train"]["extend_box"]
-        self.classes_file = pd.read_csv(self.config["train"]["species_class_file"])
-        self.classes = self.classes_file.shape[0]
+        self.classes_file = self.config["train"]["species_class_file"]
         self.sites = self.config["train"]["sites"]
 
     def generate(self, shapefile, HSI_sensor_path, RGB_sensor_path, elevation, heights, site, species_label_dict=None, train=True, chunk_size=1000):
@@ -73,6 +72,7 @@ class AttentionModel():
         else:
             savedir = self.config["predict"]["tfrecords"]
 
+        self.classes = pd.read_csv(self.classes_file).shape[0]        
         created_records = boxes.generate_tfrecords(shapefile=shapefile,
                                                    HSI_sensor_path=HSI_sensor_path,
                                                    RGB_sensor_path=RGB_sensor_path,                                                   
@@ -119,6 +119,7 @@ class AttentionModel():
                 weights: a saved model weights from previous run
                 name: a model name from DeepTreeAttention.models
             """
+        self.classes = pd.read_csv(self.classes_file).shape[0]        
         if self.config["train"]["gpus"] > 1:
             self.strategy = tf.distribute.MirroredStrategy()
             print("Running in parallel on {} GPUs".format(self.strategy.num_replicas_in_sync))            
@@ -205,7 +206,8 @@ class AttentionModel():
             callback_list = None
         else:            
             if self.classes_file is not None:
-                label_names = list(self.classes_file.taxonID.values)
+                labeldf = pd.read_csv(self.classes_file)
+                label_names = list(labeldf.taxonID.values)
             else:
                 label_names = None
                 
@@ -269,6 +271,8 @@ class AttentionModel():
         
     def ensemble(self, experiment, class_weight=None, freeze = True, train=True):
         #Manually override batch size
+        self.classes = pd.read_csv(self.classes_file).shape[0]        
+        
         if self.config["train"]["gpus"] > 1:
             with self.strategy.scope():        
                 self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"] * self.strategy.num_replicas_in_sync
@@ -302,7 +306,8 @@ class AttentionModel():
             label_names = None
         else:            
             if self.classes_file is not None:
-                label_names = list(self.classes_file.taxonID.values)
+                labeldf = pd.read_csv(self.classes_file)
+                label_names = list(labeldf.taxonID.values)
             else:
                 label_names = None
                 
@@ -330,6 +335,7 @@ class AttentionModel():
         Returns:
             fname: path to predicted shapefile
         """
+        self.classes = pd.read_csv(self.classes_file).shape[0] 
         if create_records:
             created_records = boxes.generate(shapefile,
                                              sensor_path=sensor_path,
