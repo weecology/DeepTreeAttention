@@ -7,7 +7,6 @@ import rasterstats
 from shapely.geometry import Point
 from DeepTreeAttention.utils.paths import find_sensor_path
 
-
 def non_zero_99_quantile(x):
     """Get height quantile of all cells that are no zero"""
     mdata = np.ma.masked_where(x < 0.5, x)
