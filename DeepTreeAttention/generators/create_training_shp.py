@@ -124,6 +124,18 @@ def filter_CHM(train_shp, lookup_glob, min_diff, remove=True):
         filtered_shp = gpd.GeoDataFrame(pd.concat(filtered_results,ignore_index=True))
         
         return filtered_shp
+
+def sample_if(x,n):
+    """Sample up to n rows if rows is less than n
+    Args:
+        x: pandas object
+        n: row minimum
+        species_counts: number of each species in total data
+    """
+    if x.shape[0] < n:
+        return x.sample(n=n, replace=True)
+    else:
+        return x
     
 def train_test_split(ROOT, lookup_glob, min_diff, n=None):
     """Create the train test split
@@ -142,8 +154,9 @@ def train_test_split(ROOT, lookup_glob, min_diff, n=None):
     filtered_train = filtered_train[filtered_train.taxonID.isin(test.taxonID.unique())]
     test = test[test.taxonID.isin(filtered_train.taxonID.unique())]
 
-    if n is not None:
-        filtered_train  =  filtered_train.groupby("taxonID").apply(lambda x: x.sample(n=n, replace=True)).reset_index(drop=True)
+    if not n is None:
+        species_counts = filtered_train.groupby("taxonID").size()
+        filtered_train  =  filtered_train.groupby("taxonID").apply(lambda x: sample_if(x,n)).reset_index(drop=True)
         
     print("There are {} records for {} species for {} sites in filtered train".format(
         filtered_train.shape[0],
