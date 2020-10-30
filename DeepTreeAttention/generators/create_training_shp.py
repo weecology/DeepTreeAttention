@@ -41,7 +41,9 @@ def postprocess_CHM(df, lookup_pool, min_diff=1, remove=True):
 def test_split(path, field_data_path):
     ids = pd.read_csv(path)
     field_data = pd.read_csv(field_data_path)
-    ids = ids[["itcEasting","itcNorthing","siteID", "plotID", "elevation","domainID","individualID","taxonID"]]   
+    
+    ids = ids[ids.plantStatus.str.contains("Live")]    
+    ids = ids[["itcEasting","itcNorthing","siteID", "plotID", "elevation","plantStatus","domainID","individualID","taxonID"]]   
     
     field_data = field_data[field_data.individualID.isin(ids.individualID.unique())]
     merge_height = field_data.groupby("individualID").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1)).reset_index(drop=True)
@@ -69,9 +71,10 @@ def train_split(path, test_ids, test_species, debug = False):
     #Inclusion criteria 
     train_field = field[~(field.individualID.isin(test_ids))]
     has_elevation = train_field[~train_field.elevation.isnull()]
-    alive = has_elevation[has_elevation.plantStatus=="Live"]
-    trees = alive[~alive.growthForm.isin(["liana","small shrub"])]
+    trees = has_elevation[~has_elevation.growthForm.isin(["liana","small shrub"])]
     trees = trees[~trees.growthForm.isnull()]
+    trees = trees[~trees.plantStatus.isnull()]        
+    trees = trees[trees.plantStatus.str.contains("Live")]    
     sun_position = trees[~(trees.canopyPosition.isin(["Full shade", "Mostly shaded"]))]
     min_height = sun_position[(sun_position.height > 3) | (sun_position.height.isnull())]
     min_size = min_height[min_height.stemDiameter > 5]
@@ -101,7 +104,7 @@ def train_split(path, test_ids, test_species, debug = False):
     shp = shp[~(shp.siteID=="ORNL")]
     
     #resample to N examples
-    shp = shp[["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"]]
+    shp = shp[["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","plantStatus","geometry"]]
     shp = shp.reset_index(drop=True)
     return shp
         

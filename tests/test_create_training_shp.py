@@ -19,7 +19,8 @@ def test_test_split():
     
     shp = create_training_shp.test_split(path, field_data_path)
     assert not shp.empty
-    assert all([x in ["siteID","plotID","elevation","domainID","individualID","height","taxonID","itcEasting","itcNorthing","geometry"] for x in shp.columns])
+    assert all([x in ["siteID","plotID","elevation","domainID","individualID","height","taxonID","itcEasting","itcNorthing","plantStatus","geometry"] for x in shp.columns])
+    assert all(shp.plantStatus.str.contains("Live"))
     
     print("There are {} records for {} species for {} sites in train".format(
         shp.shape[0],
@@ -29,23 +30,19 @@ def test_test_split():
     
 def test_train_split(testdata):
     path = "data/raw/latest_full_veg_structure.csv"
-    shp = create_training_shp.train_split(path, testdata.individualID, testdata.taxonID, debug=True)
+    shp = create_training_shp.train_split(path, testdata.individualID, testdata.taxonID, debug=False)
     assert not shp.empty
-    assert all([x in ["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"] for x in shp.columns])
+    assert all([x in ["siteID","plotID","height","elevation","domainID","individualID","taxonID",
+                      "plantStatus","itcEasting","itcNorthing","geometry"] for x in shp.columns])
+    
+    assert all(shp.plantStatus.str.contains("Live"))
     
     print("There are {} records for {} species for {} sites in train".format(
         shp.shape[0],
         len(shp.taxonID.unique()),
         len(shp.siteID.unique())
     ))    
-
-def test_resampled_train_split(testdata):
-    path = "data/raw/latest_full_veg_structure.csv"
-    shp = create_training_shp.train_split(path, testdata.individualID, testdata.taxonID, debug=True)
-    assert not shp.empty
-    assert all([x in ["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","geometry"] for x in shp.columns])
     
-    species_sizes = shp.groupby("taxonID").size()
     
 def test_filter_CHM():
     lookup_glob = "data/raw/*CHM*"
