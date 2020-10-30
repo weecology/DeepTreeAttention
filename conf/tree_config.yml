@@ -10,23 +10,23 @@ train:
     species_class_file: /home/b.weinstein/DeepTreeAttention/data/processed/species_class_labels.csv
     min_height_diff: 4 #minimum height diffs
     checkpoint_dir:  #Load RGB and HSI sub models from dir
-    resampled_per_taxa: None
+    resampled_per_taxa: 50
     HSI:
         sensor_channels: 369
         crop_size: 20
         weighted_sum: True
-        epochs: 100
+        epochs: 120
     RGB:
         sensor_channels: 3
         crop_size: 100
         weighted_sum: True
-        epochs: 75
+        epochs: 50
     metadata:
         epochs: 200
     ensemble:
         freeze: False
         batch_size: 256
-        epochs: 100
+        epochs: 120
     sites: 23
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/CHM_filtered_train.shp  #path to ground truth class shapefile   
