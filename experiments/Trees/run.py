@@ -71,6 +71,12 @@ if __name__ == "__main__":
     #Train see config.yml for tfrecords path with weighted classes in cross entropy
     model.read_data()
     
+    #Log the size of the training data
+    counter=0
+    for data, label in model.train_split:
+        counter += data.shape
+    experiment.log_parameter("Training Samples", counter)
+        
     #Load from file and compile or train new models
     if model.config["train"]["checkpoint_dir"] is not None:
         dirname = model.config["train"]["checkpoint_dir"]        

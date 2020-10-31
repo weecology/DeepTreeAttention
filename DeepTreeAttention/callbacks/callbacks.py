@@ -164,9 +164,9 @@ def create(experiment, train_data, validation_data, log_dir=None, label_names=No
     f1 = F1Callback(experiment=experiment, y_true=y_true, eval_dataset=validation_data, label_names=label_names, submodel=submodel)
     callback_list.append(f1)
     
-    if submodel is None:
-        plot_images = ImageCallback(experiment, validation_data, label_names, submodel=submodel)
-        callback_list.append(plot_images)
+    #if submodel is None:
+        #plot_images = ImageCallback(experiment, validation_data, label_names, submodel=submodel)
+        #callback_list.append(plot_images)
         
     if log_dir is not None:
         tensorboard = TensorBoard(log_dir=log_dir, histogram_freq=1, profile_batch=10)
