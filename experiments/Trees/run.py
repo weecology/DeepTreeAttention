@@ -74,7 +74,7 @@ if __name__ == "__main__":
     #Log the size of the training data
     counter=0
     for data, label in model.train_split:
-        counter =+ data.shape[0]
+        counter += data.shape[0]
     experiment.log_parameter("Training Samples", counter)
         
     #Load from file and compile or train new models
