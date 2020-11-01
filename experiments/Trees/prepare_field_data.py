@@ -162,7 +162,7 @@ def crop_image(sensor_path, box, expand=0):
     Args:
         sensor_path: full path to sensor data
         box: geopandas geometry polygon object
-        expand: add padding in meters to the edge of the crop
+        expand: add padding in percent to the edge of the crop
     Returns:
         masked_image: a crop of sensor data at specified bounds
     """
@@ -170,7 +170,24 @@ def crop_image(sensor_path, box, expand=0):
     try:    
         src = rasterio.open(sensor_path)
         left, bottom, right, top = box.bounds
-        window=rasterio.windows.from_bounds(left-expand, bottom-expand, right+expand, top+expand, transform=src.transform)
+        
+        expand_width = (right - left) * expand /2
+        expand_height = (top - bottom) * expand / 2
+        
+        #If expand is greater than increase both size
+        if expand > 0:
+            expanded_left = left-expand_width
+            expanded_bottom = bottom-expand_height
+            expanded_right = right+expand_width
+            expanded_top =  top+expand_height
+        else:
+            #Make sure of no negative boxes
+            expanded_left = left+expand_width
+            expanded_bottom = bottom+expand
+            expanded_right = right-expand_width
+            expanded_top =  top-expand_height            
+        
+        window=rasterio.windows.from_bounds(expanded_left, expanded_bottom, expanded_right, expanded_top, transform=src.transform)
         masked_image = src.read(window=window)
         src.close()
     except Exception as e:
@@ -190,7 +207,7 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
     Args:
         merged_boxes: geopandas dataframe with bounding box geometry, plotID, siteID, and species label
         hyperspectral_pool: glob string for looking up matching sensor tiles
-        expand: units in meters to add to crops to give context around deepforest box
+        expand: units in % to add to crops to give context around deepforest box. For example, -0.5 decreases the box size by 50%. 0.5 Increases by 50%
         hyperspectral_savedir: location to save convert .tif from .h5 files
     Returns:
         crops: list of cropped sensor data
@@ -337,7 +354,7 @@ def main(
         height: height in meters of the resized training image
         width: width in meters of the resized training image
         savedir: direcory to save completed tfrecords
-        extend_box: units in meters to add to the edge of a predicted box to give more context
+        extend_box: units in % to add to crops to give context around deepforest box. For example, -0.5 decreases the box size by 50%. 0.5 Increases by 50%
         hyperspectral_savedir: location to save converted .h5 to .tif
         client: dask client object to use
         species_classes_file: optional path to a two column csv file with index and species labels
