@@ -11,7 +11,6 @@ save_dir = "{}/{}".format("/orange/ewhite/b.weinstein/DeepTreeAttention/snapshot
 os.mkdir(save_dir)
 
 os.environ["COMET_LOGGING_FILE"] = "{}/comet.log".format(save_dir)
-os.environ["COMET_LOGGING_FILE_LEVEL"] = "debug"
 
 from comet_ml import Experiment
 from DeepTreeAttention.trees import AttentionModel
