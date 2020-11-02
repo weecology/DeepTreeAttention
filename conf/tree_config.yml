@@ -15,20 +15,20 @@ train:
         sensor_channels: 369
         crop_size: 20
         weighted_sum: True
-        epochs: 120
+        epochs: 1
     RGB:
         sensor_channels: 3
         crop_size: 100
         weighted_sum: True
         epochs: 50
     metadata:
-        epochs: 200
+        epochs: 1
     ensemble:
         freeze: False
         batch_size: 256
         epochs: 120
     sites: 23
-    tfrecords: /orange/ewhite/b.weinstein/DeepTreeAttention/tfrecords/train/
+    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/CHM_filtered_train.shp  #path to ground truth class shapefile   
     extend_box: 0 #expand DeepForest bounding boxes by x meters at edge
     learning_rate: .001
@@ -37,8 +37,8 @@ train:
     steps:
     shuffle: True
     training_fraction: 0.9
-    gpus: 6
-    pretrain: True #Train the submodels before ensembling all together
+    gpus: 1
+    pretrain: False #Train the submodels before ensembling all together
     
 callbacks:
     snapshots_path: /../models/
@@ -46,11 +46,11 @@ callbacks:
 
 #All the above parameters apply to evaluation except for paths, leave blank to ignore.
 evaluation:
-    tfrecords: /orange/ewhite/b.weinstein/DeepTreeAttention/tfrecords/evaluation/
+    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/test.shp
     steps:
 
 predict:
     saved_model:
-    tfrecords: /orange/ewhite/b.weinstein/DeepTreeAttention/tfrecords/predict/
-    savedir: /orange/ewhite/b.weinstein/DeepTreeAttention/predictions/
+    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/predict/
+    savedir: /orange/idtrees-collab/DeepTreeAttention/predictions/

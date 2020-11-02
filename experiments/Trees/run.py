@@ -1,16 +1,9 @@
 # Run Experiment
-## Set Comet log
 ## Sleep for a moment to allow queries to build up in SLURM queue
 import os
 from random import randint
 from time import sleep
 from datetime import datetime
-sleep(randint(0,10))
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-save_dir = "{}/{}".format("/orange/ewhite/b.weinstein/DeepTreeAttention/snapshots/",timestamp)
-os.mkdir(save_dir)
-
-os.environ["COMET_LOGGING_FILE"] = "{}/comet.log".format(save_dir)
 
 from comet_ml import Experiment
 from DeepTreeAttention.trees import AttentionModel
@@ -54,6 +47,11 @@ def predict(dirname, savedir, generate=True, cpus=2, parallel=True, height=40, w
             _predict_(shapefile, model_path, savedir=savedir, create_records=generate)
             
 if __name__ == "__main__":
+    sleep(randint(0,10))
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    save_dir = "{}/{}".format("/orange/ewhite/b.weinstein/DeepTreeAttention/snapshots/",timestamp)
+    os.mkdir(save_dir)
+    
     experiment = Experiment(project_name="neontrees", workspace="bw4sz")
     experiment.add_tag("Train")
 
