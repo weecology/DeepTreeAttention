@@ -24,9 +24,8 @@ from matplotlib.pyplot import imshow
 from tensorflow.keras import metrics as keras_metrics
 
 #random label predictions just for testing
-test_predictions = "data/raw/2019_BART_5_320000_4881000_image_edited.shp"
+test_predictions = "data/raw/2019_BART_5_320000_4881000_image_small.shp"
 
-test_field_data = "data/processed/field_data_1.tfrecord"
 #Use a small rgb crop as a example tile
 test_sensor_tile = "data/raw/2019_BART_5_320000_4881000_image_crop.tif"
 
@@ -156,21 +155,7 @@ def test_train_metadata(tfrecords, mod):
     
     #assert training took place
     assert not np.array_equal(final_weight,initial_weight)
-    assert "loss" in mod.metadata_model.history.history
-    
-def test_train(tfrecords, mod):
-    #initial weights
-    initial_weight = mod.RGB_model.layers[1].get_weights()
-    
-    mod.read_data(mode="RGB_train")
-    mod.train(sensor="RGB")
-    
-    final_weight = mod.RGB_model.layers[1].get_weights()
-    
-    #assert training took place
-    assert not np.array_equal(final_weight,initial_weight)
-
-    assert "loss" in list(mod.RGB_model.history.history.keys())     
+    assert "loss" in mod.metadata_model.history.history  
  
 def test_ensemble(tfrecords, mod):    
     mod.read_data("ensemble",validation_split=True)
@@ -185,7 +170,6 @@ def test_train_callbacks(tfrecords, mod):
     mod.read_data(validation_split=True, mode="RGB_train")
     mod.train(experiment=experiment, sensor="RGB")
     
-   
     #assert experiment.get_metric("Within-site Error") > 0
     
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
