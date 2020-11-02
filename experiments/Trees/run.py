@@ -156,8 +156,8 @@ if __name__ == "__main__":
         model.ensemble(freeze=model.config["train"]["ensemble"]["freeze"], experiment=experiment)
         
     #Save model and figure
-    tf.keras.utils.plot_model(model.ensemble_model, to_file="{}/Ensemble.png".format(save_dir))
-    experiment.log_figure("{}/Ensemble.png".format(save_dir))
+    #tf.keras.utils.plot_model(model.ensemble_model, to_file="{}/Ensemble.png".format(save_dir))
+    #experiment.log_figure("{}/Ensemble.png".format(save_dir))
     model.ensemble_model.save("{}/Ensemble.h5".format(save_dir))
     
     #save predictions
