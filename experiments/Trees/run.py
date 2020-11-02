@@ -1,8 +1,18 @@
-#Experiment
+# Run Experiment
+## Set Comet log
+## Sleep for a moment to allow queries to build up in SLURM queue
 import os
+from random import randint
+from time import sleep
+from datetime import datetime
+sleep(randint(0,10))
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+save_dir = "{}/{}".format("/orange/ewhite/b.weinstein/DeepTreeAttention/snapshots/",timestamp)
+os.mkdir(save_dir)
+
+os.environ["COMET_LOGGING_FILE"] = "{}/comet.log".format(save_dir)
 
 from comet_ml import Experiment
-from datetime import datetime
 from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.utils import metrics, resample, start_cluster
 from DeepTreeAttention.models.layers import WeightedSum
@@ -11,8 +21,6 @@ from DeepTreeAttention.visualization import visualize
 import tensorflow as tf
 from tensorflow.keras import metrics as keras_metrics
 from tensorflow.keras.models import load_model
-from random import randint
-from time import sleep
 from distributed import wait
 
 import glob
@@ -49,13 +57,8 @@ if __name__ == "__main__":
     experiment = Experiment(project_name="neontrees", workspace="bw4sz")
     experiment.add_tag("Train")
 
-    #Create output folder
-    #Sleep for a moment to allow queries to build up in SLURM queue
-    sleep(randint(0,30))
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    save_dir = "{}/{}".format("/orange/ewhite/b.weinstein/DeepTreeAttention/snapshots/",timestamp)
-    os.mkdir(save_dir)
     
+    #Create output folder
     experiment.log_parameter("timestamp",timestamp)
     
     #Create a class and run
