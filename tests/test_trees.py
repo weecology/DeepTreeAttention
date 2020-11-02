@@ -83,7 +83,7 @@ def tfrecords(mod, tmpdir):
     shp = gpd.read_file(test_predictions)
     
     created_records = mod.generate(shapefile=test_predictions, site=0, elevation=100,
-                                   heights=np.random.random(shp.shape[0])*10,
+                                   heights=np.random.random(shp.shape[0]),
                                    HSI_sensor_path=test_sensor_tile,
                                    RGB_sensor_path=test_sensor_tile,
                                    train=True,
@@ -95,7 +95,7 @@ def test_generate(mod):
     created_records = mod.generate(
         shapefile=test_predictions,
         site=0,
-        heights=np.random.random(shp.shape[0])*10,
+        heights=np.random.random(shp.shape[0]),
         elevation=100,
         HSI_sensor_path=test_sensor_tile,
         RGB_sensor_path=test_sensor_tile,

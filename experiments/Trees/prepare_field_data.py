@@ -175,7 +175,7 @@ def crop_image(sensor_path, box, expand=0):
         expand_height = (top - bottom) * expand / 2
         
         #If expand is greater than increase both size
-        if expand > 0:
+        if expand >= 0:
             expanded_left = left-expand_width
             expanded_bottom = bottom-expand_height
             expanded_right = right+expand_width

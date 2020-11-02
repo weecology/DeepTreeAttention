@@ -52,7 +52,7 @@ if __name__ == "__main__":
     #Sleep for a moment to allow queries to build up in SLURM queue
     sleep(randint(0,30))
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    save_dir = "{}/{}".format("/orange/idtrees-collab/DeepTreeAttention/snapshots/",timestamp)
+    save_dir = "{}/{}".format("/orange/ewhite/DeepTreeAttention/snapshots/",timestamp)
     os.mkdir(save_dir)
     
     experiment.log_parameter("timestamp",timestamp)

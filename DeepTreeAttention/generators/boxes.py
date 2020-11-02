@@ -17,21 +17,46 @@ def resize(img, height, width):
 
     return resized
 
-def crop(src, geom, extend_box):
-    left, bottom, right, top = geom.bounds
-    window = from_bounds(left - extend_box,
-                             bottom - extend_box,
-                             right + extend_box,
-                             top + extend_box,
-                             transform=src.transform)
-    masked_image = src.read(window=window)
-
+def crop_image(src, box, expand=0): 
+    """Read sensor data and crop a bounding box
+    Args:
+        src: a rasterio opened path
+        box: geopandas geometry polygon object
+        expand: add padding in percent to the edge of the crop
+    Returns:
+        masked_image: a crop of sensor data at specified bounds
+    """
+    #Read data and mask
+    try:    
+        left, bottom, right, top = box.bounds
+        
+        expand_width = (right - left) * expand /2
+        expand_height = (top - bottom) * expand / 2
+        
+        #If expand is greater than increase both size
+        if expand >= 0:
+            expanded_left = left-expand_width
+            expanded_bottom = bottom-expand_height
+            expanded_right = right+expand_width
+            expanded_top =  top+expand_height
+        else:
+            #Make sure of no negative boxes
+            expanded_left = left+expand_width
+            expanded_bottom = bottom+expand
+            expanded_right = right-expand_width
+            expanded_top =  top-expand_height            
+        
+        window=rasterio.windows.from_bounds(expanded_left, expanded_bottom, expanded_right, expanded_top, transform=src.transform)
+        masked_image = src.read(window=window)
+    except Exception as e:
+        raise ValueError("sensor path: {} failed at reading window {} with error {}".format(sensor_path, box.bounds,e))
+        
     #Roll depth to channel last
     masked_image = np.rollaxis(masked_image, 0, 3)
-
+    
     #Skip empty frames
-    if masked_image.size == 0:
-        raise ValueError("Empty Frame")
+    if masked_image.size ==0:
+        raise ValueError("Empty frame crop for box {} in sensor path {}".format(box, sensor_path))
     
     return masked_image
     
@@ -82,11 +107,11 @@ def generate_tfrecords(shapefile,
         #Add training label, ignore unclassified 0 class
         if train:
             labels.append(row["label"])
-        
         try:
-            HSI_crop = crop(HSI_src, row["geometry"], extend_box)
-            RGB_crop = crop(RGB_src, row["geometry"], extend_box)
-        except ValueError:
+            HSI_crop = crop_image(HSI_src, row["geometry"], extend_box)
+            RGB_crop = crop_image(RGB_src, row["geometry"], extend_box)
+        except Exception as e:
+            print("row {} failed with {}".format(index, e))
             continue
         
         HSI_crops.append(HSI_crop)
@@ -434,14 +459,6 @@ def _train_HSI_submodel_parse_(tfrecord):
     
     #Metadata and labels
     classes = tf.cast(example['classes'], tf.int32)
-    
-    #recast and scale to km    
-    #number_of_sites = tf.cast(example['number_of_sites'], tf.int32)    
-    #site = tf.cast(example['site'], tf.int64)    
-    #elevation = tf.cast(example['elevation'], tf.float32)
-    #elevation = elevation / 1000
-    #metadata = elevation
-    #one_hot_sites = tf.one_hot(site, number_of_sites)
     
     #one hot encoding
     label = tf.cast(example['label'], tf.int64)    
