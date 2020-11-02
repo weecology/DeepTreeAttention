@@ -28,7 +28,7 @@ train:
         batch_size: 256
         epochs: 6
     sites: 23
-    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
+    tfrecords: /orange/ewhite/b.weinstein/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/CHM_filtered_train.shp  #path to ground truth class shapefile   
     extend_box: 0 #expand DeepForest bounding boxes by x meters at edge
     learning_rate: .001
@@ -46,11 +46,11 @@ callbacks:
 
 #All the above parameters apply to evaluation except for paths, leave blank to ignore.
 evaluation:
-    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/
+    tfrecords: /orange/ewhite/b.weinstein/DeepTreeAttention/tfrecords/evaluation/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/test.shp
     steps:
 
 predict:
     saved_model:
-    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/predict/
-    savedir: /orange/idtrees-collab/DeepTreeAttention/predictions/
+    tfrecords: /orange/ewhite/b.weinstein/DeepTreeAttention/tfrecords/predict/
+    savedir: /orange/ewhite/b.weinstein/DeepTreeAttention/predictions/
