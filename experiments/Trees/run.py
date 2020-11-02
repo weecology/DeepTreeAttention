@@ -1,4 +1,9 @@
 #Experiment
+import os
+#Comet log
+os.environ["COMET_LOGGING_FILE"] = "{}/comet.log".format(save_dir)
+os.environ["COMET_LOGGING_FILE_LEVEL"] = "debug"
+
 from comet_ml import Experiment
 from datetime import datetime
 from DeepTreeAttention.trees import AttentionModel
@@ -14,7 +19,6 @@ from time import sleep
 from distributed import wait
 
 import glob
-import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -55,10 +59,6 @@ if __name__ == "__main__":
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     save_dir = "{}/{}".format("/orange/ewhite/b.weinstein/DeepTreeAttention/snapshots/",timestamp)
     os.mkdir(save_dir)
-    
-    #Comet log
-    os.environ["COMET_LOGGING_FILE"] = "{}/comet.log".format(save_dir)
-    os.environ["COMET_LOGGING_FILE_LEVEL"] = "debug"
     
     experiment.log_parameter("timestamp",timestamp)
     
