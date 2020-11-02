@@ -33,13 +33,18 @@ test_sensor_tile = "data/raw/2019_BART_5_320000_4881000_image_crop.tif"
 def mod(tmpdir):
     mod = trees.AttentionModel(config="conf/tree_config.yml")   
     
+    
     train_dir = tmpdir.mkdir("train")
     predict_dir = tmpdir.mkdir("predict")
+    label_file = "{}/label_file.csv".format(train_dir)
+    
+    #create a fake label file
+    pd.DataFrame({"taxonID":["Ben","Jon"],"label":[0,1]}).to_csv(label_file)
     
     config = {}
     train_config = { }
     train_config["tfrecords"] = train_dir
-    train_config["batch_size"] = 48
+    train_config["batch_size"] = 2
     train_config["epochs"] = 1
     train_config["steps"] = 1
     train_config["gpus"] = 1
@@ -47,7 +52,7 @@ def mod(tmpdir):
     train_config["shuffle"] = True
     train_config["weighted_sum"] = False
     train_config["classes"] = 2
-    train_config["species_class_file"] = "data/processed/species_class_labels.csv"
+    train_config["species_class_file"] = label_file
         
     #evaluation
     eval_config = { }
@@ -72,7 +77,7 @@ def mod(tmpdir):
     mod.HSI_channels = 3
     mod.RGB_channels = 3
     mod.extend_box = mod.config["train"]["extend_box"]
-    mod.classes_file = "data/processed/species_class_labels.csv"
+    mod.classes_file = label_file
     #Create a model with input sizes
     mod.create()
             
@@ -87,7 +92,7 @@ def tfrecords(mod, tmpdir):
                                    HSI_sensor_path=test_sensor_tile,
                                    RGB_sensor_path=test_sensor_tile,
                                    train=True,
-                                   chunk_size=100)    
+                                   chunk_size=2)    
     return created_records
 
 def test_generate(mod):
@@ -99,7 +104,7 @@ def test_generate(mod):
         elevation=100,
         HSI_sensor_path=test_sensor_tile,
         RGB_sensor_path=test_sensor_tile,
-        train=True, chunk_size=100)  
+        train=True, chunk_size=2)  
     
     assert all([os.path.exists(x) for x in created_records])
 
@@ -159,19 +164,20 @@ def test_train_metadata(tfrecords, mod):
  
 def test_ensemble(tfrecords, mod):    
     mod.read_data("ensemble",validation_split=True)
-    mod.ensemble(experiment=experiment, class_weight=None, train=False)
+    mod.config["train"]["ensemble"]["epochs"] = 1    
+    mod.ensemble(experiment=experiment, class_weight=None, train=True)
          
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
-    mod.classes_file = "{}/species_class_labels.csv".format(os.path.dirname(tfrecords[0]))
     mod.read_data(validation_split=True, mode="RGB_submodel")
+    
+    #update epoch manually
+    mod.config["train"]["RGB"]["epochs"] = 1
     mod.train(sensor="RGB", submodel="spectral",experiment=experiment)
 
     mod.read_data(validation_split=True, mode="RGB_train")
     mod.train(experiment=experiment, sensor="RGB")
-    
-    #assert experiment.get_metric("Within-site Error") > 0
-    
+        
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_field_callbacks(mod):
     mod.config["train"]["tfrecords"] = "data/processed/"

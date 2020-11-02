@@ -63,11 +63,9 @@ class ConfusionMatrixCallback(Callback):
     def on_train_end(self, epoch, logs={}):
         
         y_pred = self.model.predict(self.dataset)
-
+                    
         if self.submodel is "metadata":
             name = "Metadata Confusion Matrix"        
-        if self.submodel in ["spectral","spatial"]:
-            name = "Submodel Confusion Matrix"
         elif self.submodel in ["ensemble"]:
             name = "Ensemble Matrix"
         else:
@@ -157,9 +155,9 @@ def create(experiment, train_data, validation_data, log_dir=None, label_names=No
             
     y_true = np.concatenate(y_true)
     
-    confusion_matrix = ConfusionMatrixCallback(experiment=experiment, y_true=y_true, dataset=validation_data, label_names=label_names, submodel=submodel)
-    callback_list.append(confusion_matrix)
-    
+    if not submodel in ["spatial","spectral"]:
+        confusion_matrix = ConfusionMatrixCallback(experiment=experiment, y_true=y_true, dataset=validation_data, label_names=label_names, submodel=submodel)
+        callback_list.append(confusion_matrix)
 
     f1 = F1Callback(experiment=experiment, y_true=y_true, eval_dataset=validation_data, label_names=label_names, submodel=submodel)
     callback_list.append(f1)

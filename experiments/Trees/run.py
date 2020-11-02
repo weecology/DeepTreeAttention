@@ -47,6 +47,7 @@ def predict(dirname, savedir, generate=True, cpus=2, parallel=True, height=40, w
 if __name__ == "__main__":
     experiment = Experiment(project_name="neontrees", workspace="bw4sz")
     experiment.add_tag("Train")
+
     
     #Create output folder
     #Sleep for a moment to allow queries to build up in SLURM queue
@@ -54,6 +55,10 @@ if __name__ == "__main__":
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     save_dir = "{}/{}".format("/orange/ewhite/DeepTreeAttention/snapshots/",timestamp)
     os.mkdir(save_dir)
+    
+    #Comet log
+    os.environ["COMET_LOGGING_FILE"] = "{}/comet.log".format(save_dir)
+    os.environ["COMET_LOGGING_FILE_LEVEL"] = "debug"
     
     experiment.log_parameter("timestamp",timestamp)
     
