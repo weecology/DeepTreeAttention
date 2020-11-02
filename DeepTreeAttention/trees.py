@@ -288,6 +288,7 @@ class AttentionModel():
                                                                      name='acc')])
         else:
             self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"]      
+            self.read_data(mode="ensemble")            
             self.ensemble_model = Hang.learned_ensemble(HSI_model=self.HSI_model, RGB_model=self.RGB_model,metadata_model=self.metadata_model, freeze=freeze, classes=self.classes)
             if train:
                 self.ensemble_model.compile(
