@@ -9,7 +9,7 @@ rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif  #path to sensor dat
 train:
     species_class_file: /home/b.weinstein/DeepTreeAttention/data/processed/species_class_labels.csv
     min_height_diff: 4 #minimum height diffs
-    checkpoint_dir:  #Load RGB and HSI sub models from dir
+    checkpoint_dir: /orange/idtrees-collab/DeepTreeAttention/snapshots/20201102_175251/ #Load RGB and HSI sub models from dir
     resampled_per_taxa: 50
     HSI:
         sensor_channels: 369

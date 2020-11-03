@@ -286,6 +286,13 @@ class AttentionModel():
                         lr=float(self.config["train"]["learning_rate"])),
                         metrics=[tf.keras.metrics.CategoricalAccuracy(
                                                                      name='acc')])
+                    #Train ensemble layer
+                    self.ensemble_model.fit(
+                        self.train_split,
+                        epochs=self.config["train"]["ensemble"]["epochs"],
+                        validation_data=self.val_split,
+                        callbacks=callback_list,
+                        class_weight=class_weight)                    
         else:
             self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"]      
             self.read_data(mode="ensemble")            
