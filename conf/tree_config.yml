@@ -15,14 +15,14 @@ train:
         sensor_channels: 369
         crop_size: 20
         weighted_sum: True
-        epochs: 1
+        epochs: 120
     RGB:
         sensor_channels: 3
         crop_size: 100
         weighted_sum: True
         epochs: 50
     metadata:
-        epochs: 1
+        epochs: 200
     ensemble:
         freeze: False
         batch_size: 256
@@ -37,8 +37,8 @@ train:
     steps:
     shuffle: True
     training_fraction: 0.9
-    gpus: 1
-    pretrain: False #Train the submodels before ensembling all together
+    gpus: 6
+    pretrain: True #Train the submodels before ensembling all together
     
 callbacks:
     snapshots_path: /../models/
