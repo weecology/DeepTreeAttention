@@ -10,7 +10,7 @@
 #SBATCH --error=/home/b.weinstein/logs/DeepTreeAttention_%j.err
 #SBATCH --partition=gpu
 #SBATCH --nodes=1
-#SBATCH --gpus=1
+#SBATCH --gpus=6
 
 module load tensorflow/2.1.0
 
@@ -22,7 +22,7 @@ export LD_LIBRARY_PATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention/lib/:
 cd /home/b.weinstein/DeepTreeAttention/experiments/Trees/
 
 #python generate.py
-export COMET_LOGGING_FILE=~/tmp/comet.log
-export COMET_LOGGING_CONSOLE=info
+#export COMET_LOGGING_FILE=~/tmp/comet.log
+#export COMET_LOGGING_CONSOLE=debug
 
 python run.py
