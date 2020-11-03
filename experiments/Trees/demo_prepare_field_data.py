@@ -64,23 +64,20 @@ def test_process_plot():
     assert df.shape[0] <= merged_boxes.shape[0]
     
 def test_run():
-    df = gpd.read_file(data_path)
-    
-    plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index = prepare_field_data.run(
+    df = gpd.read_file(data_path)    
+    counter = prepare_field_data.run(
         plot=df.plotID[0],
-        df=df,
+        field_data=data_path,
         rgb_pool=rgb_pool,
         hyperspectral_pool=hyperspectral_pool,
-        extend_box=1,
-        hyperspectral_savedir=hyperspectral_savedir
+        extend_box=0,
+        hyperspectral_savedir=hyperspectral_savedir,
+        RGB_size=height,
+        HSI_size=height,
     ) 
     
     #all have same length
-    lists = [plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_elevations, plot_box_index]
-    assert len({len(i) for i in lists}) == 1
-    
-    #all indices should be unique
-    #assert len(np.unique(plot_box_index)) == len(plot_box_index)
+    assert counter == df.shape[0]
     
 def test_main():
     created_records = prepare_field_data.main(
@@ -90,7 +87,7 @@ def test_main():
         HSI_size    =width,
         rgb_dir=rgb_dir,
         hyperspectral_savedir=hyperspectral_savedir,
-        extend_box=3)
+        extend_box=0.5)
     
     dataset = boxes.tf_dataset(created_records, batch_size=1, mode="RGB_train")
     iterator = dataset.make_one_shot_iterator()

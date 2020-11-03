@@ -258,40 +258,29 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         
     return crops, labels, sites, heights, elevations, box_index
 
-def create_records(HSI_crops, RGB_crops, labels, sites, heights, elevations, box_index, savedir, RGB_size, HSI_size, chunk_size=400):
-    #get keys and divide into chunks for a single tfrecor
-    filenames = []
-    counter = 0
-    for i in range(0, len(HSI_crops)+1, chunk_size):
-        chunk_HSI_crops = HSI_crops[i:i + chunk_size]
-        chunk_RGB_crops = RGB_crops[i:i + chunk_size]
-        chunk_index = box_index[i:i + chunk_size]
-        chunk_labels = labels[i:i + chunk_size]
-        chunk_sites = sites[i:i + chunk_size]
-        chunk_elevations = elevations[i:i + chunk_size]
-        chunk_heights = heights[i:i + chunk_size]
-            
-        resized_RGB_crops = [resize(x, RGB_size, RGB_size).astype("int16") for x in chunk_RGB_crops]
-        resized_HSI_crops = [resize(x, HSI_size, HSI_size).astype("int16") for x in chunk_HSI_crops]
+def create_records(HSI_crops, RGB_crops, labels, sites, heights, elevations, box_index, savedir, RGB_size, HSI_size, plot_name):
+    """Create plots worth of tfrecords"""
         
-        filename = "{}/field_data_{}.tfrecord".format(savedir, counter)
-        write_tfrecord(filename=filename,
-                                            HSI_images=resized_HSI_crops,
-                                            RGB_images=resized_RGB_crops,
-                                            labels=chunk_labels,
-                                            sites = chunk_sites,
-                                            heights = chunk_heights,
-                                            elevations=chunk_elevations,
-                                            indices=chunk_index,
-                                            classes=max(labels)+1)
-        
-        filenames.append(filename)
-        counter +=1    
+    resized_RGB_crops = [resize(x, RGB_size, RGB_size).astype("int16") for x in RGB_crops]
+    resized_HSI_crops = [resize(x, HSI_size, HSI_size).astype("int16") for x in HSI_crops]
     
-    return filenames
+    filename = "{}/field_data_{}.tfrecord".format(savedir, plot_name)
+    write_tfrecord(filename=filename,
+                                        HSI_images=resized_HSI_crops,
+                                        RGB_images=resized_RGB_crops,
+                                        labels=labels,
+                                        sites = sites,
+                                        heights = heights,
+                                        elevations=elevations,
+                                        indices= box_index,
+                                        classes=max(labels)+1)
+       
+    return filename
 
-def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspectral_savedir=".",saved_model=None, deepforest_model=None):
+def run(plot, field_data, RGB_size, HSI_size, savedir=".", rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspectral_savedir=".",saved_model=None, deepforest_model=None, species_classes_file=None,site_classes_file=None):
     """wrapper function for dask, see main.py"""
+    df = gpd.read_file(field_data)
+    
     try:
         from deepforest import deepforest
     
@@ -327,11 +316,53 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspe
         
         #Assert they are the same
         assert len(plot_rgb_crops) == len(plot_HSI_crops)
-        assert plot_labels==plot_rgb_labels
+        assert plot_labels == plot_rgb_labels
+        
     except Exception as e:
         raise ValueError("Plot {} failed {}".format(plot, e))
+    
+    #If passes a site label dict
+    if species_classes_file is not None:
+        species_classdf  = pd.read_csv(species_classes_file)
+        species_label_dict = species_classdf.set_index("speciesID").label.to_dict()
+    else:       
+        #Create and save a new species and species label dict
+        unique_species_labels = np.unique(plot_labels)
+        species_label_dict = {}
+        for index, label in enumerate(unique_species_labels):
+            species_label_dict[label] = index
+        pd.DataFrame(species_label_dict.items(), columns=["speciesID","label"]).to_csv("{}/species_class_labels.csv".format(savedir))
 
-    return plot_HSI_crops, plot_rgb_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index
+    #If passes a site label dict
+    if site_classes_file is not None:
+        site_classdf  = pd.read_csv(site_classes_file)
+        site_label_dict = site_classdf.set_index("siteID").label.to_dict()
+    else:       
+        #Create and save a new site and site label dict
+        unique_site_labels = np.unique(plot_sites)
+        site_label_dict = {}
+        for index, label in enumerate(unique_site_labels):
+            site_label_dict[label] = index
+        pd.DataFrame(site_label_dict.items(), columns=["siteID","label"]).to_csv("{}/site_class_labels.csv".format(savedir))
+
+    numeric_labels = [species_label_dict[x] for x in plot_labels]
+    numeric_sites = [site_label_dict[x] for x in plot_sites]
+        
+    #Write tfrecords
+    tfrecords = create_records(
+        HSI_crops=plot_HSI_crops,
+        RGB_crops=plot_rgb_crops,
+        labels=numeric_labels, 
+        sites=numeric_sites, 
+        elevations=plot_elevations,
+        box_index=plot_box_index, 
+        savedir=savedir, 
+        heights=plot_heights,
+        RGB_size=RGB_size,
+        HSI_size=HSI_size, 
+        plot_name=plot)
+    
+    return len(plot_HSI_crops)
 
 def main(
     field_data,
@@ -363,127 +394,69 @@ def main(
     Returns:
         tfrecords: list of created tfrecords
     """ 
-    df = gpd.read_file(field_data)
     plot_names = df.plotID.unique()
     
     hyperspectral_pool = glob.glob(hyperspectral_dir, recursive=True)
     rgb_pool = glob.glob(rgb_dir, recursive=True)
-    
-    labels = []
-    HSI_crops = []
-    RGB_crops = []
-    sites = []
-    box_indexes = []    
-    elevations = []
-    heights = []
+
     if client is not None:
         futures = []
         for plot in plot_names:
             future = client.submit(
                 run,
                 plot=plot,
-                df=df,
+                field_data=field_data,
                 rgb_pool=rgb_pool,
                 hyperspectral_pool=hyperspectral_pool,
                 extend_box=extend_box,
                 hyperspectral_savedir=hyperspectral_savedir,
-                saved_model=saved_model
+                saved_model=saved_model,
+                HSI_size=HSI_size,
+                RGB_size=RGB_size,
+                savedir=savedir,
+                species_classes_file=species_classes_file,
+                site_classes_file=site_classes_file,
             )
             futures.append(future)
         
         wait(futures)
+        counter=0        
         for x in futures:
             try:
-                plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index = x.result()
-                
-                #Append to general plot list
-                HSI_crops.extend(plot_HSI_crops)
-                RGB_crops.extend(plot_RGB_crops)
-                labels.extend(plot_labels)
-                sites.extend(plot_sites)           
-                heights.extend(plot_heights)
-                elevations.extend(plot_elevations)
-                box_indexes.extend(plot_box_index)        
+                counter += x.result()
             except Exception as e:
                 print("Future failed with {}".format(e))      
                 traceback.print_exc()
     else:
         from deepforest import deepforest        
         deepforest_model = deepforest.deepforest()
-        deepforest_model.use_release()        
+        deepforest_model.use_release()    
+        counter = 0 
         for plot in plot_names:
             try:
-                plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index = run(
+                counter += run(
                     plot=plot,
-                    df=df,
+                    field_data=field_data,
                     rgb_pool=rgb_pool,
                     hyperspectral_pool=hyperspectral_pool, 
                     extend_box=extend_box,
                     hyperspectral_savedir=hyperspectral_savedir,
                     saved_model=saved_model,
-                    deepforest_model=deepforest_model
+                    savedir=savedir,
+                    deepforest_model=deepforest_model,
+                    RGB_size=RGB_size,
+                    species_classes_file=species_classes_file,
+                    site_classes_file=site_classes_file,                    
+                    HSI_size=HSI_size
                 )
             except Exception as e:
                 print("Plot failed with {}".format(e))      
                 traceback.print_exc()  
-                continue
+                continue    
     
-            #Append to general plot list
-            HSI_crops.extend(plot_HSI_crops)
-            RGB_crops.extend(plot_RGB_crops)
-            labels.extend(plot_labels)
-            sites.extend(plot_sites)    
-            heights.extend(plot_heights)                        
-            elevations.extend(plot_elevations)
-            box_indexes.extend(plot_box_index)
-            
-    if shuffle:
-        z = list(zip(HSI_crops, RGB_crops, sites, heights, elevations, box_indexes, labels))
-        random.shuffle(z)
-        HSI_crops, RGB_crops, sites, heights, elevations, box_indexes, labels = zip(*z)
-                        
-    #If passes a species label dict
-    species_classdf  = pd.read_csv(species_classes_file)
-    species_label_dict = species_classdf.set_index("taxonID").label.to_dict()
-
-    #If passes a site label dict
-    if site_classes_file is not None:
-        site_classdf  = pd.read_csv(site_classes_file)
-        site_label_dict = site_classdf.set_index("siteID").label.to_dict()
-    else:
-        #Create and save a new site and site label dict
-        unique_site_labels = np.unique(sites)
-        site_label_dict = {}
-        
-        for index, label in enumerate(unique_site_labels):
-            site_label_dict[label] = index
-        pd.DataFrame(site_label_dict.items(), columns=["siteID","label"]).to_csv("{}/site_class_labels.csv".format(savedir))
-
-    #Convert labels to numeric
-    numeric_labels = [species_label_dict[x] for x in labels]
-    numeric_sites = [site_label_dict[x] for x in sites]
+    print("{} records written".format(counter))
     
-    print("Writing records of {} HSI samples, {} RGB samples from {} species and {} sites".format(
-        len(HSI_crops),
-        len(RGB_crops),
-        len(np.unique(numeric_labels)),
-        len(np.unique(numeric_sites))))
-    
-    #Write tfrecords
-    tfrecords = create_records(
-        HSI_crops=HSI_crops,
-        RGB_crops=RGB_crops,
-        labels=numeric_labels, 
-        sites=numeric_sites, 
-        elevations=elevations,
-        box_index=box_indexes, 
-        savedir=savedir, 
-        heights=heights,
-        RGB_size=RGB_size,
-        HSI_size=HSI_size, 
-        chunk_size=chunk_size)
-    
-    return tfrecords
+    return None
     
 if __name__ == "__main__":
     #Generate the training data shapefiles
@@ -498,7 +471,7 @@ if __name__ == "__main__":
     create_training_shp.train_test_split(ROOT, lookup_glob, min_diff=config["train"]["min_height_diff"], n=config["train"]["resampled_per_taxa"])
     
     #create dask client
-    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="15GB")
+    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="8GB")
     
     #test data
     main(
@@ -527,8 +500,8 @@ if __name__ == "__main__":
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["train"]["tfrecords"],
         client=client,
-        species_classes_file = "{}/data/processed/species_class_labels.csv".format(ROOT),
-        site_classes_file =  "{}/data/processed/site_class_labels.csv".format(ROOT),        
+        species_classes_file="{}/data/processed/species_class_labels.csv".format(ROOT),
+        site_classes_file="{}/data/processed/site_class_labels.csv".format(ROOT),        
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )
     
