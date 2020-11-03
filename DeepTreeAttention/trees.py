@@ -272,11 +272,32 @@ class AttentionModel():
     def ensemble(self, experiment, class_weight=None, freeze = True, train=True):
         #Manually override batch size
         self.classes = pd.read_csv(self.classes_file).shape[0]        
-        
+        self.read_data(mode="ensemble")        
+        if self.val_split is None:
+            print("Cannot run callbacks without validation data, skipping...")
+            callback_list = None
+            label_names = None
+        elif experiment is None:
+            print("Cannot run callbacks without comet experiment, skipping...")
+            callback_list = None
+            label_names = None
+        else:            
+            if self.classes_file is not None:
+                labeldf = pd.read_csv(self.classes_file)
+                label_names = list(labeldf.taxonID.values)
+            else:
+                label_names = None
+                
+            callback_list = callbacks.create(log_dir=self.log_dir,
+                                             experiment=experiment,
+                                             validation_data=self.val_split,
+                                             train_data=self.train_split,
+                                             label_names=label_names,
+                                             submodel="ensemble")
+            
         if self.config["train"]["gpus"] > 1:
             with self.strategy.scope():        
                 self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"] * self.strategy.num_replicas_in_sync
-                self.read_data(mode="ensemble")
                 self.ensemble_model = Hang.learned_ensemble(HSI_model=self.HSI_model, RGB_model=self.RGB_model, metadata_model= self.metadata_model, freeze=freeze, classes=self.classes)
                 
                 if train:
@@ -295,7 +316,6 @@ class AttentionModel():
                         class_weight=class_weight)                    
         else:
             self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"]      
-            self.read_data(mode="ensemble")            
             self.ensemble_model = Hang.learned_ensemble(HSI_model=self.HSI_model, RGB_model=self.RGB_model,metadata_model=self.metadata_model, freeze=freeze, classes=self.classes)
             if train:
                 self.ensemble_model.compile(
@@ -304,27 +324,6 @@ class AttentionModel():
                     lr=float(self.config["train"]["learning_rate"])),
                     metrics=[tf.keras.metrics.CategoricalAccuracy(
                                                                  name='acc')])            
-                if self.val_split is None:
-                    print("Cannot run callbacks without validation data, skipping...")
-                    callback_list = None
-                    label_names = None
-                elif experiment is None:
-                    print("Cannot run callbacks without comet experiment, skipping...")
-                    callback_list = None
-                    label_names = None
-                else:            
-                    if self.classes_file is not None:
-                        labeldf = pd.read_csv(self.classes_file)
-                        label_names = list(labeldf.taxonID.values)
-                    else:
-                        label_names = None
-                        
-                    callback_list = callbacks.create(log_dir=self.log_dir,
-                                                     experiment=experiment,
-                                                     validation_data=self.val_split,
-                                                     train_data=self.train_split,
-                                                     label_names=label_names,
-                                                     submodel="ensemble")
                         
                 #Train ensemble layer
                 self.ensemble_model.fit(
