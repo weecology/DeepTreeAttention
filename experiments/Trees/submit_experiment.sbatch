@@ -23,6 +23,6 @@ cd /home/b.weinstein/DeepTreeAttention/experiments/Trees/
 
 #python generate.py
 #export COMET_LOGGING_FILE=~/tmp/comet.log
-#export COMET_LOGGING_CONSOLE=info
+#export COMET_LOGGING_CONSOLE=debug
 
 python run.py
