@@ -324,14 +324,14 @@ def run(plot, field_data, RGB_size, HSI_size, savedir=".", rgb_pool=None, hypers
     #If passes a site label dict
     if species_classes_file is not None:
         species_classdf  = pd.read_csv(species_classes_file)
-        species_label_dict = species_classdf.set_index("speciesID").label.to_dict()
+        species_label_dict = species_classdf.set_index("taxonID").label.to_dict()
     else:       
         #Create and save a new species and species label dict
         unique_species_labels = np.unique(plot_labels)
         species_label_dict = {}
         for index, label in enumerate(unique_species_labels):
             species_label_dict[label] = index
-        pd.DataFrame(species_label_dict.items(), columns=["speciesID","label"]).to_csv("{}/species_class_labels.csv".format(savedir))
+        pd.DataFrame(species_label_dict.items(), columns=["taxonID","label"]).to_csv("{}/species_class_labels.csv".format(savedir))
 
     #If passes a site label dict
     if site_classes_file is not None:
@@ -472,7 +472,7 @@ if __name__ == "__main__":
     create_training_shp.train_test_split(ROOT, lookup_glob, min_diff=config["train"]["min_height_diff"], n=config["train"]["resampled_per_taxa"])
     
     #create dask client
-    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="8GB")
+    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="10GB")
     
     #test data
     main(
