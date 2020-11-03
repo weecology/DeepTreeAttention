@@ -394,6 +394,7 @@ def main(
     Returns:
         tfrecords: list of created tfrecords
     """ 
+    df = gpd.read_file(field_data)    
     plot_names = df.plotID.unique()
     
     hyperspectral_pool = glob.glob(hyperspectral_dir, recursive=True)
