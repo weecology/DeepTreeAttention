@@ -424,7 +424,7 @@ def main(
             futures.append(future)
         
         counter=0        
-        for x in as_completed(futures, with_result=False):
+        for x in as_completed(futures, with_results=False):
             try:
                 counter += x.result()
             except Exception as e:
