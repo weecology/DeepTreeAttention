@@ -11,13 +11,14 @@ import shapely
 import pandas as pd
 import traceback
 from matplotlib import pyplot
+import gc
 
 from DeepTreeAttention.generators.boxes import write_tfrecord
 from DeepTreeAttention.utils.paths import find_sensor_path, convert_h5
 from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.utils import start_cluster
 from DeepTreeAttention.generators import create_training_shp
-from distributed import wait
+from distributed import wait, as_completed
 from random import randint
 from time import sleep
 
@@ -362,6 +363,8 @@ def run(plot, field_data, RGB_size, HSI_size, savedir=".", rgb_pool=None, hypers
         HSI_size=HSI_size, 
         plot_name=plot)
     
+    #Explicitely collect garbage
+    print(gc.collect())    
     return len(plot_HSI_crops)
 
 def main(
@@ -420,14 +423,14 @@ def main(
             )
             futures.append(future)
         
-        wait(futures)
         counter=0        
-        for x in futures:
+        for x in as_completed(futures, with_result=False):
             try:
                 counter += x.result()
             except Exception as e:
                 print("Future failed with {}".format(e))      
                 traceback.print_exc()
+            x.release()
     else:
         from deepforest import deepforest        
         deepforest_model = deepforest.deepforest()
@@ -472,7 +475,7 @@ if __name__ == "__main__":
     create_training_shp.train_test_split(ROOT, lookup_glob, min_diff=config["train"]["min_height_diff"], n=config["train"]["resampled_per_taxa"])
     
     #create dask client
-    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="10GB")
+    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="9GB")
     
     #test data
     main(
