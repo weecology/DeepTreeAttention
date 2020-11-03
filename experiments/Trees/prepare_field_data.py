@@ -430,7 +430,6 @@ def main(
             except Exception as e:
                 print("Future failed with {}".format(e))      
                 traceback.print_exc()
-            x.release()
     else:
         from deepforest import deepforest        
         deepforest_model = deepforest.deepforest()
