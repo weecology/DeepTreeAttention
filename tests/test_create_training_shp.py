@@ -30,7 +30,7 @@ def test_test_split():
     
 def test_train_split(testdata):
     path = "data/raw/latest_full_veg_structure.csv"
-    shp = create_training_shp.train_split(path, testdata.individualID, testdata.taxonID, debug=False)
+    shp = create_training_shp.train_split(path, testdata.individualID, testdata.taxonID, debug=True)
     assert not shp.empty
     assert all([x in ["siteID","plotID","height","elevation","domainID","individualID","taxonID",
                       "plantStatus","itcEasting","itcNorthing","geometry"] for x in shp.columns])
