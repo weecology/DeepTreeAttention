@@ -64,10 +64,9 @@ def test_process_plot():
     assert df.shape[0] <= merged_boxes.shape[0]
     
 def test_run():
-    df = gpd.read_file(data_path)    
+    df = gpd.read_file(data_path)
     counter = prepare_field_data.run(
-        plot=df.plotID[0],
-        field_data=data_path,
+        df,
         rgb_pool=rgb_pool,
         hyperspectral_pool=hyperspectral_pool,
         extend_box=0,

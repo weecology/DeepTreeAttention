@@ -18,7 +18,8 @@ from DeepTreeAttention.utils.paths import find_sensor_path, convert_h5
 from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.utils import start_cluster
 from DeepTreeAttention.generators import create_training_shp
-from distributed import wait, as_completed
+from distributed import wait, as_completed, fire_and_forget
+from dask import dataframe as dd
 from random import randint
 from time import sleep
 
@@ -278,10 +279,8 @@ def create_records(HSI_crops, RGB_crops, labels, sites, heights, elevations, box
        
     return filename
 
-def run(plot, field_data, RGB_size, HSI_size, savedir=".", rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspectral_savedir=".",saved_model=None, deepforest_model=None, species_classes_file=None,site_classes_file=None):
+def run(df, RGB_size, HSI_size, savedir=".", rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspectral_savedir=".",saved_model=None, deepforest_model=None, species_classes_file=None,site_classes_file=None):
     """wrapper function for dask, see main.py"""
-    df = gpd.read_file(field_data)
-    
     try:
         from deepforest import deepforest
     
@@ -294,77 +293,78 @@ def run(plot, field_data, RGB_size, HSI_size, savedir=".", rgb_pool=None, hypers
                 deepforest_model = deepforest.deepforest(saved_model=saved_model)
             
         #Filter data and process
-        plot_data = df[df.plotID == plot]
-        predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
+        for plot in df.plotID.unique():
+            plot_data = df[df.plotID == plot]
+            predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
+            
+            #Crop HSI
+            plot_HSI_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index = create_crops(
+                predicted_trees,
+                hyperspectral_pool=hyperspectral_pool,
+                rgb_pool=rgb_pool,
+                sensor="hyperspectral",
+                expand=extend_box,
+                hyperspectral_savedir=hyperspectral_savedir)
+            
+            #Crop RGB, drop repeated elements, leave one for testing
+            plot_rgb_crops, plot_rgb_labels, _, _, _, _ = create_crops(
+                predicted_trees,
+                hyperspectral_pool=hyperspectral_pool,
+                rgb_pool=rgb_pool,
+                sensor="rgb",
+                expand=extend_box,
+                hyperspectral_savedir=hyperspectral_savedir)    
+            
+            #Assert they are the same
+            assert len(plot_rgb_crops) == len(plot_HSI_crops)
+            assert plot_labels == plot_rgb_labels
+            
+            #If passes a site label dict
+            if species_classes_file is not None:
+                species_classdf  = pd.read_csv(species_classes_file)
+                species_label_dict = species_classdf.set_index("taxonID").label.to_dict()
+            else:       
+                #Create and save a new species and species label dict
+                unique_species_labels = np.unique(plot_labels)
+                species_label_dict = {}
+                for index, label in enumerate(unique_species_labels):
+                    species_label_dict[label] = index
+                pd.DataFrame(species_label_dict.items(), columns=["taxonID","label"]).to_csv("{}/species_class_labels.csv".format(savedir))
         
-        #Crop HSI
-        plot_HSI_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index = create_crops(
-            predicted_trees,
-            hyperspectral_pool=hyperspectral_pool,
-            rgb_pool=rgb_pool,
-            sensor="hyperspectral",
-            expand=extend_box,
-            hyperspectral_savedir=hyperspectral_savedir)
+            #If passes a site label dict
+            if site_classes_file is not None:
+                site_classdf  = pd.read_csv(site_classes_file)
+                site_label_dict = site_classdf.set_index("siteID").label.to_dict()
+            else:       
+                #Create and save a new site and site label dict
+                unique_site_labels = np.unique(plot_sites)
+                site_label_dict = {}
+                for index, label in enumerate(unique_site_labels):
+                    site_label_dict[label] = index
+                pd.DataFrame(site_label_dict.items(), columns=["siteID","label"]).to_csv("{}/site_class_labels.csv".format(savedir))
         
-        #Crop RGB, drop repeated elements, leave one for testing
-        plot_rgb_crops, plot_rgb_labels, _, _, _, _ = create_crops(
-            predicted_trees,
-            hyperspectral_pool=hyperspectral_pool,
-            rgb_pool=rgb_pool,
-            sensor="rgb",
-            expand=extend_box,
-            hyperspectral_savedir=hyperspectral_savedir)    
-        
-        #Assert they are the same
-        assert len(plot_rgb_crops) == len(plot_HSI_crops)
-        assert plot_labels == plot_rgb_labels
-        
+            numeric_labels = [species_label_dict[x] for x in plot_labels]
+            numeric_sites = [site_label_dict[x] for x in plot_sites]
+                
+            #Write tfrecords
+            tfrecords = create_records(
+                HSI_crops=plot_HSI_crops,
+                RGB_crops=plot_rgb_crops,
+                labels=numeric_labels, 
+                sites=numeric_sites, 
+                elevations=plot_elevations,
+                box_index=plot_box_index, 
+                savedir=savedir, 
+                heights=plot_heights,
+                RGB_size=RGB_size,
+                HSI_size=HSI_size, 
+                plot_name=plot)
+            
+            #Explicitely collect garbage
+            print(gc.collect())    
+            
     except Exception as e:
-        raise ValueError("Plot {} failed {}".format(plot, e))
-    
-    #If passes a site label dict
-    if species_classes_file is not None:
-        species_classdf  = pd.read_csv(species_classes_file)
-        species_label_dict = species_classdf.set_index("taxonID").label.to_dict()
-    else:       
-        #Create and save a new species and species label dict
-        unique_species_labels = np.unique(plot_labels)
-        species_label_dict = {}
-        for index, label in enumerate(unique_species_labels):
-            species_label_dict[label] = index
-        pd.DataFrame(species_label_dict.items(), columns=["taxonID","label"]).to_csv("{}/species_class_labels.csv".format(savedir))
-
-    #If passes a site label dict
-    if site_classes_file is not None:
-        site_classdf  = pd.read_csv(site_classes_file)
-        site_label_dict = site_classdf.set_index("siteID").label.to_dict()
-    else:       
-        #Create and save a new site and site label dict
-        unique_site_labels = np.unique(plot_sites)
-        site_label_dict = {}
-        for index, label in enumerate(unique_site_labels):
-            site_label_dict[label] = index
-        pd.DataFrame(site_label_dict.items(), columns=["siteID","label"]).to_csv("{}/site_class_labels.csv".format(savedir))
-
-    numeric_labels = [species_label_dict[x] for x in plot_labels]
-    numeric_sites = [site_label_dict[x] for x in plot_sites]
-        
-    #Write tfrecords
-    tfrecords = create_records(
-        HSI_crops=plot_HSI_crops,
-        RGB_crops=plot_rgb_crops,
-        labels=numeric_labels, 
-        sites=numeric_sites, 
-        elevations=plot_elevations,
-        box_index=plot_box_index, 
-        savedir=savedir, 
-        heights=plot_heights,
-        RGB_size=RGB_size,
-        HSI_size=HSI_size, 
-        plot_name=plot)
-    
-    #Explicitely collect garbage
-    print(gc.collect())    
+        raise ValueError("Plot {} failed {}".format(plot, e))        
     return len(plot_HSI_crops)
 
 def main(
@@ -397,36 +397,35 @@ def main(
     Returns:
         tfrecords: list of created tfrecords
     """ 
-    df = gpd.read_file(field_data)    
     plot_names = df.plotID.unique()
     
     hyperspectral_pool = glob.glob(hyperspectral_dir, recursive=True)
     rgb_pool = glob.glob(rgb_dir, recursive=True)
 
     if client is not None:
-        futures = []
-        for plot in plot_names:
-            future = client.submit(
-                run,
-                plot=plot,
-                field_data=field_data,
-                rgb_pool=rgb_pool,
-                hyperspectral_pool=hyperspectral_pool,
-                extend_box=extend_box,
-                hyperspectral_savedir=hyperspectral_savedir,
-                saved_model=saved_model,
-                HSI_size=HSI_size,
-                RGB_size=RGB_size,
-                savedir=savedir,
-                species_classes_file=species_classes_file,
-                site_classes_file=site_classes_file,
+        df = dd.read_csv(field_data)    
+        partitions = ddf.to_delayed()
+        futures = client.map(
+            run,
+            partitions,
+            rgb_pool=rgb_pool,
+            hyperspectral_pool=hyperspectral_pool,
+            extend_box=extend_box,
+            hyperspectral_savedir=hyperspectral_savedir,
+            saved_model=saved_model,
+            HSI_size=HSI_size,
+            RGB_size=RGB_size,
+            savedir=savedir,
+            species_classes_file=species_classes_file,
+            site_classes_file=site_classes_file
             )
-            futures.append(future)
         
         counter=0        
         for x in as_completed(futures, with_results=False):
             try:
                 counter += x.result()
+                print("{} records complete".format(counter))
+                client.cancel(x)
             except Exception as e:
                 print("Future failed with {}".format(e))      
                 traceback.print_exc()
@@ -435,11 +434,12 @@ def main(
         deepforest_model = deepforest.deepforest()
         deepforest_model.use_release()    
         counter = 0 
+        df = gpd.read_file(field_data)            
         for plot in plot_names:
+            plot_data = df[df.plotID==plot]
             try:
                 counter += run(
-                    plot=plot,
-                    field_data=field_data,
+                    plot_data,
                     rgb_pool=rgb_pool,
                     hyperspectral_pool=hyperspectral_pool, 
                     extend_box=extend_box,
@@ -474,7 +474,7 @@ if __name__ == "__main__":
     create_training_shp.train_test_split(ROOT, lookup_glob, min_diff=config["train"]["min_height_diff"], n=config["train"]["resampled_per_taxa"])
     
     #create dask client
-    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="9GB")
+    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="15GB")
     
     #test data
     main(
@@ -493,6 +493,7 @@ if __name__ == "__main__":
     )
     
     ##train data
+    client.restart()
     main(
         field_data=config["train"]["ground_truth_path"],
         RGB_size=config["train"]["RGB"]["crop_size"],
