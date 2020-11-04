@@ -8,8 +8,8 @@ rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif  #path to sensor dat
 
 train:
     species_class_file: /home/b.weinstein/DeepTreeAttention/data/processed/species_class_labels.csv
-    min_height_diff: 4 #minimum height diffs
-    checkpoint_dir: /orange/idtrees-collab/DeepTreeAttention/snapshots/20201102_175251/ #Load RGB and HSI sub models from dir
+    min_height_diff: 10 #minimum height diffs
+    checkpoint_dir:  #Load RGB and HSI sub models from dir
     resampled_per_taxa: 50
     HSI:
         sensor_channels: 369
@@ -28,7 +28,7 @@ train:
         batch_size: 256
         epochs: 120
     sites: 23
-    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train2/
+    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/CHM_filtered_train.shp  #path to ground truth class shapefile   
     extend_box: 0 #expand DeepForest bounding boxes by x meters at edge
     learning_rate: .001
@@ -46,7 +46,7 @@ callbacks:
 
 #All the above parameters apply to evaluation except for paths, leave blank to ignore.
 evaluation:
-    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation2/
+    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/test.shp
     steps:
 

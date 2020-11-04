@@ -76,8 +76,8 @@ def train_split(path, test_ids, test_species, debug = False):
     trees = trees[~trees.plantStatus.isnull()]        
     trees = trees[trees.plantStatus.str.contains("Live")]    
     sun_position = trees[~(trees.canopyPosition.isin(["Full shade", "Mostly shaded"]))]
-    #min_height = sun_position[(sun_position.height > 3) | (sun_position.height.isnull())]
-    min_size = sun_position[sun_position.stemDiameter > 5]
+    min_height = sun_position[(sun_position.height > 3) | (sun_position.height.isnull())]
+    min_size = min_height[min_height.stemDiameter > 5]
         
     #ensure that species set matches
     min_date = min_size[min_size.taxonID.isin(test_species)]
