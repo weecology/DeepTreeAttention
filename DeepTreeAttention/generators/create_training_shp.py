@@ -100,12 +100,12 @@ def train_split(path, test_ids, test_species, debug = False):
     shp.loc[BLAN_errors.index] = BLAN_errors
     
     #HOT fix, STEI was split into two utm zones but is unlabeled. It's 16N but needs to be 15N in the AOP data
-    STEI_errors = shp[(shp.siteID == "STEI") & (shp.itcEasting.astype(str).str.startswith("7"))]
-    STEI_errors.set_crs(epsg=32615, inplace=True)
-    STEI_errors.to_crs(32616,inplace=True)
-    STEI_errors["utmZone"] = "16N"    
-    STEI_errors["itcEasting"] = STEI_errors.geometry.apply(lambda x: x.coords[0][0])
-    STEI_errors["itcNorthing"] = STEI_errors.geometry.apply(lambda x: x.coords[0][1])
+    #STEI_errors = shp[(shp.siteID == "STEI") & (shp.itcEasting.astype(str).str.startswith("7"))]
+    #STEI_errors.set_crs(epsg=32615, inplace=True)
+    #STEI_errors.to_crs(32616,inplace=True)
+    #STEI_errors["utmZone"] = "16N"    
+    #STEI_errors["itcEasting"] = STEI_errors.geometry.apply(lambda x: x.coords[0][0])
+    #STEI_errors["itcNorthing"] = STEI_errors.geometry.apply(lambda x: x.coords[0][1])
     
     #reupdate
     shp.loc[STEI_errors.index] = STEI_errors
