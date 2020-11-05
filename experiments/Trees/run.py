@@ -102,29 +102,29 @@ if __name__ == "__main__":
                 model.train(submodel="metadata", experiment=experiment)
                 model.metadata_model.save("{}/metadata_model.h5".format(save_dir))
                 
-            ##Train subnetworks
-            experiment.log_parameter("Train subnetworks", True)
-            with experiment.context_manager("RGB_spatial_subnetwork"):
-                print("Train RGB spatial subnetwork")
-                model.read_data(mode="RGB_submodel")
-                model.train(submodel="spatial", sensor="RGB", experiment=experiment)
+            ###Train subnetworks
+            #experiment.log_parameter("Train subnetworks", True)
+            #with experiment.context_manager("RGB_spatial_subnetwork"):
+                #print("Train RGB spatial subnetwork")
+                #model.read_data(mode="RGB_submodel")
+                #model.train(submodel="spatial", sensor="RGB", experiment=experiment)
                 
-            with experiment.context_manager("RGB_spectral_subnetwork"):
-                print("Train RGB spectral subnetwork")    
-                model.read_data(mode="RGB_submodel")   
-                model.train(submodel="spectral", sensor="RGB", experiment=experiment)
+            #with experiment.context_manager("RGB_spectral_subnetwork"):
+                #print("Train RGB spectral subnetwork")    
+                #model.read_data(mode="RGB_submodel")   
+                #model.train(submodel="spectral", sensor="RGB", experiment=experiment)
                     
-            #Train full RGB model
-            with experiment.context_manager("RGB_model"):
-                experiment.log_parameter("Class Weighted", True)
-                model.read_data(mode="RGB_train")
-                model.train(sensor="RGB", experiment=experiment)
-                model.RGB_model.save("{}/RGB_model.h5".format(save_dir))
+            ##Train full RGB model
+            #with experiment.context_manager("RGB_model"):
+                #experiment.log_parameter("Class Weighted", True)
+                #model.read_data(mode="RGB_train")
+                #model.train(sensor="RGB", experiment=experiment)
+                #model.RGB_model.save("{}/RGB_model.h5".format(save_dir))
                 
-                #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
-                if model.config["train"]["RGB"]["weighted_sum"]:
-                    estimate_a = model.RGB_model.get_layer("weighted_sum").get_weights()
-                    experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
+                ##Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
+                #if model.config["train"]["RGB"]["weighted_sum"]:
+                    #estimate_a = model.RGB_model.get_layer("weighted_sum").get_weights()
+                    #experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
             
             ##Train subnetwork
             experiment.log_parameter("Train subnetworks", True)
