@@ -126,7 +126,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     try:
         rgb_sensor_path = find_sensor_path(bounds=plot_data.total_bounds, lookup_pool=rgb_pool)
     except Exception as e:
-        raise ValueError("cannot find sensor for {}".format(plot_data.plotID.unique()))
+        raise ValueError("cannot find RGB sensor for {}".format(plot_data.plotID.unique()))
     
     boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
 
@@ -174,7 +174,7 @@ def crop_image(sensor_path, box, expand=0):
         masked_image = src.read(window=window)
         src.close()
     except Exception as e:
-        raise ValueError("sensor path: {} failed at reading window {} with error {}".format(sensor_path, box.bounds,e))
+        raise ValueError("sensor path: {} failed at reading crop window {} with error {}".format(sensor_path, box.bounds,e))
         
     #Roll depth to channel last
     masked_image = np.rollaxis(masked_image, 0, 3)
@@ -478,7 +478,7 @@ if __name__ == "__main__":
     config = parse_yaml("{}/conf/tree_config.yml".format(ROOT))
     
     #Create train test split
-    create_training_shp.train_test_split(ROOT, lookup_glob, min_diff=config["train"]["min_height_diff"], n=config["train"]["resampled_per_taxa"])
+    create_training_shp.train_test_split(ROOT, lookup_glob, n=config["train"]["resampled_per_taxa"])
     
     #create dask client
     client = start_cluster.start(cpus=config["cpu_workers"], mem_size="15GB")
