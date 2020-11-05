@@ -14,13 +14,13 @@ def non_zero_99_quantile(x):
     percentile = np.nanpercentile(mdata, 99)
     return (percentile)
 
-def postprocess_CHM(df, lookup_pool, min_diff=1, remove=True):
+def postprocess_CHM(df, lookup_pool):
     """Field measured height must be within min_diff meters of canopy model"""
     #Extract zonal stats
     try:
         CHM_path = find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds)
     except:
-        raise ValueError("Cannot find path for {} from plot {} in lookup_pool".format(df.total_bounds, df.plotID.unique()))
+        raise ValueError("Cannot find CHM path for {} from plot {} in lookup_pool".format(df.total_bounds, df.plotID.unique()))
     draped_boxes = rasterstats.zonal_stats(df.geometry.__geo_interface__,
                                            CHM_path,
                                            add_stats={'q99': non_zero_99_quantile})
@@ -29,11 +29,11 @@ def postprocess_CHM(df, lookup_pool, min_diff=1, remove=True):
     #if height is null, assign it
     df.height.fillna(df["CHM_height"], inplace=True)
     
-    #Rename column
-    if remove:
-        #drop points with less than 1 m height        
-        df = df[df.CHM_height>1]        
-        df = df[(abs(df.height - df.CHM_height) < min_diff)]
+    ##Rename column
+    #if remove:
+        ##drop points with less than 1 m height        
+        #df = df[df.CHM_height>1]        
+        #df = df[(abs(df.height - df.CHM_height) < min_diff)]
 
     return df
 
@@ -118,18 +118,17 @@ def train_split(path, test_ids, test_species, debug = False):
     shp = shp.reset_index(drop=True)
     return shp
         
-def filter_CHM(train_shp, lookup_glob, min_diff, remove=True):
+def filter_CHM(train_shp, lookup_glob):
         """For each plotID extract the heights from LiDAR derived CHM
         Args:
             train_shp: shapefile of data to filter
             lookup_glob: recursive glob search for CHM files
-            min_diff: min height diff between field and CHM data
         """    
         filtered_results = []
         lookup_pool = glob.glob(lookup_glob, recursive=True)        
         for name, group in train_shp.groupby("plotID"):
             try:
-                result = postprocess_CHM(group, lookup_pool=lookup_pool, min_diff=min_diff, remove = remove)
+                result = postprocess_CHM(group, lookup_pool=lookup_pool)
             except Exception as e:
                 print("plotID: {} failed with {}".format(group.plotID.unique(),e))
                 continue
@@ -150,7 +149,7 @@ def sample_if(x,n):
     else:
         return x
     
-def train_test_split(ROOT, lookup_glob, min_diff, n=None):
+def train_test_split(ROOT, lookup_glob, n=None):
     """Create the train test split
     Args:
         ROOT: 
@@ -160,15 +159,14 @@ def train_test_split(ROOT, lookup_glob, min_diff, n=None):
         """
     test = test_split("{}/data/raw/test_with_uid.csv".format(ROOT), field_data_path="{}/data/raw/latest_full_veg_structure.csv".format(ROOT))
     #Interpolate CHM height
-    test = filter_CHM(test, lookup_glob, min_diff=min_diff, remove=False)
+    test = filter_CHM(test, lookup_glob)
     train = train_split("{}/data/raw/latest_full_veg_structure.csv".format(ROOT), test.individualID, test.taxonID.unique())
     
-    filtered_train = filter_CHM(train, lookup_glob, min_diff=min_diff, remove=True)
+    filtered_train = filter_CHM(train, lookup_glob)
     filtered_train = filtered_train[filtered_train.taxonID.isin(test.taxonID.unique())]
     test = test[test.taxonID.isin(filtered_train.taxonID.unique())]
 
     if not n is None:
-        species_counts = filtered_train.groupby("taxonID").size()
         filtered_train  =  filtered_train.groupby("taxonID").apply(lambda x: sample_if(x,n)).reset_index(drop=True)
         
     print("There are {} records for {} species for {} sites in filtered train".format(
