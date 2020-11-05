@@ -35,7 +35,8 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None):
     """
 
     if shapefile is None:
-        geo_index = bounds_to_geoindex(bounds)
+        geo_index = bounds_to_geoindex(
+        )
         match = [x for x in lookup_pool if geo_index in x]
         match.sort()
         try:
