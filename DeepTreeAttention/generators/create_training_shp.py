@@ -19,8 +19,8 @@ def postprocess_CHM(df, lookup_pool):
     #Extract zonal stats
     try:
         CHM_path = find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds)
-    except:
-        raise ValueError("Cannot find CHM path for {} from plot {} in lookup_pool".format(df.total_bounds, df.plotID.unique()))
+    except Exception as e:
+        raise ValueError("Cannot find CHM path for {} from plot {} in lookup_pool: {}".format(df.total_bounds, df.plotID.unique(),e))
     draped_boxes = rasterstats.zonal_stats(df.geometry.__geo_interface__,
                                            CHM_path,
                                            add_stats={'q99': non_zero_99_quantile})
@@ -108,7 +108,7 @@ def train_split(path, test_ids, test_species, debug = False):
     #STEI_errors["itcNorthing"] = STEI_errors.geometry.apply(lambda x: x.coords[0][1])
     
     #reupdate
-    shp.loc[STEI_errors.index] = STEI_errors
+    #shp.loc[STEI_errors.index] = STEI_errors
     
     #Oak Right Lab has no AOP data
     shp = shp[~(shp.siteID=="ORNL")]
@@ -118,20 +118,16 @@ def train_split(path, test_ids, test_species, debug = False):
     shp = shp.reset_index(drop=True)
     return shp
         
-def filter_CHM(train_shp, lookup_glob):
+def filter_CHM(shp, lookup_glob):
         """For each plotID extract the heights from LiDAR derived CHM
         Args:
-            train_shp: shapefile of data to filter
+            shp: shapefile of data to filter
             lookup_glob: recursive glob search for CHM files
         """    
         filtered_results = []
         lookup_pool = glob.glob(lookup_glob, recursive=True)        
-        for name, group in train_shp.groupby("plotID"):
-            try:
-                result = postprocess_CHM(group, lookup_pool=lookup_pool)
-            except Exception as e:
-                print("plotID: {} failed with {}".format(group.plotID.unique(),e))
-                continue
+        for name, group in shp.groupby("plotID"):
+            result = postprocess_CHM(group, lookup_pool=lookup_pool)
             filtered_results.append(result)
         filtered_shp = gpd.GeoDataFrame(pd.concat(filtered_results,ignore_index=True))
         
