@@ -47,7 +47,7 @@ def predict(dirname, savedir, generate=True, cpus=2, parallel=True, height=40, w
             _predict_(shapefile, model_path, savedir=savedir, create_records=generate)
             
 if __name__ == "__main__":
-    sleep(randint(0,10))
+    sleep(randint(0,20))
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     save_dir = "{}/{}".format("/orange/idtrees-collab/DeepTreeAttention/snapshots/",timestamp)
     os.mkdir(save_dir)
