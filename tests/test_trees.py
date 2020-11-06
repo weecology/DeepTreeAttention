@@ -120,6 +120,9 @@ def test_split_data(mod, tfrecords):
     
 @pytest.mark.parametrize("submodel",["spectral","spatial","metadata","None"])
 def test_AttentionModel(mod, tfrecords, submodel):
+    
+    shp = gpd.read_file(test_predictions)
+    
     mod.read_data(validation_split=True)
     
     #How many batches and ensure no overlap in data
@@ -135,7 +138,8 @@ def test_AttentionModel(mod, tfrecords, submodel):
     for data, label in mod.val_split:
         test_image_data.append(data)            
         test_counter+=data.shape[0]
-
+    
+    assert shp.shape[0] == train_counter + test_counter
     assert train_counter > test_counter
     
     #No test in train batches
