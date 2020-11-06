@@ -27,6 +27,27 @@ class F1Callback(Callback):
         self.n = n
         self.y_true = y_true
  
+    def on_train_end(self, logs={}):
+            
+        y_pred = []
+        sites = []
+        
+        #gather site and species matrix
+        y_pred = self.model.predict(self.eval_dataset)
+        
+        if self.submodel in ["spectral","spatial"]:
+            y_pred = y_pred[0]
+        
+        #F1
+        macro, micro = metrics.f1_scores(self.y_true, y_pred)
+        self.experiment.log_metric("Final MicroF1", micro)
+        self.experiment.log_metric("Final MacroF1", macro)
+        
+        #Log number of predictions to make sure its constant
+        self.experiment.log_metric("Prediction samples",y_pred.shape[0])
+        results = pd.DataFrame({"true":np.argmax(self.y_true, 1),"predicted":np.argmax(y_pred, 1)})
+        self.experiment.log_table("results_final.csv".format(epoch),results.values)
+        
     def on_epoch_end(self, epoch, logs={}):
         
         if not epoch % self.n == 0:
