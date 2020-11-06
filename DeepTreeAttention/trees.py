@@ -170,7 +170,7 @@ class AttentionModel():
             #Create testing tf.data
             self.val_split = boxes.tf_dataset(
                 tfrecords=self.test_split_records,
-                batch_size=1,
+                batch_size=313,
                 shuffle=False,
                 mode=mode,
                 cores=self.config["cpu_workers"],
@@ -193,7 +193,7 @@ class AttentionModel():
 
                 self.val_split = boxes.tf_dataset(
                     tfrecords=self.test_records,
-                    batch_size=1,
+                    batch_size=313,
                     shuffle=False,
                     mode=mode,
                     cores=self.config["cpu_workers"],
