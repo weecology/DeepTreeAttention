@@ -55,7 +55,9 @@ class AttentionModel():
         self.extend_box = self.config["train"]["extend_box"]
         self.classes_file = self.config["train"]["species_class_file"]
         self.sites = self.config["train"]["sites"]
-
+        self.training_samples = None
+        self.test_samples = None
+        
     def generate(self, shapefile, HSI_sensor_path, RGB_sensor_path, elevation, heights, site, species_label_dict=None, train=True, chunk_size=1000):
         """Predict species class for each DeepForest bounding box
             Args:
