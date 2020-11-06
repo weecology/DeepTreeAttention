@@ -84,11 +84,11 @@ if __name__ == "__main__":
         if model.config["train"]["gpus"] > 1:
             with model.strategy.scope():   
                 print("Running in parallel on {} GPUs".format(model.strategy.num_replicas_in_sync))
-                model.RGB_model = load_model("{}/RGB_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum}, compile=False)
+                #model.RGB_model = load_model("{}/RGB_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum}, compile=False)
                 model.HSI_model = load_model("{}/HSI_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum}, compile=False)  
                 model.metadata_model = load_model("{}/metadata_model.h5".format(dirname), compile=False)  
         else:
-            model.RGB_model = load_model("{}/RGB_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum})
+            #model.RGB_model = load_model("{}/RGB_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum})
             model.HSI_model = load_model("{}/HSI_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum})     
             model.metadata_model = load_model("{}/metadata_model.h5".format(dirname), compile=False)  
                 
