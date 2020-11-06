@@ -238,7 +238,7 @@ class AttentionModel():
                 steps_per_epoch=self.steps_per_epoch,
                 epochs=int(self.config["train"]["metadata"]["epochs"]),
                 validation_data=self.val_split,
-                callbacks=callback_list,
+                callbacks=None,
                 class_weight=class_weight)
         else:
             if submodel == "spatial":
@@ -247,7 +247,7 @@ class AttentionModel():
                                            epochs=int(self.config["train"]["HSI"]["epochs"]),
                                            steps_per_epoch=self.steps_per_epoch,                                           
                                            validation_data=self.val_split,
-                                           callbacks=callback_list,
+                                           callbacks=None,
                                            class_weight=class_weight)
                 
                 elif sensor == "RGB":
@@ -255,7 +255,7 @@ class AttentionModel():
                                                      epochs=int(self.config["train"]["RGB"]["epochs"]),
                                                      steps_per_epoch=self.steps_per_epoch,                                                     
                                                        validation_data=self.val_split,
-                                                       callbacks=callback_list,
+                                                       callbacks=None,
                                                        class_weight=class_weight)                
     
             elif submodel == "spectral":
@@ -264,7 +264,7 @@ class AttentionModel():
                                            epochs=int(self.config["train"]["HSI"]["epochs"]),
                                            steps_per_epoch=self.steps_per_epoch,                                           
                                            validation_data=self.val_split,
-                                           callbacks=callback_list,
+                                           callbacks=None,
                                            class_weight=class_weight)
                 elif sensor == "RGB":
                     self.RGB_spectral.fit(
@@ -272,7 +272,7 @@ class AttentionModel():
                         epochs=int(self.config["train"]["RGB"]["epochs"]),
                         steps_per_epoch=self.steps_per_epoch,                                                     
                         validation_data=self.val_split,
-                        callbacks=callback_list,
+                        callbacks=None,
                         class_weight=class_weight)      
             else:
                 if sensor == "hyperspectral":
@@ -281,7 +281,7 @@ class AttentionModel():
                         steps_per_epoch=self.steps_per_epoch,                                                                                            
                         epochs=self.config["train"]["HSI"]["epochs"],
                         validation_data=self.val_split,
-                        callbacks=callback_list,
+                        callbacks=None,
                         class_weight=class_weight)
                 
                 elif sensor == "RGB":
@@ -290,14 +290,14 @@ class AttentionModel():
                         steps_per_epoch=self.steps_per_epoch,                                                                             
                         epochs=self.config["train"]["RGB"]["epochs"],
                         validation_data=self.val_split,
-                        callbacks=callback_list,
+                        callbacks=None,
                         class_weight=class_weight)
         
     def ensemble(self, experiment, class_weight=None, freeze = True, train=True):
         #Manually override batch size
         self.classes = pd.read_csv(self.classes_file).shape[0]        
         self.read_data(mode="ensemble")     
-        self.steps_per_epoch = round(self.training_samples / (self.config["ensemble"]["batch_size"] * self.config["train"]["gpus"]))
+        self.steps_per_epoch = round(self.training_samples / (self.config["train"]["ensemble"]["batch_size"] * self.config["train"]["gpus"]))
         
         if self.val_split is None:
             print("Cannot run callbacks without validation data, skipping...")
@@ -339,7 +339,7 @@ class AttentionModel():
                         epochs=self.config["train"]["ensemble"]["epochs"],
                         steps_per_epoch=self.steps_per_epoch,                                                                             
                         validation_data=self.val_split,
-                        callbacks=callback_list,
+                        callbacks=None,
                         class_weight=class_weight)                    
         else:
             self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"]      
