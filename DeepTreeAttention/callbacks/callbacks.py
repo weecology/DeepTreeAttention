@@ -46,7 +46,7 @@ class F1Callback(Callback):
         #Log number of predictions to make sure its constant
         self.experiment.log_metric("Prediction samples",y_pred.shape[0])
         results = pd.DataFrame({"true":np.argmax(self.y_true, 1),"predicted":np.argmax(y_pred, 1)})
-        self.experiment.log_table("results_final.csv".format(epoch),results.values)
+        self.experiment.log_table("results_final.csv",results.values)
         
     def on_epoch_end(self, epoch, logs={}):
         
