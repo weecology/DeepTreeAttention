@@ -15,18 +15,18 @@ train:
         sensor_channels: 369
         crop_size: 20
         weighted_sum: True
-        epochs: 120
+        epochs: 5
     RGB:
         sensor_channels: 3
         crop_size: 100
         weighted_sum: True
-        epochs: 50
+        epochs: 5
     metadata:
-        epochs: 200
+        epochs: 5
     ensemble:
         freeze: False
         batch_size: 256
-        epochs: 120
+        epochs: 5
     sites: 23
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/CHM_filtered_train.shp  #path to ground truth class shapefile   
@@ -37,7 +37,7 @@ train:
     steps:
     shuffle: True
     training_fraction: 0.9
-    gpus: 6
+    gpus: 2
     pretrain: True #Train the submodels before ensembling all together
     
 callbacks:
