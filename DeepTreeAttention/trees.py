@@ -210,7 +210,7 @@ class AttentionModel():
             self.training_samples += label.shape[0]      
             
         self.test_samples=0
-        for data, label in self.train_split:
+        for data, label in self.val_split:
             if submodel in ["spatial","spectral"]:
                 label = label[0]
             self.test_samples += label.shape[0]                 
