@@ -482,7 +482,7 @@ if __name__ == "__main__":
     
     #create dask client
     client = start_cluster.start(cpus=config["cpu_workers"], mem_size="15GB")
-    
+    #client = None
     #test data
     main(
         field_data=config["evaluation"]["ground_truth_path"],
