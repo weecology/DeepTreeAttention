@@ -55,7 +55,6 @@ if __name__ == "__main__":
     experiment = Experiment(project_name="neontrees", workspace="bw4sz")
     experiment.add_tag("Train")
 
-    
     #Create output folder
     experiment.log_parameter("timestamp",timestamp)
     

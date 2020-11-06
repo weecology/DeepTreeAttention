@@ -687,14 +687,13 @@ def tf_dataset(tfrecords,
         if shuffle:
             dataset = dataset.shuffle(buffer_size=batch_size)
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=drop_remainder)
-      
     elif mode == "RGB_submodel":
         dataset = dataset.map(_train_RGB_submodel_parse_, num_parallel_calls=cores)
         dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
         dataset = dataset.map(lambda image, label: (flip(image), label))        
         if shuffle:
             dataset = dataset.shuffle(buffer_size=batch_size * 2)
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=drop_remainder)        
+        dataset = dataset.batch(batch_size=batch_size, drop_remainder=drop_remainder)     
     else:
         raise ValueError(
             "invalid mode, please use HSI_train, RGB_train, ensemble, predict or submodel: {}".format(mode))

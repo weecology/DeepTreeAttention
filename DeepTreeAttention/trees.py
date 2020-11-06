@@ -165,7 +165,7 @@ class AttentionModel():
                 shuffle=self.config["train"]["shuffle"],
                 mode=mode,
                 cores=self.config["cpu_workers"],
-                drop_remainder=True)
+                drop_remainder=False)
 
             #Create testing tf.data
             self.val_split = boxes.tf_dataset(
@@ -183,7 +183,7 @@ class AttentionModel():
                 shuffle=self.config["train"]["shuffle"],
                 mode=mode,
                 cores=self.config["cpu_workers"],
-                drop_remainder=True)
+                drop_remainder=False)
 
             #honor config if validation not set
             self.val_split = None
@@ -201,7 +201,15 @@ class AttentionModel():
 
     def train(self, experiment=None, class_weight=None, submodel=None, sensor="hyperspectral"):
         """Train a model with callbacks"""
-
+        
+        #Training data repeats with a known number of samples
+        self.training_samples=0
+        for data, label in self.train_split:
+            self.training_samples += label.shape[0]        
+        
+        self.train_split = self.train_split.repeat()
+        self.steps_per_epoch = self.training_samples / (self.config["train"]["batch_size"] * self.config["train"]["gpus"])
+        
         if self.val_split is None:
             print("Cannot run callbacks without validation data, skipping...")
             callback_list = None
@@ -223,16 +231,19 @@ class AttentionModel():
                                              submodel=submodel)
                 
         if submodel == "metadata":
-            self.metadata_model.fit(self.train_split,
-                           epochs=int(self.config["train"]["metadata"]["epochs"]),
-                           validation_data=self.val_split,
-                           callbacks=callback_list,
-                           class_weight=class_weight)
+            self.metadata_model.fit(
+                self.train_split,
+                steps_per_epoch=self.steps_per_epoch,
+                epochs=int(self.config["train"]["metadata"]["epochs"]),
+                validation_data=self.val_split,
+                callbacks=callback_list,
+                class_weight=class_weight)
         else:
             if submodel == "spatial":
                 if sensor == "hyperspectral":
                     self.HSI_spatial.fit(self.train_split,
                                            epochs=int(self.config["train"]["HSI"]["epochs"]),
+                                           steps_per_epoch=self.steps_per_epoch,                                           
                                            validation_data=self.val_split,
                                            callbacks=callback_list,
                                            class_weight=class_weight)
@@ -240,6 +251,7 @@ class AttentionModel():
                 elif sensor == "RGB":
                     self.RGB_spatial.fit(self.train_split,
                                                      epochs=int(self.config["train"]["RGB"]["epochs"]),
+                                                     steps_per_epoch=self.steps_per_epoch,                                                     
                                                        validation_data=self.val_split,
                                                        callbacks=callback_list,
                                                        class_weight=class_weight)                
@@ -248,26 +260,32 @@ class AttentionModel():
                 if sensor == "hyperspectral":
                     self.HSI_spectral.fit(self.train_split,
                                            epochs=int(self.config["train"]["HSI"]["epochs"]),
+                                           steps_per_epoch=self.steps_per_epoch,                                           
                                            validation_data=self.val_split,
                                            callbacks=callback_list,
                                            class_weight=class_weight)
                 elif sensor == "RGB":
-                    self.RGB_spectral.fit(self.train_split,
-                                                     epochs=int(self.config["train"]["RGB"]["epochs"]),
-                                                       validation_data=self.val_split,
-                                                       callbacks=callback_list,
-                                                       class_weight=class_weight)      
+                    self.RGB_spectral.fit(
+                        self.train_split,
+                        epochs=int(self.config["train"]["RGB"]["epochs"]),
+                        steps_per_epoch=self.steps_per_epoch,                                                     
+                        validation_data=self.val_split,
+                        callbacks=callback_list,
+                        class_weight=class_weight)      
             else:
                 if sensor == "hyperspectral":
-                    self.HSI_model.fit(self.train_split,
-                                   epochs=self.config["train"]["HSI"]["epochs"],
-                                   validation_data=self.val_split,
-                                   callbacks=callback_list,
-                                   class_weight=class_weight)
+                    self.HSI_model.fit(
+                        self.train_split,
+                        steps_per_epoch=self.steps_per_epoch,                                                                                            
+                        epochs=self.config["train"]["HSI"]["epochs"],
+                        validation_data=self.val_split,
+                        callbacks=callback_list,
+                        class_weight=class_weight)
                 
                 elif sensor == "RGB":
                     self.RGB_model.fit(
                         self.train_split,
+                        steps_per_epoch=self.steps_per_epoch,                                                                             
                         epochs=self.config["train"]["RGB"]["epochs"],
                         validation_data=self.val_split,
                         callbacks=callback_list,
@@ -315,6 +333,7 @@ class AttentionModel():
                     self.ensemble_model.fit(
                         self.train_split,
                         epochs=self.config["train"]["ensemble"]["epochs"],
+                        steps_per_epoch=self.steps_per_epoch,                                                                             
                         validation_data=self.val_split,
                         callbacks=callback_list,
                         class_weight=class_weight)                    
