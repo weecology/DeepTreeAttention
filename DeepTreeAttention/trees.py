@@ -207,10 +207,17 @@ class AttentionModel():
         for data, label in self.train_split:
             if submodel in ["spatial","spectral"]:
                 label = label[0]
-            self.training_samples += label.shape[0]        
+            self.training_samples += label.shape[0]      
+            
+        self.test_samples=0
+        for data, label in self.train_split:
+            if submodel in ["spatial","spectral"]:
+                label = label[0]
+            self.test_samples += label.shape[0]                 
         
         self.train_split = self.train_split.repeat()
         self.steps_per_epoch = round(self.training_samples / (self.config["train"]["batch_size"] * self.config["train"]["gpus"]))
+        self.validation_steps = int(self.test_samples / 1 * self.config["train"]["gpus"])
         
         if self.val_split is None:
             print("Cannot run callbacks without validation data, skipping...")
@@ -238,6 +245,7 @@ class AttentionModel():
                 steps_per_epoch=self.steps_per_epoch,
                 epochs=int(self.config["train"]["metadata"]["epochs"]),
                 validation_data=self.val_split,
+                validation_steps = self.validation_steps,                
                 callbacks=None,
                 class_weight=class_weight)
         else:
@@ -247,6 +255,7 @@ class AttentionModel():
                                            epochs=int(self.config["train"]["HSI"]["epochs"]),
                                            steps_per_epoch=self.steps_per_epoch,                                           
                                            validation_data=self.val_split,
+                                           validation_steps = self.validation_steps,                                           
                                            callbacks=None,
                                            class_weight=class_weight)
                 
@@ -255,6 +264,7 @@ class AttentionModel():
                                                      epochs=int(self.config["train"]["RGB"]["epochs"]),
                                                      steps_per_epoch=self.steps_per_epoch,                                                     
                                                        validation_data=self.val_split,
+                                                       validation_steps = self.validation_steps,                                                       
                                                        callbacks=None,
                                                        class_weight=class_weight)                
     
@@ -264,6 +274,7 @@ class AttentionModel():
                                            epochs=int(self.config["train"]["HSI"]["epochs"]),
                                            steps_per_epoch=self.steps_per_epoch,                                           
                                            validation_data=self.val_split,
+                                           validation_steps = self.validation_steps,                                           
                                            callbacks=None,
                                            class_weight=class_weight)
                 elif sensor == "RGB":
@@ -272,6 +283,7 @@ class AttentionModel():
                         epochs=int(self.config["train"]["RGB"]["epochs"]),
                         steps_per_epoch=self.steps_per_epoch,                                                     
                         validation_data=self.val_split,
+                        validation_steps = self.validation_steps,                        
                         callbacks=None,
                         class_weight=class_weight)      
             else:
@@ -281,6 +293,7 @@ class AttentionModel():
                         steps_per_epoch=self.steps_per_epoch,                                                                                            
                         epochs=self.config["train"]["HSI"]["epochs"],
                         validation_data=self.val_split,
+                        validation_steps = self.validation_steps,                        
                         callbacks=None,
                         class_weight=class_weight)
                 
@@ -290,6 +303,7 @@ class AttentionModel():
                         steps_per_epoch=self.steps_per_epoch,                                                                             
                         epochs=self.config["train"]["RGB"]["epochs"],
                         validation_data=self.val_split,
+                        validation_steps = self.validation_steps,                        
                         callbacks=None,
                         class_weight=class_weight)
         
@@ -297,7 +311,9 @@ class AttentionModel():
         #Manually override batch size
         self.classes = pd.read_csv(self.classes_file).shape[0]        
         self.read_data(mode="ensemble")     
+        self.train_split = self.train_split.repeat()        
         self.steps_per_epoch = round(self.training_samples / (self.config["train"]["ensemble"]["batch_size"] * self.config["train"]["gpus"]))
+        self.validation_steps = int(self.test_samples / 1 * self.config["train"]["gpus"])
         
         if self.val_split is None:
             print("Cannot run callbacks without validation data, skipping...")
@@ -339,6 +355,7 @@ class AttentionModel():
                         epochs=self.config["train"]["ensemble"]["epochs"],
                         steps_per_epoch=self.steps_per_epoch,                                                                             
                         validation_data=self.val_split,
+                        validation_steps = self.validation_steps,
                         callbacks=None,
                         class_weight=class_weight)                    
         else:
