@@ -153,7 +153,11 @@ if __name__ == "__main__":
     with experiment.context_manager("ensemble"):    
         print("Train Ensemble")
         model.ensemble(freeze=model.config["train"]["ensemble"]["freeze"], experiment=experiment)
-        
+    
+    #Final score, be absolutely sure you get all the data, feed slowly in batches of 1
+    final_score = model.ensemble_model.evaluate(model.val_split.unbatch().batch(1))    
+    experiment.log_metric("Ensemble Accuracy", final_score[1])
+    
     #Save model and figure
     #tf.keras.utils.plot_model(model.ensemble_model, to_file="{}/Ensemble.png".format(save_dir))
     #experiment.log_figure("{}/Ensemble.png".format(save_dir))
