@@ -205,10 +205,12 @@ class AttentionModel():
         #Training data repeats with a known number of samples
         self.training_samples=0
         for data, label in self.train_split:
+            if submodel in ["spatial","spectral"]:
+                label = label[0]
             self.training_samples += label.shape[0]        
         
         self.train_split = self.train_split.repeat()
-        self.steps_per_epoch = self.training_samples / (self.config["train"]["batch_size"] * self.config["train"]["gpus"])
+        self.steps_per_epoch = round(self.training_samples / (self.config["train"]["batch_size"] * self.config["train"]["gpus"]))
         
         if self.val_split is None:
             print("Cannot run callbacks without validation data, skipping...")
@@ -295,7 +297,7 @@ class AttentionModel():
         #Manually override batch size
         self.classes = pd.read_csv(self.classes_file).shape[0]        
         self.read_data(mode="ensemble")     
-        self.steps_per_epoch = self.training_samples / (self.config["ensemble"]["batch_size"] * self.config["train"]["gpus"])
+        self.steps_per_epoch = round(self.training_samples / (self.config["ensemble"]["batch_size"] * self.config["train"]["gpus"]))
         
         if self.val_split is None:
             print("Cannot run callbacks without validation data, skipping...")
