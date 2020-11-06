@@ -216,8 +216,8 @@ class AttentionModel():
             self.test_samples += label.shape[0]                 
         
         self.train_split = self.train_split.repeat()
-        self.steps_per_epoch = round(self.training_samples / (self.config["train"]["batch_size"] * self.config["train"]["gpus"]))
-        self.validation_steps = int(self.test_samples / 1 * self.config["train"]["gpus"])
+        self.steps_per_epoch = round(self.training_samples / (self.config["train"]["batch_size"] ))
+        self.validation_steps = int(self.test_samples)
         
         if self.val_split is None:
             print("Cannot run callbacks without validation data, skipping...")
@@ -312,8 +312,8 @@ class AttentionModel():
         self.classes = pd.read_csv(self.classes_file).shape[0]        
         self.read_data(mode="ensemble")     
         self.train_split = self.train_split.repeat()        
-        self.steps_per_epoch = round(self.training_samples / (self.config["train"]["ensemble"]["batch_size"] * self.config["train"]["gpus"]))
-        self.validation_steps = int(self.test_samples / 1 * self.config["train"]["gpus"])
+        self.steps_per_epoch = round(self.training_samples / (self.config["train"]["ensemble"]["batch_size"] ))
+        self.validation_steps = int(self.test_samples / 1)
         
         if self.val_split is None:
             print("Cannot run callbacks without validation data, skipping...")
@@ -333,6 +333,8 @@ class AttentionModel():
             callback_list = callbacks.create(log_dir=self.log_dir,
                                              experiment=experiment,
                                              validation_data=self.val_split,
+                                             steps_per_epoch=self.steps_per_epoch,                                                                                                                          
+                                             validation_steps = self.validation_steps,                                             
                                              train_data=self.train_split,
                                              label_names=label_names,
                                              submodel="ensemble")

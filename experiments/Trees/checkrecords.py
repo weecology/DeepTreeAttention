@@ -23,7 +23,7 @@ for metadata, label in dataset:
         counter += data.shape[0]
         
 created_records = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/train/*.tfrecord")
-dataset = boxes.tf_dataset(created_records, mode="ensemble",batch_size=256*6, drop_remainder=False)
+dataset = boxes.tf_dataset(created_records, mode="ensemble",batch_size=256, drop_remainder=False)
 counter=0
 for data, label in dataset:
     counter+=data[0].shape[0]
