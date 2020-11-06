@@ -623,6 +623,7 @@ def tf_dataset(tfrecords,
                shuffle=True,
                mode="HSI_train",
                normalize=True,
+               drop_remainder=False,
                cores=10):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
@@ -650,7 +651,7 @@ def tf_dataset(tfrecords,
         dataset = dataset.map(lambda image, label: (tf.image.rot90(image), label))                        
         if shuffle:
             dataset = dataset.shuffle(buffer_size=batch_size)
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)
+        dataset = dataset.batch(batch_size=batch_size, drop_remainder=drop_remainder)
     
     elif mode == "RGB_train":
         dataset = dataset.map(_RGB_train_parse_, num_parallel_calls=cores)
@@ -659,7 +660,7 @@ def tf_dataset(tfrecords,
         dataset = dataset.map(lambda inputs, label: (flip(inputs), label))        
         if shuffle:
             dataset = dataset.shuffle(buffer_size=batch_size * 2)
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)
+        dataset = dataset.batch(batch_size=batch_size, drop_remainder=drop_remainder)
      
     elif mode == "ensemble":
         dataset = dataset.map(_train_parse_, num_parallel_calls=cores)
@@ -667,16 +668,16 @@ def tf_dataset(tfrecords,
         dataset = dataset.map(lambda data, label: (preproccess_images(data),label))
         if shuffle:
             dataset = dataset.shuffle(buffer_size=batch_size)
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)
+        dataset = dataset.batch(batch_size=batch_size, drop_remainder=drop_remainder)
             
     elif mode == "predict":
         dataset = dataset.map(_predict_parse_, num_parallel_calls=cores)
         dataset = dataset.map(lambda inputs, index: ((tf.image.per_image_standardization(inputs[0]),inputs[1]), index))
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)
+        dataset = dataset.batch(batch_size=batch_size, drop_remainder=drop_remainder)
     
     elif mode == "metadata":
         dataset = dataset.map(_metadata_parse_, num_parallel_calls=cores)
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)
+        dataset = dataset.batch(batch_size=batch_size, drop_remainder=drop_remainder)
         
     elif mode == "HSI_submodel":
         dataset = dataset.map(_train_HSI_submodel_parse_, num_parallel_calls=cores)
@@ -685,7 +686,7 @@ def tf_dataset(tfrecords,
         dataset = dataset.map(lambda image, label: (tf.image.rot90(image), label))                
         if shuffle:
             dataset = dataset.shuffle(buffer_size=batch_size)
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)
+        dataset = dataset.batch(batch_size=batch_size, drop_remainder=drop_remainder)
       
     elif mode == "RGB_submodel":
         dataset = dataset.map(_train_RGB_submodel_parse_, num_parallel_calls=cores)
@@ -693,7 +694,7 @@ def tf_dataset(tfrecords,
         dataset = dataset.map(lambda image, label: (flip(image), label))        
         if shuffle:
             dataset = dataset.shuffle(buffer_size=batch_size * 2)
-        dataset = dataset.batch(batch_size=batch_size, drop_remainder=False)        
+        dataset = dataset.batch(batch_size=batch_size, drop_remainder=drop_remainder)        
     else:
         raise ValueError(
             "invalid mode, please use HSI_train, RGB_train, ensemble, predict or submodel: {}".format(mode))

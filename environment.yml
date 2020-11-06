@@ -3,7 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - python=3.7
-  - gdal
+  - gdal > 3.1
   - rasterio > 1.0
   - tensorflow > 2.0
   - scikit-learn
@@ -16,7 +16,7 @@ dependencies:
   - numpydoc
   - h5py
   - numpy
-  - pillow
+  - pillow  
   - bokeh
   - pip
   - matplotlib

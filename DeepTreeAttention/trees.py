@@ -164,7 +164,8 @@ class AttentionModel():
                 batch_size=self.config["train"]["batch_size"],
                 shuffle=self.config["train"]["shuffle"],
                 mode=mode,
-                cores=self.config["cpu_workers"])
+                cores=self.config["cpu_workers"],
+                drop_remainder=True)
 
             #Create testing tf.data
             self.val_split = boxes.tf_dataset(
@@ -172,7 +173,8 @@ class AttentionModel():
                 batch_size=self.config["train"]["batch_size"],
                 shuffle=False,
                 mode=mode,
-                cores=self.config["cpu_workers"])
+                cores=self.config["cpu_workers"],
+                drop_remainder=False)
         else:
             #Create training tf.data
             self.train_split = boxes.tf_dataset(
@@ -180,7 +182,8 @@ class AttentionModel():
                 batch_size=self.config["train"]["batch_size"],
                 shuffle=self.config["train"]["shuffle"],
                 mode=mode,
-                cores=self.config["cpu_workers"])
+                cores=self.config["cpu_workers"],
+                drop_remainder=True)
 
             #honor config if validation not set
             self.val_split = None
@@ -193,7 +196,8 @@ class AttentionModel():
                     batch_size=self.config["train"]["batch_size"],
                     shuffle=False,
                     mode=mode,
-                    cores=self.config["cpu_workers"])
+                    cores=self.config["cpu_workers"],
+                    drop_remainder=False)
 
     def train(self, experiment=None, class_weight=None, submodel=None, sensor="hyperspectral"):
         """Train a model with callbacks"""
