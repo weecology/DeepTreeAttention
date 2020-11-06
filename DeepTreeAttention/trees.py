@@ -217,7 +217,7 @@ class AttentionModel():
         
         self.train_split = self.train_split.repeat()
         self.steps_per_epoch = round(self.training_samples / (self.config["train"]["batch_size"] ))
-        self.validation_steps = int(self.test_samples)
+        self.validation_steps = int(self.test_samples/313)
         
         if self.val_split is None:
             print("Cannot run callbacks without validation data, skipping...")
@@ -313,7 +313,7 @@ class AttentionModel():
         self.read_data(mode="ensemble")     
         self.train_split = self.train_split.repeat()        
         self.steps_per_epoch = round(self.training_samples / (self.config["train"]["ensemble"]["batch_size"] ))
-        self.validation_steps = round(self.test_samples)
+        self.validation_steps = round(self.test_samples/313)
         
         if self.val_split is None:
             print("Cannot run callbacks without validation data, skipping...")
