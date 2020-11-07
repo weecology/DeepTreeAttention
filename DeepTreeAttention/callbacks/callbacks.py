@@ -164,6 +164,7 @@ def create(experiment, train_data, validation_data, log_dir=None, label_names=No
                                   patience=10,
                                   cooldown=5,
                                   min_delta=0.1,
+                                  min_lr=0.00005,
                                   verbose=1)
     callback_list.append(reduce_lr)
 
