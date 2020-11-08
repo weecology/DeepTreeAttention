@@ -28,9 +28,7 @@ def postprocess_CHM(df, lookup_pool):
 
     #if height is null, assign it
     df.height.fillna(df["CHM_height"], inplace=True)
-    
-    df = df[df.CHM_height>1]        
-    
+        
     ##Rename column
     #if remove:
         ##drop points with less than 1 m height        
@@ -100,17 +98,6 @@ def train_split(path, test_ids, test_species, debug = False):
     #reupdate
     shp.loc[BLAN_errors.index] = BLAN_errors
     
-    #HOT fix, STEI was split into two utm zones but is unlabeled. It's 16N but needs to be 15N in the AOP data
-    #STEI_errors = shp[(shp.siteID == "STEI") & (shp.itcEasting.astype(str).str.startswith("7"))]
-    #STEI_errors.set_crs(epsg=32615, inplace=True)
-    #STEI_errors.to_crs(32616,inplace=True)
-    #STEI_errors["utmZone"] = "16N"    
-    #STEI_errors["itcEasting"] = STEI_errors.geometry.apply(lambda x: x.coords[0][0])
-    #STEI_errors["itcNorthing"] = STEI_errors.geometry.apply(lambda x: x.coords[0][1])
-    
-    #reupdate
-    #shp.loc[STEI_errors.index] = STEI_errors
-    
     #Oak Right Lab has no AOP data
     shp = shp[~(shp.siteID=="ORNL")]
     
@@ -179,6 +166,9 @@ def train_test_split(ROOT, lookup_glob, n=None):
     ))
     
     #just to be safe, assert no test in train
+    #remove CHM points under 1m
+    train = train[train.CHM_height>1]        
+    
     check_empty = test[test.individualID.isin(train.individualID.unique())]
     assert check_empty.empty
     

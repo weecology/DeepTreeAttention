@@ -162,9 +162,8 @@ def create(experiment, train_data, validation_data, log_dir=None, label_names=No
     reduce_lr = ReduceLROnPlateau(monitor='val_loss',
                                   factor=0.5,
                                   patience=10,
-                                  cooldown=5,
                                   min_delta=0.1,
-                                  min_lr=0.0005,
+                                  min_lr=0.0001,
                                   verbose=1)
     callback_list.append(reduce_lr)
 
