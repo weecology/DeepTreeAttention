@@ -147,6 +147,7 @@ def train_test_split(ROOT, lookup_glob, n=None):
     train = train_split("{}/data/raw/latest_full_veg_structure.csv".format(ROOT), test.individualID, test.taxonID.unique())
     
     filtered_train = filter_CHM(train, lookup_glob)
+    filtered_train = filtered_train[filtered_train.CHM_height>1]   
     filtered_train = filtered_train[filtered_train.taxonID.isin(test.taxonID.unique())]
     test = test[test.taxonID.isin(filtered_train.taxonID.unique())]
 
@@ -166,8 +167,7 @@ def train_test_split(ROOT, lookup_glob, n=None):
     ))
     
     #just to be safe, assert no test in train
-    #remove CHM points under 1m
-    train = train[train.CHM_height>1]        
+    #remove CHM points under 1m    
     
     check_empty = test[test.individualID.isin(train.individualID.unique())]
     assert check_empty.empty
