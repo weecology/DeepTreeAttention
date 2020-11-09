@@ -7,9 +7,18 @@ from DeepTreeAttention.callbacks import callbacks
 import pandas as pd
 from tensorflow.keras.models import load_model
 from DeepTreeAttention.models.layers import WeightedSum
+from random import randint
+from time import sleep
+from datetime import datetime
+import os
 
 model = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
 model.create()
+
+sleep(randint(0,20))
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+save_dir = "{}/{}".format("/orange/idtrees-collab/DeepTreeAttention/snapshots/",timestamp)
+os.mkdir(save_dir)
 
 #Log config
 experiment = Experiment(project_name="neontrees", workspace="bw4sz")
@@ -17,6 +26,8 @@ experiment.log_parameters(model.config["train"])
 experiment.log_parameters(model.config["evaluation"])    
 experiment.log_parameters(model.config["predict"])
 experiment.add_tag("RGB")
+experiment.log_parameter("timestamp",timestamp)
+
 
 ##Train
 
