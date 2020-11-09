@@ -27,20 +27,20 @@ with experiment.context_manager("RGB_spatial_subnetwork"):
     model.read_data(mode="RGB_submodel")
     model.train(submodel="spatial", sensor="RGB", experiment=experiment)
 
-#with experiment.context_manager("RGB_spectral_subnetwork"):
-    #print("Train RGB spectral subnetwork")    
-    #model.read_data(mode="RGB_submodel")   
-    #model.train(submodel="spectral", sensor="RGB", experiment=experiment)
+with experiment.context_manager("RGB_spectral_subnetwork"):
+    print("Train RGB spectral subnetwork")    
+    model.read_data(mode="RGB_submodel")   
+    model.train(submodel="spectral", sensor="RGB", experiment=experiment)
         
-##Train full model
-#with experiment.context_manager("RGB_model"):
-    #model.read_data(mode="RGB_train")
-    #model.train(sensor="RGB", experiment=experiment)
+#Train full model
+with experiment.context_manager("RGB_model"):
+    model.read_data(mode="RGB_train")
+    model.train(sensor="RGB", experiment=experiment)
     
-    ##Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
-    #if model.config["train"]["RGB"]["weighted_sum"]:
-        #estimate_a = model.RGB_model.get_layer("weighted_sum").get_weights()
-        #experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
+    #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
+    if model.config["train"]["RGB"]["weighted_sum"]:
+        estimate_a = model.RGB_model.get_layer("weighted_sum").get_weights()
+        experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
         
 #Load RGB model
 model.HSI_model = load_model("{}/HSI_model.h5".format(model.config["train"]["checkpoint_dir"]), custom_objects={"WeightedSum": WeightedSum})     
