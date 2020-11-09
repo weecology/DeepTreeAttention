@@ -609,7 +609,7 @@ def preproccess_images(data):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
     HSI, RGB, elevation, height, site = data 
     HSI = tf.image.per_image_standardization(HSI)
-    RGB = tf.image.per_image_standardization(RGB)
+    #RGB = tf.image.per_image_standardization(RGB)
     HSI = flip(HSI)
     RGB = flip(RGB)
     
@@ -657,7 +657,7 @@ def tf_dataset(tfrecords,
     elif mode == "RGB_train":
         dataset = dataset.map(_RGB_train_parse_, num_parallel_calls=cores)
         #normalize and batch
-        dataset = dataset.map(lambda inputs, label: (tf.image.per_image_standardization(inputs), label))
+        #dataset = dataset.map(lambda inputs, label: (tf.image.per_image_standardization(inputs), label))
         dataset = dataset.map(lambda inputs, label: (flip(inputs), label))        
         if shuffle:
             dataset = dataset.shuffle(buffer_size=batch_size * 2)
@@ -690,7 +690,7 @@ def tf_dataset(tfrecords,
         dataset = dataset.batch(batch_size=batch_size, drop_remainder=drop_remainder)
     elif mode == "RGB_submodel":
         dataset = dataset.map(_train_RGB_submodel_parse_, num_parallel_calls=cores)
-        dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
+        #dataset = dataset.map(lambda image, label: (tf.image.per_image_standardization(image), label))   
         dataset = dataset.map(lambda image, label: (flip(image), label))        
         if shuffle:
             dataset = dataset.shuffle(buffer_size=batch_size * 2)
