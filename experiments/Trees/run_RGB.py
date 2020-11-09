@@ -42,11 +42,18 @@ with experiment.context_manager("RGB_model"):
     if model.config["train"]["RGB"]["weighted_sum"]:
         estimate_a = model.RGB_model.get_layer("weighted_sum").get_weights()
         experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
-        
-#Load RGB model
-model.HSI_model = load_model("{}/HSI_model.h5".format(model.config["train"]["checkpoint_dir"]), custom_objects={"WeightedSum": WeightedSum})     
-model.metadata_model = load_model("{}/metadata_model.h5".format(model.config["train"]["checkpoint_dir"]), compile=False)  
-model.RGB_model = model.RGB_spatial
+
+model.RGB_model.save("{}/RGB_model.h5".format(save_dir))
+
+#Load ensembles model
+if model.config["train"]["gpus"] > 1:
+    with model.strategy.scope():   
+        print("Running in parallel on {} GPUs".format(model.strategy.num_replicas_in_sync))
+        model.HSI_model = load_model("{}/HSI_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum}, compile=False)  
+        model.metadata_model = load_model("{}/metadata_model.h5".format(dirname), compile=False)  
+else:
+    model.HSI_model = load_model("{}/HSI_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum})     
+    model.metadata_model = load_model("{}/metadata_model.h5".format(dirname), compile=False)  
 
 with experiment.context_manager("ensemble"):    
     print("Train Ensemble")
