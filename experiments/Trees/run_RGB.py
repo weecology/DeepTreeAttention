@@ -46,7 +46,7 @@ with experiment.context_manager("RGB_model"):
 #Load RGB model
 model.HSI_model = load_model("{}/HSI_model.h5".format(model.config["train"]["checkpoint_dir"]), custom_objects={"WeightedSum": WeightedSum})     
 model.metadata_model = load_model("{}/metadata_model.h5".format(model.config["train"]["checkpoint_dir"]), compile=False)  
-model.RGB_model = self.RGB_spatial
+model.RGB_model = model.RGB_spatial
 
 with experiment.context_manager("ensemble"):    
     print("Train Ensemble")

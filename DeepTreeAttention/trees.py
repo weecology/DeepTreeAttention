@@ -87,7 +87,7 @@ class AttentionModel():
                                                    number_of_sites=self.sites,
                                                    classes=self.classes,
                                                    chunk_size=chunk_size,
-                                                   extend_box=self.extend_box,
+                                                   extend_box=self.extend_HSI_box,
                                                    shuffle=True)
 
         return created_records
