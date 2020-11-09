@@ -59,6 +59,7 @@ model.RGB_model.save("{}/RGB_model.h5".format(save_dir))
 #Load ensembles model
 if model.config["train"]["gpus"] > 1:
     with model.strategy.scope():   
+        dirname = model.config["train"]["checkpoint_dir"]        
         print("Running in parallel on {} GPUs".format(model.strategy.num_replicas_in_sync))
         model.HSI_model = load_model("{}/HSI_model.h5".format(dirname), custom_objects={"WeightedSum": WeightedSum}, compile=False)  
         model.metadata_model = load_model("{}/metadata_model.h5".format(dirname), compile=False)  
