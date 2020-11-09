@@ -52,7 +52,7 @@ class AttentionModel():
         self.RGB_channels = self.config["train"]["RGB"]["sensor_channels"]
         self.RGB_weighted_sum = self.config["train"]["RGB"]["weighted_sum"]
         
-        self.extend_box = self.config["train"]["extend_box"]
+        self.HSI_extend_box = self.config["train"]["HSI"]["extend_box"]
         self.classes_file = self.config["train"]["species_class_file"]
         self.sites = self.config["train"]["sites"]
         
