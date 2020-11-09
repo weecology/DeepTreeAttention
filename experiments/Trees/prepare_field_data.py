@@ -273,7 +273,7 @@ def create_records(HSI_crops, RGB_crops, labels, sites, heights, elevations, box
     
     return filenames
 
-def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspectral_savedir=".",saved_model=None, deepforest_model=None):
+def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_HSI_box=0, extend_RGB_box=0, hyperspectral_savedir=".",saved_model=None, deepforest_model=None):
     """wrapper function for dask, see main.py"""
     try:
         from deepforest import deepforest
@@ -296,7 +296,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspe
             hyperspectral_pool=hyperspectral_pool,
             rgb_pool=rgb_pool,
             sensor="hyperspectral",
-            expand=extend_box,
+            expand=extend_HSI_box,
             hyperspectral_savedir=hyperspectral_savedir)
         
         #Crop RGB, drop repeated elements, leave one for testing
@@ -305,7 +305,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_box=0, hyperspe
             hyperspectral_pool=hyperspectral_pool,
             rgb_pool=rgb_pool,
             sensor="rgb",
-            expand=extend_box,
+            expand=extend_RGB_box,
             hyperspectral_savedir=hyperspectral_savedir)    
         
         #Assert they are the same
@@ -326,7 +326,8 @@ def main(
     hyperspectral_dir,
     savedir=".", 
     chunk_size=400,
-    extend_box=0, 
+    extend_HSI_box=0, 
+    extend_RGB_box=0,
     hyperspectral_savedir=".", 
     saved_model=None, 
     client=None, 
@@ -337,7 +338,8 @@ def main(
         height: height in meters of the resized training image
         width: width in meters of the resized training image
         savedir: direcory to save completed tfrecords
-        extend_box: units in meters to add to the edge of a predicted box to give more context
+        extend_HSI_box: units in meters to add to the edge of a predicted box to give more context
+        extend_RGB_box: units in meters to add to the edge of a predicted box to give more context
         hyperspectral_savedir: location to save converted .h5 to .tif
         client: dask client object to use
         species_classes_file: optional path to a two column csv file with index and species labels
@@ -368,7 +370,8 @@ def main(
                 df=df,
                 rgb_pool=rgb_pool,
                 hyperspectral_pool=hyperspectral_pool,
-                extend_box=extend_box,
+                extend_HSI_box=extend_HSI_box,
+                extend_RGB_box=extend_RGB_box,                
                 hyperspectral_savedir=hyperspectral_savedir,
                 saved_model=saved_model
             )
@@ -401,7 +404,8 @@ def main(
                     df=df,
                     rgb_pool=rgb_pool,
                     hyperspectral_pool=hyperspectral_pool, 
-                    extend_box=extend_box,
+                    extend_HSI_box=extend_HSI_box,
+                    extend_RGB_box=extend_RGB_box,   
                     hyperspectral_savedir=hyperspectral_savedir,
                     saved_model=saved_model,
                     deepforest_model=deepforest_model
@@ -490,7 +494,8 @@ if __name__ == "__main__":
         HSI_size=config["train"]["HSI"]["crop_size"],      
         hyperspectral_dir=config["hyperspectral_sensor_pool"],
         rgb_dir=config["rgb_sensor_pool"],
-        extend_box=config["train"]["extend_box"],
+        extend_HSI_box = config["train"]["HSI"]["extend_box"],
+        extend_RGB_box = config["train"]["RGB"]["extend_box"],        
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["evaluation"]["tfrecords"],
         species_classes_file = "{}/data/processed/species_class_labels.csv".format(ROOT),
@@ -510,7 +515,8 @@ if __name__ == "__main__":
         HSI_size=config["train"]["HSI"]["crop_size"],        
         hyperspectral_dir=config["hyperspectral_sensor_pool"],
         rgb_dir=config["rgb_sensor_pool"],
-        extend_box=config["train"]["extend_box"],
+        extend_HSI_box = config["train"]["HSI"]["extend_box"],
+        extend_RGB_box = config["train"]["RGB"]["extend_box"],     
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["train"]["tfrecords"],
         client=client,

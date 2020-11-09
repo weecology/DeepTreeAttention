@@ -5,6 +5,7 @@ from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.models import metadata
 from DeepTreeAttention.callbacks import callbacks
 import pandas as pd
+from tensorflow.keras.models import load_model
 
 model = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
 model.create()
