@@ -30,7 +30,7 @@ train:
         batch_size: 256
         epochs: 5
     sites: 23
-    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
+    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train_extend/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/CHM_filtered_train.shp  #path to ground truth class shapefile   
     learning_rate: .001
     batch_size: 200
@@ -47,7 +47,7 @@ callbacks:
 
 #All the above parameters apply to evaluation except for paths, leave blank to ignore.
 evaluation:
-    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/
+    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation_extend/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/test.shp
     steps:
 
