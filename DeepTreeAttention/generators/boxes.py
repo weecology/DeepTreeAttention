@@ -615,6 +615,7 @@ def preproccess_images(data):
     
     #Rotate
     HSI = tf.image.rot90(HSI)
+    RGB = tf.image.rot90(RGB)
     
     return HSI, RGB, elevation, height, site
 
