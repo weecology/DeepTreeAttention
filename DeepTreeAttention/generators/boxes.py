@@ -636,7 +636,6 @@ def tf_dataset(tfrecords,
         """
     AUTO = tf.data.experimental.AUTOTUNE
     ignore_order = tf.data.Options()
-    cores = AUTO
 
     dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)
     dataset = dataset.with_options(ignore_order)
