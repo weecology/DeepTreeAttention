@@ -105,14 +105,32 @@ def strip_sensor_softmax(model, classes, index, squeeze=False, squeeze_size=128)
     return stripped_model
 
 def learned_ensemble(RGB_model, HSI_model, metadata_model, classes, freeze=True):
-    stripped_HSI_model = strip_sensor_softmax(HSI_model, classes, index = "HSI", squeeze=True, squeeze_size=classes)      
+    
+    #Strip to last pooling layer    
+    stripped_HSI_model = strip_sensor_softmax(HSI_model, classes, index = "HSI", squeeze=True, squeeze_size=classes)    
+    stripped_RGB_model = strip_sensor_softmax(RGB_model, classes, index = "HSI", squeeze=True, squeeze_size=classes)          
     normalized_metadata = layers.BatchNormalization()(metadata_model.get_layer("last_relu").output)
     stripped_metadata = tf.keras.Model(inputs=metadata_model.inputs, outputs = normalized_metadata)
     
+    #make names unique
+    for x in stripped_RGB_model.layers:
+        x._name = x.name + str("RGB")
+    
+    for x in stripped_HSI_model.layers:
+        x._name = x.name + str("HSI")    
+    
+    
     #concat and learn ensemble weights
-    merged_layers = WeightedSum(name="HSI_meta_weighted_sum")([stripped_HSI_model.output, stripped_metadata.output])    
-    merged_layers = layers.Dropout(0.7)(merged_layers)
-    ensemble_softmax = layers.Dense(classes,name="ensemble_learn",activation="softmax")(merged_layers)
+    HSI_meta_fuse = WeightedSum(name="HSI_meta_weighted_sum")([stripped_HSI_model.output, stripped_metadata.output])    
+    HSI_meta_fuse = layers.Dropout(0.7)(HSI_meta_fuse)
+    
+    HSI_RGB_fuse = WeightedSum(name="HSI_RGB_weighted_sum")([stripped_HSI_model.output, stripped_RGB_model.output])    
+    HSI_RGB_fuse = layers.Dropout(0.7)(HSI_RGB_fuse)    
+    
+    merged_layers = layers.Concatenate()([HSI_meta_fuse, HSI_RGB_fuse, stripped_HSI_model.output])
+    merged_layers = layers.Dense(classes*3,name="ensemble_learn1",activation="relu")(merged_layers)
+    merged_layers = layers.Dense(classes*2,name="ensemble_learn2",activation="relu")(merged_layers)
+    ensemble_softmax = layers.Dense(classes,name="ensemble_sotmax",activation="softmax")(merged_layers)
 
     #Take joint inputs    
     ensemble_model = tf.keras.Model(inputs=HSI_model.inputs+RGB_model.inputs+metadata_model.inputs,
