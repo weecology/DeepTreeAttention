@@ -21,19 +21,19 @@ train:
         sensor_channels: 3
         crop_size: 100
         weighted_sum: True
-        epochs: 60
+        epochs: 70
         extend_box: 3 #expand DeepForest bounding boxes by x meters at edge
     metadata:
         epochs: 150
     ensemble:
         freeze: False
-        batch_size: 256
+        batch_size: 128
         epochs: 120
     sites: 23
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train_extend/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/CHM_filtered_train.shp  #path to ground truth class shapefile   
     learning_rate: .001
-    batch_size: 256
+    batch_size: 128
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
     steps:
     shuffle: True
