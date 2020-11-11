@@ -57,7 +57,7 @@ def mod(tmpdir):
     #evaluation
     eval_config = { }
     eval_config["tfrecords"] = None
-    eval_config["steps"] = 2
+    eval_config["steps"] = 1
     
     predict_config = { }
     predict_config["tfrecords"] = predict_dir
@@ -78,7 +78,7 @@ def mod(tmpdir):
     mod.RGB_channels = 3
     mod.extend_HSI_box = mod.config["train"]["HSI"]["extend_box"]
     mod.classes_file = label_file
-    mod.train_shp = pd.DataFrame({"taxonID":["JON","BEN"], "siteID":[0,1],"domainID":[0,1],"plotID":[0,1]})
+    mod.train_shp = pd.DataFrame({"taxonID":["Jon","Ben"], "siteID":[0,1],"domainID":[0,1],"plotID":[0,1], "scientificName":["genus species","genus species"]})
     #Create a model with input sizes
     mod.create()
             
