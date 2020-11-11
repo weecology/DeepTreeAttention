@@ -42,7 +42,7 @@ def test_split(path, field_data_path):
     field_data = pd.read_csv(field_data_path)
     
     ids = ids[ids.plantStatus.str.contains("Live")]    
-    ids = ids[["itcEasting","itcNorthing","siteID", "plotID", "elevation","plantStatus","domainID","individualID","taxonID"]]   
+    ids = ids[["itcEasting","itcNorthing","siteID", "plotID", "elevation","plantStatus","domainID","individualID","taxonID","scientificName"]]   
     
     field_data = field_data[field_data.individualID.isin(ids.individualID.unique())]
     merge_height = field_data.groupby("individualID").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1)).reset_index(drop=True)
@@ -103,7 +103,7 @@ def train_split(path, test_ids, test_species, debug = False):
     shp = shp[~(shp.siteID=="ORNL")]
     
     #resample to N examples
-    shp = shp[["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","plantStatus","geometry"]]
+    shp = shp[["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","plantStatus","scientificName","geometry"]]
     shp = shp.reset_index(drop=True)
     return shp
         
