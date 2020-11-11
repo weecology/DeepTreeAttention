@@ -65,6 +65,10 @@ class F1Callback(Callback):
             domain_confusion = metrics.site_confusion(y_true = results.true_taxonID, y_pred = results.predicted_taxonID, site_lists=domain_lists)
             self.experiment.log_metric(name = "Within_domain confusion[training]", value = domain_confusion)
             
+            #Genus of all the different taxonID variants should be the same, take the first
+            scientific_dict = self.train_shp.groupby('taxonID')['scientificName'].apply(lambda x: x.head(1).values.tolist()).to_dict()
+            metrics.genus_confusion(y_true = results.true_taxonID, y_pred = results.predicted_taxonID, scientific_dict)
+            
     def on_epoch_end(self, epoch, logs={}):
         
         if not epoch % self.n == 0:
@@ -139,7 +143,7 @@ class ImageCallback(Callback):
         num_images = 0
         for data, label in self.dataset:
             if num_images < limit:
-                pred = self.model.predict(data)
+                pred = self.model.predict(data)                    
                 images.append(data)
                 
                 if self.submodel:
@@ -206,9 +210,9 @@ def create(experiment, train_data, validation_data, train_shp, log_dir=None, lab
     f1 = F1Callback(experiment=experiment, y_true=y_true, eval_dataset=validation_data, label_names=label_names, submodel=submodel, train_shp=train_shp)
     callback_list.append(f1)
     
-    #if submodel is None:
-        #plot_images = ImageCallback(experiment, validation_data, label_names, submodel=submodel)
-        #callback_list.append(plot_images)
+    if submodel is None:
+        plot_images = ImageCallback(experiment, validation_data, label_names, submodel=submodel)
+        callback_list.append(plot_images)
         
     if log_dir is not None:
         tensorboard = TensorBoard(log_dir=log_dir, histogram_freq=1, profile_batch=10)

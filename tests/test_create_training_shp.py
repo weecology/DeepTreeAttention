@@ -19,7 +19,7 @@ def test_test_split():
     
     shp = create_training_shp.test_split(path, field_data_path)
     assert not shp.empty
-    assert all([x in ["siteID","plotID","elevation","domainID","individualID","height","taxonID","itcEasting","itcNorthing","plantStatus","geometry"] for x in shp.columns])
+    assert all([x in ["siteID","plotID","elevation","domainID","individualID","height","taxonID","itcEasting","itcNorthing","plantStatus","scientificName","geometry"] for x in shp.columns])
     assert all(shp.plantStatus.str.contains("Live"))
     
     print("There are {} records for {} species for {} sites in train".format(
@@ -33,7 +33,7 @@ def test_train_split(testdata):
     shp = create_training_shp.train_split(path, testdata.individualID, testdata.taxonID, debug=True)
     assert not shp.empty
     assert all([x in ["siteID","plotID","height","elevation","domainID","individualID","taxonID",
-                      "plantStatus","itcEasting","itcNorthing","geometry"] for x in shp.columns])
+                      "plantStatus","scientificName","itcEasting","itcNorthing","geometry"] for x in shp.columns])
     
     assert all(shp.plantStatus.str.contains("Live"))
     
