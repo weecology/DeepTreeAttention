@@ -52,8 +52,8 @@ def genus_confusion(y_true, y_pred, scientific_dict):
     for index, value in enumerate(y_pred):
         #If not correctly predicted
         if not value == y_true[index]:
-            true_genus = scientific_dict[y_true[index]].split().str.get(0)
-            pred_genus = scientific_dict[y_pred[index]].split().str.get(0)
+            true_genus = scientific_dict[y_true[index]][0].split()[0]
+            pred_genus = scientific_dict[y_pred[index]][0].split()[0]
             
             if true_genus == pred_genus:
                 within_genus +=1
