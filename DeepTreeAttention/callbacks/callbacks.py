@@ -14,7 +14,7 @@ from tensorflow import expand_dims
 
 class F1Callback(Callback):
 
-    def __init__(self, experiment, eval_dataset, y_true, label_names, submodel, n=6):
+    def __init__(self, experiment, eval_dataset, y_true, label_names, submodel, train_shp, n=6):
         """F1 callback
         Args:
             n: number of epochs to run. If n=4, function will run every 4 epochs
@@ -25,6 +25,7 @@ class F1Callback(Callback):
         self.label_names = label_names
         self.submodel = submodel
         self.n = n
+        self.train_shp = train_shp
         self.y_true = y_true
  
     def on_train_end(self, logs={}):
@@ -46,8 +47,24 @@ class F1Callback(Callback):
         #Log number of predictions to make sure its constant
         self.experiment.log_metric("Prediction samples",y_pred.shape[0])
         results = pd.DataFrame({"true":np.argmax(self.y_true, 1),"predicted":np.argmax(y_pred, 1)})
-        self.experiment.log_table("results_final.csv",results.values)
+        #assign labels
+        if self.label_names:
+            results["true_taxonID"] = results.true.apply(lambda x: self.label_names[x])
+            results["predicted_taxonID"] = results.true.apply(lambda x: self.label_names[x])
+            
+            #Within site confusion
+            site_lists = self.train_shp.groupby("taxonID").siteID.unique()
+            site_confusion = metrics.site_confusion(y_true = results.true_taxonID, y_pred = results.predicted_taxonID, site_lists=site_lists)
+            self.experiment.log_metric(name = "Within_site confusion[training]", value = site_confusion)
         
+            plot_lists = self.train_shp.groupby("taxonID").plotID.unique()        
+            plot_confusion = metrics.site_confusion(y_true = results.true_taxonID, y_pred = results.predicted_taxonID, site_lists=plot_lists)
+            self.experiment.log_metric(name = "Within_plot confusion[training]", value = plot_confusion)        
+        
+            domain_lists = self.train_shp.groupby("taxonID").domainID.unique()        
+            domain_confusion = metrics.site_confusion(y_true = results.true_taxonID, y_pred = results.predicted_taxonID, site_lists=domain_lists)
+            self.experiment.log_metric(name = "Within_domain confusion[training]", value = domain_confusion)
+            
     def on_epoch_end(self, epoch, logs={}):
         
         if not epoch % self.n == 0:
@@ -155,7 +172,14 @@ class ImageCallback(Callback):
             counter += 1
 
 
-def create(experiment, train_data, validation_data, log_dir=None, label_names=None, submodel=False):
+def create(experiment, train_data, validation_data, train_shp, log_dir=None, label_names=None, submodel=False):
+    """Create a set of callbacks
+    Args:
+        experiment: a comet experiment object
+        train_data: a tf data object to generate data
+        validation_data: a tf data object to generate data
+        train_shp: the original shapefile for the train data to check site error
+        """
     
     #turn off callbacks for metadata
     callback_list = []
@@ -179,7 +203,7 @@ def create(experiment, train_data, validation_data, log_dir=None, label_names=No
         confusion_matrix = ConfusionMatrixCallback(experiment=experiment, y_true=y_true, dataset=validation_data, label_names=label_names, submodel=submodel)
         callback_list.append(confusion_matrix)
 
-    f1 = F1Callback(experiment=experiment, y_true=y_true, eval_dataset=validation_data, label_names=label_names, submodel=submodel)
+    f1 = F1Callback(experiment=experiment, y_true=y_true, eval_dataset=validation_data, label_names=label_names, submodel=submodel, train_shp=train_shp)
     callback_list.append(f1)
     
     #if submodel is None:

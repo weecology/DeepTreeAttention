@@ -4,6 +4,7 @@ import os
 import re
 import glob
 import pandas as pd
+import geopandas as gpd
 import numpy as np
 import tensorflow as tf
 
@@ -55,6 +56,10 @@ class AttentionModel():
         self.HSI_extend_box = self.config["train"]["HSI"]["extend_box"]
         self.classes_file = self.config["train"]["species_class_file"]
         self.sites = self.config["train"]["sites"]
+        try:
+            self.train_shp = gpd.read_file(self.config["train"]["ground_truth_path"])
+        except:
+            self.train_shp = None
         
     def generate(self, shapefile, HSI_sensor_path, RGB_sensor_path, elevation, heights, site, species_label_dict=None, train=True, chunk_size=1000):
         """Predict species class for each DeepForest bounding box
@@ -220,6 +225,7 @@ class AttentionModel():
                                              validation_data=self.val_split,
                                              train_data=self.train_split,
                                              label_names=label_names,
+                                             train_shp=self.train_shp,
                                              submodel=submodel)
                 
         if submodel == "metadata":
@@ -301,6 +307,7 @@ class AttentionModel():
                                              validation_data=self.val_split,
                                              train_data=self.train_split,
                                              label_names=label_names,
+                                             train_shp=self.train_shp,                                             
                                              submodel="ensemble")
         
         if self.config["train"]["gpus"] > 1:
