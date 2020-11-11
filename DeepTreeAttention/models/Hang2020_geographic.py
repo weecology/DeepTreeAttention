@@ -119,7 +119,6 @@ def learned_ensemble(RGB_model, HSI_model, metadata_model, classes, freeze=True)
     for x in stripped_HSI_model.layers:
         x._name = x.name + str("HSI")    
     
-    
     #concat and learn ensemble weights
     HSI_meta_fuse = WeightedSum(name="HSI_meta_weighted_sum")([stripped_HSI_model.output, stripped_metadata.output])    
     HSI_meta_fuse = layers.Dropout(0.7)(HSI_meta_fuse)
