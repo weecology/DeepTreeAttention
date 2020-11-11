@@ -50,7 +50,7 @@ class F1Callback(Callback):
         #assign labels
         if self.label_names:
             results["true_taxonID"] = results.true.apply(lambda x: self.label_names[x])
-            results["predicted_taxonID"] = results.true.apply(lambda x: self.label_names[x])
+            results["predicted_taxonID"] = results.predicted.apply(lambda x: self.label_names[x])
             
             #Within site confusion
             site_lists = self.train_shp.groupby("taxonID").siteID.unique()
@@ -67,7 +67,13 @@ class F1Callback(Callback):
             
             #Genus of all the different taxonID variants should be the same, take the first
             scientific_dict = self.train_shp.groupby('taxonID')['scientificName'].apply(lambda x: x.head(1).values.tolist()).to_dict()
-            metrics.genus_confusion(y_true = results.true_taxonID, y_pred = results.predicted_taxonID, scientific_dict)
+            metrics.genus_confusion(y_true = results.true_taxonID, y_pred = results.predicted_taxonID, scientific_dict=scientific_dict)
+            
+            #Most confused
+            most_confused = results.groupby(["true_taxonID","predicted_taxonID"]).size().reset_index(name="count")
+            most_confused = most_confused[~most_confused.true_taxonID == most_confused.predicted_taxonID].sort_values("count", ascending=False)
+            self.experiment.log_table(name = "Most Confusion", value = domain_confusion)
+            
             
     def on_epoch_end(self, epoch, logs={}):
         
@@ -90,8 +96,6 @@ class F1Callback(Callback):
         
         #Log number of predictions to make sure its constant
         self.experiment.log_metric("Prediction samples",y_pred.shape[0])
-        results = pd.DataFrame({"true":np.argmax(self.y_true, 1),"predicted":np.argmax(y_pred, 1)})
-        self.experiment.log_table("results_{}.csv".format(epoch),results.values)
                                
 class ConfusionMatrixCallback(Callback):
 
