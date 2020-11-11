@@ -56,7 +56,7 @@ The field data are from NEON's woody vegetation structure dataset. A curated .sh
 To generate training data from existing shapefiles of deepforest predictions
 
 ```
-python experiments/Trees/generate_.py
+python experiments/Trees/generate.py
 ```
 
 To generate new deepforest boxes, you will need to create a seperate conda environment. DeepForest requires tensorflow <2.0 where this repo is >2.0. The requirements are otherwise the same. To generate boxes see
