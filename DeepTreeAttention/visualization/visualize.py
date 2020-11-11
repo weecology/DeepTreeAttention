@@ -63,20 +63,23 @@ def discrete_cmap(N, base_cmap=None):
     return base.from_list(cmap_name, color_list, N)
 
 
-def error_crown_position(y_true, y_pred, box_index, shp_path):
-    """Plot the errors by their crown position category"""
+def error_crown_position(y_true, y_pred, box_index, canopydict):
+    """Plot the errors by their crown position category
+    Args:
+        y_true: true labels
+        y_pred: predicted labels
+        box_index: index of the pandas frame used to create records
+        canopydict: dictionary box_index -> canopyPosition
+    Returns:
+        matplotlib axes
+    """
     
-    train_shp = gpd.read_file(shp_path)
-    basename = os.path.splitext(os.path.basename(test_predictions))[0]
-    shp["box_index"] = ["{}_{}".format(basename, x) for x in shp.index.values]
-    
-    train_shp = train_shp[["box_index","canopyPosition"]]
     results = pd.DataFrame({"true":y_true,"predicted":y_pred, "box_index":box_index})
-    results = results.merge(train_shp)
-    results["match"] = results.apply(lambda x: x["true"] ==["predicted"])
+    results["canopyPosition"] = results.box_index.apply(lambda x: canopydict[x])
+    results["match"] = (results["true"] == results["predicted"])
     
-    summary = results.groupby(["canopyPosition","match"]).size.reset_index(name="count")
-    summary.plot.bar()
+    summary = results.groupby(["canopyPosition","match"]).size().reset_index(name="count")
+    summary.pivot("canopyPosition","match","count").plot.bar()
     
     
     
