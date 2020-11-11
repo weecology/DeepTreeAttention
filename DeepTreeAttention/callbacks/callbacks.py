@@ -66,13 +66,13 @@ class F1Callback(Callback):
             self.experiment.log_metric(name = "Within_domain confusion[training]", value = domain_confusion)
             
             #Genus of all the different taxonID variants should be the same, take the first
-            scientific_dict = self.train_shp.groupby('taxonID')['scientificName'].apply(lambda x: x.head(1).values.tolist()).to_dict()
+            scientific_dict = self.train_shp.groupby('taxonID')['scientific'].apply(lambda x: x.head(1).values.tolist()).to_dict()
             metrics.genus_confusion(y_true = results.true_taxonID, y_pred = results.predicted_taxonID, scientific_dict=scientific_dict)
             
             #Most confused
             most_confused = results.groupby(["true_taxonID","predicted_taxonID"]).size().reset_index(name="count")
-            most_confused = most_confused[~most_confused.true_taxonID == most_confused.predicted_taxonID].sort_values("count", ascending=False)
-            self.experiment.log_table(name = "Most Confusion", value = domain_confusion)
+            most_confused = most_confused[~(most_confused.true_taxonID == most_confused.predicted_taxonID)].sort_values("count", ascending=False)
+            self.experiment.log_table("most_confused.csv",most_confused.values)
             
             
     def on_epoch_end(self, epoch, logs={}):

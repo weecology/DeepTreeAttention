@@ -1,8 +1,9 @@
 """Visualization tools"""
-#From https://gist.github.com/jakevdp/91077b0cae40f8f8244a
+import geopandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from skimage import exposure
+import os
 import pandas as pd
 
 def normalize(array):
@@ -61,3 +62,21 @@ def discrete_cmap(N, base_cmap=None):
     cmap_name = base.name + str(N)
     return base.from_list(cmap_name, color_list, N)
 
+
+def error_crown_position(y_true, y_pred, box_index, shp_path):
+    """Plot the errors by their crown position category"""
+    
+    train_shp = gpd.read_file(shp_path)
+    basename = os.path.splitext(os.path.basename(test_predictions))[0]
+    shp["box_index"] = ["{}_{}".format(basename, x) for x in shp.index.values]
+    
+    train_shp = train_shp[["box_index","canopyPosition"]]
+    results = pd.DataFrame({"true":y_true,"predicted":y_pred, "box_index":box_index})
+    results = results.merge(train_shp)
+    results["match"] = results.apply(lambda x: x["true"] ==["predicted"])
+    
+    summary = results.groupby(["canopyPosition","match"]).size.reset_index(name="count")
+    summary.plot.bar()
+    
+    
+    

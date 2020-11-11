@@ -78,7 +78,7 @@ def mod(tmpdir):
     mod.RGB_channels = 3
     mod.extend_HSI_box = mod.config["train"]["HSI"]["extend_box"]
     mod.classes_file = label_file
-    mod.train_shp = pd.DataFrame({"taxonID":["Jon","Ben"], "siteID":[0,1],"domainID":[0,1],"plotID":[0,1], "scientificName":["genus species","genus species"]})
+    mod.train_shp = pd.DataFrame({"taxonID":["Jon","Ben"], "siteID":[0,1],"domainID":[0,1],"plotID":[0,1], "scientific":["genus species","genus species"]})
     #Create a model with input sizes
     mod.create()
             
