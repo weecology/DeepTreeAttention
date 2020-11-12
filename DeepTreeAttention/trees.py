@@ -189,6 +189,18 @@ class AttentionModel():
                 ids=ids,
                 submodel=submodel,                
                 cores=self.config["cpu_workers"])
+            
+            self.val_split_with_ids = boxes.tf_dataset(
+                tfrecords=self.test_records,
+                batch_size=self.config["train"]["batch_size"],                    
+                shuffle=False,
+                RGB=RGB,
+                HSI=HSI,
+                metadata=metadata,
+                labels=labels,
+                ids=True,
+                submodel=submodel,                    
+                cores=self.config["cpu_workers"])                  
         else:
             #Create training tf.data
             self.train_split = boxes.tf_dataset(
@@ -219,7 +231,19 @@ class AttentionModel():
                     labels=labels,
                     ids=ids,
                     submodel=submodel,                    
-                    cores=self.config["cpu_workers"])   
+                    cores=self.config["cpu_workers"])  
+                
+                self.val_split_with_ids = boxes.tf_dataset(
+                    tfrecords=self.test_records,
+                    batch_size=self.config["train"]["batch_size"],                    
+                    shuffle=False,
+                    RGB=RGB,
+                    HSI=HSI,
+                    metadata=metadata,
+                    labels=labels,
+                    ids=True,
+                    submodel=submodel,                    
+                    cores=self.config["cpu_workers"])                   
                 
     def train(self, experiment=None, class_weight=None, submodel=None, sensor="hyperspectral"):
         """Train a model with callbacks"""
@@ -240,6 +264,7 @@ class AttentionModel():
             callback_list = callbacks.create(log_dir=self.log_dir,
                                              experiment=experiment,
                                              validation_data=self.val_split,
+                                             validation_data_with_index=self.val_split_with_ids,
                                              train_data=self.train_split,
                                              label_names=label_names,
                                              train_shp=self.train_shp,
@@ -322,7 +347,7 @@ class AttentionModel():
             callback_list = callbacks.create(log_dir=self.log_dir,
                                              experiment=experiment,
                                              validation_data=self.val_split,
-                                             validation_data_with_index=self.val_split_id,
+                                             validation_data_with_index=self.val_split_with_ids,
                                              train_data=self.train_split,
                                              label_names=label_names,
                                              train_shp=self.train_shp,                                             
