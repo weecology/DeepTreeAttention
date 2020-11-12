@@ -79,7 +79,8 @@ def error_crown_position(y_true, y_pred, box_index, canopydict):
     results["match"] = (results["true"] == results["predicted"])
     
     summary = results.groupby(["canopyPosition","match"]).size().reset_index(name="count")
-    summary.pivot("canopyPosition","match","count").plot.bar()
+    ax = summary.pivot("canopyPosition","match","count").plot.bar()
+    return ax
     
     
     

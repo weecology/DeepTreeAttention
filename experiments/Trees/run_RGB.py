@@ -36,17 +36,16 @@ experiment.log_parameter("timestamp",timestamp)
 experiment.log_parameter("Train subnetworks", True)
 with experiment.context_manager("RGB_spatial_subnetwork"):
     print("Train RGB spatial subnetwork")
-    model.read_data(mode="RGB_submodel")
+    model.read_data(HSI=False, RGB=True, metadata=False, submodel= False)
     model.train(submodel="spatial", sensor="RGB", experiment=experiment)
 
 with experiment.context_manager("RGB_spectral_subnetwork"):
     print("Train RGB spectral subnetwork")    
-    model.read_data(mode="RGB_submodel")   
     model.train(submodel="spectral", sensor="RGB", experiment=experiment)
         
 #Train full model
 with experiment.context_manager("RGB_model"):
-    model.read_data(mode="RGB_train")
+    model.read_data(HSI=False, RGB=True, metadata=False)
     model.train(sensor="RGB", experiment=experiment)
     
     #Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
