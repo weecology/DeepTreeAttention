@@ -82,7 +82,7 @@ class F1Callback(Callback):
         box_index = [ ]
         for index, data, label in self.eval_dataset_with_index:
             prediction = self.model.predict_on_batch(data)            
-            if submodel in ["spatial","spectral"]:
+            if self.submodel in ["spatial","spectral"]:
                 label = label[0]
                 prediction = prediction[0]
             y_true.append(label)
