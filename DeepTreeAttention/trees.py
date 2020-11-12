@@ -142,11 +142,12 @@ class AttentionModel():
             #create a metadata model
             self.metadata_model = metadata.create(self.classes, self.sites, self.config["train"]["learning_rate"])
         
-    def read_data(self, mode="HSI_train", validation_split=False):
+    def read_data(self, HSI, metadata, RGB, labels=True, ids=False, submodel = False, validation_split=False):
         """Read tfrecord into datasets from config
             Args:
                 validation_split: True -> split tfrecords into train test. This overrides the evaluation config!
             """
+        #Decode mode
         self.train_records = glob.glob(
             os.path.join(self.config["train"]["tfrecords"], "*.tfrecord"))
 
@@ -168,27 +169,39 @@ class AttentionModel():
                 tfrecords=self.train_split_records,
                 batch_size=self.config["train"]["batch_size"],
                 shuffle=self.config["train"]["shuffle"],
-                mode=mode,
-                cores=self.config["cpu_workers"],
-                drop_remainder=False)
+                RGB=RGB,
+                HSI=HSI,
+                metadata=metadata,
+                labels=labels,
+                ids=ids,
+                submodel=submodel,
+                cores=self.config["cpu_workers"])
 
             #Create testing tf.data
             self.val_split = boxes.tf_dataset(
                 tfrecords=self.test_split_records,
                 batch_size=self.config["train"]["batch_size"],
                 shuffle=False,
-                mode=mode,
-                cores=self.config["cpu_workers"],
-                drop_remainder=False)
+                RGB=RGB,
+                HSI=HSI,
+                metadata=metadata,
+                labels=labels,
+                ids=ids,
+                submodel=submodel,                
+                cores=self.config["cpu_workers"])
         else:
             #Create training tf.data
             self.train_split = boxes.tf_dataset(
                 tfrecords=self.train_records,
                 batch_size=self.config["train"]["batch_size"],
                 shuffle=self.config["train"]["shuffle"],
-                mode=mode,
-                cores=self.config["cpu_workers"],
-                drop_remainder=False)
+                RGB=RGB,
+                HSI=HSI,
+                metadata=metadata,
+                labels=labels,
+                ids=ids,
+                submodel=submodel,                
+                cores=self.config["cpu_workers"])
 
             #honor config if validation not set
             self.val_split = None
@@ -200,10 +213,14 @@ class AttentionModel():
                     tfrecords=self.test_records,
                     batch_size=self.config["train"]["batch_size"],                    
                     shuffle=False,
-                    mode=mode,
-                    cores=self.config["cpu_workers"],
-                    drop_remainder=False)
-
+                    RGB=RGB,
+                    HSI=HSI,
+                    metadata=metadata,
+                    labels=labels,
+                    ids=ids,
+                    submodel=submodel,                    
+                    cores=self.config["cpu_workers"])   
+                
     def train(self, experiment=None, class_weight=None, submodel=None, sensor="hyperspectral"):
         """Train a model with callbacks"""
         
@@ -285,7 +302,7 @@ class AttentionModel():
     def ensemble(self, experiment, class_weight=None, freeze = True, train=True):
         #Manually override batch size
         self.classes = pd.read_csv(self.classes_file).shape[0]        
-        self.read_data(mode="ensemble")      
+        self.read_data(HSI = True, RGB = True, metadata = True)      
         
         if self.val_split is None:
             print("Cannot run callbacks without validation data, skipping...")
@@ -305,6 +322,7 @@ class AttentionModel():
             callback_list = callbacks.create(log_dir=self.log_dir,
                                              experiment=experiment,
                                              validation_data=self.val_split,
+                                             validation_data_with_index=self.val_split_id,
                                              train_data=self.train_split,
                                              label_names=label_names,
                                              train_shp=self.train_shp,                                             

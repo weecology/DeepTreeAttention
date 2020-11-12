@@ -70,7 +70,7 @@ if __name__ == "__main__":
     
     ##Train
     #Train see config.yml for tfrecords path with weighted classes in cross entropy
-    model.read_data()
+    model.read_data(HSI=True, RGB=False, metadata=False)
     
     #Log the size of the training data
     counter=0
@@ -97,7 +97,7 @@ if __name__ == "__main__":
             #metadata network
             with experiment.context_manager("metadata"):
                 print("Train metadata")
-                model.read_data(mode="metadata")
+                model.read_data(HSI = False, RGB= False, metadata=True)
                 model.train(submodel="metadata", experiment=experiment)
                 model.metadata_model.save("{}/metadata_model.h5".format(save_dir))
                 
@@ -105,18 +105,17 @@ if __name__ == "__main__":
             #experiment.log_parameter("Train subnetworks", True)
             #with experiment.context_manager("RGB_spatial_subnetwork"):
                 #print("Train RGB spatial subnetwork")
-                #model.read_data(mode="RGB_submodel")
+                #model.read_data(HSI=False, RGB=True, metadata=False, submodel = True)
                 #model.train(submodel="spatial", sensor="RGB", experiment=experiment)
                 
             #with experiment.context_manager("RGB_spectral_subnetwork"):
                 #print("Train RGB spectral subnetwork")    
-                #model.read_data(mode="RGB_submodel")   
                 #model.train(submodel="spectral", sensor="RGB", experiment=experiment)
                     
             ##Train full RGB model
             #with experiment.context_manager("RGB_model"):
                 #experiment.log_parameter("Class Weighted", True)
-                #model.read_data(mode="RGB_train")
+                #model.read_data(HSI=False, RGB=True, metadata=False)
                 #model.train(sensor="RGB", experiment=experiment)
                 #model.RGB_model.save("{}/RGB_model.h5".format(save_dir))
                 
@@ -129,18 +128,17 @@ if __name__ == "__main__":
             experiment.log_parameter("Train subnetworks", True)
             with experiment.context_manager("HSI_spatial_subnetwork"):
                 print("Train HSI spatial subnetwork")
-                model.read_data(mode="HSI_submodel")
+                model.read_data(HSI=True, RGB=False, metadata=False, submodel=True)
                 model.train(submodel="spatial", sensor="hyperspectral", experiment=experiment)
             
             with experiment.context_manager("HSI_spectral_subnetwork"):
                 print("Train HSI spectral subnetwork")    
-                model.read_data(mode="HSI_submodel")   
                 model.train(submodel="spectral", sensor="hyperspectral", experiment=experiment)
                     
             #Train full model
             with experiment.context_manager("HSI_model"):
                 experiment.log_parameter("Class Weighted", True)
-                model.read_data(mode="HSI_train")
+                model.read_data(HSI=True, RGB=False, metadata=False)
                 model.train(sensor="hyperspectral", experiment=experiment)
                 model.HSI_model.save("{}/HSI_model.h5".format(save_dir))
                 
