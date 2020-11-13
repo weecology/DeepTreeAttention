@@ -64,13 +64,13 @@ def discrete_cmap(N, base_cmap=None):
     return base.from_list(cmap_name, color_list, N)
 
 
-def plot_crown_position(train_path, model, eval_dataset_with_index, submodel = False):
+def plot_crown_position(path, model, eval_dataset_with_index, submodel = False):
     """Plot the errors by their crown position category
     Args:
-        y_true: true labels
-        y_pred: predicted labels
-        box_index: index of the pandas frame used to create records
-        canopydict: dictionary box_index -> canopyPosition
+        path: file path to the original data used to generate tfrecords
+        model: keras model object to predict
+        eval_dataset_with_index: tf dataset that yields data and index to match to original
+        submodel: Logical, whether to replicate labels for submodel data (3x)
     Returns:
         matplotlib axes
     """
@@ -100,7 +100,7 @@ def plot_crown_position(train_path, model, eval_dataset_with_index, submodel = F
     canopy_dict = {}
     for index in box_index:
         data_index = index.decode().split("_")[-1]
-        canopy_dict[index] = train_shp[train_shp.index.astype(str) == data_index].canopyPosition.values[0]
+        canopy_dict[index] = train_shp[train_shp.index.astype(str) == data_index].canopyPosi.values[0]
     
     ax = canopyPosition_barplot(y_true, y_pred, box_index, canopydict)
     
