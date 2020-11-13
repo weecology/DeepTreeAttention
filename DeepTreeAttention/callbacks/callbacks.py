@@ -76,35 +76,6 @@ class F1Callback(Callback):
             most_confused = most_confused[~(most_confused.true_taxonID == most_confused.predicted_taxonID)].sort_values("count", ascending=False)
             self.experiment.log_table("most_confused.csv",most_confused.values)
             
-        #Get the true labels since they are not shuffled
-        y_true = [ ]
-        y_pred = [ ]
-        box_index = [ ]
-        for index, data, label in self.eval_dataset_with_index:
-            prediction = self.model.predict_on_batch(data)            
-            if self.submodel in ["spatial","spectral"]:
-                label = label[0]
-                prediction = prediction[0]
-            y_true.append(label)
-            y_pred.append(prediction)
-            box_index.append(index)            
-            
-        y_true = np.concatenate(y_true)
-        y_pred = np.concatenate(y_pred)
-        box_index = np.concatenate(box_index)
-        box_index = list(box_index)
-        y_true = np.argmax(y_true, 1)
-        y_pred = np.argmax(y_pred, 1)
-        
-        #get canopy dictionary
-        canopy_dict = {}
-        for index in box_index:
-            data_index = index.decode().split("_")[-1]
-            canopy_dict[index] = self.train_shp[self.train_shp.index.astype(str) == data_index].canopyPosition.values[0]
-            
-        ax = visualize.error_crown_position(y_true, y_pred, box_index, canopy_dict)
-        self.experiment.log_figure(ax)
-            
     def on_epoch_end(self, epoch, logs={}):
         
         if not epoch % self.n == 0:
