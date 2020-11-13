@@ -439,6 +439,7 @@ def tf_dataset(tfrecords,
                ids = False,
                metadata=True,
                submodel=False,
+               cache=True
                cores=32):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
@@ -449,11 +450,11 @@ def tf_dataset(tfrecords,
         metadata: include metadata 
         labels: training record labels
         submodel: Logical. "spectral" or "spatial submodels" have three label inputs
+        cache: cache dataset for faster reading. Dataset must be fairly small.
     Returns:
         dataset: a tf.data dataset yielding crops and labels for train: True, crops and raster indices for train: False
         """
     AUTO = tf.data.experimental.AUTOTUNE
-    cores = AUTO
 
     inputs = [ ]
     if shuffle:
@@ -507,14 +508,16 @@ def tf_dataset(tfrecords,
         else:
             zipped_dataset = tf.data.Dataset.zip(tuple(inputs))              
         
-    
+    if cache:
+        zipped_dataset = zipped_dataset.cache()
+                
     #batch and shuffle
     if shuffle:
         zipped_dataset = zipped_dataset.shuffle(buffer_size=batch_size)    
         
     zipped_dataset = zipped_dataset.batch(batch_size=batch_size)   
-    zipped_dataset = zipped_dataset.prefetch(buffer_size=AUTO)
-    zipped_dataset = zipped_dataset.cache()
+    zipped_dataset = zipped_dataset.prefetch(buffer_size=20)
+
     
     return zipped_dataset
 
