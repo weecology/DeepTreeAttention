@@ -191,7 +191,7 @@ class AttentionModel():
                 cores=self.config["cpu_workers"])
             
             self.val_split_with_ids = boxes.tf_dataset(
-                tfrecords=self.test_records,
+                tfrecords=self.test_split_records,
                 batch_size=self.config["train"]["batch_size"],                    
                 shuffle=False,
                 RGB=RGB,

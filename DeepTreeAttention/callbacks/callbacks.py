@@ -92,12 +92,15 @@ class F1Callback(Callback):
         y_true = np.concatenate(y_true)
         y_pred = np.concatenate(y_pred)
         box_index = np.concatenate(box_index)
+        box_index = list(box_index)
+        y_true = np.argmax(y_true, 1)
+        y_pred = np.argmax(y_pred, 1)
         
         #get canopy dictionary
         canopy_dict = {}
         for index in box_index:
-            data_index = index.split("_")[1]
-            canopy_dict[index] = train_shp[train_shp.index == data_index].canopyPosition.values
+            data_index = index.decode().split("_")[-1]
+            canopy_dict[index] = self.train_shp[self.train_shp.index.astype(str) == data_index].canopyPosition.values[0]
             
         ax = visualize.error_crown_position(y_true, y_pred, box_index, canopy_dict)
         self.experiment.log_figure(ax)
