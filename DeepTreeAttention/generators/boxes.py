@@ -439,7 +439,7 @@ def tf_dataset(tfrecords,
                ids = False,
                metadata=True,
                submodel=False,
-               cache=True
+               cache=True,
                cores=32):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
