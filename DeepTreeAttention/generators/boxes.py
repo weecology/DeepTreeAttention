@@ -458,37 +458,37 @@ def tf_dataset(tfrecords,
     
     if ids:
         ids_dataset = tf.data.TFRecordDataset(tfrecords)        
-        ids_dataset = ids_dataset.map(_box_index_parse_) 
+        ids_dataset = ids_dataset.map(_box_index_parse_,  num_parallel_calls=cores) 
             
     if HSI:
-        HSI_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)                
+        HSI_dataset = tf.data.TFRecordDataset(tfrecords)                
         HSI_dataset = HSI_dataset.map(_HSI_parse_, num_parallel_calls=cores) 
         HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=cores)            
         HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=cores)    
         inputs.append(HSI_dataset)        
         
     if RGB:
-        RGB_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)                        
+        RGB_dataset = tf.data.TFRecordDataset(tfrecords)                        
         RGB_dataset = RGB_dataset.map(_RGB_parse_, num_parallel_calls=cores) 
         RGB_dataset = RGB_dataset.map(augment, num_parallel_calls=cores)    
         inputs.append(RGB_dataset)    
         
     if metadata:
         height_dataset = tf.data.TFRecordDataset(tfrecords)                                
-        height_dataset = height_dataset.map(_height_parse_)     
+        height_dataset = height_dataset.map(_height_parse_,  num_parallel_calls=cores)     
         inputs.append(height_dataset)   
         
         elevation_dataset = tf.data.TFRecordDataset(tfrecords)                                
-        elevation_dataset = elevation_dataset.map(_elevation_parse_)                 
+        elevation_dataset = elevation_dataset.map(_elevation_parse_,  num_parallel_calls=cores)                 
         inputs.append(elevation_dataset)   
         
         site_dataset = tf.data.TFRecordDataset(tfrecords)                                
-        site_dataset = site_dataset.map(_site_parse_)                 
+        site_dataset = site_dataset.map(_site_parse_,  num_parallel_calls=cores)                 
         inputs.append(site_dataset)   
         
     if labels:
         labels_dataset = tf.data.TFRecordDataset(tfrecords)                                        
-        labels_dataset = labels_dataset.map(_label_parse_) 
+        labels_dataset = labels_dataset.map(_label_parse_,  num_parallel_calls=cores) 
         
         if submodel:
             labels_dataset = tf.data.Dataset.zip((labels_dataset, labels_dataset, labels_dataset))
