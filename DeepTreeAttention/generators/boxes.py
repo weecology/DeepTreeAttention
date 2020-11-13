@@ -507,17 +507,17 @@ def tf_dataset(tfrecords,
             zipped_dataset = tf.data.Dataset.zip((tuple(inputs), labels_dataset))
         else:
             zipped_dataset = tf.data.Dataset.zip(tuple(inputs))              
-        
+    
+    zipped_dataset = zipped_dataset.batch(batch_size=batch_size)   
+    
     if cache:
-        zipped_dataset = zipped_dataset.cache()
-                
+        zipped_dataset = zipped_dataset.cache()        
+     
     #batch and shuffle
     if shuffle:
-        zipped_dataset = zipped_dataset.shuffle(buffer_size=batch_size)    
+        zipped_dataset = zipped_dataset.shuffle(buffer_size=batch_size)   
         
-    zipped_dataset = zipped_dataset.batch(batch_size=batch_size)   
-    #zipped_dataset = zipped_dataset.prefetch(buffer_size=20)
-
+    zipped_dataset = zipped_dataset.prefetch(buffer_size=20)
     
     return zipped_dataset
 
