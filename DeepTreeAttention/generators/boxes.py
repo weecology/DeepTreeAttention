@@ -514,7 +514,7 @@ def tf_dataset(tfrecords,
         
     zipped_dataset = zipped_dataset.batch(batch_size=batch_size)   
     zipped_dataset = zipped_dataset.prefetch(buffer_size=AUTO)
-    zipped_dataset = zipped_dataset.interleave(num_parallel_calls=AUTO)
+    zipped_dataset = zipped_dataset.cache()
     
     return zipped_dataset
 
