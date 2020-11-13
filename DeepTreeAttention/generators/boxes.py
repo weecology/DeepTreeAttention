@@ -413,7 +413,7 @@ def flip(x: tf.Tensor) -> tf.Tensor:
 
     return x
 
-def preproccess_RGB(data):
+def augment(data):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
 
     data = flip(data)
@@ -421,15 +421,11 @@ def preproccess_RGB(data):
     
     return data
 
-def preproccess_HSI(data):
-    """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
-
-    data = flip(data)
-    data = tf.image.rot90(data)
+def normalize(data):
     data = tf.image.per_image_standardization(data)
     
     return data
-
+    
 def tf_dataset(tfrecords,
                batch_size=2,
                shuffle=True,
@@ -439,7 +435,6 @@ def tf_dataset(tfrecords,
                ids = False,
                metadata=True,
                submodel=False,
-               cache=True,
                cores=32):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
@@ -462,37 +457,38 @@ def tf_dataset(tfrecords,
         random.shuffle(tfrecords)
     
     if ids:
-        ids_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)        
-        ids_dataset = ids_dataset.map(_box_index_parse_, num_parallel_calls=cores) 
+        ids_dataset = tf.data.TFRecordDataset(tfrecords)        
+        ids_dataset = ids_dataset.map(_box_index_parse_) 
             
     if HSI:
         HSI_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)                
         HSI_dataset = HSI_dataset.map(_HSI_parse_, num_parallel_calls=cores) 
-        HSI_dataset = HSI_dataset.map(preproccess_HSI, num_parallel_calls=cores)    
+        HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=cores)            
+        HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=cores)    
         inputs.append(HSI_dataset)        
         
     if RGB:
         RGB_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)                        
         RGB_dataset = RGB_dataset.map(_RGB_parse_, num_parallel_calls=cores) 
-        RGB_dataset = RGB_dataset.map(preproccess_RGB, num_parallel_calls=cores)    
+        RGB_dataset = RGB_dataset.map(augment, num_parallel_calls=cores)    
         inputs.append(RGB_dataset)    
         
     if metadata:
-        height_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)                                
-        height_dataset = height_dataset.map(_height_parse_, num_parallel_calls=cores)     
+        height_dataset = tf.data.TFRecordDataset(tfrecords)                                
+        height_dataset = height_dataset.map(_height_parse_)     
         inputs.append(height_dataset)   
         
-        elevation_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)                                
-        elevation_dataset = elevation_dataset.map(_elevation_parse_, num_parallel_calls=cores)                 
+        elevation_dataset = tf.data.TFRecordDataset(tfrecords)                                
+        elevation_dataset = elevation_dataset.map(_elevation_parse_)                 
         inputs.append(elevation_dataset)   
         
-        site_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)                                
-        site_dataset = site_dataset.map(_site_parse_, num_parallel_calls=cores)                 
+        site_dataset = tf.data.TFRecordDataset(tfrecords)                                
+        site_dataset = site_dataset.map(_site_parse_)                 
         inputs.append(site_dataset)   
         
     if labels:
-        labels_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)                                        
-        labels_dataset = labels_dataset.map(_label_parse_, num_parallel_calls=cores) 
+        labels_dataset = tf.data.TFRecordDataset(tfrecords)                                        
+        labels_dataset = labels_dataset.map(_label_parse_) 
         
         if submodel:
             labels_dataset = tf.data.Dataset.zip((labels_dataset, labels_dataset, labels_dataset))
