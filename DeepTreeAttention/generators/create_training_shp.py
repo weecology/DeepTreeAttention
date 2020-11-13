@@ -42,7 +42,7 @@ def test_split(path, field_data_path):
     field_data = pd.read_csv(field_data_path)
     
     ids = ids[ids.plantStatus.str.contains("Live")]    
-    ids = ids[["itcEasting","itcNorthing","siteID", "plotID", "elevation","plantStatus","domainID","individualID","taxonID","scientificName"]]   
+    ids = ids[["itcEasting","itcNorthing","siteID", "plotID", "elevation","plantStatus","domainID","individualID","taxonID","canopyPosition","scientificName"]]   
     
     field_data = field_data[field_data.individualID.isin(ids.individualID.unique())]
     merge_height = field_data.groupby("individualID").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1)).reset_index(drop=True)

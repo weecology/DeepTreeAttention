@@ -63,7 +63,7 @@ def discrete_cmap(N, base_cmap=None):
     return base.from_list(cmap_name, color_list, N)
 
 
-def error_crown_position(y_true, y_pred, box_index, canopydict):
+def plot_crown_position(train_path, model, eval_dataset_with_index, submodel = False):
     """Plot the errors by their crown position category
     Args:
         y_true: true labels
@@ -73,14 +73,44 @@ def error_crown_position(y_true, y_pred, box_index, canopydict):
     Returns:
         matplotlib axes
     """
+    train_shp = gpd.read_files(train_path)
     
+    #Get the true labels since they are not shuffled
+    y_true = [ ]
+    y_pred = [ ]
+    box_index = [ ]
+    for index, data, label in eval_dataset_with_index:
+        prediction = model.predict_on_batch(data)            
+        if submodel:
+            label = label[0]
+            prediction = prediction[0]
+        y_true.append(label)
+        y_pred.append(prediction)
+        box_index.append(index)            
+        
+    y_true = np.concatenate(y_true)
+    y_pred = np.concatenate(y_pred)
+    box_index = np.concatenate(box_index)
+    box_index = list(box_index)
+    y_true = np.argmax(y_true, 1)
+    y_pred = np.argmax(y_pred, 1)
+    
+    #get canopy dictionary
+    canopy_dict = {}
+    for index in box_index:
+        data_index = index.decode().split("_")[-1]
+        canopy_dict[index] = train_shp[train_shp.index.astype(str) == data_index].canopyPosition.values[0]
+    
+    ax = canopyPosition_barplot(y_true, y_pred, box_index, canopydict)
+    
+    return ax
+    
+def canopyPosition_barplot(y_true, y_pred, box_index, canopydict):
     results = pd.DataFrame({"true":y_true,"predicted":y_pred, "box_index":box_index})
     results["canopyPosition"] = results.box_index.apply(lambda x: canopydict[x])
     results["match"] = (results["true"] == results["predicted"])
     
     summary = results.groupby(["canopyPosition","match"]).size().reset_index(name="count")
     ax = summary.pivot("canopyPosition","match","count").plot.bar()
-    return ax
     
-    
-    
+    return ax    
