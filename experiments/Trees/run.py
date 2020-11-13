@@ -162,7 +162,7 @@ if __name__ == "__main__":
     model.ensemble_model.save("{}/Ensemble.h5".format(save_dir))
     
     #Plots
-    visualize.plot_crown_position(model = model.ensemble_model, train_shp = model.config["evaluation"]["ground_truth_path"], eval_dataset_with_index=model.val_split_with_ids)
+    visualize.plot_crown_position(model = model.ensemble_model, train_path = model.config["evaluation"]["ground_truth_path"], eval_dataset_with_index=model.val_split_with_ids)
     
     #save predictions
     
