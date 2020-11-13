@@ -77,7 +77,8 @@ def mod(tmpdir):
     mod.RGB_channels = 3
     mod.extend_HSI_box = mod.config["train"]["HSI"]["extend_box"]
     mod.classes_file = label_file
-    mod.train_shp = pd.DataFrame({"taxonID":["Jon","Ben"], "siteID":[0,1],"domainID":[0,1],"plotID":[0,1], "scientific":["genus species","genus species"]})
+    mod.train_shp = pd.DataFrame({"taxonID":["Jon","Ben"], "siteID":[0,1],"domainID":[0,1],"plotID":[0,1], "canopyPosition":["a","b"],"scientific":["genus species","genus species"]})
+    mod.train_shp.index =[2,7]
     #Create a model with input sizes
     mod.create()
             
@@ -172,7 +173,7 @@ def test_ensemble(tfrecords, mod):
          
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
-    mod.read_data(HSI=False, RGB=True, metadata=False, submodel=True)
+    mod.read_data(HSI=False, RGB=True, metadata=False, submodel=True, validation_split=True)
     
     #update epoch manually
     mod.config["train"]["RGB"]["epochs"] = 1
