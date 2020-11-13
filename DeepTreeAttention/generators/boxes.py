@@ -453,6 +453,7 @@ def tf_dataset(tfrecords,
         dataset: a tf.data dataset yielding crops and labels for train: True, crops and raster indices for train: False
         """
     AUTO = tf.data.experimental.AUTOTUNE
+    cores = AUTO
 
     inputs = [ ]
     if shuffle:
@@ -512,9 +513,8 @@ def tf_dataset(tfrecords,
         zipped_dataset = zipped_dataset.shuffle(buffer_size=batch_size)    
         
     zipped_dataset = zipped_dataset.batch(batch_size=batch_size)   
-    
-
-    zipped_dataset = zipped_dataset.prefetch(buffer_size=1)
+    zipped_dataset = zipped_dataset.prefetch(buffer_size=AUTO)
+    zipped_dataset = zipped_dataset.interleave(num_parallel_calls=AUTO)
     
     return zipped_dataset
 
