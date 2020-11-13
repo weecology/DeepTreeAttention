@@ -5,6 +5,7 @@ import numpy as np
 from skimage import exposure
 import os
 import pandas as pd
+import geopandas as gpd
 
 def normalize(array):
     """Normalizes numpy arrays into scale 0.0 - 1.0"""
