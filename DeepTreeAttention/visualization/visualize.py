@@ -113,7 +113,7 @@ def canopyPosition_barplot(y_true, y_pred, box_index, canopydict):
     
     summary = results.groupby(["canopyPosition","match"]).size().reset_index(name="count")
     ax = summary.pivot("canopyPosition","match","count").plot.bar()
-    plt.xticks(rotation=90)
-    plt.xticks(fontsize=10)
+    plt.xticks(rotation=-90)
+    plt.xticks(fontsize=8)
     
     return ax    
