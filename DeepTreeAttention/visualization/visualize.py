@@ -102,7 +102,7 @@ def plot_crown_position(path, model, eval_dataset_with_index, submodel = False):
         data_index = index.decode().split("_")[-1]
         canopy_dict[index] = train_shp[train_shp.index.astype(str) == data_index].canopyPosi.values[0]
     
-    ax = canopyPosition_barplot(y_true, y_pred, box_index, canopydict)
+    ax = canopyPosition_barplot(y_true, y_pred, box_index, canopy_dict)
     
     return ax
     
