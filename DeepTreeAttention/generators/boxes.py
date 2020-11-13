@@ -521,7 +521,7 @@ def tf_dataset(tfrecords,
     if shuffle:
         zipped_dataset = zipped_dataset.shuffle(buffer_size=5)   
         
-    zipped_dataset = zipped_dataset.prefetch(buffer_size=20)
+    zipped_dataset = zipped_dataset.prefetch(buffer_size=2)
     
     return zipped_dataset
 
