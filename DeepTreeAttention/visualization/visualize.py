@@ -74,7 +74,7 @@ def plot_crown_position(train_path, model, eval_dataset_with_index, submodel = F
     Returns:
         matplotlib axes
     """
-    train_shp = gpd.read_files(train_path)
+    train_shp = gpd.read_file(train_path)
     
     #Get the true labels since they are not shuffled
     y_true = [ ]
