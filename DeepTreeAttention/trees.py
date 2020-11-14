@@ -187,7 +187,8 @@ class AttentionModel():
                 metadata=metadata,
                 labels=labels,
                 ids=ids,
-                submodel=submodel,                
+                submodel=submodel,      
+                augmentation=False,
                 cores=self.config["cpu_workers"])
             
             self.val_split_with_ids = boxes.tf_dataset(

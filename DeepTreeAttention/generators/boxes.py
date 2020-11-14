@@ -435,6 +435,7 @@ def tf_dataset(tfrecords,
                ids = False,
                metadata=True,
                submodel=False,
+               augmentation = True,
                cores=32):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
@@ -464,13 +465,15 @@ def tf_dataset(tfrecords,
         HSI_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)                 
         HSI_dataset = HSI_dataset.map(_HSI_parse_, num_parallel_calls=cores) 
         HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=cores)            
-        HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=cores)    
+        if augmentation:
+            HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=cores)    
         inputs.append(HSI_dataset)        
         
     if RGB:
         RGB_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)                        
         RGB_dataset = RGB_dataset.map(_RGB_parse_, num_parallel_calls=cores) 
-        RGB_dataset = RGB_dataset.map(augment, num_parallel_calls=cores)    
+        if augmentation:
+            RGB_dataset = RGB_dataset.map(augment, num_parallel_calls=cores)    
         inputs.append(RGB_dataset)    
         
     if metadata:
@@ -506,7 +509,7 @@ def tf_dataset(tfrecords,
      
     #batch and shuffle
     if shuffle:
-        zipped_dataset = zipped_dataset.shuffle(buffer_size=100)   
+        zipped_dataset = zipped_dataset.shuffle(buffer_size=10)   
      
     #if cache:
         #zipped_dataset = zipped_dataset.cache()        
