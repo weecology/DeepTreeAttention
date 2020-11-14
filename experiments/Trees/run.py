@@ -57,9 +57,10 @@ if __name__ == "__main__":
 
     #Create output folder
     experiment.log_parameter("timestamp",timestamp)
+    experiment.log_parameter("log_dir",save_dir)
     
     #Create a class and run
-    model = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
+    model = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml", log_dir=save_dir)
     model.create()
         
     #Log config

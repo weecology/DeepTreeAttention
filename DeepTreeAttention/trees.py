@@ -272,6 +272,7 @@ class AttentionModel():
                                              train_data=self.train_split,
                                              label_names=label_names,
                                              train_shp=self.train_shp,
+                                             log_dir=self.log_dir,
                                              submodel=submodel)
                 
         if submodel == "metadata":
@@ -354,7 +355,8 @@ class AttentionModel():
                                              validation_data_with_index=self.val_split_with_ids,
                                              train_data=self.train_split,
                                              label_names=label_names,
-                                             train_shp=self.train_shp,                                             
+                                             train_shp=self.train_shp,    
+                                             log_dir=self.log_dir,
                                              submodel="ensemble")
         
         if self.config["train"]["gpus"] > 1:
