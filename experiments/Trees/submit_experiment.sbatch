@@ -15,10 +15,10 @@
 #module load tensorflow/2.3.1
 
 #export PATH=${PATH}:/home/b.weinstein/miniconda3/envs/DeepTreeAttention/bin/
-#export PYTHONPATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention/lib/python3.7/site-packages/:/home/b.weinstein/DeepTreeAttention/:${PYTHONPATH}
+export PYTHONPATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention_hipergator/lib/python3.7/site-packages/:/home/b.weinstein/DeepTreeAttention/:${PYTHONPATH}
 #export LD_LIBRARY_PATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention/lib/:${LD_LIBRARY_PATH}
 
-conda activate DeepTreeAttention_hipergator
+source activate DeepTreeAttention_hipergator
 
 #Run using tensorflow greater than tensorflow 2.0
 cd /home/b.weinstein/DeepTreeAttention/experiments/Trees/
