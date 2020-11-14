@@ -18,9 +18,6 @@ export PATH=${PATH}:/home/b.weinstein/miniconda3/envs/DeepTreeAttention_38/bin/
 export PYTHONPATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention_38/lib/python3.8/site-packages/:/home/b.weinstein/DeepTreeAttention/:${PYTHONPATH}
 export LD_LIBRARY_PATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention_38/lib/:${LD_LIBRARY_PATH}
 
-
-source activate DeepTreeAttention_hipergator
-
 #Run using tensorflow greater than tensorflow 2.0
 cd /home/b.weinstein/DeepTreeAttention/experiments/Trees/
 
