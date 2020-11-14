@@ -436,7 +436,7 @@ def tf_dataset(tfrecords,
                metadata=True,
                submodel=False,
                augmentation = True,
-               cores=64):
+               cores=10):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
         tfrecords: path to tfrecords, see generate.py
