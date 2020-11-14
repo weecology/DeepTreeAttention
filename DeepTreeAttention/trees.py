@@ -200,7 +200,8 @@ class AttentionModel():
                 metadata=metadata,
                 labels=labels,
                 ids=True,
-                submodel=submodel,                    
+                submodel=submodel,     
+                augmentation=False,                
                 cores=self.config["cpu_workers"])                  
         else:
             #Create training tf.data
@@ -231,6 +232,7 @@ class AttentionModel():
                     metadata=metadata,
                     labels=labels,
                     ids=ids,
+                    augmentation=False,                    
                     submodel=submodel,                    
                     cores=self.config["cpu_workers"])  
                 
@@ -243,6 +245,7 @@ class AttentionModel():
                     metadata=metadata,
                     labels=labels,
                     ids=True,
+                    augmentation=False,
                     submodel=submodel,                    
                     cores=self.config["cpu_workers"])                   
                 
