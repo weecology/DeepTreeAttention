@@ -321,6 +321,7 @@ def _HSI_parse_(tfrecord):
     
     # Reshape to known shape
     loaded_HSI_image = tf.reshape(HSI_image, HSI_image_shape, name="cast_loaded_HSI_image")
+    loaded_HSI_image = tf.cast(loaded_HSI_image, tf.float32)
     
     return loaded_HSI_image
         
