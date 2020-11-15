@@ -292,8 +292,7 @@ def _label_parse_(tfrecord):
     }
     example = tf.io.parse_single_example(tfrecord, features)
     classes = tf.cast(example['classes'], tf.int32)    
-    label = tf.cast(example['label'], tf.int64)    
-    one_hot_labels = tf.one_hot(label, classes)
+    one_hot_labels = tf.one_hot(example['label'], classes)
     
     return one_hot_labels
 
@@ -317,15 +316,11 @@ def _HSI_parse_(tfrecord):
     example = tf.io.parse_single_example(tfrecord, features)
 
     # Load HSI image from file
-    HSI_height = tf.cast(example['HSI_image/height'], tf.int64)
-    HSI_width = tf.cast(example['HSI_image/width'], tf.int64)
-    HSI_depth = tf.cast(example['HSI_image/depth'], tf.int64)
     HSI_image = tf.io.decode_raw(example['HSI_image/data'], tf.uint16)
-    HSI_image_shape = tf.stack([HSI_height,HSI_width, HSI_depth])
+    HSI_image_shape = tf.stack([example['HSI_image/height'],example['HSI_image/width'], example['HSI_image/depth']])
     
     # Reshape to known shape
     loaded_HSI_image = tf.reshape(HSI_image, HSI_image_shape, name="cast_loaded_HSI_image")
-    loaded_HSI_image = tf.cast(loaded_HSI_image, dtype=tf.float32)
     
     return loaded_HSI_image
         
@@ -344,15 +339,11 @@ def _RGB_parse_(tfrecord):
     example = tf.io.parse_single_example(tfrecord, features)
     
     # Load RGB image from file
-    RGB_height = tf.cast(example['RGB_image/height'], tf.int64)
-    RGB_width = tf.cast(example['RGB_image/width'], tf.int64)
-    RGB_depth = tf.cast(example['RGB_image/depth'], tf.int64)
     RGB_image = tf.io.decode_raw(example['RGB_image/data'], tf.uint16)
-    RGB_image_shape = tf.stack([RGB_height,RGB_width, RGB_depth])
+    RGB_image_shape = tf.stack([example['RGB_image/height'],example['RGB_image/width'], example['RGB_image/depth']])
     
     # Reshape to known shape
     loaded_RGB_image = tf.reshape(RGB_image, RGB_image_shape, name="cast_loaded_RGB_image")
-    loaded_RGB_image = tf.cast(loaded_RGB_image, dtype=tf.float32)
     
     return loaded_RGB_image
     
@@ -365,7 +356,7 @@ def _site_parse_(tfrecord):
     }
 
     example = tf.io.parse_single_example(tfrecord, features)
-    site = tf.cast(example['site'], tf.int64)
+    site = example['site']
     sites = tf.cast(example['number_of_sites'], tf.int32)    
     
     #one hot
@@ -381,8 +372,7 @@ def _height_parse_(tfrecord):
     }
 
     example = tf.io.parse_single_example(tfrecord, features)
-    height = tf.cast(example['height'], tf.float32)
-    height = height / 100
+    height = example['height'] / 100
 
     return height
 
@@ -394,8 +384,7 @@ def _elevation_parse_(tfrecord):
     }
 
     example = tf.io.parse_single_example(tfrecord, features)    
-    elevation = tf.cast(example['elevation'], tf.int64)
-    elevation = elevation/1000
+    elevation = example['elevation']/1000
 
     return elevation
 
