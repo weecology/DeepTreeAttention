@@ -18,7 +18,7 @@ def created_records(tmpdir):
         shapefile=test_predictions,
         site = 1,
         heights=np.random.random(shp.shape[0])*10,        
-        elevation=100,
+        elevation=100.0,
         savedir=tmpdir,
         HSI_sensor_path=test_sensor_tile,
         RGB_sensor_path=test_sensor_tile,

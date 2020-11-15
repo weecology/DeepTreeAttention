@@ -236,6 +236,9 @@ def create_record(HSI_image, RGB_image, index, site, elevation, height, classes,
     Returns:
         tf example parser
     """
+    
+    #Standardize HSI normalization, perform now instead of at runtime.
+    HSI_image = tf.image.per_image_standardization(HSI_image).numpy()
     HSI_rows = HSI_image.shape[0]
     HSI_cols = HSI_image.shape[1]
     HSI_depth = HSI_image.shape[2]
@@ -251,7 +254,7 @@ def create_record(HSI_image, RGB_image, index, site, elevation, height, classes,
                 'HSI_image/data': _bytes_feature(HSI_image.tostring()),
                 'label': _int64_feature(label),
                 'site': _int64_feature(site),    
-                'elevation': _int64_feature(elevation),                                
+                'elevation': _float32_feature(elevation),                                
                 'HSI_image/height': _int64_feature(HSI_rows),
                 'HSI_image/width': _int64_feature(HSI_cols),
                 'HSI_image/depth': _int64_feature(HSI_depth),
@@ -277,7 +280,7 @@ def create_record(HSI_image, RGB_image, index, site, elevation, height, classes,
                 'RGB_image/depth': _int64_feature(RGB_depth),        
                 'classes': _int64_feature(classes),
                 'site': _int64_feature(site),               
-                'elevation': _int64_feature(elevation),                                                
+                'elevation': _float32_feature(elevation),                                                
                 'number_of_sites': _int64_feature(number_of_sites),
                 'height': _float32_feature(height)
             }))
@@ -372,8 +375,7 @@ def _height_parse_(tfrecord):
     }
 
     example = tf.io.parse_single_example(tfrecord, features)
-    height = tf.cast(example['height'], tf.float32)
-    height = height / 100
+    height = example['height']
 
     return height
 
@@ -381,14 +383,12 @@ def _elevation_parse_(tfrecord):
     """Tfrecord generator parse for a metadata model only"""
     # Define features
     features = {
-        "elevation": tf.io.FixedLenFeature([], tf.int64),                             
+        "elevation": tf.io.FixedLenFeature([], tf.float32),                             
     }
 
     example = tf.io.parse_single_example(tfrecord, features)  
-    elevation = tf.cast(example['elevation'], tf.float32)
-    elevation = example['elevation']/1000
 
-    return elevation
+    return example['elevation']
 
 def flip(x: tf.Tensor) -> tf.Tensor:
     """Flip augmentation
@@ -454,7 +454,6 @@ def tf_dataset(tfrecords,
             
     if HSI:
         HSI_dataset = dataset.map(_HSI_parse_, num_parallel_calls=cores) 
-        HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=cores)
         if augmentation:
             HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=cores)    
         inputs.append(HSI_dataset)        

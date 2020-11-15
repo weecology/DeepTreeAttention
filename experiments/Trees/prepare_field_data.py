@@ -208,8 +208,8 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         box = row["geometry"]       
         plot_name = row["plotID"] 
         site = row["plotID"].split("_")[0]
-        elevation = int(row["elevation"])
-        height = row["height"]
+        elevation = float(row["elevation"])/1000
+        height = float(row["height"])/100
         
         #get sensor data
         if sensor == "rgb":

@@ -216,13 +216,13 @@ def create(experiment, train_data, validation_data, train_shp, validation_data_w
     f1 = F1Callback(experiment=experiment, y_true=y_true, eval_dataset=validation_data, label_names=label_names, submodel=submodel, eval_dataset_with_index=validation_data_with_index, train_shp=train_shp)
     callback_list.append(f1)
     
-    if submodel is None:
-        plot_images = ImageCallback(experiment, validation_data, label_names, submodel=submodel)
-        callback_list.append(plot_images)
+    #if submodel is None:
+        #plot_images = ImageCallback(experiment, validation_data, label_names, submodel=submodel)
+        #callback_list.append(plot_images)
         
     if log_dir is not None:
         print("saving tensorboard logs at {}".format(log_dir))
-        tensorboard = TensorBoard(log_dir=log_dir, histogram_freq=1, profile_batch=10)
+        tensorboard = TensorBoard(log_dir=log_dir, histogram_freq=1, profile_batch=20)
         callback_list.append(tensorboard)        
 
     return callback_list
