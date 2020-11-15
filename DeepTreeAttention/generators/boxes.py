@@ -372,7 +372,8 @@ def _height_parse_(tfrecord):
     }
 
     example = tf.io.parse_single_example(tfrecord, features)
-    height = example['height'] / 100
+    height = tf.cast(example['height'], tf.float32)
+    height = height / 100
 
     return height
 
@@ -383,7 +384,8 @@ def _elevation_parse_(tfrecord):
         "elevation": tf.io.FixedLenFeature([], tf.int64),                             
     }
 
-    example = tf.io.parse_single_example(tfrecord, features)    
+    example = tf.io.parse_single_example(tfrecord, features)  
+    elevation = tf.cast(example['elevation'], tf.float32)
     elevation = example['elevation']/1000
 
     return elevation
