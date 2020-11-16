@@ -7,7 +7,9 @@ import rasterio
 import random
 import tensorflow as tf
 import cv2
+
 from rasterio.windows import from_bounds
+from sklearn import preprocessing
 
 def resize(img, height, width):
     # resize image
@@ -238,7 +240,8 @@ def create_record(HSI_image, RGB_image, index, site, elevation, height, classes,
     """
     
     #Standardize HSI normalization, perform now instead of at runtime.
-    HSI_image = tf.image.per_image_standardization(HSI_image).numpy()
+    scaler = preprocessing.StandardScaler()
+    HSI_image = scaler.fit_transform(HSI_image.reshape(-1, HSI_image.shape[-1])).reshape(HSI_image.shape)
     HSI_rows = HSI_image.shape[0]
     HSI_cols = HSI_image.shape[1]
     HSI_depth = HSI_image.shape[2]
