@@ -240,8 +240,6 @@ def create_record(HSI_image, RGB_image, index, site, elevation, height, classes,
     """
     
     #Standardize HSI normalization, perform now instead of at runtime.
-    scaler = preprocessing.StandardScaler()
-    HSI_image = scaler.fit_transform(HSI_image.reshape(-1, HSI_image.shape[-1])).reshape(HSI_image.shape)
     HSI_rows = HSI_image.shape[0]
     HSI_cols = HSI_image.shape[1]
     HSI_depth = HSI_image.shape[2]
@@ -458,7 +456,8 @@ def tf_dataset(tfrecords,
     if HSI:
         HSI_dataset = dataset.map(_HSI_parse_, num_parallel_calls=cores) 
         if augmentation:
-            HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=cores)    
+            HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=cores)                
+            HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=cores)    
         inputs.append(HSI_dataset)        
         
     if RGB:
