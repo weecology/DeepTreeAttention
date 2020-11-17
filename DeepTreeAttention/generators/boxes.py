@@ -14,7 +14,6 @@ from sklearn import preprocessing
 def resize(img, height, width):
     # resize image
     dim = (width, height)
-    img = img.astype("float32")
     resized = cv2.resize(img, dim, interpolation=cv2.INTER_NEAREST)
 
     return resized
@@ -157,8 +156,8 @@ def generate_tfrecords(shapefile,
             chunk_labels = None
 
         #resize crops
-        resized_HSI_crops = [resize(x, HSI_size, HSI_size).astype("float32") for x in chunk_HSI_crops]
-        resized_RGB_crops = [resize(x, RGB_size, RGB_size).astype("float32") for x in chunk_RGB_crops]
+        resized_HSI_crops = [resize(x, HSI_size, HSI_size) for x in chunk_HSI_crops]
+        resized_RGB_crops = [resize(x, RGB_size, RGB_size) for x in chunk_RGB_crops]
 
         filename = "{}/{}_{}.tfrecord".format(savedir, basename, counter)
         
@@ -320,7 +319,7 @@ def _HSI_parse_(tfrecord):
     example = tf.io.parse_single_example(tfrecord, features)
 
     # Load HSI image from file
-    HSI_image = tf.io.decode_raw(example['HSI_image/data'], tf.float32)
+    HSI_image = tf.io.decode_raw(example['HSI_image/data'], tf.uint8)
     HSI_image_shape = tf.stack([example['HSI_image/height'],example['HSI_image/width'], example['HSI_image/depth']])
     
     # Reshape to known shape
@@ -343,7 +342,7 @@ def _RGB_parse_(tfrecord):
     example = tf.io.parse_single_example(tfrecord, features)
     
     # Load RGB image from file
-    RGB_image = tf.io.decode_raw(example['RGB_image/data'], tf.float32)
+    RGB_image = tf.io.decode_raw(example['RGB_image/data'], tf.uint8)
     RGB_image_shape = tf.stack([example['RGB_image/height'],example['RGB_image/width'], example['RGB_image/depth']])
     
     # Reshape to known shape
@@ -456,8 +455,8 @@ def tf_dataset(tfrecords,
     if HSI:
         HSI_dataset = dataset.map(_HSI_parse_, num_parallel_calls=cores) 
         if augmentation:
+            HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=cores)                
             HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=cores)                
-            HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=cores)    
         inputs.append(HSI_dataset)        
         
     if RGB:

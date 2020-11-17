@@ -51,14 +51,17 @@ print("There are {} train labels".format(len(np.unique(labels))))
 
 
 created_records = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/*.tfrecord")
-dataset = boxes.tf_dataset(created_records, mode="ensemble", batch_size=100)
+dataset = boxes.tf_dataset(created_records, batch_size=100)
 counter=0
 
 test_labels = []
 test_elevation = []
-for (HSI, RGB, elevation,height, sites), label in dataset:
-    test_elevation.append(elevation)
-    test_labels.append(label)
+for (HSI, RGB, elevation,height, sites), label in dataset.take(1):
+    HSI = HSI
+    RGB = RGB
+    elevation = elevation
+    height = height
+    sites = sites
 
 test_elevation = np.concatenate(test_elevation)
 test_labels = np.vstack(test_labels)
