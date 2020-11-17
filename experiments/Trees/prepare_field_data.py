@@ -253,8 +253,8 @@ def create_records(HSI_crops, RGB_crops, labels, sites, heights, elevations, box
         chunk_elevations = elevations[i:i + chunk_size]
         chunk_heights = heights[i:i + chunk_size]
             
-        resized_RGB_crops = [resize(x, RGB_size, RGB_size) for x in chunk_RGB_crops]
-        resized_HSI_crops = [resize(x, HSI_size, HSI_size) for x in chunk_HSI_crops]
+        resized_RGB_crops = [resize(x, RGB_size, RGB_size).astype(np.uint8) for x in chunk_RGB_crops]
+        resized_HSI_crops = [resize(x, HSI_size, HSI_size).astype(np.uint16) for x in chunk_HSI_crops]
         
         filename = "{}/field_data_{}.tfrecord".format(savedir, counter)
         write_tfrecord(filename=filename,
