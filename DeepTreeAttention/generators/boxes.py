@@ -446,7 +446,7 @@ def tf_dataset(tfrecords,
     inputs = [ ]
 
     dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads = 20)   
-    dataset = dataset.batch(batch_size=batch_size)
+    zipped_dataset = zipped_dataset.batch(batch_size=batch_size)
     
     if shuffle:
         dataset = dataset.shuffle(10)      
