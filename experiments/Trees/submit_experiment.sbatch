@@ -5,12 +5,12 @@
 #SBATCH --account=ewhite
 #SBATCH --cpus-per-task=10
 #SBATCH --mem=40GB
-#SBATCH --time=4:00:00       #Time limit hrs:min:sec
+#SBATCH --time=00:20:00       #Time limit hrs:min:sec
 #SBATCH --output=/home/b.weinstein/logs/DeepTreeAttention_%j.out   # Standard output and error log
 #SBATCH --error=/home/b.weinstein/logs/DeepTreeAttention_%j.err
 #SBATCH --partition=gpu
 #SBATCH --nodes=1
-#SBATCH --gpus=4
+#SBATCH --gpus=2
 
 module load tensorflow/2.3.1
 module load cuda
