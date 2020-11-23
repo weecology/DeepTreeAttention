@@ -504,11 +504,10 @@ def tf_dataset(tfrecords,
 
     inputs = [ ]
     
-    dataset = tf.data.Dataset.from_tensor_slices(tfrecords)
-    dataset = dataset.interleave(lambda x: tf.data.TFRecordDataset(x),
-        cycle_length=20, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    #dataset = dataset.interleave(lambda x: tf.data.TFRecordDataset(x),
+    #    cycle_length=20, num_parallel_calls=tf.data.experimental.AUTOTUNE)
     
-    #dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)   
+    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=AUTO)   
     
     if shuffle:
         dataset = dataset.shuffle(10)      
