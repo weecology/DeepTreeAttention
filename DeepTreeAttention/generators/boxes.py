@@ -517,40 +517,40 @@ def tf_dataset(tfrecords,
 
     inputs = [ ]
 
-    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=40)   
+    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=20)   
     
     if shuffle:
         dataset = dataset.shuffle(10)      
     
     if ids:
-        ids_dataset = dataset.map(_box_index_parse_, num_parallel_calls=32) 
+        ids_dataset = dataset.map(_box_index_parse_, num_parallel_calls=64) 
             
     if HSI:
-        HSI_dataset = dataset.map(_HSI_parse_, num_parallel_calls=32) 
-        HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=32)      
+        HSI_dataset = dataset.map(_HSI_parse_, num_parallel_calls=64) 
+        HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=64)      
         if augmentation:
-            HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=32)   
+            HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=64)   
                 
         inputs.append(HSI_dataset)        
         
     if RGB:
-        RGB_dataset = dataset.map(_RGB_parse_, num_parallel_calls=32) 
+        RGB_dataset = dataset.map(_RGB_parse_, num_parallel_calls=64) 
         if augmentation:
-            RGB_dataset = RGB_dataset.map(augment, num_parallel_calls=32)    
+            RGB_dataset = RGB_dataset.map(augment, num_parallel_calls=64)    
         inputs.append(RGB_dataset)    
         
     if metadata:        
-        height_dataset = dataset.map(_height_parse_, num_parallel_calls=32)     
+        height_dataset = dataset.map(_height_parse_, num_parallel_calls=64)     
         inputs.append(height_dataset)   
         
-        elevation_dataset = dataset.map(_elevation_parse_, num_parallel_calls=32)                 
+        elevation_dataset = dataset.map(_elevation_parse_, num_parallel_calls=64)                 
         inputs.append(elevation_dataset)   
         
-        site_dataset = dataset.map(_site_parse_, num_parallel_calls=32)                 
+        site_dataset = dataset.map(_site_parse_, num_parallel_calls=64)                 
         inputs.append(site_dataset)   
         
     if labels:
-        labels_dataset = dataset.map(_label_parse_, num_parallel_calls=32) 
+        labels_dataset = dataset.map(_label_parse_, num_parallel_calls=64) 
         
         if submodel:
             labels_dataset = tf.data.Dataset.zip((labels_dataset, labels_dataset, labels_dataset))
