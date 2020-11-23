@@ -27,7 +27,6 @@ train:
         epochs: 150
     ensemble:
         freeze: False
-        batch_size: 256
         epochs: 120
     sites: 23
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/

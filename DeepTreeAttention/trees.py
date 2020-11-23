@@ -127,7 +127,7 @@ class AttentionModel():
         self.classes = pd.read_csv(self.classes_file).shape[0]        
         if self.config["train"]["gpus"] > 1:
             self.strategy = tf.distribute.MirroredStrategy()
-            print("Running in parallel on {} GPUs".format(self.strategy.num_replicas_in_sync))            
+            print("Running in parallel on {} GPUs".format(self.strategy.num_replicas_in_sync))          
             self.config["train"]["batch_size"] = self.config["train"]["batch_size"] * self.strategy.num_replicas_in_sync
             with self.strategy.scope():
                 self.HSI_model, self.HSI_spatial, self.HSI_spectral = Hang.create_models(self.HSI_size, self.HSI_size, self.HSI_channels, self.classes, self.config["train"]["learning_rate"])
@@ -332,9 +332,6 @@ class AttentionModel():
         #Manually override batch size
         self.classes = pd.read_csv(self.classes_file).shape[0] 
         
-        if self.config["train"]["gpus"] > 1:
-            self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"] * self.strategy.num_replicas_in_sync
-        
         self.read_data(HSI = True, RGB = True, metadata = True)      
         
         if self.val_split is None:
@@ -380,7 +377,6 @@ class AttentionModel():
                         callbacks=callback_list,
                         class_weight=class_weight)                    
         else:
-            self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"]      
             self.ensemble_model = Hang.learned_ensemble(HSI_model=self.HSI_model, RGB_model=self.RGB_model,metadata_model=self.metadata_model, freeze=freeze, classes=self.classes)
             if train:
                 self.ensemble_model.compile(
