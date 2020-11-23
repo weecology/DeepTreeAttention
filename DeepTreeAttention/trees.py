@@ -330,7 +330,11 @@ class AttentionModel():
         
     def ensemble(self, experiment, class_weight=None, freeze = True, train=True):
         #Manually override batch size
-        self.classes = pd.read_csv(self.classes_file).shape[0]        
+        self.classes = pd.read_csv(self.classes_file).shape[0] 
+        
+        if self.config["train"]["gpus"] > 1:
+            self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"] * self.strategy.num_replicas_in_sync
+        
         self.read_data(HSI = True, RGB = True, metadata = True)      
         
         if self.val_split is None:
@@ -359,7 +363,6 @@ class AttentionModel():
         
         if self.config["train"]["gpus"] > 1:
             with self.strategy.scope():        
-                self.config["train"]["batch_size"] = self.config["train"]["ensemble"]["batch_size"] * self.strategy.num_replicas_in_sync
                 self.ensemble_model = Hang.learned_ensemble(HSI_model=self.HSI_model, RGB_model=self.RGB_model, metadata_model= self.metadata_model, freeze=freeze, classes=self.classes)
                 
                 if train:
