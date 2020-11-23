@@ -560,6 +560,6 @@ def tf_dataset(tfrecords,
         zipped_dataset = zipped_dataset.shuffle(buffer_size=10)   
     
     zipped_dataset = zipped_dataset.batch(batch_size=batch_size)    
-    zipped_dataset = zipped_dataset.prefetch(buffer_size=AUTO)    
+    zipped_dataset = zipped_dataset.prefetch(buffer_size=1)    
     
     return zipped_dataset
