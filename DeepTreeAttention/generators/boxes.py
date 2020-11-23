@@ -528,7 +528,7 @@ def tf_dataset(tfrecords,
     if HSI:
         HSI_dataset = dataset.map(_HSI_parse_, num_parallel_calls=32) 
         HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=32)      
-        HSI_dataset.cache()
+        HSI_dataset = HSI_dataset.cache()
         if augmentation:
             HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=32)   
         inputs.append(HSI_dataset)        
