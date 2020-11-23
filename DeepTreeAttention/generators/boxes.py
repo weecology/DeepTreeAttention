@@ -517,7 +517,7 @@ def tf_dataset(tfrecords,
 
     inputs = [ ]
 
-    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=20)   
+    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=40)   
     
     if shuffle:
         dataset = dataset.shuffle(10)      
