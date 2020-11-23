@@ -462,25 +462,12 @@ def _elevation_parse_(tfrecord):
 
     return example['elevation']
 
-def flip(x: tf.Tensor) -> tf.Tensor:
-    """Flip augmentation
-
-    Args:
-        x: Image to flip
-
-    Returns:
-        Augmented image
-    """
-    x = tf.image.random_flip_left_right(x)
-    x = tf.image.random_flip_up_down(x)
-
-    return x
-
 def augment(data):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
 
-    data = flip(data)
     data = tf.image.rot90(data)
+    data = tf.image.random_flip_left_right(data)
+    data = tf.image.random_flip_up_down(data)    
     
     return data
 
@@ -499,7 +486,7 @@ def tf_dataset(tfrecords,
                metadata=True,
                submodel=False,
                augmentation = True,
-               cores=10):
+               cores=32):
     """Create a tf.data dataset that yields sensor data and ground truth
     Args:
         tfrecords: path to tfrecords, see generate.py
@@ -517,40 +504,40 @@ def tf_dataset(tfrecords,
 
     inputs = [ ]
 
-    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=AUTO)   
+    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)   
     
     if shuffle:
         dataset = dataset.shuffle(10)      
     
     if ids:
-        ids_dataset = dataset.map(_box_index_parse_, num_parallel_calls=AUTO) 
+        ids_dataset = dataset.map(_box_index_parse_, num_parallel_calls=cores) 
             
     if HSI:
-        HSI_dataset = dataset.map(_HSI_parse_, num_parallel_calls=AUTO) 
-        HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=AUTO)      
+        HSI_dataset = dataset.map(_HSI_parse_, num_parallel_calls=cores) 
+        HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=cores)      
         if augmentation:
-            HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=AUTO)   
+            HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=cores)   
                 
         inputs.append(HSI_dataset)        
         
     if RGB:
-        RGB_dataset = dataset.map(_RGB_parse_, num_parallel_calls=AUTO) 
+        RGB_dataset = dataset.map(_RGB_parse_, num_parallel_calls=cores) 
         if augmentation:
-            RGB_dataset = RGB_dataset.map(augment, num_parallel_calls=AUTO)    
+            RGB_dataset = RGB_dataset.map(augment, num_parallel_calls=cores)    
         inputs.append(RGB_dataset)    
         
     if metadata:        
-        height_dataset = dataset.map(_height_parse_, num_parallel_calls=AUTO)     
+        height_dataset = dataset.map(_height_parse_, num_parallel_calls=cores)     
         inputs.append(height_dataset)   
         
-        elevation_dataset = dataset.map(_elevation_parse_, num_parallel_calls=AUTO)                 
+        elevation_dataset = dataset.map(_elevation_parse_, num_parallel_calls=cores)                 
         inputs.append(elevation_dataset)   
         
-        site_dataset = dataset.map(_site_parse_, num_parallel_calls=AUTO)                 
+        site_dataset = dataset.map(_site_parse_, num_parallel_calls=cores)                 
         inputs.append(site_dataset)   
         
     if labels:
-        labels_dataset = dataset.map(_label_parse_, num_parallel_calls=AUTO) 
+        labels_dataset = dataset.map(_label_parse_, num_parallel_calls=cores) 
         
         if submodel:
             labels_dataset = tf.data.Dataset.zip((labels_dataset, labels_dataset, labels_dataset))
