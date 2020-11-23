@@ -504,7 +504,7 @@ def tf_dataset(tfrecords,
 
     inputs = [ ]
     
-    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=AUTO)   
+    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)   
     
     if shuffle:
         dataset = dataset.shuffle(10)      
@@ -557,8 +557,7 @@ def tf_dataset(tfrecords,
     if shuffle:
         zipped_dataset = zipped_dataset.shuffle(buffer_size=10)   
     
-    #zipped_dataset = zipped_dataset.batch(batch_size=batch_size)
-    zipped_dataset = zipped_dataset.apply(tf.data.experimental.map_and_batch(batch_size=batch_size, num_parallel_calls=cores))
+    zipped_dataset = zipped_dataset.batch(batch_size=batch_size)
     zipped_dataset = zipped_dataset.prefetch(buffer_size=1)    
     
     return zipped_dataset
