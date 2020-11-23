@@ -349,7 +349,26 @@ def _RGB_parse_(tfrecord):
     loaded_RGB_image = tf.reshape(RGB_image, RGB_image_shape, name="cast_loaded_RGB_image")
     
     return loaded_RGB_image
+
+def _metadata_parse_(tfrecord):
+    """Tfrecord generator parse for a metadata model only"""
+    # Define features
+    features = {
+        "site": tf.io.FixedLenFeature([], tf.int64),  
+        "number_of_sites": tf.io.FixedLenFeature([], tf.int64),  
+        "height": tf.io.FixedLenFeature([], tf.float32),     
+        "elevation": tf.io.FixedLenFeature([], tf.float32)                                     
+    }
+
+    example = tf.io.parse_single_example(tfrecord, features)
+    site = example['site']
+    sites = tf.cast(example['number_of_sites'], tf.int32)    
     
+    #one hot
+    one_hot_sites = tf.one_hot(site, sites)
+
+    return [example['height'], example['elevation'], one_hot_sites] 
+
 def _site_parse_(tfrecord):
     """Tfrecord generator parse for a metadata model only"""
     # Define features
@@ -446,7 +465,6 @@ def tf_dataset(tfrecords,
     inputs = [ ]
 
     dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads = 20)   
-    zipped_dataset = zipped_dataset.batch(batch_size=batch_size)
     
     if shuffle:
         dataset = dataset.shuffle(10)      
@@ -467,7 +485,7 @@ def tf_dataset(tfrecords,
             RGB_dataset = RGB_dataset.map(augment)    
         inputs.append(RGB_dataset)    
         
-    if metadata:
+    if metadata:        
         height_dataset = dataset.map(_height_parse_)     
         inputs.append(height_dataset)   
         
@@ -498,6 +516,7 @@ def tf_dataset(tfrecords,
     if shuffle:
         zipped_dataset = zipped_dataset.shuffle(buffer_size=10)   
     
+    zipped_dataset = zipped_dataset.batch(batch_size=batch_size)    
     zipped_dataset = zipped_dataset.prefetch(buffer_size=1)    
     
     return zipped_dataset
