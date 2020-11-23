@@ -504,10 +504,10 @@ def tf_dataset(tfrecords,
 
     inputs = [ ]
     
-    #dataset = dataset.interleave(lambda x: tf.data.TFRecordDataset(x),
-    #    cycle_length=20, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    dataset = dataset.interleave(lambda x: tf.data.TFRecordDataset(x),
+        cycle_length=4, num_parallel_calls=tf.data.experimental.AUTOTUNE)
     
-    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=AUTO)   
+    #dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=AUTO)   
     
     if shuffle:
         dataset = dataset.shuffle(10)      
@@ -561,6 +561,6 @@ def tf_dataset(tfrecords,
         zipped_dataset = zipped_dataset.shuffle(buffer_size=10)   
     
     zipped_dataset = zipped_dataset.batch(batch_size=batch_size)
-    zipped_dataset = zipped_dataset.prefetch(buffer_size=1)    
+    zipped_dataset = zipped_dataset.prefetch(buffer_size=AUTO)    
     
     return zipped_dataset
