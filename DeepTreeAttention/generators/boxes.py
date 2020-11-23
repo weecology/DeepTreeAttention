@@ -515,6 +515,7 @@ def tf_dataset(tfrecords,
     if HSI:
         HSI_dataset = dataset.map(_HSI_parse_, num_parallel_calls=cores) 
         HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=cores)      
+        HSI_dataset = HSI_dataset.cache()
         if augmentation:
             HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=cores)   
                 
@@ -522,6 +523,7 @@ def tf_dataset(tfrecords,
         
     if RGB:
         RGB_dataset = dataset.map(_RGB_parse_, num_parallel_calls=cores) 
+        RGB_dataset = RGB_dataset.cache()
         if augmentation:
             RGB_dataset = RGB_dataset.map(augment, num_parallel_calls=cores)    
         inputs.append(RGB_dataset)    
