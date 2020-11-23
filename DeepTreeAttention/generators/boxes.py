@@ -504,8 +504,8 @@ def tf_dataset(tfrecords,
 
     inputs = [ ]
 
-    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores, buffer_size=1000)   
-    
+    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)   
+    dataset = dataset.cache()
     if shuffle:
         dataset = dataset.shuffle(10)      
     
@@ -515,7 +515,6 @@ def tf_dataset(tfrecords,
     if HSI:
         HSI_dataset = dataset.map(_HSI_parse_, num_parallel_calls=cores) 
         HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=cores)      
-        HSI_dataset = HSI_dataset.cache()
         if augmentation:
             HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=cores)   
                 
@@ -523,7 +522,6 @@ def tf_dataset(tfrecords,
         
     if RGB:
         RGB_dataset = dataset.map(_RGB_parse_, num_parallel_calls=cores) 
-        RGB_dataset = RGB_dataset.cache()
         if augmentation:
             RGB_dataset = RGB_dataset.map(augment, num_parallel_calls=cores)    
         inputs.append(RGB_dataset)    
@@ -560,6 +558,6 @@ def tf_dataset(tfrecords,
         zipped_dataset = zipped_dataset.shuffle(buffer_size=10)   
     
     zipped_dataset = zipped_dataset.batch(batch_size=batch_size)    
-    zipped_dataset = zipped_dataset.prefetch(buffer_size=AUTO)    
+    zipped_dataset = zipped_dataset.prefetch(buffer_size=1)    
     
     return zipped_dataset
