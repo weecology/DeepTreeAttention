@@ -517,7 +517,7 @@ def tf_dataset(tfrecords,
 
     inputs = [ ]
 
-    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=20)   
+    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=40)   
     
     if shuffle:
         dataset = dataset.shuffle(10)      
@@ -530,9 +530,7 @@ def tf_dataset(tfrecords,
         HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=32)      
         if augmentation:
             HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=32)   
-        
-        HSI_dataset = HSI_dataset.cache()
-        
+                
         inputs.append(HSI_dataset)        
         
     if RGB:
