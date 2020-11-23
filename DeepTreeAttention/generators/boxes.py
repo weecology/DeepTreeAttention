@@ -506,7 +506,7 @@ def tf_dataset(tfrecords,
     
     dataset = tf.data.Dataset.from_tensor_slices(tfrecords)
     dataset = dataset.interleave(lambda x: tf.data.TFRecordDataset(x),
-        cycle_length=4, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        cycle_length=10, num_parallel_calls=tf.data.experimental.AUTOTUNE)
     
     #dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)   
     
