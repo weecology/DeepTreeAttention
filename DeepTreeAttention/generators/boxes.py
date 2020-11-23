@@ -470,33 +470,33 @@ def tf_dataset(tfrecords,
         dataset = dataset.shuffle(10)      
     
     if ids:
-        ids_dataset = dataset.map(_box_index_parse_) 
+        ids_dataset = dataset.map(_box_index_parse_, num_parallel_calls= 32) 
             
     if HSI:
-        HSI_dataset = dataset.map(_HSI_parse_) 
-        HSI_dataset = HSI_dataset.map(normalize)                        
+        HSI_dataset = dataset.map(_HSI_parse_, num_parallel_calls= 32) 
+        HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls= 32)                        
         if augmentation:
-            HSI_dataset = HSI_dataset.map(augment)                
+            HSI_dataset = HSI_dataset.map(augment, num_parallel_calls= 32)                
         inputs.append(HSI_dataset)        
         
     if RGB:
-        RGB_dataset = dataset.map(_RGB_parse_) 
+        RGB_dataset = dataset.map(_RGB_parse_, num_parallel_calls= 32) 
         if augmentation:
-            RGB_dataset = RGB_dataset.map(augment)    
+            RGB_dataset = RGB_dataset.map(augment, num_parallel_calls= 32)    
         inputs.append(RGB_dataset)    
         
     if metadata:        
-        height_dataset = dataset.map(_height_parse_)     
+        height_dataset = dataset.map(_height_parse_, num_parallel_calls= 32)     
         inputs.append(height_dataset)   
         
-        elevation_dataset = dataset.map(_elevation_parse_)                 
+        elevation_dataset = dataset.map(_elevation_parse_, num_parallel_calls= 32)                 
         inputs.append(elevation_dataset)   
         
-        site_dataset = dataset.map(_site_parse_)                 
+        site_dataset = dataset.map(_site_parse_, num_parallel_calls= 32)                 
         inputs.append(site_dataset)   
         
     if labels:
-        labels_dataset = dataset.map(_label_parse_) 
+        labels_dataset = dataset.map(_label_parse_, num_parallel_calls= 32) 
         
         if submodel:
             labels_dataset = tf.data.Dataset.zip((labels_dataset, labels_dataset, labels_dataset))
