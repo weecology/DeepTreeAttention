@@ -530,6 +530,9 @@ def tf_dataset(tfrecords,
         HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=32)      
         if augmentation:
             HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=32)   
+        
+        HSI_dataset = HSI_dataset.cache()
+        
         inputs.append(HSI_dataset)        
         
     if RGB:
@@ -564,9 +567,7 @@ def tf_dataset(tfrecords,
             zipped_dataset = tf.data.Dataset.zip((tuple(inputs), labels_dataset))
         else:
             zipped_dataset = tf.data.Dataset.zip(tuple(inputs))              
-     
-    zipped_dataset = zipped_dataset.cache()
-     
+          
     #batch and shuffle
     if shuffle:
         zipped_dataset = zipped_dataset.shuffle(buffer_size=10)   
