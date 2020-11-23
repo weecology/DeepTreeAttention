@@ -527,9 +527,10 @@ def tf_dataset(tfrecords,
             
     if HSI:
         HSI_dataset = dataset.map(_HSI_parse_, num_parallel_calls=32) 
-        HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=32)                        
+        HSI_dataset = HSI_dataset.map(normalize, num_parallel_calls=32)      
+        HSI_dataset.cache()
         if augmentation:
-            HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=32)                
+            HSI_dataset = HSI_dataset.map(augment, num_parallel_calls=32)   
         inputs.append(HSI_dataset)        
         
     if RGB:
@@ -573,53 +574,3 @@ def tf_dataset(tfrecords,
     zipped_dataset = zipped_dataset.prefetch(buffer_size=1)    
     
     return zipped_dataset
-
-def ensemble_dataset(tfrecords,
-               batch_size=2,
-               shuffle=True,
-               RGB=True,
-               HSI=True,
-               labels=True,
-               ids = False,
-               metadata=True,
-               submodel=False,
-               augmentation = True,
-               cores=10):
-    """Create a tf.data dataset that yields sensor data and ground truth
-    Args:
-        tfrecords: path to tfrecords, see generate.py
-        RGB: Include RGB data
-        HSI: Include HSI data
-        ids: include box ids
-        metadata: include metadata 
-        labels: training record labels
-        submodel: Logical. "spectral" or "spatial submodels" have three label inputs
-        cache: cache dataset for faster reading. Dataset must be fairly small.
-    Returns:
-        dataset: a tf.data dataset yielding crops and labels for train: True, crops and raster indices for train: False
-        """
-    AUTO = tf.data.experimental.AUTOTUNE
-
-    inputs = [ ]
-
-    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=20)   
-
-    if shuffle:
-        dataset = dataset.shuffle(10)      
-
-    dataset = dataset.map(_parse_, num_parallel_calls=32) 
-
-    if ids:
-        ids_dataset = dataset.map(_box_index_parse_, num_parallel_calls=32) 
-
-    if ids:
-        dataset = tf.data.Dataset.zip((ids_dataset, dataset))              
-
-    #batch and shuffle
-    if shuffle:
-        dataset = dataset.shuffle(buffer_size=10)   
-
-    dataset = dataset.batch(batch_size=batch_size)    
-    dataset = dataset.prefetch(buffer_size=1)    
-
-    return dataset
