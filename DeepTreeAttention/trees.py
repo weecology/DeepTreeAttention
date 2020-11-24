@@ -189,6 +189,7 @@ class AttentionModel():
                 ids=ids,
                 submodel=submodel,      
                 augmentation=False,
+                cache=True,
                 cores=self.config["cpu_workers"])
             
             self.val_split_with_ids = boxes.tf_dataset(
@@ -201,7 +202,8 @@ class AttentionModel():
                 labels=labels,
                 ids=True,
                 submodel=submodel,     
-                augmentation=False,                
+                augmentation=False,     
+                cache=True,
                 cores=self.config["cpu_workers"])                  
         else:
             #Create training tf.data
