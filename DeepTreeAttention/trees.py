@@ -329,7 +329,6 @@ class AttentionModel():
                         class_weight=class_weight)
         
     def ensemble(self, experiment, class_weight=None, freeze = True, train=True):
-        #Manually override batch size
         self.classes = pd.read_csv(self.classes_file).shape[0] 
         
         self.read_data(HSI = True, RGB = True, metadata = True)      
