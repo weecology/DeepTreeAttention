@@ -20,6 +20,7 @@ from DeepTreeAttention.generators import create_training_shp
 from distributed import wait
 from random import randint
 from time import sleep
+from sklearn.preprocessing import normalize
 
 def resize(img, height, width):
     # resize image
@@ -255,6 +256,9 @@ def create_records(HSI_crops, RGB_crops, labels, sites, heights, elevations, box
             
         resized_RGB_crops = [resize(x, RGB_size, RGB_size).astype(np.float32) for x in chunk_RGB_crops]
         resized_HSI_crops = [resize(x, HSI_size, HSI_size).astype(np.float32) for x in chunk_HSI_crops]
+        
+        #Normalize HSI
+        resized_HSI_crops = [normalize(x) for x in resized_HSI_crops]
         
         filename = "{}/field_data_{}.tfrecord".format(savedir, counter)
         write_tfrecord(filename=filename,
