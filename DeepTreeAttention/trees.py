@@ -356,6 +356,8 @@ class AttentionModel():
                                              label_names=label_names,
                                              train_shp=self.train_shp,    
                                              submodel="ensemble")
+            
+            print("callback list is {}".format(callback_list))
         
         if self.config["train"]["gpus"] > 1:
             with self.strategy.scope():        

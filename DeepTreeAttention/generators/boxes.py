@@ -496,7 +496,6 @@ def tf_dataset(tfrecords,
         metadata: include metadata 
         labels: training record labels
         submodel: Logical. "spectral" or "spatial submodels" have three label inputs
-        cache: cache dataset for faster reading. Dataset must be fairly small.
     Returns:
         dataset: a tf.data dataset yielding crops and labels for train: True, crops and raster indices for train: False
         """
