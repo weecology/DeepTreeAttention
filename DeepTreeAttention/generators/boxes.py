@@ -322,7 +322,7 @@ def _box_index_parse_(tfrecord):
 def _HSI_parse_(tfrecord):
     features = {}
     
-    features['HSI_image/data'] = tf.io.FixedLenFeature([20*20*3], tf.float32)        
+    features['HSI_image/data'] = tf.io.FixedLenFeature([20*20*369], tf.float32)        
     features["HSI_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/width"] = tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/depth"] = tf.io.FixedLenFeature([], tf.int64)  
