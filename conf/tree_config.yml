@@ -37,7 +37,7 @@ train:
     steps:
     shuffle: False
     training_fraction: 0.9
-    gpus: 2
+    gpus: 1
     pretrain: True #Train the submodels before ensembling all together
     
 callbacks:
