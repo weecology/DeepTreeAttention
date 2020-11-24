@@ -7,9 +7,17 @@ import rasterio
 import random
 import tensorflow as tf
 import cv2
-
+import math
 from rasterio.windows import from_bounds
-from sklearn import preprocessing
+
+def image_normalize(image):
+    """normalize a 3d numoy array simiiar to tf.image.per_image_standardization"""
+    mean = image.mean()
+    stddev = image.std()
+    adjusted_stddev = max(stddev, 1.0/math.sqrt(image.size))
+    standardized_image = (image - mean) / adjusted_stddev
+    
+    return standardized_image
 
 def resize(img, height, width):
     # resize image
@@ -158,6 +166,8 @@ def generate_tfrecords(shapefile,
         #resize crops
         resized_HSI_crops = [resize(x, HSI_size, HSI_size).astype(np.float32) for x in chunk_HSI_crops]
         resized_RGB_crops = [resize(x, RGB_size, RGB_size).astype(np.float32) for x in chunk_RGB_crops]
+        
+        resized_HSI_crops = [image_normalize(x) for x in resized_HSI_crops]
 
         filename = "{}/{}_{}.tfrecord".format(savedir, basename, counter)
         

@@ -7,11 +7,12 @@ import geopandas as gpd
 import rasterio
 import random
 import numpy as np
+import math
 import shapely
 import pandas as pd
 import traceback
-from matplotlib import pyplot
 
+from matplotlib import pyplot
 from DeepTreeAttention.generators.boxes import write_tfrecord
 from DeepTreeAttention.utils.paths import find_sensor_path, convert_h5
 from DeepTreeAttention.utils.config import parse_yaml
@@ -20,8 +21,17 @@ from DeepTreeAttention.generators import create_training_shp
 from distributed import wait
 from random import randint
 from time import sleep
-from sklearn.preprocessing import normalize
 
+
+def normalize(image):
+    """normalize a 3d numoy array simiiar to tf.image.per_image_standardization"""
+    mean = image.mean()
+    stddev = image.std()
+    adjusted_stddev = max(stddev, 1.0/math.sqrt(image.size))
+    standardized_image = (image - mean) / adjusted_stddev
+    
+    return standardized_image
+    
 def resize(img, height, width):
     # resize image
     dim = (width, height)    
