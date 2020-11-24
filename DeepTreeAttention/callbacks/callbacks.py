@@ -223,6 +223,6 @@ def create(experiment, train_data, validation_data, train_shp, validation_data_w
     if log_dir is not None:
         print("saving tensorboard logs at {}".format(log_dir))
         tensorboard = TensorBoard(log_dir=log_dir, histogram_freq=0, profile_batch=30)
-        callback_list = callback_list.append(tensorboard)      
+        callback_list.append(tensorboard)      
 
     return callback_list
