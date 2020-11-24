@@ -261,14 +261,14 @@ def create_record(HSI_image, RGB_image, index, site, elevation, height, classes,
         example = tf.train.Example(features=tf.train.Features(
             feature={
                 'box_index': _bytes_feature(index.encode()),
-                'HSI_image/data': _bytes_feature(HSI_image.tostring()),
+                'HSI_image/data': tf.train.Feature(float_list=tf.train.FloatList(value=HSI_image.reshape(-1))),
                 'label': _int64_feature(label),
                 'site': _int64_feature(site),    
                 'elevation': _float32_feature(elevation),                                
                 'HSI_image/height': _int64_feature(HSI_rows),
                 'HSI_image/width': _int64_feature(HSI_cols),
                 'HSI_image/depth': _int64_feature(HSI_depth),
-                'RGB_image/data': _bytes_feature(RGB_image.tostring()),                                
+                'RGB_image/data': tf.train.Feature(float_list=tf.train.FloatList(value=RGB_image.reshape(-1))),                            
                 'RGB_image/height': _int64_feature(RGB_rows),
                 'RGB_image/width': _int64_feature(RGB_cols),
                 'RGB_image/depth': _int64_feature(RGB_depth),                
@@ -280,11 +280,11 @@ def create_record(HSI_image, RGB_image, index, site, elevation, height, classes,
         example = tf.train.Example(features=tf.train.Features(
             feature={
                 'box_index': _bytes_feature(index.encode()),
-                'HSI_image/data': _bytes_feature(HSI_image.tostring()),
+                'HSI_image/data': tf.train.Feature(float_list=tf.train.FloatList(value=HSI_image.reshape(-1))),
                 'HSI_image/height': _int64_feature(HSI_rows),
                 'HSI_image/width': _int64_feature(HSI_cols),
                 'HSI_image/depth': _int64_feature(HSI_depth),
-                'RGB_image/data': _bytes_feature(RGB_image.tostring()),                
+                'RGB_image/data': tf.train.Feature(float_list=tf.train.FloatList(value=RGB_image.reshape(-1))),                            
                 'RGB_image/height': _int64_feature(RGB_rows),
                 'RGB_image/width': _int64_feature(RGB_cols),
                 'RGB_image/depth': _int64_feature(RGB_depth),        
@@ -298,63 +298,12 @@ def create_record(HSI_image, RGB_image, index, site, elevation, height, classes,
     # Serialize to string and write to file
     return example
 
-def _parse_(tfrecord):
-    features = {
-        "classes": tf.io.FixedLenFeature([], tf.int64),
-        "label": tf.io.FixedLenFeature([], tf.int64),
-        "site": tf.io.FixedLenFeature([], tf.int64),  
-        "number_of_sites": tf.io.FixedLenFeature([], tf.int64),  
-        "height": tf.io.FixedLenFeature([], tf.float32),     
-        "elevation": tf.io.FixedLenFeature([], tf.float32),
-        'box_index': tf.io.FixedLenFeature([], tf.string),         
-        
-    }
-    
-    features['HSI_image/data'] = tf.io.FixedLenFeature([], tf.string)        
-    features["HSI_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
-    features["HSI_image/width"] = tf.io.FixedLenFeature([], tf.int64)
-    features["HSI_image/depth"] = tf.io.FixedLenFeature([], tf.int64)
-    
-    features['RGB_image/data'] = tf.io.FixedLenFeature([], tf.string)        
-    features["RGB_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
-    features["RGB_image/width"] = tf.io.FixedLenFeature([], tf.int64)
-    features["RGB_image/depth"] = tf.io.FixedLenFeature([], tf.int64)             
-    
-    example = tf.io.parse_single_example(tfrecord, features)
-    classes = tf.cast(example['classes'], tf.int32)    
-    one_hot_labels = tf.one_hot(example['label'], classes)
-    
-    # Load HSI image from file
-    HSI_image = tf.io.decode_raw(example['HSI_image/data'], tf.float32)
-    HSI_image_shape = tf.stack([example['HSI_image/height'],example['HSI_image/width'], example['HSI_image/depth']])
-    
-    # Reshape to known shape
-    loaded_HSI_image = tf.reshape(HSI_image, HSI_image_shape, name="cast_loaded_HSI_image")
-    
-    
-    # Load RGB image from file
-    RGB_image = tf.io.decode_raw(example['RGB_image/data'], tf.float32)
-    RGB_image_shape = tf.stack([example['RGB_image/height'],example['RGB_image/width'], example['RGB_image/depth']])
-    
-    # Reshape to known shape
-    loaded_RGB_image = tf.reshape(RGB_image, RGB_image_shape, name="cast_loaded_RGB_image")
-        
-    example = tf.io.parse_single_example(tfrecord, features)
-    site = example['site']
-    sites = tf.cast(example['number_of_sites'], tf.int32)    
-    
-    #one hot
-    one_hot_sites = tf.one_hot(site, sites)
-    
-    
-    return (loaded_HSI_image, loaded_RGB_image, example['height'], example['elevation'], one_hot_sites), one_hot_labels
 
 def _label_parse_(tfrecord):
     features = {
         "classes": tf.io.FixedLenFeature([], tf.int64),
         "label": tf.io.FixedLenFeature([], tf.int64),
     }
-
     
     example = tf.io.parse_single_example(tfrecord, features)
     classes = tf.cast(example['classes'], tf.int32)    
@@ -373,7 +322,7 @@ def _box_index_parse_(tfrecord):
 def _HSI_parse_(tfrecord):
     features = {}
     
-    features['HSI_image/data'] = tf.io.FixedLenFeature([], tf.string)        
+    features['HSI_image/data'] = tf.io.FixedLenFeature([20*20*3], tf.float32)        
     features["HSI_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/width"] = tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/depth"] = tf.io.FixedLenFeature([], tf.int64)  
@@ -382,11 +331,10 @@ def _HSI_parse_(tfrecord):
     example = tf.io.parse_single_example(tfrecord, features)
 
     # Load HSI image from file
-    HSI_image = tf.io.decode_raw(example['HSI_image/data'], tf.float32)
     HSI_image_shape = tf.stack([example['HSI_image/height'],example['HSI_image/width'], example['HSI_image/depth']])
     
     # Reshape to known shape
-    loaded_HSI_image = tf.reshape(HSI_image, HSI_image_shape, name="cast_loaded_HSI_image")
+    loaded_HSI_image = tf.reshape(example['HSI_image/data'], HSI_image_shape, name="cast_loaded_HSI_image")
     
     return loaded_HSI_image
         
@@ -396,7 +344,7 @@ def _RGB_parse_(tfrecord):
     
     features = {}
 
-    features['RGB_image/data'] = tf.io.FixedLenFeature([], tf.string)        
+    features['RGB_image/data'] = tf.io.FixedLenFeature([100*100*3], tf.float32)        
     features["RGB_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
     features["RGB_image/width"] = tf.io.FixedLenFeature([], tf.int64)
     features["RGB_image/depth"] = tf.io.FixedLenFeature([], tf.int64)             
@@ -405,11 +353,10 @@ def _RGB_parse_(tfrecord):
     example = tf.io.parse_single_example(tfrecord, features)
     
     # Load RGB image from file
-    RGB_image = tf.io.decode_raw(example['RGB_image/data'], tf.float32)
     RGB_image_shape = tf.stack([example['RGB_image/height'],example['RGB_image/width'], example['RGB_image/depth']])
     
     # Reshape to known shape
-    loaded_RGB_image = tf.reshape(RGB_image, RGB_image_shape, name="cast_loaded_RGB_image")
+    loaded_RGB_image = tf.reshape(example['RGB_image/data'], RGB_image_shape, name="cast_loaded_RGB_image")
     
     return loaded_RGB_image
 
