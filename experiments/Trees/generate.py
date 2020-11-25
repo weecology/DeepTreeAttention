@@ -27,7 +27,12 @@ def run(record):
     
     ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     site_classes_file = "{}/data/processed/site_class_labels.csv".format(ROOT)
+    site_classdf  = pd.read_csv(site_classes_file)
+    site_label_dict = site_classdf.set_index("siteID").label.to_dict()    
+    
     species_classes_file = "{}/data/processed/species_class_labels.csv".format(ROOT)
+    species_classdf  = pd.read_csv(species_classes_file)
+    species_label_dict = species_classdf.set_index("taxonID").label.to_dict()
     
     rgb_pool = glob.glob(att.config["rgb_sensor_pool"], recursive=True)
     hyperspectral_pool = glob.glob(att.config["hyperspectral_sensor_pool"], recursive=True)
@@ -40,8 +45,6 @@ def run(record):
     
     #infer site
     site = site_from_path(renamed_record)
-    site_classdf  = pd.read_csv(site_classes_file)
-    site_label_dict = site_classdf.set_index("siteID").label.to_dict()    
     numeric_site = site_label_dict[site] 
     
     #infer elevation
@@ -62,7 +65,7 @@ def run(record):
         site=numeric_site,
         heights=heights,
         elevation=elevation,
-        species_classes_file=species_classes_file)
+        species_label_dict=species_label_dict)
     
     return tfrecords
     
