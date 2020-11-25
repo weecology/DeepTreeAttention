@@ -128,7 +128,10 @@ def generate_tfrecords(
     else:
         basename = os.path.splitext(os.path.basename(shapefile))[0]        
         gdf = gpd.read_file(shapefile)
-
+    
+    #Remove any nan
+    gdf = gdf[~gdf[label_column].isnull()]
+    
     gdf["box_index"] = ["{}_{}".format(basename, x) for x in gdf.index.values]
     labels = []
     HSI_crops = []
