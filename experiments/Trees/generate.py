@@ -1,12 +1,15 @@
 #Generate tfrecords
+import glob
+import numpy as np
+import os
+
+
 from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.generators import boxes
 from DeepTreeAttention.utils.start_cluster import start
-from DeepTreeAttention.utils.paths import lookup_and_convert
+from DeepTreeAttention.utils.paths import *
 
 from distributed import wait
-import glob
-import os
 
 att = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
 
@@ -20,14 +23,33 @@ weak_records = weak_records[:3]
 
 print("Running records: {}".format(weak_records))
 
-rgb_pool = glob.glob(att.config["rgb_sensor_pool"])
-hyperspectral_pool = glob.glob(att.config["hyperspectral_sensor_pool"])
+rgb_pool = glob.glob(att.config["rgb_sensor_pool"],recursive=True)
+hyperspectral_pool = glob.glob(att.config["hyperspectral_sensor_pool"],recursive=True)
 
+train_tfrecords = []
 for record in weak_records:
     #Hot fix for the regex, sergio changed the name slightly.
+    
+    #Convert h5 hyperspec
     record = record.replace("itc_predictions", "image")
-    sensor_path = lookup_and_convert(shapefile=record, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, savedir=att.config["hyperspectral_tif_dir"])
-    future = client.submit(att.generate, record=record, sensor_path=sensor_path, chunk_size=500, train=True)
+    h5_future = client.submit(lookup_and_convert,shapefile=record,rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, savedir=att.config["hyperspectral_tif_dir"])
+    
+    rgb_path = find_sensor_path(shapefile=record, lookup_pool=rgb_pool)
+    
+    #infer site
+    site = site_from_path(rgb_path)
+    
+    #infer elevation
+    h5_path = find_sensor_path(shapefile=record, lookup_pool=hyperspectral_pool)    
+    elevation = elevation_from_tile(h5_path)
+    
+    #Generate record when complete
+    
+    #TODO fix heights, hardcode to bypass while testing
+    df = pd.read_csv(record)
+    heights = np.repeat(10,df.shape[0])
+    
+    future = client.submit(att.generate, shapefile=record, HSI_sensor_path=h5_future.result(), RGB_sensor_path =rgb_path , chunk_size=500, train=True, site=site, heights =heights , elevation=elevation)
     train_tfrecords.append(future)
     
 wait(train_tfrecords)

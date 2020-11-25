@@ -85,7 +85,8 @@ def generate_tfrecords(shapefile,
                        classes=20,
                        number_of_sites=23,
                        train=True,
-                       extend_box=0,
+                       extend_HSI_box=0,
+                       extend_RGB_box=0,
                        shuffle=True):
     """Yield one instance of data with one hot labels
     Args:
@@ -99,7 +100,9 @@ def generate_tfrecords(shapefile,
         HSI_size: size in pixels of one side of image
         train: training mode to include yielded labels
         number_of_sites: total number of sites used for one-hot encoding
-        extend_box: units in meters to expand DeepForest bounding box to give crop more context
+        extend_HSI_box: units in meters to expand DeepForest bounding box to give crop more context
+        extend_RGB_box: units in meters to expand DeepForest bounding box to give crop more context
+
     Returns:
         filename: tfrecords path
     """

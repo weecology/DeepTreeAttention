@@ -3,6 +3,7 @@ import os
 import glob
 import math
 import re
+import h5py
 
 from DeepTreeAttention.utils import Hyperspectral
 
@@ -83,3 +84,16 @@ def lookup_and_convert(shapefile, rgb_pool, hyperspectral_pool, savedir):
         tif_path = convert_h5(hyperspectral_h5_path, rgb_path, savedir)
 
     return tif_path
+
+def site_from_path(path):
+    basename = os.path.splitext(os.path.basename(path))[0]
+    site_name = re.search("NEON_D\d+_(\w+)_D", basename).group(1)
+    
+    return site_name
+    
+def elevation_from_tile(path):
+    h5 = h5py.File(path)
+    elevation = h5[list(h5.keys())[0]]["Reflectance"]["Metadata"]["Ancillary_Imagery"]["Smooth_Surface_Elevation"].value.mean()
+    return elevation
+
+    
