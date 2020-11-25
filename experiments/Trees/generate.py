@@ -12,7 +12,7 @@ from DeepTreeAttention.utils.paths import *
 from distributed import wait
 
 #get root dir full path
-client = start(cpus=3, mem_size="12GB") 
+client = start(cpus=3, mem_size="11GB") 
 
 #Generate training data
 weak_records = glob.glob(os.path.join("/orange/idtrees-collab/species_classification/confident_predictions","*.csv"))
@@ -53,6 +53,11 @@ def run(record):
     
     #Generate record when complete   
     df = pd.read_csv(record)
+    df["label"] = df["filtered_taxonID"]
+    df.to_csv(record)
+    
+    #Fix label name
+    
     # hot fix the heights for the moment.
     heights = np.repeat(10, df.shape[0])
     
