@@ -40,6 +40,8 @@ def run(record):
     
     #infer site
     site = site_from_path(renamed_record)
+    site_classdf  = pd.read_csv(site_classes_file)
+    site_label_dict = site_classdf.set_index("siteID").label.to_dict()    
     numeric_site = site_label_dict[site] 
     
     #infer elevation
@@ -54,13 +56,12 @@ def run(record):
     tfrecords = att.generate(
         csv_file=record,
         HSI_sensor_path=hyperspec_path,
-        RGB_sensor_path =rgb_path,
+        RGB_sensor_path=rgb_path,
         chunk_size=500,
         train=True,
         site=numeric_site,
         heights=heights,
         elevation=elevation,
-        site_classes_file=site_classes_file,
         species_classes_file=species_classes_file)
     
     return tfrecords

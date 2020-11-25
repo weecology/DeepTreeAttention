@@ -66,7 +66,7 @@ class AttentionModel():
             Args:
                 shapefile: a DeepForest shapefile (see NeonCrownMaps) with a bounding box and utm projection
                 train: generate a training record that yields, image, label, or a prediction record with metadata? Default True
-                site: site metadata label
+                site: site metadata label in numeric
                 height: list of heights in the shapefile
                 sensor_path: supply a known path to a sensor geoTIFF tile. 
                 chunk_size: number of crops per tfrecord
