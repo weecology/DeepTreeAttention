@@ -71,7 +71,7 @@ def crop_image(src, box, expand=0):
     
     return masked_image
     
-def generate_tfrecords(shapefile,
+def generate_tfrecords(
                        HSI_sensor_path,
                        RGB_sensor_path,
                        site,
@@ -87,7 +87,9 @@ def generate_tfrecords(shapefile,
                        train=True,
                        extend_HSI_box=0,
                        extend_RGB_box=0,
-                       shuffle=True):
+                       shuffle=True,
+                       shapefile=None,
+                       csv_file=None):
     """Yield one instance of data with one hot labels
     Args:
         chunk_size: number of windows per tfrecord
@@ -107,18 +109,25 @@ def generate_tfrecords(shapefile,
         filename: tfrecords path
     """
     
-    #Read csv file
-    df = pd.read_csv(csv_file)
-    df['geometry'] = df['geometry'].apply(wkt.loads)
-    df = gpd.GeoDataFrame(df)
+    if all([x is None for x in [csv_file, shapefile]]):
+        raise AttributeError("Either pass a shapefile=, or csv_file argument")
     
-    basename = os.path.splitext(os.path.basename(csv_file))[0]
     HSI_src = rasterio.open(HSI_sensor_path)
-    RGB_src = rasterio.open(HSI_sensor_path)
-
-    #assign crs
-    df.crs = RGB_src.crs
+    RGB_src = rasterio.open(RGB_sensor_path)
     
+    #Read csv file
+    if shapefile is None:
+        basename = os.path.splitext(os.path.basename(csv_file))[0]        
+        gdf = pd.read_csv(csv_file)
+        gdf['geometry'] = gdf['geometry'].apply(wkt.loads)
+        gdf = gpd.GeoDataFrame(gdf)
+        #assign crs
+        gdf.crs = RGB_src.crs
+                
+    else:
+        basename = os.path.splitext(os.path.basename(shapefile))[0]        
+        gdf = gpd.read_file(shapefile)
+
     gdf["box_index"] = ["{}_{}".format(basename, x) for x in gdf.index.values]
     labels = []
     HSI_crops = []
@@ -130,8 +139,8 @@ def generate_tfrecords(shapefile,
         if train:
             labels.append(row["label"])
         try:
-            HSI_crop = crop_image(HSI_src, row["geometry"], extend_box)
-            RGB_crop = crop_image(RGB_src, row["geometry"], extend_box)
+            HSI_crop = crop_image(HSI_src, row["geometry"], extend_HSI_box)
+            RGB_crop = crop_image(RGB_src, row["geometry"], extend_RGB_box)
         except Exception as e:
             print("row {} failed with {}".format(index, e))
             continue
