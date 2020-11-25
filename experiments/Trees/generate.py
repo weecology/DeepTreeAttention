@@ -38,7 +38,7 @@ for record in weak_records:
     rgb_path = find_sensor_path(shapefile=record, lookup_pool=rgb_pool)
     
     #infer site
-    site = site_from_path(rgb_path)
+    site = site_from_path(record)
     
     #infer elevation
     h5_path = find_sensor_path(shapefile=record, lookup_pool=hyperspectral_pool)    
