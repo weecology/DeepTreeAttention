@@ -16,7 +16,7 @@ client = start(cpus=3, mem_size="12GB")
 #Generate training data
 train_tfrecords = []
 weak_records = glob.glob(os.path.join("/orange/idtrees-collab/species_classification/confident_predictions","*.csv"))
-weak_records = ["BART" in x for x in weak_records]
+weak_records = [x for x in weak_records if "BART" in x]
 weak_records = weak_records[:3]
 
 print("Running records: {}".format(weak_records))
