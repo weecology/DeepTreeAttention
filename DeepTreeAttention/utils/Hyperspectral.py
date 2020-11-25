@@ -62,7 +62,7 @@ def h5refl2array(refl_filename, epsg):
     metadata['ext_dict']['xMax'] = xMax
     metadata['ext_dict']['yMin'] = yMin
     metadata['ext_dict']['yMax'] = yMax
-    hdf5_file.close
+    hdf5_file.close()
 
     return metadata, wavelengths
 

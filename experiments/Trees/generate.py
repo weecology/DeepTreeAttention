@@ -4,7 +4,6 @@ import numpy as np
 import os
 import pandas as pd
 
-
 from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.generators import boxes
 from DeepTreeAttention.utils.start_cluster import start
