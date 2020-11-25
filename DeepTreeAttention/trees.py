@@ -79,6 +79,7 @@ class AttentionModel():
 
         self.classes = pd.read_csv(self.classes_file).shape[0]        
         created_records = boxes.generate_tfrecords(shapefile=shapefile,
+                                                   csv_file=csv_file,
                                                    HSI_sensor_path=HSI_sensor_path,
                                                    RGB_sensor_path=RGB_sensor_path,                                                   
                                                    site=site,
