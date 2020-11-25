@@ -47,14 +47,12 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None):
         #Get file metadata from name string
         basename = os.path.splitext(os.path.basename(shapefile))[0]
         geo_index = re.search("(\d+_\d+)_image", basename).group(1)
-        match = [x for x in pool if geo_index in x]
-        year = re.search("(\d+)_", basename).group(1)
-        year_match = [x for x in match if year in x]
+        match = [x for x in lookup_pool if geo_index in x]
+        match.sort()
         try:
-            year_match = year_match[0]
+            year_match = match[-1]
         except Exception as e:
-            raise ValueError("No matches for {} in {}: {}".format(
-                shapefile, lookup_pool, e))
+            raise ValueError("No matches for geoindex {} in sensor pool".format(geo_index))
 
     return year_match
 
