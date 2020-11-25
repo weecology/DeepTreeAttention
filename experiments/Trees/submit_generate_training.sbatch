@@ -3,9 +3,9 @@
 #SBATCH --mail-type=END               # Mail events
 #SBATCH --mail-user=benweinstein2010@gmail.com  # Where to send mail
 #SBATCH --account=ewhite
-#SBATCH --cpus-per-task=10
-#SBATCH --mem=30GB
-#SBATCH --time=2:00:00       #Time limit hrs:min:sec
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=40GB
+#SBATCH --time=24:00:00       #Time limit hrs:min:sec
 #SBATCH --output=/home/b.weinstein/logs/GenerateTreeAttention_%j.out   # Standard output and error log
 #SBATCH --error=/home/b.weinstein/logs/GenerateTreeAttention_%j.err
 #SBATCH --partition=gpu
