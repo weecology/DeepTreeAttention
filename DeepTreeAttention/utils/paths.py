@@ -92,8 +92,9 @@ def site_from_path(path):
     return site_name
     
 def elevation_from_tile(path):
-    h5 = h5py.File(path)
+    h5 = h5py.File(path, 'r')
     elevation = h5[list(h5.keys())[0]]["Reflectance"]["Metadata"]["Ancillary_Imagery"]["Smooth_Surface_Elevation"].value.mean()
+    h5.close()
     return elevation
 
     
