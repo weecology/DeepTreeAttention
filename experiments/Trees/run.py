@@ -62,6 +62,9 @@ if __name__ == "__main__":
     #Create a class and run
     model = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml", log_dir=save_dir)
     model.create()
+    
+    if model.config["train"]["pretraining_dir"]:
+        model.HSI_model.load_weights("{}/HSI.h5".format(model.config["train"]["pretraining_dir"]))
         
     #Log config
     experiment.log_parameters(model.config["train"])
