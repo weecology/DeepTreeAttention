@@ -34,6 +34,7 @@ for record in weak_records:
     #Convert h5 hyperspec
     record = record.replace("itc_predictions", "image")
     h5_future = client.submit(lookup_and_convert,shapefile=record,rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, savedir=att.config["hyperspectral_tif_dir"])
+    wait(h5_future)
     
     rgb_path = find_sensor_path(shapefile=record, lookup_pool=rgb_pool)
     
