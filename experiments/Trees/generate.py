@@ -34,8 +34,7 @@ def run(record):
     
     #Convert h5 hyperspec
     renamed_record = record.replace("itc_predictions", "image")
-    h5_future = lookup_and_convert(shapefile=renamed_record, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, savedir=att.config["hyperspectral_tif_dir"])
-    wait(h5_future)
+    hyperspec_path = lookup_and_convert(shapefile=renamed_record, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, savedir=att.config["hyperspectral_tif_dir"])
     
     rgb_path = find_sensor_path(shapefile=renamed_record, lookup_pool=rgb_pool)
     
@@ -54,7 +53,7 @@ def run(record):
     
     tfrecords = att.generate(
         csv_file=record,
-        HSI_sensor_path=h5_future.result(),
+        HSI_sensor_path=hyperspec_path,
         RGB_sensor_path =rgb_path,
         chunk_size=500,
         train=True,
