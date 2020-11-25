@@ -31,17 +31,17 @@ for record in weak_records:
     #Hot fix for the regex, sergio changed the name slightly.
     
     #Convert h5 hyperspec
-    record = record.replace("itc_predictions", "image")
-    h5_future = client.submit(lookup_and_convert,shapefile=record,rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, savedir=att.config["hyperspectral_tif_dir"])
+    renamed_record = record.replace("itc_predictions", "image")
+    h5_future = client.submit(lookup_and_convert,shapefile=renamed_record,rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, savedir=att.config["hyperspectral_tif_dir"])
     wait(h5_future)
     
-    rgb_path = find_sensor_path(shapefile=record, lookup_pool=rgb_pool)
+    rgb_path = find_sensor_path(shapefile=renamed_record, lookup_pool=rgb_pool)
     
     #infer site
-    site = site_from_path(record)
+    site = site_from_path(renamed_record)
     
     #infer elevation
-    h5_path = find_sensor_path(shapefile=record, lookup_pool=hyperspectral_pool)    
+    h5_path = find_sensor_path(shapefile=renamed_record, lookup_pool=hyperspectral_pool)    
     elevation = elevation_from_tile(h5_path)
     
     #Generate record when complete
@@ -50,7 +50,7 @@ for record in weak_records:
     df = pd.read_csv(record)
     heights = np.repeat(10,df.shape[0])
     
-    future = client.submit(att.generate, shapefile=record, HSI_sensor_path=h5_future.result(), RGB_sensor_path =rgb_path , chunk_size=500, train=True, site=site, heights =heights , elevation=elevation)
+    future = client.submit(att.generate, shapefile=renamed_record, HSI_sensor_path=h5_future.result(), RGB_sensor_path =rgb_path , chunk_size=500, train=True, site=site, heights =heights , elevation=elevation)
     train_tfrecords.append(future)
     
 wait(train_tfrecords)
