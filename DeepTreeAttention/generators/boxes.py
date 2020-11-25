@@ -129,8 +129,10 @@ def generate_tfrecords(
         basename = os.path.splitext(os.path.basename(shapefile))[0]        
         gdf = gpd.read_file(shapefile)
     
-    #Remove any nan
+    #Remove any nan and species not in the label dict if provided
     gdf = gdf[~gdf[label_column].isnull()]
+    if species_label_dict is not None:
+        gdf = gdf[gdf[label_column].isin(list(species_label_dict.keys()))]
     
     gdf["box_index"] = ["{}_{}".format(basename, x) for x in gdf.index.values]
     labels = []
