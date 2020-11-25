@@ -66,7 +66,7 @@ def run(record, rgb_pool, hyperspectral_pool, site_classes_file, species_classes
     
 train_tfrecords = []
 for record in weak_records:
-    future = client.submit(run, record=record, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool)
+    future = client.submit(run, record=record, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, site_classes_file=site_classes_file, species_classes_file=species_classes_file)
     train_tfrecords.append(future)
     
 wait(train_tfrecords)
