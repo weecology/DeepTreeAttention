@@ -11,12 +11,6 @@ from DeepTreeAttention.utils.paths import *
 
 from distributed import wait
 
-att = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
-
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-site_classes_file = "{}/data/processed/site_class_labels.csv".format(ROOT)
-species_classes_file = "{}/data/processed/species_class_labels.csv".format(ROOT)
-
 #get root dir full path
 client = start(cpus=3, mem_size="12GB") 
 
@@ -26,10 +20,17 @@ weak_records = [x for x in weak_records if "BART" in x]
 weak_records = weak_records[:3]
 
 print("Running records: {}".format(weak_records))
-rgb_pool = glob.glob(att.config["rgb_sensor_pool"], recursive=True)
-hyperspectral_pool = glob.glob(att.config["hyperspectral_sensor_pool"], recursive=True)
 
-def run(record, rgb_pool, hyperspectral_pool, site_classes_file, species_classes_file):
+def run(record):
+    
+    att = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
+    
+    ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    site_classes_file = "{}/data/processed/site_class_labels.csv".format(ROOT)
+    species_classes_file = "{}/data/processed/species_class_labels.csv".format(ROOT)
+    
+    rgb_pool = glob.glob(rgb_glob, recursive=True)
+    hyperspectral_pool = glob.glob(hyperspectral_glob, recursive=True)
     
     #Convert h5 hyperspec
     renamed_record = record.replace("itc_predictions", "image")
@@ -48,7 +49,7 @@ def run(record, rgb_pool, hyperspectral_pool, site_classes_file, species_classes
     
     #Generate record when complete   
     df = pd.read_csv(record)
-    heights = np.repeat(10,df.shape[0])
+    heights = np.repeat(10, df.shape[0])
     
     tfrecords = att.generate(
         csv_file=record,
@@ -66,7 +67,7 @@ def run(record, rgb_pool, hyperspectral_pool, site_classes_file, species_classes
     
 train_tfrecords = []
 for record in weak_records:
-    future = client.submit(run, record=record, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, site_classes_file=site_classes_file, species_classes_file=species_classes_file)
+    future = client.submit(run, record=record)
     train_tfrecords.append(future)
     
 wait(train_tfrecords)
