@@ -20,7 +20,7 @@ weak_records = ["BART" in x for x in weak_records]
 weak_records = weak_records[:3]
 
 for record in weak_records:
-    sensor_path = lookup_and_convert(shapefile, rgb_pool=att.config["train"]["rgb_sensor_pool"], hyperspectral_pool=att.config["train"]["hyperspectral_sensor_pool"], savedir=att.config["hyperspectral_tif_dir"])
+    sensor_path = lookup_and_convert(record, rgb_pool=att.config["train"]["rgb_sensor_pool"], hyperspectral_pool=att.config["train"]["hyperspectral_sensor_pool"], savedir=att.config["hyperspectral_tif_dir"])
     future = client.submit(att.generate, record=record, sensor_path=sensor_path, chunk_size=500, train=True)
     train_tfrecords.append(future)
     
