@@ -1,5 +1,5 @@
 #Parallel workers for data generation
-cpu_workers: 30
+cpu_workers: 20
 
 #Intermediate location to store .h5 converted geotiff hyperspec tiles
 hyperspectral_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/
@@ -32,7 +32,7 @@ train:
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/CHM_filtered_train.shp  #path to ground truth class shapefile   
     learning_rate: .001
-    batch_size: 32
+    batch_size: 64
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
     steps:
     shuffle: False
