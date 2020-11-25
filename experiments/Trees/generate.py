@@ -29,8 +29,8 @@ def run(record):
     site_classes_file = "{}/data/processed/site_class_labels.csv".format(ROOT)
     species_classes_file = "{}/data/processed/species_class_labels.csv".format(ROOT)
     
-    rgb_pool = glob.glob(rgb_glob, recursive=True)
-    hyperspectral_pool = glob.glob(hyperspectral_glob, recursive=True)
+    rgb_pool = glob.glob(att.config["rgb_sensor_pool"], recursive=True)
+    hyperspectral_pool = glob.glob(att.config["hyperspectral_sensor_pool"], recursive=True)
     
     #Convert h5 hyperspec
     renamed_record = record.replace("itc_predictions", "image")
@@ -49,6 +49,7 @@ def run(record):
     
     #Generate record when complete   
     df = pd.read_csv(record)
+    # hot fix the heights for the moment.
     heights = np.repeat(10, df.shape[0])
     
     tfrecords = att.generate(
