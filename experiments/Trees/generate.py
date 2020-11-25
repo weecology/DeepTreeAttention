@@ -13,6 +13,10 @@ from distributed import wait
 
 att = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
 
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+site_classes_file = "{}/data/processed/site_class_labels.csv".format(ROOT)
+species_classes_file = "{}/data/processed/species_class_labels.csv".format(ROOT)
+
 #get root dir full path
 client = start(cpus=3, mem_size="12GB") 
 
@@ -22,35 +26,47 @@ weak_records = [x for x in weak_records if "BART" in x]
 weak_records = weak_records[:3]
 
 print("Running records: {}".format(weak_records))
+rgb_pool = glob.glob(att.config["rgb_sensor_pool"], recursive=True)
+hyperspectral_pool = glob.glob(att.config["hyperspectral_sensor_pool"], recursive=True)
 
-rgb_pool = glob.glob(att.config["rgb_sensor_pool"],recursive=True)
-hyperspectral_pool = glob.glob(att.config["hyperspectral_sensor_pool"],recursive=True)
-
-train_tfrecords = []
-for record in weak_records:
-    #Hot fix for the regex, sergio changed the name slightly.
+def run(record, rgb_pool, hyperspectral_pool, site_classes_file, species_classes_file):
     
     #Convert h5 hyperspec
     renamed_record = record.replace("itc_predictions", "image")
-    h5_future = client.submit(lookup_and_convert,shapefile=renamed_record,rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, savedir=att.config["hyperspectral_tif_dir"])
+    h5_future = lookup_and_convert(shapefile=renamed_record, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, savedir=att.config["hyperspectral_tif_dir"])
     wait(h5_future)
     
     rgb_path = find_sensor_path(shapefile=renamed_record, lookup_pool=rgb_pool)
     
     #infer site
     site = site_from_path(renamed_record)
+    numeric_site = site_label_dict[site] 
     
     #infer elevation
     h5_path = find_sensor_path(shapefile=renamed_record, lookup_pool=hyperspectral_pool)    
     elevation = elevation_from_tile(h5_path)
     
-    #Generate record when complete
-    
-    #TODO fix heights, hardcode to bypass while testing
+    #Generate record when complete   
     df = pd.read_csv(record)
     heights = np.repeat(10,df.shape[0])
     
-    future = client.submit(att.generate, csv_file=record, HSI_sensor_path=h5_future.result(), RGB_sensor_path =rgb_path , chunk_size=500, train=True, site=site, heights=heights, elevation=elevation)
+    tfrecords = att.generate(
+        csv_file=record,
+        HSI_sensor_path=h5_future.result(),
+        RGB_sensor_path =rgb_path,
+        chunk_size=500,
+        train=True,
+        site=numeric_site,
+        heights=heights,
+        elevation=elevation,
+        site_classes_file=site_classes_file,
+        species_classes_file=species_classes_file)
+    
+    return tfrecords
+    
+train_tfrecords = []
+for record in weak_records:
+    future = client.submit(run, record=record, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool)
     train_tfrecords.append(future)
     
 wait(train_tfrecords)
