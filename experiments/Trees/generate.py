@@ -11,17 +11,20 @@ import os
 att = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
 
 #get root dir full path
-client = start(cpus=10, mem_size="5GB") 
+client = start(cpus=3, mem_size="12GB") 
 
 #Generate training data
 train_tfrecords = []
-shapefiles = glob.glob(os.path.join("/orange/idtrees-collab/DeepTreeAttention/WeakLabels/","*.shp"))
-for shapefile in shapefiles:
+weak_records = glob.glob(os.path.join("/orange/idtrees-collab/species_classification/confident_predictions","*.csv"))
+weak_records = ["BART" in x for x in weak_records]
+weak_records = weak_records[:3]
+
+for record in weak_records:
     sensor_path = lookup_and_convert(shapefile, rgb_pool=att.config["train"]["rgb_sensor_pool"], hyperspectral_pool=att.config["train"]["hyperspectral_sensor_pool"], savedir=att.config["hyperspectral_tif_dir"])
-    future = client.submit(att.generate, shapefile=shapefile, sensor_path=sensor_path, chunk_size=1000, train=True)
+    future = client.submit(att.generate, record=record, sensor_path=sensor_path, chunk_size=500, train=True)
     train_tfrecords.append(future)
     
 wait(train_tfrecords)
 for x in train_tfrecords:
-    x.result()
+    print(x.result())
         

@@ -1,5 +1,5 @@
 #### tf.data input pipeline ###
-import geopandas
+import geopandas as gpd
 import numpy as np
 import os
 import pandas as pd
@@ -8,7 +8,9 @@ import random
 import tensorflow as tf
 import cv2
 import math
+
 from rasterio.windows import from_bounds
+from shapely import wkt
 
 def image_normalize(image):
     """normalize a 3d numoy array simiiar to tf.image.per_image_standardization"""
@@ -101,11 +103,19 @@ def generate_tfrecords(shapefile,
     Returns:
         filename: tfrecords path
     """
-    gdf = geopandas.read_file(shapefile)
-    basename = os.path.splitext(os.path.basename(shapefile))[0]
+    
+    #Read csv file
+    df = pd.read_csv(csv_file)
+    df['geometry'] = df['geometry'].apply(wkt.loads)
+    df = gpd.GeoDataFrame(df)
+    
+    basename = os.path.splitext(os.path.basename(csv_file))[0]
     HSI_src = rasterio.open(HSI_sensor_path)
     RGB_src = rasterio.open(HSI_sensor_path)
 
+    #assign crs
+    df.crs = RGB_src.crs
+    
     gdf["box_index"] = ["{}_{}".format(basename, x) for x in gdf.index.values]
     labels = []
     HSI_crops = []

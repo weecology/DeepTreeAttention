@@ -35,21 +35,19 @@ def test_generate_tfrecords(train, created_records):
     assert all([os.path.exists(x) for x in created_records])
     
     if train:
-        dataset = boxes.tf_dataset(created_records, batch_size=2)
+        dataset = boxes.tf_dataset(created_records, HSI=False, batch_size=2)
     else:
-        dataset = boxes.tf_dataset(created_records, batch_size=2, labels=False, ids = True)
+        dataset = boxes.tf_dataset(created_records, HSI=False, batch_size=2, labels=False, ids = True)
     
     if train:
         #Yield a batch of data and confirm its shape
         for data, label_batch in dataset.take(3):
-            HSI, RGB, height, elevation, site = data 
-            assert HSI.shape == (2,20,20,3)
+            RGB, height, elevation, site = data 
             assert RGB.shape == (2,100,100,3)    
             assert label_batch.shape == (2,6)
     else:
         for ids, data in dataset.take(3):
-            HSI, RGB, height, elevation, site = data 
-            assert HSI.shape == (2,20,20,3)
+            RGB, height, elevation, site = data 
             assert RGB.shape == (2,100,100,3)    
             assert ids.shape == (2)
             
@@ -69,7 +67,7 @@ def test_RGB_submodel(created_records):
 
 def test_id_train(created_records):
     shp = gpd.read_file(test_predictions)        
-    dataset = boxes.tf_dataset(created_records, batch_size=2, ids=True)
+    dataset = boxes.tf_dataset(created_records, batch_size=2, ids=True, HSI=False)
     for ids, data, label_batch in dataset.take(3):
         assert ids.numpy().shape == (2,)
     
