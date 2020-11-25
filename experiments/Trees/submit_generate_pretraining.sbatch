@@ -9,11 +9,11 @@
 #SBATCH --output=/home/b.weinstein/logs/GenerateTreeAttention_%j.out   # Standard output and error log
 #SBATCH --error=/home/b.weinstein/logs/GenerateTreeAttention_%j.err
 
-module load tensorflow/1.14.0
+module load tensorflow/2.3.1
 
-export PATH=${PATH}:/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/bin/:/home/b.weinstein/DeepTreeAttention/
-export PYTHONPATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/:/home/b.weinstein/DeepTreeAttention/:${PYTHONPATH}
-export LD_LIBRARY_PATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/:${LD_LIBRARY_PATH}
+export PATH=${PATH}:/home/b.weinstein/miniconda3/envs/DeepTreeAttention_38/bin/:/home/b.weinstein/DeepTreeAttention/
+export PYTHONPATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention_38/lib/python3.7/site-packages/:/home/b.weinstein/DeepTreeAttention/:${PYTHONPATH}
+export LD_LIBRARY_PATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention_38/lib/:${LD_LIBRARY_PATH}
 
 cd /home/b.weinstein/DeepTreeAttention/experiments/Trees/
 
