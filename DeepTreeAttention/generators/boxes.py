@@ -89,7 +89,8 @@ def generate_tfrecords(
                        extend_RGB_box=0,
                        shuffle=True,
                        shapefile=None,
-                       csv_file=None):
+                       csv_file=None,
+                       label_column="label"):
     """Yield one instance of data with one hot labels
     Args:
         chunk_size: number of windows per tfrecord
@@ -137,7 +138,7 @@ def generate_tfrecords(
     for index, row in gdf.iterrows():
         #Add training label, ignore unclassified 0 class
         if train:
-            labels.append(row["label"])
+            labels.append(row[label_column])
         try:
             HSI_crop = crop_image(HSI_src, row["geometry"], extend_HSI_box)
             RGB_crop = crop_image(RGB_src, row["geometry"], extend_RGB_box)

@@ -53,10 +53,6 @@ def run(record):
     
     #Generate record when complete   
     df = pd.read_csv(record)
-    df["label"] = df["filtered_taxonID"]
-    df.to_csv(record)
-    
-    #Fix label name
     
     # hot fix the heights for the moment.
     heights = np.repeat(10, df.shape[0])
@@ -70,6 +66,7 @@ def run(record):
         site=numeric_site,
         heights=heights,
         elevation=elevation,
+        label_column="filtered_taxonID",
         species_label_dict=species_label_dict)
     
     return tfrecords
