@@ -50,7 +50,7 @@ for record in weak_records:
     df = pd.read_csv(record)
     heights = np.repeat(10,df.shape[0])
     
-    future = client.submit(att.generate, shapefile=renamed_record, HSI_sensor_path=h5_future.result(), RGB_sensor_path =rgb_path , chunk_size=500, train=True, site=site, heights=heights, elevation=elevation)
+    future = client.submit(att.generate, shapefile=record, HSI_sensor_path=h5_future.result(), RGB_sensor_path =rgb_path , chunk_size=500, train=True, site=site, heights=heights, elevation=elevation)
     train_tfrecords.append(future)
     
 wait(train_tfrecords)
