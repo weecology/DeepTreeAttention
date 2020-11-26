@@ -3,6 +3,7 @@ import glob
 import numpy as np
 import os
 import pandas as pd
+from dask import dataframe as dd
 
 from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.generators import boxes
@@ -11,15 +12,46 @@ from DeepTreeAttention.utils.paths import *
 
 from distributed import wait
 
+#Delete any file previous run
+old_files = glob.glob("/orange/idtrees-collab/DeepTreeAttention/WeakLabels/*")
+[os.remove(x) for x in old_files]
+old_files = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/pretraining/*")
+[os.remove(x) for x in old_files]
+
+
 #get root dir full path
-client = start(cpus=3, mem_size="11GB") 
+client = start(cpus=10, mem_size="11GB") 
+
+weak_records = glob.glob(os.path.join("/orange/idtrees-collab/species_classification/confident_predictions","*.csv"))
+
+#Check if complete
+def check_shape(x):
+    df = pd.read_csv(x)
+    if len(df.columns) == 12:
+        return x
+    else:
+        return None
+    
+futures = client.map(check_shape,weak_records)
+completed_records = [x.result() for x in futures if x.result() is not None]
+
+#Create a dask dataframe of csv files
+df = dd.read_csv(completed_records, include_path_column = True)
+
+#Get a balanced set of species
+df = df.groupby("filtered_taxonID").apply(lambda x: x.head(1000)).compute().reset_index(drop=True)
+
+#write a csv file per tile
+def write_csv(x):
+    path_name = x.path.unique()[0]
+    basename = os.path.basename(path_name)
+    x.to_csv("/orange/idtrees-collab/DeepTreeAttention/WeakLabels/{}".format(basename))
+
+df.groupby("path").apply(write_csv)
 
 #Generate training data
-weak_records = glob.glob(os.path.join("/orange/idtrees-collab/species_classification/confident_predictions","*.csv"))
-weak_records = [x for x in weak_records if "BART" in x]
-weak_records = weak_records[:3]
-
-print("Running records: {}".format(weak_records))
+records_to_run = glob.glob("/orange/idtrees-collab/DeepTreeAttention/WeakLabels/*.csv")
+print("Running records: {}".format(records_to_run))
 
 def run(record):
     
@@ -72,7 +104,7 @@ def run(record):
     return tfrecords
     
 train_tfrecords = []
-for record in weak_records:
+for record in records_to_run:
     future = client.submit(run, record=record)
     train_tfrecords.append(future)
     
