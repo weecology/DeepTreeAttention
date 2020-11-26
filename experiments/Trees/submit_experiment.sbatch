@@ -5,7 +5,7 @@
 #SBATCH --account=ewhite
 #SBATCH --cpus-per-task=30
 #SBATCH --mem=40GB
-#SBATCH --time=5:00:00       #Time limit hrs:min:sec
+#SBATCH --time=24:00:00       #Time limit hrs:min:sec
 #SBATCH --output=/home/b.weinstein/logs/DeepTreeAttention_%j.out   # Standard output and error log
 #SBATCH --error=/home/b.weinstein/logs/DeepTreeAttention_%j.err
 #SBATCH --partition=gpu
