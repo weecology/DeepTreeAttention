@@ -179,6 +179,7 @@ class AttentionModel():
                 labels=labels,
                 ids=ids,
                 submodel=submodel,
+                augmentation=self.config["train"]["augment"],
                 cores=self.config["cpu_workers"])
 
             #Create testing tf.data
@@ -220,6 +221,7 @@ class AttentionModel():
                 metadata=metadata,
                 labels=labels,
                 ids=ids,
+                augmentation=self.config["train"]["augment"],                
                 submodel=submodel,                
                 cores=self.config["cpu_workers"])
 
