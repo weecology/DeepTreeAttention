@@ -37,6 +37,7 @@ train:
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
     steps:
     shuffle: False
+    augment: True
     training_fraction: 0.9
     gpus: 1
     pretrain: True #Train the submodels before ensembling all together
