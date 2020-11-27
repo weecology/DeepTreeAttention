@@ -43,6 +43,8 @@ df = df.groupby("filtered_taxonID").apply(lambda x: x.reset_index().head(1000)).
 
 #write a csv file per tile
 def write_csv(x):
+    if x.empty:
+        return None
     path_name = x.path.unique()[0]
     basename = os.path.basename(path_name)
     x.to_csv("/orange/idtrees-collab/DeepTreeAttention/WeakLabels/{}".format(basename))
