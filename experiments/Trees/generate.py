@@ -112,5 +112,8 @@ for record in records_to_run:
     
 wait(train_tfrecords)
 for x in train_tfrecords:
-    print(x.result())
+    try:
+        print(x.result())
+    except:
+        pass
         
