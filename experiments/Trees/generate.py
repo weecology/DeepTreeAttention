@@ -37,10 +37,9 @@ completed_records = [x.result() for x in futures if x.result() is not None]
 
 #Create a dask dataframe of csv files
 df = dd.read_csv(completed_records[0:100], include_path_column = True)
-df = df.reset_index()
 
 #Get a balanced set of species
-df = df.groupby("filtered_taxonID").apply(lambda x: x.head(1000)).compute()
+df = df.groupby("filtered_taxonID", as_index = False).apply(lambda x: x.sample(1000),meta=df).compute()
 
 #write a csv file per tile
 def write_csv(x):
