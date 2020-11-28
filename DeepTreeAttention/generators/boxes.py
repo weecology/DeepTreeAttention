@@ -491,8 +491,8 @@ def tf_dataset(tfrecords,
     
     dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)   
     
-    if shuffle:
-        dataset = dataset.shuffle(10)      
+    #if shuffle:
+    #    dataset = dataset.shuffle(10)      
     
     if ids:
         ids_dataset = dataset.map(_box_index_parse_, num_parallel_calls=cores) 
