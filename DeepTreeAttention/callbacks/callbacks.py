@@ -14,7 +14,7 @@ from tensorflow import expand_dims
 
 class F1Callback(Callback):
 
-    def __init__(self, experiment, eval_dataset, eval_dataset_with_index,  y_true, label_names, submodel, train_shp, n=6):
+    def __init__(self, experiment, eval_dataset,  y_true, label_names, submodel, train_shp, n=6):
         """F1 callback
         Args:
             n: number of epochs to run. If n=4, function will run every 4 epochs
@@ -27,7 +27,6 @@ class F1Callback(Callback):
         self.n = n
         self.train_shp = train_shp
         self.y_true = y_true
-        self.eval_dataset_with_index = eval_dataset_with_index
  
     def on_train_end(self, logs={}):
             
