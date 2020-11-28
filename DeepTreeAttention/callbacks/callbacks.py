@@ -181,14 +181,13 @@ class ImageCallback(Callback):
             counter += 1
 
 
-def create(experiment, train_data, validation_data, train_shp, validation_data_with_index, log_dir=None, label_names=None, submodel=False):
+def create(experiment, train_data, validation_data, train_shp, log_dir=None, label_names=None, submodel=False):
     """Create a set of callbacks
     Args:
         experiment: a comet experiment object
         train_data: a tf data object to generate data
         validation_data: a tf data object to generate data
         train_shp: the original shapefile for the train data to check site error
-        eval_dataset_with_index: a id_train dataset to allow to find the original record for each image
         """
     
     #turn off callbacks for metadata
@@ -196,7 +195,7 @@ def create(experiment, train_data, validation_data, train_shp, validation_data_w
     reduce_lr = ReduceLROnPlateau(monitor='val_loss',
                                   factor=0.5,
                                   patience=10,
-                                  min_delta=0.05,
+                                  min_delta=0.1,
                                   verbose=1)
     callback_list.append(reduce_lr)
 
@@ -213,7 +212,7 @@ def create(experiment, train_data, validation_data, train_shp, validation_data_w
         confusion_matrix = ConfusionMatrixCallback(experiment=experiment, y_true=y_true, dataset=validation_data, label_names=label_names, submodel=submodel)
         callback_list.append(confusion_matrix)
 
-    f1 = F1Callback(experiment=experiment, y_true=y_true, eval_dataset=validation_data, label_names=label_names, submodel=submodel, eval_dataset_with_index=validation_data_with_index, train_shp=train_shp)
+    f1 = F1Callback(experiment=experiment, y_true=y_true, eval_dataset=validation_data, label_names=label_names, submodel=submodel, train_shp=train_shp)
     callback_list.append(f1)
     
     #if submodel is None:
