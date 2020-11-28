@@ -64,7 +64,7 @@ if __name__ == "__main__":
     model.create()
     
     if model.config["train"]["pretraining_dir"]:
-        model.HSI_model.load_weights("{}/HSI.h5".format(model.config["train"]["pretraining_dir"]))
+        model.HSI_model.load_weights("{}/HSI_model.h5".format(model.config["train"]["pretraining_dir"]))
         
     #Log config
     experiment.log_parameters(model.config["train"])
