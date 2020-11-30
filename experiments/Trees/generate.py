@@ -20,7 +20,7 @@ old_files = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/pretra
 
 
 #get root dir full path
-client = start(cpus=10, mem_size="15GB") 
+client = start(cpus=50, mem_size="15GB") 
 
 weak_records = glob.glob(os.path.join("/orange/idtrees-collab/species_classification/confident_predictions","*.csv"))
 
@@ -39,7 +39,7 @@ completed_records = [x.result() for x in futures if x.result() is not None]
 df = dd.read_csv(completed_records, include_path_column = True)
 
 #Get a balanced set of species
-df = df.groupby("filtered_taxonID").apply(lambda x: x.reset_index().sort_values("filtered_probability", ascending=False).head(100)).compute()
+df = df.groupby("filtered_taxonID").apply(lambda x: x.reset_index().sort_values("filtered_probability", ascending=False).head(2000)).compute()
 
 #write a csv file per tile
 def write_csv(x):
