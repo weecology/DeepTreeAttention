@@ -74,7 +74,7 @@ if __name__ == "__main__":
     
     ##Train
     #Train see config.yml for tfrecords path with weighted classes in cross entropy
-    model.read_data(HSI=True, RGB=False, metadata=False)
+    model.read_data(mode="HSI")
     
     #Log the size of the training data
     counter=0
