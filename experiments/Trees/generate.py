@@ -36,10 +36,10 @@ futures = client.map(check_shape,weak_records)
 completed_records = [x.result() for x in futures if x.result() is not None]
 
 #Create a dask dataframe of csv files
-df = dd.read_csv(completed_records[0:100], include_path_column = True)
+df = dd.read_csv(completed_records, include_path_column = True)
 
 #Get a balanced set of species
-df = df.groupby("filtered_taxonID").apply(lambda x: x.reset_index().head(2000)).compute()
+df = df.groupby("filtered_taxonID").apply(lambda x: x.reset_index().sort_values("filtered_probability", ascending=False).head(100)).compute()
 
 #write a csv file per tile
 def write_csv(x):
