@@ -101,7 +101,7 @@ if __name__ == "__main__":
             #metadata network
             with experiment.context_manager("metadata"):
                 print("Train metadata")
-                model.read_data(HSI = False, RGB= False, metadata=True)
+                model.read_data(mode="metadata")
                 model.train(submodel="metadata", experiment=experiment)
                 model.metadata_model.save("{}/metadata_model.h5".format(save_dir))
                 
@@ -109,7 +109,7 @@ if __name__ == "__main__":
             #experiment.log_parameter("Train subnetworks", True)
             #with experiment.context_manager("RGB_spatial_subnetwork"):
                 #print("Train RGB spatial subnetwork")
-                #model.read_data(HSI=False, RGB=True, metadata=False, submodel = True)
+                #model.read_data(mode="RGB_submodel")
                 #model.train(submodel="spatial", sensor="RGB", experiment=experiment)
                 
             #with experiment.context_manager("RGB_spectral_subnetwork"):
@@ -119,7 +119,7 @@ if __name__ == "__main__":
             ##Train full RGB model
             #with experiment.context_manager("RGB_model"):
                 #experiment.log_parameter("Class Weighted", True)
-                #model.read_data(HSI=False, RGB=True, metadata=False)
+                #model.read_data(mode="RGB")
                 #model.train(sensor="RGB", experiment=experiment)
                 #model.RGB_model.save("{}/RGB_model.h5".format(save_dir))
                 
@@ -132,7 +132,7 @@ if __name__ == "__main__":
             experiment.log_parameter("Train subnetworks", True)
             with experiment.context_manager("HSI_spatial_subnetwork"):
                 print("Train HSI spatial subnetwork")
-                model.read_data(HSI=True, RGB=False, metadata=False, submodel=True)
+                model.read_data(mode="HSI_submodel")
                 model.train(submodel="spatial", sensor="hyperspectral", experiment=experiment)
             
             with experiment.context_manager("HSI_spectral_subnetwork"):
@@ -142,7 +142,7 @@ if __name__ == "__main__":
             #Train full model
             with experiment.context_manager("HSI_model"):
                 experiment.log_parameter("Class Weighted", True)
-                model.read_data(HSI=True, RGB=False, metadata=False)
+                model.read_data(mode="HSI")
                 model.train(sensor="hyperspectral", experiment=experiment)
                 model.HSI_model.save("{}/HSI_model.h5".format(save_dir))
                 
@@ -165,9 +165,9 @@ if __name__ == "__main__":
     #experiment.log_figure("{}/Ensemble.png".format(save_dir))
     model.ensemble_model.save("{}/Ensemble.h5".format(save_dir))
     
-    #Plots
-    ax = visualize.plot_crown_position(model = model.ensemble_model, path = model.config["evaluation"]["ground_truth_path"], eval_dataset_with_index=model.val_split_with_ids)
-    experiment.log_figure(ax)
+    #Plots - this function needs to be rewritten because the dataset is now nested: ids, (data, label). probably predict on batch.
+    #ax = visualize.plot_crown_position(model = model.ensemble_model, path = model.config["evaluation"]["ground_truth_path"], eval_dataset_with_index=model.val_split_with_ids)
+    #experiment.log_figure(ax)
     
     #save predictions
     

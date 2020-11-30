@@ -111,7 +111,7 @@ def test_generate(mod):
 
 def test_split_data(mod, tfrecords):
     #Create class
-    mod.read_data(HSI=True, RGB=False, metadata=False, validation_split=True)
+    mod.read_data(mode="RGB", validation_split=True)
     
     assert len(mod.train_split_records) > 0
     assert len(mod.test_split_records) > 0
@@ -122,8 +122,11 @@ def test_split_data(mod, tfrecords):
 @pytest.mark.parametrize("submodel",[True, False])
 def test_AttentionModel(mod, tfrecords, submodel):
     shp = gpd.read_file(test_predictions)
-    mod.read_data(HSI=True, RGB=False, metadata=False, submodel=submodel, validation_split = True)
-    
+    if submodel:
+        mod.read_data(mode="RGB_submodel", validation_split = True)
+    else:
+        mod.read_data(mode="RGB", validation_split = True)
+        
     #How many batches and ensure no overlap in data
     train_image_data = []
     test_image_data = []
@@ -146,9 +149,9 @@ def test_AttentionModel(mod, tfrecords, submodel):
 
 #Test that the composition of the validation split is the same no matter the data
 def test_read_data(mod, tfrecords):
-    mod.read_data(HSI=False, RGB=True, metadata=False, submodel=True, validation_split=True)
+    mod.read_data(mode="ensemble", validation_split=True)
     before = mod.test_split_records
-    mod.read_data(HSI=True, RGB=True, metadata=True, validation_split=True)
+    mod.read_data(mode="ensemble", validation_split=True)
     after = mod.test_split_records
     assert before == after
     
@@ -156,7 +159,7 @@ def test_train_metadata(tfrecords, mod):
     #initial weights
     initial_weight = mod.metadata_model.layers[3].get_weights()
     
-    mod.read_data(HSI = False, RGB = False, metadata=True)
+    mod.read_data(mode="metadata")
     mod.train(submodel="metadata", experiment=experiment, class_weight=None)
     
     final_weight = mod.metadata_model.layers[3].get_weights()
@@ -166,31 +169,20 @@ def test_train_metadata(tfrecords, mod):
     assert "loss" in mod.metadata_model.history.history  
  
 def test_ensemble(tfrecords, mod):    
-    mod.read_data(HSI=True, RGB=True, metadata=True, submodel= False)
+    mod.read_data(mode="ensemble")
     mod.config["train"]["ensemble"]["epochs"] = 1   
     mod.config["train"]["ensemble"]["batch_size"] = 2
     mod.ensemble(experiment=experiment, class_weight=None, train=True)
          
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):
-    mod.read_data(HSI=False, RGB=True, metadata=False, submodel=True, validation_split=True)
+    mod.read_data("RGB_submodel", validation_split=True)
     
     #update epoch manually
     mod.config["train"]["RGB"]["epochs"] = 1
     mod.train(sensor="RGB", submodel="spectral",experiment=experiment)
 
-    mod.read_data(HSI=False, RGB=True, metadata=False)
+    mod.read_data(mode="RGB")
     mod.train(experiment=experiment, sensor="RGB")
-        
-#@pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
-#def test_train_field_callbacks(mod):
-    #mod.config["train"]["tfrecords"] = "data/processed/"
-    #mod.height = 20
-    #mod.width = 20
-    #mod.channels = 369
-    #mod.create()
-    #mod.read_data(HSI=False, RGB=True, metadata=False, submodel= True)
-    #mod.classes_file = "data/processed/class_labels.csv"
-    #mod.train(experiment=experiment)
 
     

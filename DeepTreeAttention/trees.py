@@ -146,7 +146,7 @@ class AttentionModel():
             #create a metadata model
             self.metadata_model = metadata.create(self.classes, self.sites, self.config["train"]["learning_rate"])
         
-    def read_data(self, HSI, metadata, RGB, labels=True, ids=False, submodel = False, validation_split=False):
+    def read_data(self, mode, ids=False, validation_split=False):
         """Read tfrecord into datasets from config
             Args:
                 validation_split: True -> split tfrecords into train test. This overrides the evaluation config!
@@ -173,12 +173,8 @@ class AttentionModel():
                 tfrecords=self.train_split_records,
                 batch_size=self.config["train"]["batch_size"],
                 shuffle=self.config["train"]["shuffle"],
-                RGB=RGB,
-                HSI=HSI,
-                metadata=metadata,
-                labels=labels,
+                mode=mode,
                 ids=ids,
-                submodel=submodel,
                 augmentation=self.config["train"]["augment"],
                 cores=self.config["cpu_workers"])
 
@@ -187,12 +183,8 @@ class AttentionModel():
                 tfrecords=self.test_split_records,
                 batch_size=self.config["train"]["batch_size"],
                 shuffle=False,
-                RGB=RGB,
-                HSI=HSI,
-                metadata=metadata,
-                labels=labels,
+                mode=mode,
                 ids=ids,
-                submodel=submodel,      
                 augmentation=False,
                 cache=True,
                 cores=self.config["cpu_workers"])
@@ -201,12 +193,8 @@ class AttentionModel():
                 tfrecords=self.test_split_records,
                 batch_size=self.config["train"]["batch_size"],                    
                 shuffle=False,
-                RGB=RGB,
-                HSI=HSI,
-                metadata=metadata,
-                labels=labels,
+                mode=mode,
                 ids=True,
-                submodel=submodel,     
                 augmentation=False,     
                 cache=True,
                 cores=self.config["cpu_workers"])                  
@@ -216,13 +204,9 @@ class AttentionModel():
                 tfrecords=self.train_records,
                 batch_size=self.config["train"]["batch_size"],
                 shuffle=self.config["train"]["shuffle"],
-                RGB=RGB,
-                HSI=HSI,
-                metadata=metadata,
-                labels=labels,
+                mode=mode,
                 ids=ids,
                 augmentation=self.config["train"]["augment"],                
-                submodel=submodel,                
                 cores=self.config["cpu_workers"])
 
             #honor config if validation not set
@@ -235,26 +219,18 @@ class AttentionModel():
                     tfrecords=self.test_records,
                     batch_size=self.config["train"]["batch_size"],                    
                     shuffle=False,
-                    RGB=RGB,
-                    HSI=HSI,
-                    metadata=metadata,
-                    labels=labels,
+                    mode=mode,
                     ids=ids,
                     augmentation=False,                    
-                    submodel=submodel,                    
                     cores=self.config["cpu_workers"])  
                 
                 self.val_split_with_ids = boxes.tf_dataset(
                     tfrecords=self.test_records,
                     batch_size=self.config["train"]["batch_size"],                    
                     shuffle=False,
-                    RGB=RGB,
-                    HSI=HSI,
-                    metadata=metadata,
-                    labels=labels,
+                    mode=mode,
                     ids=True,
                     augmentation=False,
-                    submodel=submodel,                    
                     cores=self.config["cpu_workers"])                   
                 
     def train(self, experiment=None, class_weight=None, submodel=None, sensor="hyperspectral"):
@@ -338,7 +314,7 @@ class AttentionModel():
     def ensemble(self, experiment, class_weight=None, freeze = True, train=True):
         self.classes = pd.read_csv(self.classes_file).shape[0] 
         
-        self.read_data(HSI = True, RGB = True, metadata = True)      
+        self.read_data(mode="ensemble")      
         
         if self.val_split is None:
             print("Cannot run callbacks without validation data, skipping...")
