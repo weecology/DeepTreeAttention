@@ -9,8 +9,8 @@ rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif  #path to sensor dat
 train:
     species_class_file: /home/b.weinstein/DeepTreeAttention/data/processed/species_class_labels.csv
     min_height_diff: 10 #minimum height diffs
-    checkpoint_dir:  #Load RGB and HSI sub models from dir
-    pretraining_dir: /orange/idtrees-collab/DeepTreeAttention/snapshots//20201127_160026/ #Semi-supervised HSI
+    checkpoint_dir: #Load RGB and HSI sub models from dir
+    pretraining_dir: #Semi-supervised HSI
     resampled_per_taxa: 50
     HSI:
         sensor_channels: 369
@@ -25,19 +25,19 @@ train:
         epochs: 120
         extend_box: 3 #expand DeepForest bounding boxes by x meters at edge
     metadata:
-        epochs: 120
+        epochs: 10
     ensemble:
         freeze: False
-        epochs: 120
+        epochs: 10
     sites: 23
-    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
+    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/pretraining/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/CHM_filtered_train.shp  #path to ground truth class shapefile   
-    learning_rate: .0001
-    batch_size: 32
+    learning_rate: .001
+    batch_size: 128
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
     steps:
     shuffle: True
-    augment: False
+    augment: True
     training_fraction: 0.9
     gpus: 1
     pretrain: True #Train the submodels before ensembling all together
