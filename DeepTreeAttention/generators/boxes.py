@@ -553,6 +553,8 @@ def tf_dataset(tfrecords,
         dataset: a tf.data dataset yielding crops and labels for train: True, crops and raster indices for train: False
         """
     AUTO = tf.data.experimental.AUTOTUNE
+    #For the moment be explicit.
+    cores = 32
     
     dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)     
     
@@ -584,14 +586,14 @@ def tf_dataset(tfrecords,
     if ids:
         ids_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)     
         ids_dataset = ids_dataset.map(_box_index_parse_)
-        dataset = tf.data.Dataset.zip((ids_dataset, dataset))
-
-    #batch and shuffle
-    if shuffle:
-        dataset = dataset.shuffle(buffer_size=10)   
+        dataset = tf.data.Dataset.zip((ids_dataset, dataset))  
     
     dataset = dataset.batch(batch_size=batch_size)
     
+    #batch and shuffle
+    if shuffle:
+        dataset = dataset.shuffle(buffer_size=10) 
+        
     if cache:
         dataset = dataset.cache()
     
