@@ -566,6 +566,10 @@ def tf_dataset(tfrecords,
     
     dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)     
     
+    #batch and shuffle
+    if shuffle:
+        dataset = dataset.shuffle(buffer_size=10)
+        
     if mode == "ensemble":
         dataset = dataset.map(_ensemble_parse_, num_parallel_calls=cores)
         if augmentation:
@@ -595,11 +599,6 @@ def tf_dataset(tfrecords,
         ids_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)     
         ids_dataset = ids_dataset.map(_box_index_parse_)
         dataset = tf.data.Dataset.zip((ids_dataset, dataset))  
-            
-        
-    #batch and shuffle
-    if shuffle:
-        dataset = dataset.shuffle(buffer_size=10)
         
     dataset = dataset.batch(batch_size=batch_size)
 
