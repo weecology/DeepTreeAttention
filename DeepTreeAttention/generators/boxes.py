@@ -371,7 +371,7 @@ def _ensemble_parse_(tfrecord):
     classes = tf.cast(example['classes'], tf.int32)    
     one_hot_labels = tf.one_hot(example['label'], classes)
     
-    return (loaded_HSI_image, loaded_RGB_image, example['height'], example['elevation'], one_hot_sites), one_hot_labels
+    return (loaded_HSI_image, loaded_RGB_image,  example['elevation'], example['height'], one_hot_sites), one_hot_labels
 
 def _HSI_parse_(tfrecord):
     features = {
@@ -499,7 +499,7 @@ def _metadata_parse_(tfrecord):
     classes = tf.cast(example['classes'], tf.int32)    
     one_hot_labels = tf.one_hot(example['label'], classes)
     
-    return (example['height'], example['elevation'], one_hot_sites), one_hot_labels
+    return (example['elevation'], example['height'], one_hot_sites), one_hot_labels
 
 def augment(data, label):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
@@ -513,7 +513,7 @@ def augment(data, label):
 def ensemble_augment(data, label):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
     
-    HSI, RGB, elevation, height, site = data
+    HSI, RGB, height, elevation, site = data
     
     HSI = tf.image.rot90(HSI)
     HSI = tf.image.random_flip_left_right(HSI)
@@ -523,7 +523,7 @@ def ensemble_augment(data, label):
     RGB = tf.image.random_flip_left_right(RGB)
     RGB = tf.image.random_flip_up_down(RGB)   
     
-    data = HSI, RGB, elevation, height, site
+    data = HSI, RGB, height, elevation, site
     
     return data, label
 
