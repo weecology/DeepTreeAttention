@@ -588,12 +588,12 @@ def tf_dataset(tfrecords,
         ids_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)     
         ids_dataset = ids_dataset.map(_box_index_parse_)
         dataset = tf.data.Dataset.zip((ids_dataset, dataset))  
+            
+    dataset = dataset.batch(batch_size=batch_size)
     
     #batch and shuffle
     if shuffle:
         dataset = dataset.shuffle(buffer_size=10) 
-            
-    dataset = dataset.batch(batch_size=batch_size)
         
     if cache:
         dataset = dataset.cache()
