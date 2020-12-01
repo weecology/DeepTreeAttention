@@ -39,7 +39,7 @@ completed_records = [x.result() for x in futures if x.result() is not None]
 df = dd.read_csv(completed_records, include_path_column = True)
 
 #Get a balanced set of species
-df = df.groupby("filtered_taxonID").apply(lambda x: x.reset_index().sort_values("filtered_probability", ascending=False).head(2000)).compute()
+df = df.groupby("filtered_taxonID").apply(lambda x: x.reset_index().sort_values("filtered_probability", ascending=False).head(5000)).compute()
 
 #write a csv file per tile
 def write_csv(x):
