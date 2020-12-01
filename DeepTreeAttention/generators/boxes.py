@@ -501,14 +501,31 @@ def _metadata_parse_(tfrecord):
     
     return (example['height'], example['elevation'], one_hot_sites), one_hot_labels
 
-def augment(data):
+def augment(data, label):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
 
     data = tf.image.rot90(data)
     data = tf.image.random_flip_left_right(data)
     data = tf.image.random_flip_up_down(data)    
     
-    return data
+    return data, label
+
+def ensemble_augment(data, label):
+    """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
+    
+    HSI, RGB, elevation, height, site = data
+    
+    HSI = tf.image.rot90(HSI)
+    HSI = tf.image.random_flip_left_right(HSI)
+    HSI = tf.image.random_flip_up_down(HSI)    
+    
+    RGB = tf.image.rot90(RGB)
+    RGB = tf.image.random_flip_left_right(RGB)
+    RGB = tf.image.random_flip_up_down(RGB)   
+    
+    data = HSI, RGB, elevation, height, site
+    
+    return data, label
 
 def normalize(data):
     data = tf.image.per_image_standardization(data)
@@ -541,26 +558,24 @@ def tf_dataset(tfrecords,
     
     if mode == "ensemble":
         dataset = dataset.map(_ensemble_parse_, num_parallel_calls=cores)
-        #if augmentation:
-        #    dataset = dataset.map(lambda data, label: ((augment(data),label)), num_parallel_calls=cores)    
-        #if augmentation:
-        #    dataset = dataset.map(lambda data, label: ((augment(data),label)), num_parallel_calls=cores)    
+        if augmentation:
+            dataset = dataset.map(ensemble_augment, num_parallel_calls=cores)                
     elif mode == "HSI":
         dataset = dataset.map(_HSI_parse_)
         if augmentation:
-            dataset = dataset.map(lambda data, label: ((augment(data),label)), num_parallel_calls=cores)                
+            dataset = dataset.map(augment, num_parallel_calls=cores)                
     elif mode == "HSI_submodel":
         dataset = dataset.map(_HSI_submodel_parse_)
         if augmentation:
-            dataset = dataset.map(lambda data, label: ((augment(data), label)), num_parallel_calls=cores)                        
+            dataset = dataset.map(augment, num_parallel_calls=cores)                
     elif mode == "RGB":
         dataset = dataset.map(_RGB_parse_)
         if augmentation:
-            dataset = dataset.map(lambda data, label: ((augment(data), label)), num_parallel_calls=cores)                        
+            dataset = dataset.map(augment, num_parallel_calls=cores)                
     elif mode == "RGB_submodel":
         dataset = dataset.map(_RGB_submodel_parse_)        
         if augmentation:
-            dataset = dataset.map(lambda data, label: ((augment(data), label)), num_parallel_calls=cores)                        
+            dataset = dataset.map(augment, num_parallel_calls=cores)                
     elif mode == "metadata":
         dataset = dataset.map(_metadata_parse_)
     else:
