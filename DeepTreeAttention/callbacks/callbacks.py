@@ -14,7 +14,7 @@ from tensorflow import expand_dims
 
 class F1Callback(Callback):
 
-    def __init__(self, experiment, eval_dataset,  y_true, label_names, submodel, train_shp, n=6):
+    def __init__(self, experiment, eval_dataset,  y_true, label_names, submodel, train_shp, n=10):
         """F1 callback
         Args:
             n: number of epochs to run. If n=4, function will run every 4 epochs
