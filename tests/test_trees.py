@@ -134,12 +134,12 @@ def test_AttentionModel(mod, tfrecords, submodel):
     train_counter=0
     for data, label in mod.train_split:
         train_image_data.append(data)
-        train_counter+=data[0].shape[0]
+        train_counter+=data.shape[0]
             
     test_counter=0
     for data, label in mod.val_split:
         test_image_data.append(data)            
-        test_counter+=data[0].shape[0]
+        test_counter+=data.shape[0]
     
     assert shp.shape[0] == train_counter + test_counter
     assert train_counter > test_counter

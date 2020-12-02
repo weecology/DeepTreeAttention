@@ -11,6 +11,8 @@ test_predictions = "data/raw/2019_BART_5_320000_4881000_image_small.shp"
 #Use a small rgb crop as a example tile
 test_sensor_tile = "data/raw/2019_BART_5_320000_4881000_image_crop.tif"
 
+test_hsi_tile = "data/raw/2019_BART_5_320000_4881000_image_hyperspectral_crop.tif"
+
 @pytest.fixture()
 def created_records(tmpdir):
     shp = gpd.read_file(test_predictions)    
@@ -20,7 +22,7 @@ def created_records(tmpdir):
         heights=np.random.random(shp.shape[0])*10,        
         elevation=100.0,
         savedir=tmpdir,
-        HSI_sensor_path=test_sensor_tile,
+        HSI_sensor_path=test_hsi_tile,
         RGB_sensor_path=test_sensor_tile,
         species_label_dict=None,
         RGB_size=100,
@@ -70,7 +72,7 @@ def test_ensemble(created_records):
     dataset = boxes.tf_dataset(created_records, batch_size=2, mode="ensemble")
     for data, label_batch in dataset.take(1):
         HSI, RGB, elevation, height, site = data
-        assert HSI.shape == (2,20,20,3)    
+        assert HSI.shape == (2,20,20,369)    
         assert RGB.shape == (2,100,100,3)    
         assert elevation.numpy().shape == (2,)
         assert site.numpy().shape == (2,10)
