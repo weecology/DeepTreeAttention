@@ -556,39 +556,39 @@ def tf_dataset(tfrecords,
     AUTO = tf.data.experimental.AUTOTUNE
     #For the moment be explicit.
     
-    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)     
+    dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=AUTO)     
     
     #batch and shuffle
     if shuffle:
         dataset = dataset.shuffle(buffer_size=10)
         
     if mode == "ensemble":
-        dataset = dataset.map(_ensemble_parse_, num_parallel_calls=cores)
+        dataset = dataset.map(_ensemble_parse_, num_parallel_calls=AUTO)
         if augmentation:
-            dataset = dataset.map(ensemble_augment, num_parallel_calls=cores)                
+            dataset = dataset.map(ensemble_augment, num_parallel_calls=AUTO)                
     elif mode == "HSI":
         dataset = dataset.map(_HSI_parse_)
         if augmentation:
-            dataset = dataset.map(augment, num_parallel_calls=cores)                
+            dataset = dataset.map(augment, num_parallel_calls=AUTO)                
     elif mode == "HSI_submodel":
         dataset = dataset.map(_HSI_submodel_parse_)
         if augmentation:
-            dataset = dataset.map(augment, num_parallel_calls=cores)                
+            dataset = dataset.map(augment, num_parallel_calls=AUTO)                
     elif mode == "RGB":
         dataset = dataset.map(_RGB_parse_)
         if augmentation:
-            dataset = dataset.map(augment, num_parallel_calls=cores)                
+            dataset = dataset.map(augment, num_parallel_calls=AUTO)                
     elif mode == "RGB_submodel":
         dataset = dataset.map(_RGB_submodel_parse_)        
         if augmentation:
-            dataset = dataset.map(augment, num_parallel_calls=cores)                
+            dataset = dataset.map(augment, num_parallel_calls=AUTO)                
     elif mode == "metadata":
         dataset = dataset.map(_metadata_parse_)
     else:
         raise ValueError("Accepted types = 'ensemble', 'HSI', 'HSI_submodel', 'RGB', 'RGB_submodel', 'metadata'")   
                         
     if ids:
-        ids_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)     
+        ids_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=AUTO)     
         ids_dataset = ids_dataset.map(_box_index_parse_)
         dataset = tf.data.Dataset.zip((ids_dataset, dataset))  
         
