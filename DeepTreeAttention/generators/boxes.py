@@ -555,7 +555,6 @@ def tf_dataset(tfrecords,
         """
     AUTO = tf.data.experimental.AUTOTUNE
     #For the moment be explicit.
-    cores = 32
     
     dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)     
     
