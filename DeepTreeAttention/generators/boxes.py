@@ -560,7 +560,7 @@ def tf_dataset(tfrecords,
     
     #batch and shuffle
     if shuffle:
-        dataset = dataset.shuffle(buffer_size=10)
+        dataset = dataset.shuffle(buffer_size=100)
         
     if mode == "ensemble":
         dataset = dataset.map(_ensemble_parse_, num_parallel_calls=cores)
