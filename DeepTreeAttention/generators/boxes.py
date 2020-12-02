@@ -520,9 +520,9 @@ def ensemble_augment(data, label):
     HSI = tf.image.random_flip_left_right(HSI)
     HSI = tf.image.random_flip_up_down(HSI)    
     
-    RGB = tf.image.rot90(RGB)
-    RGB = tf.image.random_flip_left_right(RGB)
-    RGB = tf.image.random_flip_up_down(RGB)   
+    #RGB = tf.image.rot90(RGB)
+    #RGB = tf.image.random_flip_left_right(RGB)
+    #RGB = tf.image.random_flip_up_down(RGB)   
     
     data = HSI, RGB, elevation, height, site
     
