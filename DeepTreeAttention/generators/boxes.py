@@ -600,6 +600,6 @@ def tf_dataset(tfrecords,
         
     dataset = dataset.batch(batch_size=batch_size)
     
-    dataset = dataset.prefetch(buffer_size=5)    
+    dataset = dataset.prefetch(buffer_size=1)    
     
     return dataset
