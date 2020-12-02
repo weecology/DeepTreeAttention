@@ -564,14 +564,20 @@ def tf_dataset(tfrecords,
         
     if mode == "ensemble":
         dataset = dataset.map(_ensemble_parse_, num_parallel_calls=cores)
+        if cache:
+            dataset = dataset.cache()        
         if augmentation:
             dataset = dataset.map(ensemble_augment, num_parallel_calls=cores)                
     elif mode == "HSI":
         dataset = dataset.map(_HSI_parse_)
+        if cache:
+            dataset = dataset.cache()        
         if augmentation:
             dataset = dataset.map(augment, num_parallel_calls=cores)                
     elif mode == "HSI_submodel":
         dataset = dataset.map(_HSI_submodel_parse_)
+        if cache:
+            dataset = dataset.cache()        
         if augmentation:
             dataset = dataset.map(augment, num_parallel_calls=cores)                
     elif mode == "RGB":
@@ -593,9 +599,6 @@ def tf_dataset(tfrecords,
         dataset = tf.data.Dataset.zip((ids_dataset, dataset))  
         
     dataset = dataset.batch(batch_size=batch_size)
-
-    if cache:
-        dataset = dataset.cache()
     
     dataset = dataset.prefetch(buffer_size=5)    
     
