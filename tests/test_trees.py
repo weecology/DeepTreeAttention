@@ -29,6 +29,8 @@ test_predictions = "data/raw/2019_BART_5_320000_4881000_image_small.shp"
 #Use a small rgb crop as a example tile
 test_sensor_tile = "data/raw/2019_BART_5_320000_4881000_image_crop.tif"
 
+test_sensor_hyperspec = "data/raw/2019_BART_5_320000_4881000_image_hyperspectral_crop.tif"
+
 @pytest.fixture()
 def mod(tmpdir):
     mod = trees.AttentionModel(config="conf/tree_config.yml")   
@@ -90,7 +92,7 @@ def tfrecords(mod, tmpdir):
     
     created_records = mod.generate(shapefile=test_predictions, site=0, elevation=100,
                                    heights=np.random.random(shp.shape[0]),
-                                   HSI_sensor_path=test_sensor_tile,
+                                   HSI_sensor_path=test_sensor_hyperspec,
                                    RGB_sensor_path=test_sensor_tile,
                                    train=True,
                                    chunk_size=2)    
@@ -103,7 +105,7 @@ def test_generate(mod):
         site=0,
         heights=np.random.random(shp.shape[0]),
         elevation=100,
-        HSI_sensor_path=test_sensor_tile,
+        HSI_sensor_path=test_sensor_hyperspec,
         RGB_sensor_path=test_sensor_tile,
         train=True, chunk_size=2)  
     
@@ -185,4 +187,10 @@ def test_train_callbacks(tfrecords, mod):
     mod.read_data(mode="RGB")
     mod.train(experiment=experiment, sensor="RGB")
 
+def test_ensemble_predict(tfrecords, mod):
+    mod.read_data(mode="ensemble")
+    mod.ensemble(experiment=experiment, train=True)
+    results = mod.predict_ensemble()
+    
+    assert not results.empty
     

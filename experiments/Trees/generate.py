@@ -20,7 +20,7 @@ old_files = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/pretra
 
 
 #get root dir full path
-client = start(cpus=50, mem_size="15GB") 
+client = start(cpus=60, mem_size="10GB") 
 
 weak_records = glob.glob(os.path.join("/orange/idtrees-collab/species_classification/confident_predictions","*.csv"))
 
@@ -38,8 +38,21 @@ completed_records = [x.result() for x in futures if x.result() is not None]
 #Create a dask dataframe of csv files
 df = dd.read_csv(completed_records, include_path_column = True)
 
+df = df[df.filtered_probability > 0.8]
+
 #Get a balanced set of species
-df = df.groupby("filtered_taxonID").apply(lambda x: x.reset_index().sort_values("filtered_probability", ascending=False).head(5000)).compute()
+df = df.groupby("filtered_taxonID").apply(lambda x: x.reset_index().sort_values("filtered_probability", ascending=False).head(3000)).compute()
+
+#Filter by within site predictions
+field_data = "/home/b.weinstein/DeepTreeAttention/data/raw/2020_vst_december.csv"
+site_list = field_data.groupby("siteID").taxonID.unique().to_dict()
+
+def check_within(x, site_list):
+    x["keep"] = x.apply(lambda y: y["taxonID"] in site_list[y["siteID"]])
+    x = x[x.keep == True]
+    return x
+
+df.apply(check_within, site_list=site_list)
 
 #write a csv file per tile
 def write_csv(x):

@@ -166,8 +166,8 @@ if __name__ == "__main__":
     model.ensemble_model.save("{}/Ensemble.h5".format(save_dir))
     
     #Plots - this function needs to be rewritten because the dataset is now nested: ids, (data, label). probably predict on batch.
-    #ax = visualize.plot_crown_position(model = model.ensemble_model, path = model.config["evaluation"]["ground_truth_path"], eval_dataset_with_index=model.val_split_with_ids)
-    #experiment.log_figure(ax)
+    ax = visualize.plot_crown_position(model = model.ensemble_model, path = model.config["evaluation"]["ground_truth_path"], eval_dataset_with_index=model.val_split_with_ids)
+    experiment.log_figure(ax)
     
     #save predictions
     

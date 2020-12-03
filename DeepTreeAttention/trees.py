@@ -381,7 +381,7 @@ class AttentionModel():
                     callbacks=callback_list,
                     class_weight=class_weight)
         
-    def predict(self, shapefile, savedir, create_records=True, sensor_path=None):
+    def ensemble_predict(self):
         """Predict species id for each box in a single shapefile
         Args:
             shapefile: path to a shapefile
@@ -390,73 +390,36 @@ class AttentionModel():
         Returns:
             fname: path to predicted shapefile
         """
-        self.classes = pd.read_csv(self.classes_file).shape[0] 
-        if create_records:
-            created_records = boxes.generate(shapefile,
-                                             sensor_path=sensor_path,
-                                             savedir=self.config["predict"]["savedir"],
-                                             height=self.height,
-                                             width=self.width,
-                                             classes=self.classes,
-                                             train=False)
-        else:
-            created_records = glob.glob(dirname + "*.tfrecord")
-
-        #Merge with original box shapefile by index and write new shapefile to file
-        results = self.predict_boxes(created_records)
-        fname = self.merge_shapefile(shapefile, results, savedir=savedir)
-
-        return fname
-
-    def predict_boxes(self, tfrecords, batch_size=1):
-        """Predicted a set of tfrecords and create a raster image"""
-        prediction_set = boxes.tf_dataset(tfrecords=tfrecords,
-                                          batch_size=batch_size,
-                                          shuffle=False,
-                                          mode="predict",
-                                          cores=self.config["cpu_workers"])
-
-        predictions = []
-        indices = []
-        for image, box_index in prediction_set:
-            try:
-                softmax_batch = self.model.predict_on_batch(image)
-                predictions.append(softmax_batch)
-                indices.append(box_index)
-            except tf.errors.OutOfRangeError:
-                print("Completed {} predictions".format(len(predictions)))
-
-        #stack
-        predictions = np.vstack(predictions)
-        predictions = np.argmax(predictions, 1)
-
-        indices = np.concatenate(indices)
-
-        #Read class labels
-        labels = [
-            self.classes_file.loc[self.classes_file.index == x, "taxonID"].values[0] for x in predictions
-        ]
-        results = pd.DataFrame({"label": labels, "box_index": indices})
-
-        #decode results
-        results["box_index"] = results["box_index"].apply(lambda x: x.decode()).astype(
-            str)
-
-        return results
-
-    def merge_shapefile(self, shapefile, results, savedir):
-        """Merge predicted species label with box id"""
-
-        gdf = geopandas.read_file(shapefile)
+        #Get the true labels since they are not shuffled
+        y_true = [ ]
+        y_pred = [ ]
+        box_index = [ ]
+        for index, data, label in self.eval_dataset_with_index:
+            prediction = self.ensemble_model.predict_on_batch(data)            
+            if submodel:
+                label = label[0]
+                prediction = prediction[0]
+            y_true.append(label)
+            y_pred.append(prediction)
+            box_index.append(index)            
+            
+        y_true = np.concatenate(y_true)
+        y_pred = np.concatenate(y_pred)
+        box_index = np.concatenate(box_index)
+        box_index = list(box_index)
+        y_true = np.argmax(y_true, 1)
+        y_pred = np.argmax(y_pred, 1)
+        
+        results = pd.DataFrame({"true":y_true,"predicted":y_pred, "box_index":box_index})
+        
+        #Read original data
+        gdf = geopandas.read_file(self.config["evaluation"]["ground_truth_path"])
 
         #Make sure there isn't a label column in merge data
-        gdf = gdf.drop(columns="label")
         basename = os.path.splitext(os.path.basename(shapefile))[0]
-        gdf["box_index"] = ["{}_{}".format(basename, x) for x in gdf.index.values]
+        gdf["box_index"] = gdf.index.values
 
         #Merge
         joined_gdf = gdf.merge(results, on="box_index")
-        fname = "{}/{}.shp".format(savedir, basename)
-        joined_gdf.to_file(fname)
-
-        return fname   
+        
+        return joined_gdf

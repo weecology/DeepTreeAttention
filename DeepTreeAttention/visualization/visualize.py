@@ -63,7 +63,6 @@ def discrete_cmap(N, base_cmap=None):
     cmap_name = base.name + str(N)
     return base.from_list(cmap_name, color_list, N)
 
-
 def plot_crown_position(path, model, eval_dataset_with_index, submodel = False):
     """Plot the errors by their crown position category
     Args:
@@ -75,26 +74,6 @@ def plot_crown_position(path, model, eval_dataset_with_index, submodel = False):
         matplotlib axes
     """
     train_shp = gpd.read_file(path)
-    
-    #Get the true labels since they are not shuffled
-    y_true = [ ]
-    y_pred = [ ]
-    box_index = [ ]
-    for index, data, label in eval_dataset_with_index:
-        prediction = model.predict_on_batch(data)            
-        if submodel:
-            label = label[0]
-            prediction = prediction[0]
-        y_true.append(label)
-        y_pred.append(prediction)
-        box_index.append(index)            
-        
-    y_true = np.concatenate(y_true)
-    y_pred = np.concatenate(y_pred)
-    box_index = np.concatenate(box_index)
-    box_index = list(box_index)
-    y_true = np.argmax(y_true, 1)
-    y_pred = np.argmax(y_pred, 1)
     
     #get canopy dictionary
     canopy_dict = {}
@@ -108,6 +87,7 @@ def plot_crown_position(path, model, eval_dataset_with_index, submodel = False):
     
 def canopyPosition_barplot(y_true, y_pred, box_index, canopydict):
     results = pd.DataFrame({"true":y_true,"predicted":y_pred, "box_index":box_index})
+    
     results["canopyPosition"] = results.box_index.apply(lambda x: canopydict[x])
     results["match"] = (results["true"] == results["predicted"])
     

@@ -142,10 +142,10 @@ def train_test_split(ROOT, lookup_glob, n=None):
         min_diff: minimum height diff between field and CHM data
         n: number of resampled points per class
         """
-    test = test_split("{}/data/raw/test_with_uid.csv".format(ROOT), field_data_path="{}/data/raw/latest_full_veg_structure.csv".format(ROOT))
+    test = test_split("{}/data/raw/test_with_uid.csv".format(ROOT), field_data_path="{}/data/raw/2020_vst_december.csv".format(ROOT))
     #Interpolate CHM height
     test = filter_CHM(test, lookup_glob)
-    train = train_split("{}/data/raw/latest_full_veg_structure.csv".format(ROOT), test.individualID, test.taxonID.unique())
+    train = train_split("{}/data/raw/2020_vst_december.csv".format(ROOT), test.individualID, test.taxonID.unique())
     
     filtered_train = filter_CHM(train, lookup_glob)
     filtered_train = filtered_train[filtered_train.CHM_height>1]   
@@ -168,7 +168,9 @@ def train_test_split(ROOT, lookup_glob, n=None):
     ))
     
     #just to be safe, assert no test in train
+    
     #remove CHM points under 1m    
+    test = test[abs(test.height - test.CHM_height) < 4]  
     
     check_empty = test[test.individualID.isin(train.individualID.unique())]
     assert check_empty.empty
