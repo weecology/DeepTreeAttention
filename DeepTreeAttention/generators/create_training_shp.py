@@ -79,7 +79,7 @@ def train_split(path, test_ids, test_species, debug = False):
     min_height = sun_position[(sun_position.height > 3) | (sun_position.height.isnull())]
     min_size = min_height[min_height.stemDiameter > 5]
     
-    min_size = min_size[~min_size.taxonID.isin("BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS" "2PLANT")]
+    min_size = min_size[~min_size.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS" "2PLANT"])]
     
     #ensure that species set matches
     min_size = min_size[min_size.taxonID.isin(test_species)]
