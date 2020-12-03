@@ -75,7 +75,7 @@ def mod(tmpdir):
     #Update the inits
     mod.RGB_size = mod.config["train"]["RGB"]["crop_size"]
     mod.HSI_size = mod.config["train"]["HSI"]["crop_size"]
-    mod.HSI_channels = 3
+    mod.HSI_channels = 369
     mod.RGB_channels = 3
     mod.extend_HSI_box = mod.config["train"]["HSI"]["extend_box"]
     mod.classes_file = label_file
@@ -190,7 +190,7 @@ def test_train_callbacks(tfrecords, mod):
 def test_ensemble_predict(tfrecords, mod):
     mod.read_data(mode="ensemble")
     mod.ensemble(experiment=experiment, train=True)
-    results = mod.predict_ensemble()
+    results = mod.ensemble_predict()
     
     assert not results.empty
     

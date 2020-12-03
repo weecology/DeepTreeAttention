@@ -394,7 +394,7 @@ class AttentionModel():
         y_true = [ ]
         y_pred = [ ]
         box_index = [ ]
-        for index, data, label in self.eval_dataset_with_index:
+        for index, data, label in self.val_split_with_ids:
             prediction = self.ensemble_model.predict_on_batch(data)            
             if submodel:
                 label = label[0]

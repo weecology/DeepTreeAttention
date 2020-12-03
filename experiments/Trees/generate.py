@@ -44,15 +44,22 @@ df = df[df.filtered_probability > 0.8]
 df = df.groupby("filtered_taxonID").apply(lambda x: x.reset_index().sort_values("filtered_probability", ascending=False).head(3000)).compute()
 
 #Filter by within site predictions
-field_data = "/home/b.weinstein/DeepTreeAttention/data/raw/2020_vst_december.csv"
+field_data = pd.read_csv("/home/b.weinstein/DeepTreeAttention/data/raw/2020_vst_december.csv")
 site_list = field_data.groupby("siteID").taxonID.unique().to_dict()
 
 def check_within(x, site_list):
-    x["keep"] = x.apply(lambda y: y["taxonID"] in site_list[y["siteID"]])
     x = x[x.keep == True]
     return x
 
-df.apply(check_within, site_list=site_list)
+df["siteID"]  = df.path.apply(lambda x: site_from_path(x))
+
+keep_index = []
+for index, row in df.iterrows():
+    if df.filtered_taxonID.loc[index] in site_list[df.siteID.loc[index]]:
+        keep_index.append(index)
+        
+df = df[df.index.isin(keep_index)]
+
 
 #write a csv file per tile
 def write_csv(x):
