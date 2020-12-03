@@ -338,7 +338,7 @@ def main(
     site_classes_file,
     hyperspectral_dir,
     savedir=".", 
-    chunk_size=100,
+    chunk_size=200,
     extend_HSI_box=0, 
     extend_RGB_box=0,
     hyperspectral_savedir=".", 

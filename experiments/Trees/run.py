@@ -173,3 +173,11 @@ if __name__ == "__main__":
     predicted_shp = model.ensemble_predict()
     predicted_shp.to_file("{}/prediction.shp".format(save_dir))
     experiment.log_asset("{}/prediction.shp".format(save_dir))
+    
+    #per species accurracy
+    predicted_shp["match"] = predicted_shp.apply(lambda x: x.true_taxonID == x.predicted_taxonID, 1)
+    per_species = predicted_shp.groupby("true_taxonID").apply(lambda x: x["match"].sum()/len(x))
+    per_species.to_csv("{}/perspecies.csv".format(save_dir))
+    experiment.log_asset("{}/perspecies.csv".format(save_dir))
+    
+    

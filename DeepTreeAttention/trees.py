@@ -420,4 +420,7 @@ class AttentionModel():
         #Merge
         joined_gdf = gdf.merge(results, on="box_index")
         
+        joined_gdf["true_taxonID"] = joined_gdf.true.apply(lambda x: self.label_names[x])
+        joined_gdf["predicted_taxonID"] = joined_gdf.predicted.apply(lambda x: self.label_names[x])
+                
         return joined_gdf

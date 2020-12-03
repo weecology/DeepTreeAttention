@@ -53,6 +53,7 @@ def test_split(path, field_data_path):
     # invalid tile species and plots
     ids = ids[~(ids.plotID == "KONZ_049")]
     ids = ids[~(ids.individualID == "NEON.PLA.D17.SOAP.03458")]
+    ids = ids[~ids.taxonID.isin("BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS" "2PLANT")]
     
     ids["geometry"] = [Point(x,y) for x,y in zip(ids["itcEasting"], ids["itcNorthing"])]
     shp = gpd.GeoDataFrame(ids)
@@ -77,7 +78,9 @@ def train_split(path, test_ids, test_species, debug = False):
     sun_position = trees[~(trees.canopyPosition.isin(["Full shade", "Mostly shaded"]))]
     min_height = sun_position[(sun_position.height > 3) | (sun_position.height.isnull())]
     min_size = min_height[min_height.stemDiameter > 5]
-        
+    
+    min_size = min_size[~min_size.taxonID.isin("BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS" "2PLANT")]
+    
     #ensure that species set matches
     min_size = min_size[min_size.taxonID.isin(test_species)]
     min_date = min_size[~(min_size.eventID.str.contains("2014"))]
@@ -173,7 +176,7 @@ def train_test_split(ROOT, lookup_glob, n=None):
     
     #just to be safe, assert no test in train
     
-    #remove CHM points under 1m    
+    #remove CHM points under 4m    
     test = test[abs(test.height - test.CHM_height) < 4]  
     
     check_empty = test[test.individualID.isin(train.individualID.unique())]
