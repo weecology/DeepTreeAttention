@@ -53,7 +53,7 @@ def test_split(path, field_data_path):
     # invalid tile species and plots
     ids = ids[~(ids.plotID == "KONZ_049")]
     ids = ids[~(ids.individualID == "NEON.PLA.D17.SOAP.03458")]
-    ids = ids[~ids.taxonID.isin("BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS" "2PLANT")]
+    ids = ids[~ids.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS" "2PLANT"])]
     
     ids["geometry"] = [Point(x,y) for x,y in zip(ids["itcEasting"], ids["itcNorthing"])]
     shp = gpd.GeoDataFrame(ids)
