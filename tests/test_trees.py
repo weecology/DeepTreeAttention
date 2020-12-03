@@ -59,6 +59,7 @@ def mod(tmpdir):
     eval_config = { }
     eval_config["tfrecords"] = None
     eval_config["steps"] = 1
+    eval_config["ground_truth_path"] = "data/processed/test.shp"
     
     predict_config = { }
     predict_config["tfrecords"] = predict_dir
@@ -81,6 +82,7 @@ def mod(tmpdir):
     mod.classes_file = label_file
     mod.train_shp = pd.DataFrame({"taxonID":["Jon","Ben"], "siteID":[0,1],"domainID":[0,1],"plotID":[0,1], "canopyPosition":["a","b"],"scientific":["genus species","genus species"]})
     mod.train_shp.index =[2,7]
+    
     #Create a model with input sizes
     mod.create()
             
@@ -97,6 +99,7 @@ def tfrecords(mod, tmpdir):
                                    train=True,
                                    chunk_size=2)    
     return created_records
+
 
 def test_generate(mod):
     shp = gpd.read_file(test_predictions)    
@@ -186,11 +189,4 @@ def test_train_callbacks(tfrecords, mod):
 
     mod.read_data(mode="RGB")
     mod.train(experiment=experiment, sensor="RGB")
-
-def test_ensemble_predict(tfrecords, mod):
-    mod.read_data(mode="ensemble")
-    mod.ensemble(experiment=experiment, train=True)
-    results = mod.ensemble_predict()
-    
-    assert not results.empty
     

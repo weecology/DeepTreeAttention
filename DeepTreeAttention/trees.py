@@ -394,11 +394,9 @@ class AttentionModel():
         y_true = [ ]
         y_pred = [ ]
         box_index = [ ]
-        for index, data, label in self.val_split_with_ids:
+        for index, batch in self.val_split_with_ids:
+            data,label = batch
             prediction = self.ensemble_model.predict_on_batch(data)            
-            if submodel:
-                label = label[0]
-                prediction = prediction[0]
             y_true.append(label)
             y_pred.append(prediction)
             box_index.append(index)            
@@ -411,13 +409,13 @@ class AttentionModel():
         y_pred = np.argmax(y_pred, 1)
         
         results = pd.DataFrame({"true":y_true,"predicted":y_pred, "box_index":box_index})
+        results["box_index"] = results["box_index"].apply(lambda x: x.decode())
         
-        #Read original data
-        gdf = geopandas.read_file(self.config["evaluation"]["ground_truth_path"])
-
-        #Make sure there isn't a label column in merge data
+        #Read original data        
+        shapefile = self.config["evaluation"]["ground_truth_path"]
+        gdf = gpd.read_file(shapefile)        
         basename = os.path.splitext(os.path.basename(shapefile))[0]
-        gdf["box_index"] = gdf.index.values
+        gdf["box_index"] = ["{}_{}".format(basename, x) for x in gdf.index.values]
 
         #Merge
         joined_gdf = gdf.merge(results, on="box_index")

@@ -60,7 +60,6 @@ for index, row in df.iterrows():
         
 df = df[df.index.isin(keep_index)]
 
-
 #write a csv file per tile
 def write_csv(x):
     if x.empty:

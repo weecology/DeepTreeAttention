@@ -170,4 +170,6 @@ if __name__ == "__main__":
     experiment.log_figure(ax)
     
     #save predictions
-    
+    predicted_shp = model.ensemble_predict()
+    predicted_shp.to_file("{}/prediction.shp".format(save_dir))
+    experiment.log_asset("{}/prediction.shp".format(save_dir))
