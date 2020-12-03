@@ -116,8 +116,12 @@ def filter_CHM(shp, lookup_glob):
         filtered_results = []
         lookup_pool = glob.glob(lookup_glob, recursive=True)        
         for name, group in shp.groupby("plotID"):
-            result = postprocess_CHM(group, lookup_pool=lookup_pool)
-            filtered_results.append(result)
+            try:
+                result = postprocess_CHM(group, lookup_pool=lookup_pool)
+                filtered_results.append(result)
+            except Exception as e:
+                print("plotID {} raised: {}".format(name,e))
+                
         filtered_shp = gpd.GeoDataFrame(pd.concat(filtered_results,ignore_index=True))
         
         return filtered_shp
