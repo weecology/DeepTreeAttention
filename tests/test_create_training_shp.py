@@ -6,7 +6,7 @@ from shapely.geometry import Point
 @pytest.fixture()
 def testdata():
     path = "data/raw/test_with_uid.csv"
-    field_data_path = "data/raw/latest_full_veg_structure.csv"    
+    field_data_path = "data/raw/2020_vst_december.csv"    
     shp = create_training_shp.test_split(path, field_data_path)
     
     assert not shp.empty
@@ -15,7 +15,7 @@ def testdata():
 
 def test_test_split():
     path = "data/raw/test_with_uid.csv"
-    field_data_path = "data/raw/latest_full_veg_structure.csv"
+    field_data_path = "data/raw/2020_vst_december.csv"
     
     shp = create_training_shp.test_split(path, field_data_path)
     assert not shp.empty
@@ -29,7 +29,7 @@ def test_test_split():
     ))
     
 def test_train_split(testdata):
-    path = "data/raw/latest_full_veg_structure.csv"
+    path = "data/raw/2020_vst_december.csv"
     shp = create_training_shp.train_split(path, testdata.individualID, testdata.taxonID, debug=True)
     assert not shp.empty
     assert all([x in ["siteID","plotID","height","elevation","domainID","individualID","taxonID",

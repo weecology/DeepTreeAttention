@@ -123,7 +123,7 @@ class ConfusionMatrixCallback(Callback):
             title=name,
             file_name= name,
             labels=self.label_names,
-            max_categories=80,
+            max_categories=90,
             max_example_per_cell=1)
         
         

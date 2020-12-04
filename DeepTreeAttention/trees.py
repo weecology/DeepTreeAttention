@@ -405,9 +405,10 @@ class AttentionModel():
         y_pred = np.concatenate(y_pred)
         box_index = np.concatenate(box_index)
         box_index = list(box_index)
+        
         y_true = np.argmax(y_true, 1)
         y_pred = np.argmax(y_pred, 1)
-        
+            
         results = pd.DataFrame({"true":y_true,"predicted":y_pred, "box_index":box_index})
         results["box_index"] = results["box_index"].apply(lambda x: x.decode())
         
