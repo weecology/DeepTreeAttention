@@ -498,7 +498,7 @@ if __name__ == "__main__":
     create_training_shp.train_test_split(ROOT, lookup_glob, n=config["train"]["resampled_per_taxa"])
     
     #create dask client
-    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="15GB")
+    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="11GB")
     #client = None
     
     #test data
