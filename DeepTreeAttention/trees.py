@@ -419,7 +419,10 @@ class AttentionModel():
         #Merge
         joined_gdf = gdf.merge(results, on="id")
         
-        joined_gdf["true_taxonID"] = joined_gdf.true.apply(lambda x: self.label_names[x])
-        joined_gdf["predicted_taxonID"] = joined_gdf.predicted.apply(lambda x: self.label_names[x])
+        labeldf = pd.read_csv(self.classes_file)
+        label_names = list(labeldf.taxonID.values)
+        
+        joined_gdf["true_taxonID"] = joined_gdf.true.apply(lambda x: label_names[x])
+        joined_gdf["predicted_taxonID"] = joined_gdf.predicted.apply(lambda x: label_names[x])
                 
         return joined_gdf
