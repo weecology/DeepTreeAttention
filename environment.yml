@@ -37,3 +37,4 @@ dependencies:
     - dask_jobqueue
     - tensorboard_plugin_profile
     - pydot
+    - cleanlab

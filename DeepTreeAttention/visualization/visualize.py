@@ -63,7 +63,7 @@ def discrete_cmap(N, base_cmap=None):
     cmap_name = base.name + str(N)
     return base.from_list(cmap_name, color_list, N)
 
-def plot_crown_position(path, model, eval_dataset_with_index, submodel = False):
+def plot_crown_position(path, y_true, y_pred, box_index):
     """Plot the errors by their crown position category
     Args:
         path: file path to the original data used to generate tfrecords

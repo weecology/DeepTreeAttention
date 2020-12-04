@@ -165,14 +165,14 @@ if __name__ == "__main__":
     #experiment.log_figure("{}/Ensemble.png".format(save_dir))
     model.ensemble_model.save("{}/Ensemble.h5".format(save_dir))
     
-    #Plots - this function needs to be rewritten because the dataset is now nested: ids, (data, label). probably predict on batch.
-    ax = visualize.plot_crown_position(model = model.ensemble_model, path = model.config["evaluation"]["ground_truth_path"], eval_dataset_with_index=model.val_split_with_ids)
-    experiment.log_figure(ax)
-    
     #save predictions
     predicted_shp = model.ensemble_predict()
     predicted_shp.to_file("{}/prediction.shp".format(save_dir))
     experiment.log_asset("{}/prediction.shp".format(save_dir))
+    
+    #Plots - this function needs to be rewritten because the dataset is now nested: ids, (data, label). probably predict on batch.
+    ax = visualize.plot_crown_position(ypred = predicted_shp.predicted_taxonID, y_true=predicted_shp.true_taxonID, box_index=predicted_shp.box_index, path = model.config["evaluation"]["ground_truth_path"])
+    experiment.log_figure(ax)
     
     #per species accurracy
     predicted_shp["match"] = predicted_shp.apply(lambda x: x.true_taxonID == x.predicted_taxonID, 1)
