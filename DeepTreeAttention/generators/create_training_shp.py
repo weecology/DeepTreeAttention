@@ -177,7 +177,7 @@ def train_test_split(ROOT, lookup_glob, n=None):
     #just to be safe, assert no test in train
     
     #remove CHM points under 4m    
-    test = test[abs(test.height - test.CHM_height) < 4]  
+    test = test[abs(test.height - test.CHM_height) < 5]  
     
     check_empty = test[test.individualID.isin(train.individualID.unique())]
     assert check_empty.empty
