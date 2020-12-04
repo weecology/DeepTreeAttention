@@ -184,7 +184,8 @@ def train_test_split(ROOT, lookup_glob, n=None):
     assert check_empty.empty
     
     #Give tests a unique index to match against
-    test["test_index"] = test.index.values
+    test["id"] = test.index.values
+    train["id"] = train.index.values
     
     test.to_file("{}/data/processed/test.shp".format(ROOT))
     train.to_file("{}/data/processed/train.shp".format(ROOT))    
