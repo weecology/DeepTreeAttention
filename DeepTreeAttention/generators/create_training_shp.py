@@ -152,6 +152,10 @@ def train_test_split(ROOT, lookup_glob, n=None):
     test = test_split("{}/data/raw/test_with_uid.csv".format(ROOT), field_data_path="{}/data/raw/2020_vst_december.csv".format(ROOT))
     #Interpolate CHM height
     test = filter_CHM(test, lookup_glob)
+    
+    #remove CHM points under 4m    
+    test = test[abs(test.height - test.CHM_height) < 5]  
+    
     train = train_split("{}/data/raw/2020_vst_december.csv".format(ROOT), test.individualID, test.taxonID.unique())
     
     filtered_train = filter_CHM(train, lookup_glob)
@@ -175,10 +179,7 @@ def train_test_split(ROOT, lookup_glob, n=None):
     ))
     
     #just to be safe, assert no test in train
-    
-    #remove CHM points under 4m    
-    test = test[abs(test.height - test.CHM_height) < 5]  
-    
+
     check_empty = test[test.individualID.isin(train.individualID.unique())]
     assert check_empty.empty
     
