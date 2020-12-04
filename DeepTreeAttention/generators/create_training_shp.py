@@ -183,6 +183,9 @@ def train_test_split(ROOT, lookup_glob, n=None):
     check_empty = test[test.individualID.isin(train.individualID.unique())]
     assert check_empty.empty
     
+    #Give tests a unique index to match against
+    test["test_index"] = test.index.values
+    
     test.to_file("{}/data/processed/test.shp".format(ROOT))
     train.to_file("{}/data/processed/train.shp".format(ROOT))    
     filtered_train.to_file("{}/data/processed/CHM_filtered_train.shp".format(ROOT))    

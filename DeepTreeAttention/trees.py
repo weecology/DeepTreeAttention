@@ -175,7 +175,7 @@ class AttentionModel():
                 shuffle=self.config["train"]["shuffle"],
                 mode=mode,
                 ids=ids,
-                cache=True,
+                cache=False,
                 augmentation=self.config["train"]["augment"],
                 cores=self.config["cpu_workers"])
 
@@ -187,7 +187,7 @@ class AttentionModel():
                 mode=mode,
                 ids=ids,
                 augmentation=False,
-                cache=True,
+                cache=False,
                 cores=self.config["cpu_workers"])
             
             self.val_split_with_ids = boxes.tf_dataset(
@@ -197,7 +197,7 @@ class AttentionModel():
                 mode=mode,
                 ids=True,
                 augmentation=False,     
-                cache=True,
+                cache=False,
                 cores=self.config["cpu_workers"])                  
         else:
             #Create training tf.data
@@ -410,16 +410,14 @@ class AttentionModel():
         y_pred = np.argmax(y_pred, 1)
             
         results = pd.DataFrame({"true":y_true,"predicted":y_pred, "box_index":box_index})
-        results["box_index"] = results["box_index"].apply(lambda x: x.decode())
+        results["test_index"] = results["box_index"].apply(lambda x: int(x.decode()))
         
         #Read original data        
         shapefile = self.config["evaluation"]["ground_truth_path"]
         gdf = gpd.read_file(shapefile)        
-        basename = os.path.splitext(os.path.basename(shapefile))[0]
-        gdf["box_index"] = ["{}_{}".format(basename, x) for x in gdf.index.values]
 
         #Merge
-        joined_gdf = gdf.merge(results, on="box_index")
+        joined_gdf = gdf.merge(results, on="test_index")
         
         joined_gdf["true_taxonID"] = joined_gdf.true.apply(lambda x: self.label_names[x])
         joined_gdf["predicted_taxonID"] = joined_gdf.predicted.apply(lambda x: self.label_names[x])
