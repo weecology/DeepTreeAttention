@@ -163,6 +163,7 @@ def train_test_split(ROOT, lookup_glob, n=None):
     filtered_train = filtered_train[filtered_train.taxonID.isin(test.taxonID.unique())]
     test = test[test.taxonID.isin(filtered_train.taxonID.unique())]
 
+    #resample
     if not n is None:
         filtered_train  =  filtered_train.groupby("taxonID").apply(lambda x: sample_if(x,n)).reset_index(drop=True)
         
@@ -180,12 +181,12 @@ def train_test_split(ROOT, lookup_glob, n=None):
     
     #just to be safe, assert no test in train
 
-    check_empty = test[test.individualID.isin(train.individualID.unique())]
+    check_empty = test[test.individualID.isin(filtered_train.individualID.unique())]
     assert check_empty.empty
     
     #Give tests a unique index to match against
     test["id"] = test.index.values
-    train["id"] = train.index.values
+    filtered_train["id"] = filtered_train.index.values
     
     test.to_file("{}/data/processed/test.shp".format(ROOT))
     train.to_file("{}/data/processed/train.shp".format(ROOT))    
