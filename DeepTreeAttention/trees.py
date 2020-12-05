@@ -410,7 +410,7 @@ class AttentionModel():
         y_pred = np.argmax(y_pred, 1)
             
         results = pd.DataFrame({"true":y_true,"predicted":y_pred, "box_index":box_index})
-        results["id"] = results["box_index"].apply(lambda x: int(x.decode()))
+        results["id"] = results["box_index"].apply(lambda x: int(x.decode("utf-8")))
         
         #Read original data        
         shapefile = self.config["evaluation"]["ground_truth_path"]
@@ -419,6 +419,7 @@ class AttentionModel():
         #Merge
         joined_gdf = gdf.merge(results, on="id")
         
+        joined_gdf["id"] = joined_gdf.id.astype(str)
         labeldf = pd.read_csv(self.classes_file)
         label_names = list(labeldf.taxonID.values)
         

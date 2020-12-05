@@ -154,12 +154,14 @@ def train_test_split(ROOT, lookup_glob, n=None):
     test = filter_CHM(test, lookup_glob)
     
     #remove CHM points under 4m    
-    #test = test[abs(test.height - test.CHM_height) < 5]  
+    test = test[abs(test.height - test.CHM_height) < 4]  
     
     train = train_split("{}/data/raw/2020_vst_december.csv".format(ROOT), test.individualID, test.taxonID.unique())
     
     filtered_train = filter_CHM(train, lookup_glob)
-    filtered_train = filtered_train[filtered_train.CHM_height>1]   
+    filtered_train = filtered_train[filtered_train.CHM_height>1] 
+    filtered_train = filtered_train[abs(filtered_train.height - filtered_train.CHM_height) < 4]  
+    
     filtered_train = filtered_train[filtered_train.taxonID.isin(test.taxonID.unique())]
     test = test[test.taxonID.isin(filtered_train.taxonID.unique())]
 
