@@ -175,7 +175,7 @@ class AttentionModel():
                 shuffle=self.config["train"]["shuffle"],
                 mode=mode,
                 ids=ids,
-                cache=True,
+                cache=False,
                 augmentation=self.config["train"]["augment"],
                 cores=self.config["cpu_workers"])
 
@@ -187,7 +187,7 @@ class AttentionModel():
                 mode=mode,
                 ids=ids,
                 augmentation=False,
-                cache=True,
+                cache=False,
                 cores=self.config["cpu_workers"])
             
             self.val_split_with_ids = boxes.tf_dataset(
@@ -197,7 +197,7 @@ class AttentionModel():
                 mode=mode,
                 ids=True,
                 augmentation=False,     
-                cache=True,
+                cache=False,
                 cores=self.config["cpu_workers"])                  
         else:
             #Create training tf.data
@@ -207,7 +207,7 @@ class AttentionModel():
                 shuffle=self.config["train"]["shuffle"],
                 mode=mode,
                 ids=ids,
-                cache=True,
+                cache=False,
                 augmentation=self.config["train"]["augment"],                
                 cores=self.config["cpu_workers"])
 
@@ -224,7 +224,7 @@ class AttentionModel():
                     mode=mode,
                     ids=ids,
                     augmentation=False,    
-                    cache=True,
+                    cache=False,
                     cores=self.config["cpu_workers"])  
                 
                 self.val_split_with_ids = boxes.tf_dataset(
@@ -233,7 +233,7 @@ class AttentionModel():
                     shuffle=False,
                     mode=mode,
                     ids=True,
-                    cache=True,
+                    cache=False,
                     augmentation=False,
                     cores=self.config["cpu_workers"])                   
                 
