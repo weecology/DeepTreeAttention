@@ -425,5 +425,7 @@ class AttentionModel():
         
         joined_gdf["true_taxonID"] = joined_gdf.true.apply(lambda x: label_names[x])
         joined_gdf["predicted_taxonID"] = joined_gdf.predicted.apply(lambda x: label_names[x])
-                
+        
+        print(joined_gdf.dtypes)
+        
         return joined_gdf
