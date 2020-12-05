@@ -11,7 +11,7 @@ train:
     min_height_diff: 10 #minimum height diffs
     checkpoint_dir: #Load RGB and HSI sub models from dir
     pretraining_dir: #Semi-supervised HSI
-    resampled_per_taxa: 50
+    resampled_per_taxa: 10
     HSI:
         sensor_channels: 369
         crop_size: 20
@@ -33,7 +33,7 @@ train:
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/CHM_filtered_train.shp  #path to ground truth class shapefile   
     learning_rate: .001
-    batch_size: 512
+    batch_size: 256
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
     steps:
     shuffle: True
