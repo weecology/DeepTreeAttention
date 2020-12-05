@@ -156,6 +156,8 @@ def train_test_split(ROOT, lookup_glob, n=None):
     #remove CHM points under 4m    
     test = test[abs(test.height - test.CHM_height) < 4]  
     
+    #atleast five records
+    test = test.groupby("taxonID").filter(lambda x: x.shape[0] >= 5)
     train = train_split("{}/data/raw/2020_vst_december.csv".format(ROOT), test.individualID, test.taxonID.unique())
     
     filtered_train = filter_CHM(train, lookup_glob)
