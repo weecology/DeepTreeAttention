@@ -153,7 +153,7 @@ def train_test_split(ROOT, lookup_glob, n=None):
     #Interpolate CHM height
     test = filter_CHM(test, lookup_glob)
     
-    #remove CHM points under 4m    
+    #remove CHM points under 4m diff  
     test = test[abs(test.height - test.CHM_height) < 4]  
     
     #atleast five records in train
@@ -161,7 +161,7 @@ def train_test_split(ROOT, lookup_glob, n=None):
     
     filtered_train = filter_CHM(train, lookup_glob)
     filtered_train = filtered_train[filtered_train.CHM_height>1] 
-    filtered_train = filtered_train[abs(filtered_train.height - filtered_train.CHM_height) < 4]  
+    filtered_train = filtered_train[abs(filtered_train.height - filtered_train.CHM_height) < 2]  
     filtered_train = filtered_train.groupby("taxonID").filter(lambda x: x.shape[0] >= 5)
     
     filtered_train = filtered_train[filtered_train.taxonID.isin(test.taxonID.unique())]
