@@ -9,6 +9,10 @@ def model(classes, sites):
     site_layers = Dense(classes*2, activation='relu')(site_input)
     site_layers = tf.keras.layers.BatchNormalization()(site_layers)
     
+    domain_input = Input(shape=(sites,),name="domain_input")
+    domain_layers = Dense(classes*2, activation='relu')(domain_input)
+    domain_layers = tf.keras.layers.BatchNormalization()(domain_layers)
+    
     #elevation
     elevation_input = Input(shape=(1,), name="elevation_input")    
     elevation_layer = Dense(classes*2, activation='relu')(elevation_input)
@@ -24,12 +28,12 @@ def model(classes, sites):
     x = Dense(classes, activation='relu', name="last_relu")(joined_layer)
     output = Dense(classes, activation="softmax")(x)
     
-    return elevation_input, height_input, site_input, output
+    return elevation_input, height_input, site_input, domain_input, output
 
 
 def create(classes, sites, learning_rate):
-    elevation_input, height_input, site_input, output= model(classes, sites)
-    keras_model = tf.keras.Model([elevation_input, height_input, site_input],output)
+    elevation_input, height_input, site_input, domain_input, output= model(classes, sites)
+    keras_model = tf.keras.Model([elevation_input, height_input, site_input, domain_input],output)
     
     metric_list = [tf.keras.metrics.CategoricalAccuracy(name="acc")]    
     keras_model.compile(

@@ -74,6 +74,7 @@ def crop_image(src, box, expand=0):
 def generate_tfrecords(
                        HSI_sensor_path,
                        RGB_sensor_path,
+                       domain,
                        site,
                        elevation,
                        heights,
@@ -84,6 +85,7 @@ def generate_tfrecords(
                        RGB_size=40,
                        classes=20,
                        number_of_sites=23,
+                       number_of_domains=17,
                        train=True,
                        extend_HSI_box=0,
                        extend_RGB_box=0,
@@ -95,6 +97,7 @@ def generate_tfrecords(
     Args:
         chunk_size: number of windows per tfrecord
         savedir: directory to save tfrecords
+        domain: metadata site domain as integer
         site: metadata site label as integer
         elevation: height above sea level in meters
         heights: height in m
@@ -184,6 +187,7 @@ def generate_tfrecords(
         
         #All records in a single shapefile are the same site
         chunk_sites = np.repeat(site, len(chunk_index))
+        chunk_domains = np.repeat(domain, len(chunk_index))
         chunk_elevations = np.repeat(elevation, len(chunk_index))
         
         if train:
@@ -203,11 +207,13 @@ def generate_tfrecords(
                        HSI_images=resized_HSI_crops,
                        RGB_images=resized_RGB_crops,
                        labels=chunk_labels,
+                       domains = chunk_domains,
                        sites=chunk_sites,
                        heights=chunk_height,
                        elevations= chunk_elevations,
                        indices=chunk_index,
                        number_of_sites=number_of_sites,
+                       number_of_domains=number_of_domains,                       
                        classes=classes)
 
         filenames.append(filename)
@@ -224,7 +230,7 @@ def _int64_feature(value):
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-def write_tfrecord(filename, HSI_images, RGB_images, sites, elevations, heights, indices, labels=None, classes=21, number_of_sites=23):
+def write_tfrecord(filename, HSI_images, RGB_images, domains, sites, elevations, heights, indices, labels=None, classes=21, number_of_domains=17, number_of_sites=23):
     """Write a training or prediction tfrecord
         Args:
             train: True -> create a training record with labels. False -> a prediciton record with raster indices
@@ -236,6 +242,7 @@ def write_tfrecord(filename, HSI_images, RGB_images, sites, elevations, heights,
         for index, image in enumerate(HSI_images):
             tf_example = create_record(
                 index=indices[index],
+                domain=domains[index],
                 site = sites[index],
                 HSI_image = HSI_images[index],
                 RGB_image = RGB_images[index],
@@ -243,25 +250,28 @@ def write_tfrecord(filename, HSI_images, RGB_images, sites, elevations, heights,
                 height=heights[index],                
                 elevation=elevations[index],
                 number_of_sites=number_of_sites,
+                number_of_domains=number_of_domains,                                       
                 classes=classes)
             writer.write(tf_example.SerializeToString())
     else:
         for index, image in enumerate(HSI_images):
             tf_example = create_record(
                 index=indices[index],
+                domain = domains[index],
                 site = sites[index],
                 elevation = elevations[index],
                 HSI_image=image,
                 height=heights[index],
                 RGB_image = RGB_images[index],
                 number_of_sites=number_of_sites,
+                number_of_domains=number_of_domains,                                       
                 classes=classes)
             writer.write(tf_example.SerializeToString())
 
     writer.close()
 
 
-def create_record(HSI_image, RGB_image, index, site, elevation, height, classes, number_of_sites, label=None):
+def create_record(HSI_image, RGB_image, index, domain, site, elevation, height, classes, number_of_sites,number_of_domains, label=None):
     """
     Generate one record from an image 
     Args:
@@ -291,6 +301,7 @@ def create_record(HSI_image, RGB_image, index, site, elevation, height, classes,
                 'box_index': _bytes_feature(index.encode()),
                 'HSI_image/data': tf.train.Feature(float_list=tf.train.FloatList(value=HSI_image.reshape(-1))),
                 'label': _int64_feature(label),
+                'domain': _int64_feature(domain),                    
                 'site': _int64_feature(site),    
                 'elevation': _float32_feature(elevation),                                
                 'HSI_image/height': _int64_feature(HSI_rows),
@@ -301,6 +312,7 @@ def create_record(HSI_image, RGB_image, index, site, elevation, height, classes,
                 'RGB_image/width': _int64_feature(RGB_cols),
                 'RGB_image/depth': _int64_feature(RGB_depth),                
                 'classes': _int64_feature(classes),                
+                'number_of_domains': _int64_feature(number_of_domains),                
                 'number_of_sites': _int64_feature(number_of_sites),
                 'height': _float32_feature(height)
             }))
@@ -317,8 +329,10 @@ def create_record(HSI_image, RGB_image, index, site, elevation, height, classes,
                 'RGB_image/width': _int64_feature(RGB_cols),
                 'RGB_image/depth': _int64_feature(RGB_depth),        
                 'classes': _int64_feature(classes),
+                'domain': _int64_feature(domain),                                    
                 'site': _int64_feature(site),               
-                'elevation': _float32_feature(elevation),                                                
+                'elevation': _float32_feature(elevation),    
+                'number_of_domains': _int64_feature(number_of_domains),                                
                 'number_of_sites': _int64_feature(number_of_sites),
                 'height': _float32_feature(height)
             }))
@@ -333,6 +347,8 @@ def _ensemble_parse_(tfrecord):
         "site": tf.io.FixedLenFeature([], tf.int64),  
         "number_of_sites": tf.io.FixedLenFeature([], tf.int64),  
         "height": tf.io.FixedLenFeature([], tf.float32),     
+        "domain": tf.io.FixedLenFeature([], tf.int64),  
+        "number_of_domains": tf.io.FixedLenFeature([], tf.int64),           
         "elevation": tf.io.FixedLenFeature([], tf.float32),        
     }
     
@@ -371,7 +387,11 @@ def _ensemble_parse_(tfrecord):
     classes = tf.cast(example['classes'], tf.int32)    
     one_hot_labels = tf.one_hot(example['label'], classes)
     
-    return (loaded_HSI_image, loaded_RGB_image,  example['elevation'], example['height'], one_hot_sites), one_hot_labels
+    domain = example['domain']
+    domains = tf.cast(example['number_of_domains'], tf.int32)    
+    one_hot_domains = tf.one_hot(domain, domains)
+    
+    return (loaded_HSI_image, loaded_RGB_image,  example['elevation'], example['height'], one_hot_sites, one_hot_domains), one_hot_labels
 
 def _HSI_parse_(tfrecord):
     features = {
@@ -482,7 +502,9 @@ def _metadata_parse_(tfrecord):
     # Define features
     features = {
         "site": tf.io.FixedLenFeature([], tf.int64),  
-        "number_of_sites": tf.io.FixedLenFeature([], tf.int64),  
+        "number_of_sites": tf.io.FixedLenFeature([], tf.int64), 
+        "domain": tf.io.FixedLenFeature([], tf.int64),  
+        "number_of_domains": tf.io.FixedLenFeature([], tf.int64),          
         "height": tf.io.FixedLenFeature([], tf.float32),     
         "elevation": tf.io.FixedLenFeature([], tf.float32),  
         "classes": tf.io.FixedLenFeature([], tf.int64),
@@ -496,11 +518,15 @@ def _metadata_parse_(tfrecord):
     sites = tf.cast(example['number_of_sites'], tf.int32)    
     one_hot_sites = tf.one_hot(site, sites)
     
+    domain = example['domain']
+    domains = tf.cast(example['number_of_domains'], tf.int32)    
+    one_hot_domains = tf.one_hot(domain, domains)
+    
     #one hot elevation
     classes = tf.cast(example['classes'], tf.int32)    
     one_hot_labels = tf.one_hot(example['label'], classes)
     
-    return (example['elevation'], example['height'], one_hot_sites), one_hot_labels
+    return (example['elevation'], example['height'], one_hot_sites, one_hot_domains), one_hot_labels
 
 def augment(data, label):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
@@ -514,7 +540,7 @@ def augment(data, label):
 def ensemble_augment(data, label):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
     
-    HSI, RGB, elevation, height, site = data
+    HSI, RGB, elevation, height, site, domain = data
     
     HSI = tf.image.rot90(HSI)
     HSI = tf.image.random_flip_left_right(HSI)
@@ -524,7 +550,7 @@ def ensemble_augment(data, label):
     #RGB = tf.image.random_flip_left_right(RGB)
     #RGB = tf.image.random_flip_up_down(RGB)   
     
-    data = HSI, RGB, elevation, height, site
+    data = HSI, RGB, elevation, height, site, domain
     
     return data, label
 

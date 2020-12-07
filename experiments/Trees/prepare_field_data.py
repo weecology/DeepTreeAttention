@@ -209,6 +209,7 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
     """    
     crops = []
     labels = []
+    domains =[]
     sites = []
     box_index = []
     elevations = []
@@ -217,6 +218,7 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         #Crop and append
         box = row["geometry"]       
         plot_name = row["plotID"] 
+        domain = row["domainID"]
         site = row["plotID"].split("_")[0]
         elevation = float(row["elevation"])/1000
         height = float(row["height"])/100
@@ -243,15 +245,16 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         crop = crop_image(sensor_path=sensor_path, box=box, expand=expand)
         
         crops.append(crop)
+        domains.append(domain)
         sites.append(site)
         labels.append(row["taxonID"])
         elevations.append(elevation)
         heights.append(height)
         box_index.append("{}".format(row["id"]))
         
-    return crops, labels, sites, heights, elevations, box_index
+    return crops, labels, domains, sites, heights, elevations, box_index
 
-def create_records(HSI_crops, RGB_crops, labels, sites, heights, elevations, box_index, savedir, RGB_size, HSI_size, chunk_size=400):
+def create_records(HSI_crops, RGB_crops, labels, domains, sites, heights, elevations, box_index, savedir, RGB_size, HSI_size, chunk_size=400):
     #get keys and divide into chunks for a single tfrecor
     filenames = []
     counter = 0
@@ -260,6 +263,7 @@ def create_records(HSI_crops, RGB_crops, labels, sites, heights, elevations, box
         chunk_RGB_crops = RGB_crops[i:i + chunk_size]
         chunk_index = box_index[i:i + chunk_size]
         chunk_labels = labels[i:i + chunk_size]
+        chunk_domains = domains[i:i + chunk_size]
         chunk_sites = sites[i:i + chunk_size]
         chunk_elevations = elevations[i:i + chunk_size]
         chunk_heights = heights[i:i + chunk_size]
@@ -275,6 +279,7 @@ def create_records(HSI_crops, RGB_crops, labels, sites, heights, elevations, box
                                             HSI_images=resized_HSI_crops,
                                             RGB_images=resized_RGB_crops,
                                             labels=chunk_labels,
+                                            domains=chunk_domains,
                                             sites = chunk_sites,
                                             heights = chunk_heights,
                                             elevations=chunk_elevations,
@@ -304,7 +309,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_HSI_box=0, exte
         predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
         
         #Crop HSI
-        plot_HSI_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index = create_crops(
+        plot_HSI_crops, plot_labels, plot_domains, plot_sites, plot_heights, plot_elevations, plot_box_index = create_crops(
             predicted_trees,
             hyperspectral_pool=hyperspectral_pool,
             rgb_pool=rgb_pool,
@@ -327,7 +332,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_HSI_box=0, exte
     except Exception as e:
         raise ValueError("Plot {} failed {}".format(plot, e))
 
-    return plot_HSI_crops, plot_rgb_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index
+    return plot_HSI_crops, plot_rgb_crops, plot_labels, plot_domains, plot_sites, plot_heights, plot_elevations, plot_box_index
 
 def main(
     field_data,
@@ -370,6 +375,7 @@ def main(
     labels = []
     HSI_crops = []
     RGB_crops = []
+    domains = []
     sites = []
     box_indexes = []    
     elevations = []
@@ -393,13 +399,14 @@ def main(
         wait(futures)
         for x in futures:
             try:
-                plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index = x.result()
+                plot_HSI_crops, plot_RGB_crops, plot_labels, plot_domains, plot_sites, plot_heights, plot_elevations, plot_box_index = x.result()
                 
                 #Append to general plot list
                 HSI_crops.extend(plot_HSI_crops)
                 RGB_crops.extend(plot_RGB_crops)
                 labels.extend(plot_labels)
-                sites.extend(plot_sites)           
+                domain.extend(plot_domains)
+                sites.extend(plot_sites)
                 heights.extend(plot_heights)
                 elevations.extend(plot_elevations)
                 box_indexes.extend(plot_box_index)        
@@ -412,7 +419,7 @@ def main(
         deepforest_model.use_release()        
         for plot in plot_names:
             try:
-                plot_HSI_crops, plot_RGB_crops, plot_labels, plot_sites, plot_heights, plot_elevations, plot_box_index = run(
+                plot_HSI_crops, plot_RGB_crops, plot_labels, plot_domains, plot_sites, plot_heights, plot_elevations, plot_box_index = run(
                     plot=plot,
                     df=df,
                     rgb_pool=rgb_pool,
@@ -432,15 +439,16 @@ def main(
             HSI_crops.extend(plot_HSI_crops)
             RGB_crops.extend(plot_RGB_crops)
             labels.extend(plot_labels)
+            domains.extend(plot_domains)
             sites.extend(plot_sites)    
             heights.extend(plot_heights)                        
             elevations.extend(plot_elevations)
             box_indexes.extend(plot_box_index)
             
     if shuffle:
-        z = list(zip(HSI_crops, RGB_crops, sites, heights, elevations, box_indexes, labels))
+        z = list(zip(HSI_crops, RGB_crops, domains, sites, heights, elevations, box_indexes, labels))
         random.shuffle(z)
-        HSI_crops, RGB_crops, sites, heights, elevations, box_indexes, labels = zip(*z)
+        HSI_crops, RGB_crops, domains, sites, heights, elevations, box_indexes, labels = zip(*z)
                         
     #If passes a species label dict
     species_classdf  = pd.read_csv(species_classes_file)
@@ -459,9 +467,23 @@ def main(
             site_label_dict[label] = index
         pd.DataFrame(site_label_dict.items(), columns=["siteID","label"]).to_csv("{}/site_class_labels.csv".format(savedir))
 
+    #If passes a domain label dict
+    if domain_classes_file is not None:
+        domain_classdf  = pd.read_csv(domain_classes_file)
+        domain_label_dict = domain_classdf.set_index("domainID").label.to_dict()
+    else:
+        #Create and save a new domain and domain label dict
+        unique_domain_labels = np.unique(domains)
+        domain_label_dict = {}
+        
+        for index, label in enumerate(unique_domain_labels):
+            domain_label_dict[label] = index
+        pd.DataFrame(domain_label_dict.items(), columns=["domainID","label"]).to_csv("{}/domain_class_labels.csv".format(savedir))
+            
     #Convert labels to numeric
     numeric_labels = [species_label_dict[x] for x in labels]
     numeric_sites = [site_label_dict[x] for x in sites]
+    numeric_domains = [domain_label_dict[x] for x in domains]
     
     print("Writing records of {} HSI samples, {} RGB samples from {} species and {} sites".format(
         len(HSI_crops),
@@ -475,6 +497,7 @@ def main(
         RGB_crops=RGB_crops,
         labels=numeric_labels, 
         sites=numeric_sites, 
+        domains=numeric_domains,
         elevations=elevations,
         box_index=box_indexes, 
         savedir=savedir, 

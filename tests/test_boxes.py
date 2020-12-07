@@ -18,6 +18,7 @@ def created_records(tmpdir):
     shp = gpd.read_file(test_predictions)    
     created_records = boxes.generate_tfrecords(
         shapefile=test_predictions,
+        domain=1,
         site = 1,
         heights=np.random.random(shp.shape[0])*10,        
         elevation=100.0,
@@ -28,7 +29,9 @@ def created_records(tmpdir):
         RGB_size=100,
         HSI_size=20,
         classes=6,
-        number_of_sites=10)
+        number_of_sites=10,
+        number_of_domains=16
+    )
     
     return created_records
     
@@ -56,9 +59,10 @@ def test_generate_tfrecords(train, created_records):
 def test_metadata(created_records):    
     dataset = boxes.tf_dataset(created_records, batch_size=2, mode="metadata")
     for data, label_batch in dataset.take(1):
-        elevation, height, site = data
+        elevation, height, site, domain = data
         assert elevation.numpy().shape == (2,)
         assert site.numpy().shape == (2,10)
+        assert domain.numpy().shape == (2,16)
         
 def test_RGB_submodel(created_records):    
     dataset = boxes.tf_dataset(created_records, batch_size=2, mode = "RGB_submodel")
@@ -71,11 +75,12 @@ def test_RGB_submodel(created_records):
 def test_ensemble(created_records):    
     dataset = boxes.tf_dataset(created_records, batch_size=2, mode="ensemble")
     for data, label_batch in dataset.take(1):
-        HSI, RGB, elevation, height, site = data
+        HSI, RGB, elevation, height, site, domain = data
         assert HSI.shape == (2,20,20,369)    
         assert RGB.shape == (2,100,100,3)    
         assert elevation.numpy().shape == (2,)
         assert site.numpy().shape == (2,10)
+        assert domain.numpy().shape == (2,16)
 
 def test_id_train(created_records):
     shp = gpd.read_file(test_predictions)        

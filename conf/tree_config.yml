@@ -8,6 +8,8 @@ rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif  #path to sensor dat
 
 train:
     species_class_file: /home/b.weinstein/DeepTreeAttention/data/processed/species_class_labels.csv
+    site_class_file: /home/b.weinstein/DeepTreeAttention/data/processed/site_class_labels.csv
+    domain_class_file: /home/b.weinstein/DeepTreeAttention/data/processed/domain_class_labels.csv
     min_height_diff: 10 #minimum height diffs
     checkpoint_dir: #Load RGB and HSI sub models from dir
     pretraining_dir: #Semi-supervised HSI
@@ -29,7 +31,6 @@ train:
     ensemble:
         freeze: False
         epochs: 120
-    sites: 23
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/CHM_filtered_train.shp  #path to ground truth class shapefile   
     learning_rate: .001
