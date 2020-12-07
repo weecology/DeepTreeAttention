@@ -65,8 +65,10 @@ def test_process_plot():
     
 def test_run():
     df = gpd.read_file(data_path)
+    plot = df.plotID.unique()[0]
     counter = prepare_field_data.run(
-        df,
+        plot=plot,
+        df = df,
         rgb_pool=rgb_pool,
         hyperspectral_pool=hyperspectral_pool,
         extend_HSI_box=0,
