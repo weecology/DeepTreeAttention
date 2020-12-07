@@ -162,7 +162,7 @@ def train_test_split(ROOT, lookup_glob, n=None):
     filtered_train = filter_CHM(train, lookup_glob)
     filtered_train = filtered_train[filtered_train.CHM_height>1] 
     filtered_train = filtered_train[abs(filtered_train.height - filtered_train.CHM_height) < 2]  
-    filtered_train = filtered_train.groupby("taxonID").filter(lambda x: x.shape[0] >= 5)
+    filtered_train = filtered_train.groupby("taxonID").filter(lambda x: x.shape[0] >= 3)
     
     filtered_train = filtered_train[filtered_train.taxonID.isin(test.taxonID.unique())]
     test = test[test.taxonID.isin(filtered_train.taxonID.unique())]
@@ -213,3 +213,10 @@ def train_test_split(ROOT, lookup_glob, n=None):
         site_label_dict[label] = index
     pd.DataFrame(site_label_dict.items(), columns=["siteID","label"]).to_csv("{}/data/processed/site_class_labels.csv".format(ROOT))  
     
+    unique_domain_labels = np.concatenate([filtered_train.domainID.unique(), test.domainID.unique()])
+    unique_domain_labels = np.unique(unique_domain_labels)
+    domain_label_dict = {}
+    for index, label in enumerate(unique_domain_labels):
+        domain_label_dict[label] = index
+    pd.DataFrame(domain_label_dict.items(), columns=["domainID","label"]).to_csv("{}/data/processed/domain_class_labels.csv".format(ROOT))  
+        

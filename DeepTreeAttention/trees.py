@@ -55,13 +55,21 @@ class AttentionModel():
         
         self.HSI_extend_box = self.config["train"]["HSI"]["extend_box"]
         self.classes_file = self.config["train"]["species_class_file"]
-        self.sites = self.config["train"]["sites"]
+        
+        try:
+            if self.config["train"]["site_class_file"] is not None:
+                self.sites = pd.read_csv(self.config["train"]["site_class_file"]).shape[0]
+            if self.config["train"]["domain_class_file"] is not None:
+                self.domains = pd.read_csv(self.config["train"]["domain_class_file"]).shape[0]
+        except:
+            pass
+        
         try:
             self.train_shp = gpd.read_file(self.config["train"]["ground_truth_path"])
         except:
             self.train_shp = None
         
-    def generate(self, HSI_sensor_path, RGB_sensor_path, elevation, heights, site, species_label_dict=None, train=True, chunk_size=1000, shapefile=None, csv_file=None,label_column="label"):
+    def generate(self, HSI_sensor_path, RGB_sensor_path, elevation, heights, domain, site, species_label_dict=None, train=True, chunk_size=1000, shapefile=None, csv_file=None,label_column="label"):
         """Predict species class for each DeepForest bounding box
             Args:
                 shapefile: a DeepForest shapefile (see NeonCrownMaps) with a bounding box and utm projection
@@ -82,7 +90,8 @@ class AttentionModel():
         created_records = boxes.generate_tfrecords(shapefile=shapefile,
                                                    csv_file=csv_file,
                                                    HSI_sensor_path=HSI_sensor_path,
-                                                   RGB_sensor_path=RGB_sensor_path,                                                   
+                                                   RGB_sensor_path=RGB_sensor_path,   
+                                                   domain=domain,
                                                    site=site,
                                                    elevation=elevation,
                                                    heights=heights,
@@ -92,6 +101,7 @@ class AttentionModel():
                                                    savedir=savedir,
                                                    train=train,
                                                    number_of_sites=self.sites,
+                                                   number_of_domains=self.domains,
                                                    classes=self.classes,
                                                    chunk_size=chunk_size,
                                                    extend_HSI_box=self.config["train"]["HSI"]["extend_box"],

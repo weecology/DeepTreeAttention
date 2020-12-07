@@ -82,6 +82,8 @@ def mod(tmpdir):
     mod.classes_file = label_file
     mod.train_shp = pd.DataFrame({"taxonID":["Jon","Ben"], "siteID":[0,1],"domainID":[0,1],"plotID":[0,1], "canopyPosition":["a","b"],"scientific":["genus species","genus species"]})
     mod.train_shp.index =[2,7]
+    mod.sites = 2
+    mod.domains = 2
     
     #Create a model with input sizes
     mod.create()
@@ -92,7 +94,7 @@ def mod(tmpdir):
 def tfrecords(mod, tmpdir):
     shp = gpd.read_file(test_predictions)
     
-    created_records = mod.generate(shapefile=test_predictions, site=0, elevation=100,
+    created_records = mod.generate(shapefile=test_predictions, site=0, domain=1, elevation=100,
                                    heights=np.random.random(shp.shape[0]),
                                    HSI_sensor_path=test_sensor_hyperspec,
                                    RGB_sensor_path=test_sensor_tile,
@@ -105,6 +107,7 @@ def test_generate(mod):
     shp = gpd.read_file(test_predictions)    
     created_records = mod.generate(
         shapefile=test_predictions,
+        domain=1,
         site=0,
         heights=np.random.random(shp.shape[0]),
         elevation=100,
