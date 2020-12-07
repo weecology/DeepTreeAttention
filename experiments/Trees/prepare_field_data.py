@@ -293,44 +293,41 @@ def create_records(HSI_crops, RGB_crops, labels, domains, sites, heights, elevat
 
 def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_HSI_box=0, extend_RGB_box=0, hyperspectral_savedir=".",saved_model=None, deepforest_model=None):
     """wrapper function for dask, see main.py"""
-    try:
-        from deepforest import deepforest
+    from deepforest import deepforest
+
+    #create deepforest model
+    if deepforest_model is None:
+        if saved_model is None:
+            deepforest_model = deepforest.deepforest()
+            deepforest_model.use_release()
+        else:
+            deepforest_model = deepforest.deepforest(saved_model=saved_model)
+        
+    #Filter data and process
+    plot_data = df[df.plotID == plot]
+    predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
     
-        #create deepforest model
-        if deepforest_model is None:
-            if saved_model is None:
-                deepforest_model = deepforest.deepforest()
-                deepforest_model.use_release()
-            else:
-                deepforest_model = deepforest.deepforest(saved_model=saved_model)
-            
-        #Filter data and process
-        plot_data = df[df.plotID == plot]
-        predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
-        
-        #Crop HSI
-        plot_HSI_crops, plot_labels, plot_domains, plot_sites, plot_heights, plot_elevations, plot_box_index = create_crops(
-            predicted_trees,
-            hyperspectral_pool=hyperspectral_pool,
-            rgb_pool=rgb_pool,
-            sensor="hyperspectral",
-            expand=extend_HSI_box,
-            hyperspectral_savedir=hyperspectral_savedir)
-        
-        #Crop RGB, drop repeated elements, leave one for testing
-        plot_rgb_crops, plot_rgb_labels, _, _, _, _ = create_crops(
-            predicted_trees,
-            hyperspectral_pool=hyperspectral_pool,
-            rgb_pool=rgb_pool,
-            sensor="rgb",
-            expand=extend_RGB_box,
-            hyperspectral_savedir=hyperspectral_savedir)    
-        
-        #Assert they are the same
-        assert len(plot_rgb_crops) == len(plot_HSI_crops)
-        assert plot_labels==plot_rgb_labels
-    except Exception as e:
-        raise ValueError("Plot {} failed {}".format(plot, e))
+    #Crop HSI
+    plot_HSI_crops, plot_labels, plot_domains, plot_sites, plot_heights, plot_elevations, plot_box_index = create_crops(
+        predicted_trees,
+        hyperspectral_pool=hyperspectral_pool,
+        rgb_pool=rgb_pool,
+        sensor="hyperspectral",
+        expand=extend_HSI_box,
+        hyperspectral_savedir=hyperspectral_savedir)
+    
+    #Crop RGB, drop repeated elements, leave one for testing
+    plot_rgb_crops, plot_rgb_labels, _, _, _, _, _ = create_crops(
+        predicted_trees,
+        hyperspectral_pool=hyperspectral_pool,
+        rgb_pool=rgb_pool,
+        sensor="rgb",
+        expand=extend_RGB_box,
+        hyperspectral_savedir=hyperspectral_savedir)    
+    
+    #Assert they are the same
+    assert len(plot_rgb_crops) == len(plot_HSI_crops)
+    assert plot_labels==plot_rgb_labels
 
     return plot_HSI_crops, plot_rgb_crops, plot_labels, plot_domains, plot_sites, plot_heights, plot_elevations, plot_box_index
 
@@ -406,7 +403,7 @@ def main(
                 HSI_crops.extend(plot_HSI_crops)
                 RGB_crops.extend(plot_RGB_crops)
                 labels.extend(plot_labels)
-                domain.extend(plot_domains)
+                domains.extend(plot_domains)
                 sites.extend(plot_sites)
                 heights.extend(plot_heights)
                 elevations.extend(plot_elevations)

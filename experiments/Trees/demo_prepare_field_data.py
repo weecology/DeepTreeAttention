@@ -79,7 +79,7 @@ def test_run():
     ) 
     
     #all have same length
-    assert counter == df.shape[0]
+    assert len(counter) == 8
     
 def test_main():
     created_records = prepare_field_data.main(
