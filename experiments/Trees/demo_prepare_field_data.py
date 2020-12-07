@@ -72,7 +72,7 @@ def test_run():
         extend_HSI_box=0,
         hyperspectral_savedir=hyperspectral_savedir,
         RGB_size=height,
-        HSI_size=height,
+        HSI_size=height
     ) 
     
     #all have same length
@@ -83,7 +83,7 @@ def test_main():
         field_data=data_path,
         hyperspectral_dir=hyperspectral_dir,
         RGB_size=height,
-        HSI_size    =width,
+        HSI_size=width,
         rgb_dir=rgb_dir,
         hyperspectral_savedir=hyperspectral_savedir,
         extend_HSI_box=0,
