@@ -451,15 +451,15 @@ def main(
     #If passes a species label dict
     if species_classes_file is not None:
         species_classdf  = pd.read_csv(species_classes_file)
-        species_label_dict = species_classdf.set_index("speciesID").label.to_dict()
+        species_label_dict = species_classdf.set_index("taxonID").label.to_dict()
     else:
         #Create and save a new species and species label dict
-        unique_species_labels = np.unique(species)
+        unique_species_labels = np.unique(df.taxonID.unique())
         species_label_dict = {}
         
         for index, label in enumerate(unique_species_labels):
             species_label_dict[label] = index
-        pd.DataFrame(species_label_dict.items(), columns=["speciesID","label"]).to_csv("{}/species_class_labels.csv".format(savedir))
+        pd.DataFrame(species_label_dict.items(), columns=["taxonID","label"]).to_csv("{}/species_class_labels.csv".format(savedir))
     
     #If passes a site label dict
     if site_classes_file is not None:
@@ -467,7 +467,7 @@ def main(
         site_label_dict = site_classdf.set_index("siteID").label.to_dict()
     else:
         #Create and save a new site and site label dict
-        unique_site_labels = np.unique(sites)
+        unique_site_labels = np.unique(df.siteID.unique())
         site_label_dict = {}
         
         for index, label in enumerate(unique_site_labels):
@@ -480,7 +480,7 @@ def main(
         domain_label_dict = domain_classdf.set_index("domainID").label.to_dict()
     else:
         #Create and save a new domain and domain label dict
-        unique_domain_labels = np.unique(domains)
+        unique_domain_labels = np.unique(df.domainID.unique())
         domain_label_dict = {}
         
         for index, label in enumerate(unique_domain_labels):

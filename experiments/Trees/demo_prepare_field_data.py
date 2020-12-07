@@ -93,7 +93,7 @@ def test_main():
         extend_RGB_box=0
     )
     
-    dataset = boxes.tf_dataset(created_records, batch_size=1, mode="RGB_train")
+    dataset = boxes.tf_dataset(created_records, batch_size=1, mode="RGB")
     iterator = dataset.make_one_shot_iterator()
     next_element = iterator.get_next()
     
