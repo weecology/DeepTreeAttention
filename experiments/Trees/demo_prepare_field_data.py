@@ -19,6 +19,8 @@ rgb_dir = "{}/test_data/rgb/*.tif".format(data_dir)
 hyperspectral_dir = "{}/test_data/HSI/*.tif".format(data_dir)
 hyperspectral_savedir = "{}/test_data/HSI/".format(data_dir)
 
+ROOT = os.path.dirname(os.path.dirname(data_dir))
+
 hyperspectral_pool = glob.glob(hyperspectral_dir, recursive=True)
 rgb_pool = glob.glob(rgb_dir, recursive=True)
 
@@ -83,6 +85,9 @@ def test_main():
     created_records = prepare_field_data.main(
         field_data=data_path,
         hyperspectral_dir=hyperspectral_dir,
+        species_classes_file = "{}/data/processed/species_class_labels.csv".format(ROOT),
+        site_classes_file =  "{}/data/processed/site_class_labels.csv".format(ROOT),     
+        domain_classes_file = "{}/data/processed/domain_class_labels.csv".format(ROOT),  
         RGB_size=height,
         HSI_size=width,
         rgb_dir=rgb_dir,
