@@ -519,8 +519,8 @@ if __name__ == "__main__":
     create_training_shp.train_test_split(ROOT, lookup_glob, n=config["train"]["resampled_per_taxa"])
     
     #create dask client
-    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="11GB")
-    #client = None
+    #client = start_cluster.start(cpus=config["cpu_workers"], mem_size="11GB")
+    client = None
     
     #test data
     main(
@@ -542,7 +542,7 @@ if __name__ == "__main__":
     
     print("Evaluation records complete")
     #clean out client of any objects
-    client.restart()
+    #client.restart()
     
     ##train data
     main(

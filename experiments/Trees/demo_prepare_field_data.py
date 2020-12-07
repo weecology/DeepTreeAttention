@@ -120,5 +120,5 @@ def test_main():
 #Run tests
 test_empty_plot()
 test_process_plot()
-test_run()
+#test_run()
 test_main()
