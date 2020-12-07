@@ -69,7 +69,7 @@ def test_run():
         df,
         rgb_pool=rgb_pool,
         hyperspectral_pool=hyperspectral_pool,
-        extend_box=0,
+        extend_HSI_box=0,
         hyperspectral_savedir=hyperspectral_savedir,
         RGB_size=height,
         HSI_size=height,
@@ -86,7 +86,9 @@ def test_main():
         HSI_size    =width,
         rgb_dir=rgb_dir,
         hyperspectral_savedir=hyperspectral_savedir,
-        extend_box=0.5)
+        extend_HSI_box=0,
+        extend_RGB_box=0
+    )
     
     dataset = boxes.tf_dataset(created_records, batch_size=1, mode="RGB_train")
     iterator = dataset.make_one_shot_iterator()
