@@ -198,7 +198,7 @@ def crop_image(sensor_path, box, expand=0):
 def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="hyperspectral", expand=0, hyperspectral_savedir="."):
     """Crop sensor data based on a dataframe of geopandas bounding boxes
     Args:
-        merged_boxes: geopandas dataframe with bounding box geometry, plotID, siteID, and species label
+    merged_boxes: geopandas dataframe with bounding box geometry, plotID, siteID, and species label
         hyperspectral_pool: glob string for looking up matching sensor tiles
         expand: units in meters to add to crops to give context around deepforest box
         hyperspectral_savedir: location to save convert .tif from .h5 files
