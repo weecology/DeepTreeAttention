@@ -336,9 +336,6 @@ def main(
     RGB_size,
     HSI_size,
     rgb_dir, 
-    species_classes_file,
-    site_classes_file,
-    domain_classes_file,         
     hyperspectral_dir,
     savedir=".", 
     chunk_size=200,
@@ -347,6 +344,9 @@ def main(
     hyperspectral_savedir=".", 
     saved_model=None, 
     client=None, 
+    species_classes_file=None,
+    site_classes_file=None,
+    domain_classes_file=None,     
     shuffle=True):
     """Prepare NEON field data into tfrecords
     Args:
@@ -449,9 +449,18 @@ def main(
         HSI_crops, RGB_crops, domains, sites, heights, elevations, box_indexes, labels = zip(*z)
                         
     #If passes a species label dict
-    species_classdf  = pd.read_csv(species_classes_file)
-    species_label_dict = species_classdf.set_index("taxonID").label.to_dict()
-
+    if species_classes_file is not None:
+        species_classdf  = pd.read_csv(species_classes_file)
+        species_label_dict = species_classdf.set_index("speciesID").label.to_dict()
+    else:
+        #Create and save a new species and species label dict
+        unique_species_labels = np.unique(species)
+        species_label_dict = {}
+        
+        for index, label in enumerate(unique_species_labels):
+            species_label_dict[label] = index
+        pd.DataFrame(species_label_dict.items(), columns=["speciesID","label"]).to_csv("{}/species_class_labels.csv".format(savedir))
+    
     #If passes a site label dict
     if site_classes_file is not None:
         site_classdf  = pd.read_csv(site_classes_file)
@@ -519,8 +528,8 @@ if __name__ == "__main__":
     create_training_shp.train_test_split(ROOT, lookup_glob, n=config["train"]["resampled_per_taxa"])
     
     #create dask client
-    #client = start_cluster.start(cpus=config["cpu_workers"], mem_size="11GB")
-    client = None
+    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="11GB")
+    #client = None
     
     #test data
     main(
@@ -542,7 +551,7 @@ if __name__ == "__main__":
     
     print("Evaluation records complete")
     #clean out client of any objects
-    #client.restart()
+    client.restart()
     
     ##train data
     main(

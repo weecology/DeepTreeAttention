@@ -85,9 +85,6 @@ def test_main():
     created_records = prepare_field_data.main(
         field_data=data_path,
         hyperspectral_dir=hyperspectral_dir,
-        species_classes_file = "{}/data/processed/species_class_labels.csv".format(ROOT),
-        site_classes_file =  "{}/data/processed/site_class_labels.csv".format(ROOT),     
-        domain_classes_file = "{}/data/processed/domain_class_labels.csv".format(ROOT),  
         RGB_size=height,
         HSI_size=width,
         rgb_dir=rgb_dir,
@@ -120,5 +117,5 @@ def test_main():
 #Run tests
 test_empty_plot()
 test_process_plot()
-#test_run()
+test_run()
 test_main()
