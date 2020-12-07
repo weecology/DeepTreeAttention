@@ -70,9 +70,8 @@ def test_run():
         rgb_pool=rgb_pool,
         hyperspectral_pool=hyperspectral_pool,
         extend_HSI_box=0,
-        hyperspectral_savedir=hyperspectral_savedir,
-        RGB_size=height,
-        HSI_size=height
+        extend_RGB_box=0,
+        hyperspectral_savedir=hyperspectral_savedir
     ) 
     
     #all have same length
