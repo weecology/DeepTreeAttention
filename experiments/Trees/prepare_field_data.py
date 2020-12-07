@@ -341,6 +341,7 @@ def main(
     rgb_dir, 
     species_classes_file,
     site_classes_file,
+    domain_classes_file,         
     hyperspectral_dir,
     savedir=".", 
     chunk_size=200,
@@ -536,6 +537,7 @@ if __name__ == "__main__":
         hyperspectral_savedir=config["hyperspectral_tif_dir"],
         savedir=config["evaluation"]["tfrecords"],
         species_classes_file = "{}/data/processed/species_class_labels.csv".format(ROOT),
+        domain_classes_file = "{}/data/processed/domain_class_labels.csv".format(ROOT),             
         site_classes_file =  "{}/data/processed/site_class_labels.csv".format(ROOT),        
         client=client,
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
@@ -558,7 +560,8 @@ if __name__ == "__main__":
         savedir=config["train"]["tfrecords"],
         client=client,
         species_classes_file = "{}/data/processed/species_class_labels.csv".format(ROOT),
-        site_classes_file =  "{}/data/processed/site_class_labels.csv".format(ROOT),        
+        site_classes_file =  "{}/data/processed/site_class_labels.csv".format(ROOT),     
+        domain_classes_file = "{}/data/processed/domain_class_labels.csv".format(ROOT),     
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )
     
