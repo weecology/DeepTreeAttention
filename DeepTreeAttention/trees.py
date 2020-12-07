@@ -419,8 +419,7 @@ class AttentionModel():
         #Merge
         joined_gdf = gdf.merge(results, on="id")
         
-        joined_gdf["id"] = joined_gdf.id.astype(str)
-        joined_gdf["box_index"] = joined_gdf.box_index.astype(box_index)
+        joined_gdf = joined_gdf.drop(columns=["box_index"])
         
         labeldf = pd.read_csv(self.classes_file)
         label_names = list(labeldf.taxonID.values)
