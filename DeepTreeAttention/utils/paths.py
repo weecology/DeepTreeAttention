@@ -90,7 +90,13 @@ def site_from_path(path):
     site_name = re.search("NEON_D\d+_(\w+)_D", basename).group(1)
     
     return site_name
+
+def domain_from_path(path):
+    basename = os.path.splitext(os.path.basename(path))[0]
+    domain_name = re.search("NEON_(D\d+)_\w+_D", basename).group(1)
     
+    return domain_name
+
 def elevation_from_tile(path):
     h5 = h5py.File(path, 'r')
     elevation = h5[list(h5.keys())[0]]["Reflectance"]["Metadata"]["Ancillary_Imagery"]["Smooth_Surface_Elevation"].value.mean()
