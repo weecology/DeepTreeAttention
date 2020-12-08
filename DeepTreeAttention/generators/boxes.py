@@ -76,6 +76,8 @@ def generate_tfrecords(
                        RGB_sensor_path,
                        domain,
                        site,
+                       number_of_sites,
+                       number_of_domains,                       
                        elevation,
                        heights,
                        species_label_dict,
@@ -84,8 +86,6 @@ def generate_tfrecords(
                        HSI_size=40,
                        RGB_size=40,
                        classes=20,
-                       number_of_sites=23,
-                       number_of_domains=17,
                        train=True,
                        extend_HSI_box=0,
                        extend_RGB_box=0,
@@ -230,7 +230,7 @@ def _int64_feature(value):
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-def write_tfrecord(filename, HSI_images, RGB_images, domains, sites, elevations, heights, indices, labels=None, classes=21, number_of_domains=17, number_of_sites=23):
+def write_tfrecord(filename, HSI_images, RGB_images, domains, sites, elevations, heights, indices, number_of_domains, number_of_sites, classes, labels=None):
     """Write a training or prediction tfrecord
         Args:
             train: True -> create a training record with labels. False -> a prediciton record with raster indices

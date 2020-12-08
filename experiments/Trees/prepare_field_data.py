@@ -254,7 +254,7 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         
     return crops, labels, domains, sites, heights, elevations, box_index
 
-def create_records(HSI_crops, RGB_crops, labels, domains, sites, heights, elevations, box_index, savedir, RGB_size, HSI_size, chunk_size=400):
+def create_records(HSI_crops, RGB_crops, labels, domains, sites, heights, elevations, box_index, savedir, RGB_size, HSI_size, classes, number_of_domains, number_of_sites, chunk_size=400):
     #get keys and divide into chunks for a single tfrecor
     filenames = []
     counter = 0
@@ -275,16 +275,19 @@ def create_records(HSI_crops, RGB_crops, labels, domains, sites, heights, elevat
         resized_HSI_crops = [normalize(x) for x in resized_HSI_crops]
         
         filename = "{}/field_data_{}.tfrecord".format(savedir, counter)
-        write_tfrecord(filename=filename,
-                                            HSI_images=resized_HSI_crops,
-                                            RGB_images=resized_RGB_crops,
-                                            labels=chunk_labels,
-                                            domains=chunk_domains,
-                                            sites = chunk_sites,
-                                            heights = chunk_heights,
-                                            elevations=chunk_elevations,
-                                            indices=chunk_index,
-                                            classes=max(labels)+1)
+        write_tfrecord(
+            filename=filename,
+            HSI_images=resized_HSI_crops,
+            RGB_images=resized_RGB_crops,
+            labels=chunk_labels,
+            domains=chunk_domains,
+            sites = chunk_sites,
+            heights = chunk_heights,
+            elevations=chunk_elevations,
+            indices=chunk_index,
+            number_of_domains=number_of_domains,
+            number_of_sites=number_of_sites,
+            classes=classes)
         
         filenames.append(filename)
         counter +=1    
@@ -505,6 +508,9 @@ def main(
         labels=numeric_labels, 
         sites=numeric_sites, 
         domains=numeric_domains,
+        number_of_domains=len(domain_label_dict),
+        number_of_sites=len(site_label_dict),
+        classes=len(species_label_dict),
         elevations=elevations,
         box_index=box_indexes, 
         savedir=savedir, 
