@@ -173,7 +173,7 @@ if __name__ == "__main__":
     experiment.log_asset("{}/prediction.shp".format(save_dir))
     
     #Plots - this function needs to be rewritten because the dataset is now nested: ids, (data, label). probably predict on batch.
-    ax = visualize.plot_crown_position(ypred = predicted_shp.predicted_taxonID, y_true=predicted_shp.true_taxonID, box_index=predicted_shp.id, path = model.config["evaluation"]["ground_truth_path"])
+    ax = visualize.plot_crown_position(y_pred = predicted_shp.predicted_taxonID, y_true=predicted_shp.true_taxonID, box_index=predicted_shp.id, path = model.config["evaluation"]["ground_truth_path"])
     experiment.log_figure(ax)
     
     #per species accurracy
