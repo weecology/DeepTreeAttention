@@ -10,7 +10,7 @@ def model(classes, sites, domains):
     site_layers = tf.keras.layers.BatchNormalization()(site_layers)
     
     domain_input = Input(shape=(domains,),name="domain_input")
-    domain_layers = Dense(classes*2, activation='relu')(domain_input)
+    domain_layers = Dense(classes*2, activation='relu',name="domain_activation")(domain_input)
     domain_layers = tf.keras.layers.BatchNormalization()(domain_layers)
     
     #elevation

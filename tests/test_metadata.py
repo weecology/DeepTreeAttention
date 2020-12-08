@@ -17,7 +17,7 @@ def data():
     sites[8] = 1
     sites = np.expand_dims(sites,0)
     
-    domain = np.zeros(10)
+    domain = np.zeros(11)
     domain[8] = 1
     domain = np.expand_dims(domain,0)
     
@@ -25,6 +25,6 @@ def data():
 
 #Test full model makes the correct number of predictions.
 def test_model(data, classes):
-    model = metadata.create(classes=classes, sites=10, domains=10, learning_rate=0.001)
+    model = metadata.create(classes=classes, sites=10, domains=11, learning_rate=0.001)
     prediction = model.predict(data)    
     assert prediction.shape == (1, classes)
