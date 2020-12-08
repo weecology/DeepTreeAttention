@@ -148,13 +148,13 @@ class AttentionModel():
                 self.RGB_model, self.RGB_spatial, self.RGB_spectral = Hang.create_models(self.RGB_size, self.RGB_size, self.RGB_channels, self.classes, self.config["train"]["learning_rate"])
             
                 #create a metadata model
-                self.metadata_model = metadata.create(self.classes, self.sites, self.config["train"]["learning_rate"])
+                self.metadata_model = metadata.create(self.classes, self.sites, self.domains, self.config["train"]["learning_rate"])
         else:
             self.HSI_model, self.HSI_spatial, self.HSI_spectral = Hang.create_models(self.HSI_size, self.HSI_size, self.HSI_channels, self.classes, self.config["train"]["learning_rate"])
             self.RGB_model, self.RGB_spatial, self.RGB_spectral = Hang.create_models(self.RGB_size, self.RGB_size, self.RGB_channels, self.classes, self.config["train"]["learning_rate"])
             
             #create a metadata model
-            self.metadata_model = metadata.create(self.classes, self.sites, self.config["train"]["learning_rate"])
+            self.metadata_model = metadata.create(self.classes, self.sites, self.domains, self.config["train"]["learning_rate"])
         
     def read_data(self, mode, ids=False, validation_split=False):
         """Read tfrecord into datasets from config

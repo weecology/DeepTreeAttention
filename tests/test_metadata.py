@@ -16,10 +16,15 @@ def data():
     sites = np.zeros(10)
     sites[8] = 1
     sites = np.expand_dims(sites,0)
-    return elevation, height, sites
+    
+    domain = np.zeros(10)
+    domain[8] = 1
+    domain = np.expand_dims(domain,0)
+    
+    return elevation, height, sites, domain
 
 #Test full model makes the correct number of predictions.
 def test_model(data, classes):
-    model = metadata.create(classes=classes, sites=10, learning_rate=0.001)
+    model = metadata.create(classes=classes, sites=10, domains=10, learning_rate=0.001)
     prediction = model.predict(data)    
     assert prediction.shape == (1, classes)

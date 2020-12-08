@@ -2,14 +2,14 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Input
 
-def model(classes, sites):
+def model(classes, sites, domains):
     # create model
     #site label
     site_input = Input(shape=(sites,),name="site_input")
     site_layers = Dense(classes*2, activation='relu')(site_input)
     site_layers = tf.keras.layers.BatchNormalization()(site_layers)
     
-    domain_input = Input(shape=(sites,),name="domain_input")
+    domain_input = Input(shape=(domains,),name="domain_input")
     domain_layers = Dense(classes*2, activation='relu')(domain_input)
     domain_layers = tf.keras.layers.BatchNormalization()(domain_layers)
     
@@ -31,8 +31,8 @@ def model(classes, sites):
     return elevation_input, height_input, site_input, domain_input, output
 
 
-def create(classes, sites, learning_rate):
-    elevation_input, height_input, site_input, domain_input, output= model(classes, sites)
+def create(classes, sites, domains, learning_rate):
+    elevation_input, height_input, site_input, domain_input, output= model(classes, sites, domains)
     keras_model = tf.keras.Model([elevation_input, height_input, site_input, domain_input],output)
     
     metric_list = [tf.keras.metrics.CategoricalAccuracy(name="acc")]    
