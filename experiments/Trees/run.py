@@ -102,9 +102,10 @@ if __name__ == "__main__":
             with experiment.context_manager("metadata"):
                 print("Train metadata")
                 model.read_data(mode="metadata")
+                print(model.metadata_model.summary())
+                
                 model.train(submodel="metadata", experiment=experiment)
                 model.metadata_model.save("{}/metadata_model.h5".format(save_dir))
-                print(model.metadata_model.summary())
                 
             ###Train subnetworks
             #experiment.log_parameter("Train subnetworks", True)
