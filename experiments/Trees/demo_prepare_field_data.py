@@ -104,7 +104,7 @@ def test_main():
             try:
                 data, label = sess.run(next_element)
                 assert data.shape == (1, height, width, 3)
-                assert label.shape  == (1,3)
+                assert label.shape  == (1,5)
                 
                 plt.imshow(data[0].astype("uint8"))                
                 labels.append(label)

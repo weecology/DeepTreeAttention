@@ -23,7 +23,7 @@ def model(classes, sites):
     height_layer = Dense(classes*2, activation='relu')(height_input)
     height_layer = tf.keras.layers.BatchNormalization()(height_layer)
     
-    joined_layer = tf.keras.layers.Concatenate()([elevation_layer, height_layer, site_layers])
+    joined_layer = tf.keras.layers.Concatenate()([elevation_layer, height_layer, site_layers, domain_layers])
     #Bottleneck layer size should be the same as the concat features
     x = Dense(classes, activation='relu', name="last_relu")(joined_layer)
     output = Dense(classes, activation="softmax")(x)
