@@ -6,7 +6,7 @@ from DeepTreeAttention.generators import boxes
 
 #metadata
 created_records = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/*.tfrecord")
-dataset = boxes.tf_dataset(created_records, mode = "ensemble", batch_size=10)
+dataset = boxes.tf_dataset(created_records, mode = "metadata", batch_size=10)
 counter=0
 labels=[]
 data =[]

@@ -82,8 +82,8 @@ def mod(tmpdir):
     mod.classes_file = label_file
     mod.train_shp = pd.DataFrame({"taxonID":["Jon","Ben"], "siteID":[0,1],"domainID":[0,1],"plotID":[0,1], "canopyPosition":["a","b"],"scientific":["genus species","genus species"]})
     mod.train_shp.index =[2,7]
-    mod.sites = 2
-    mod.domains = 2
+    mod.sites = 23
+    mod.domains = 15
     
     #Create a model with input sizes
     mod.create()
