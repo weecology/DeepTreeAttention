@@ -29,86 +29,8 @@ def postprocess_CHM(df, lookup_pool):
     #if height is null, assign it
     df.height.fillna(df["CHM_height"], inplace=True)
         
-    ##Rename column
-    #if remove:
-        ##drop points with less than 1 m height        
-        #df = df[(abs(df.height - df.CHM_height) < min_diff)]
-
     return df
 
-#Load test data and create shapefile
-def test_split(path, field_data_path):
-    ids = pd.read_csv(path)
-    field_data = pd.read_csv(field_data_path)
-    
-    ids = ids[ids.plantStatus.str.contains("Live")]    
-    ids = ids[["itcEasting","itcNorthing","siteID", "plotID", "elevation","plantStatus","domainID","individualID","taxonID","canopyPosition","scientificName"]]   
-    
-    field_data = field_data[field_data.individualID.isin(ids.individualID.unique())]
-    merge_height = field_data.groupby("individualID").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1)).reset_index(drop=True)
-    merge_height = merge_height[["individualID","height"]]
-
-    ids = ids.merge(merge_height)
-    
-    # invalid tile species and plots
-    ids = ids[~(ids.plotID == "KONZ_049")]
-    ids = ids[~(ids.individualID == "NEON.PLA.D17.SOAP.03458")]
-    ids = ids[~ids.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
-    
-    ids["geometry"] = [Point(x,y) for x,y in zip(ids["itcEasting"], ids["itcNorthing"])]
-    shp = gpd.GeoDataFrame(ids)
-    
-    return shp
-
-def train_split(path, test_ids, test_species, debug = False):
-    """Create a train split from a larger pool of data, excluding any test ids"""
-    field = pd.read_csv(path)
-    
-    if debug:
-        #field = field.sample(n=2000)
-        field = field[field.siteID.isin(["BLAN","STEI"])]
-        
-    #Inclusion criteria 
-    train_field = field[~(field.individualID.isin(test_ids))]
-    has_elevation = train_field[~train_field.elevation.isnull()]
-    trees = has_elevation[~has_elevation.growthForm.isin(["liana","small shrub"])]
-    trees = trees[~trees.growthForm.isnull()]
-    trees = trees[~trees.plantStatus.isnull()]        
-    trees = trees[trees.plantStatus.str.contains("Live")]    
-    sun_position = trees[~(trees.canopyPosition.isin(["Full shade", "Mostly shaded"]))]
-    min_height = sun_position[(sun_position.height > 3) | (sun_position.height.isnull())]
-    min_size = min_height[min_height.stemDiameter > 5]
-    
-    min_size = min_size[~min_size.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
-    
-    #ensure that species set matches
-    min_size = min_size[min_size.taxonID.isin(test_species)]
-    min_date = min_size[~(min_size.eventID.str.contains("2014"))]
-    
-    latest_year = min_date.groupby("individualID").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1))
-    
-    #Create shapefile
-    latest_year["geometry"] = [Point(x,y) for x,y in zip(latest_year["itcEasting"], latest_year["itcNorthing"])]
-    shp = gpd.GeoDataFrame(latest_year)
-    
-    #HOTFIX, BLAN has some data in 18N UTM, reproject to 17N update columns
-    BLAN_errors = shp[(shp.siteID == "BLAN") & (shp.utmZone == "18N")]
-    BLAN_errors.set_crs(epsg=32618, inplace=True)
-    BLAN_errors.to_crs(32617,inplace=True)
-    BLAN_errors["utmZone"] = "17N"
-    BLAN_errors["itcEasting"] = BLAN_errors.geometry.apply(lambda x: x.coords[0][0])
-    BLAN_errors["itcNorthing"] = BLAN_errors.geometry.apply(lambda x: x.coords[0][1])
-    
-    #reupdate
-    shp.loc[BLAN_errors.index] = BLAN_errors
-    
-    #Oak Right Lab has no AOP data
-    shp = shp[~(shp.siteID=="ORNL")]
-    
-    #resample to N examples
-    shp = shp[["siteID","plotID","height","elevation","domainID","individualID","taxonID","itcEasting","itcNorthing","plantStatus","canopyPosition","scientificName","geometry"]]
-    shp = shp.reset_index(drop=True)
-    return shp
         
 def filter_CHM(shp, lookup_glob):
         """For each plotID extract the heights from LiDAR derived CHM
@@ -140,8 +62,32 @@ def sample_if(x,n):
         return x.sample(n=n, replace=True)
     else:
         return x
+
+def sample_plots(shp):
+    #split by plot level
+    test_plots = shp.plotID.drop_duplicates().sample(frac=0.10)
     
-def train_test_split(ROOT, lookup_glob, n=None):
+    test = shp[shp.plotID.isin(test_plots)]
+    train = shp[~shp.plotID.isin(test_plots)]
+    
+    test = test.groupby("taxonID").filter(lambda x: x.shape[0] > 5)
+    
+    train = train[train.taxonID.isin(test.taxonID)]
+    test = test[test.taxonID.isin(train.taxonID)]
+
+    #remove any test species that don't have site distributions in train
+    to_remove = []
+    for index,row in test.iterrows():
+        if train[(train.taxonID==row["taxonID"]) & (train.siteID==row["siteID"])].empty:
+            to_remove.append(index)
+        
+    add_to_train = test[test.index.isin(to_remove)]
+    train = pd.concat([train, add_to_train])
+    test = test[~test.index.isin(to_remove)]    
+    
+    return train, test
+
+def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False):
     """Create the train test split
     Args:
         ROOT: 
@@ -149,33 +95,72 @@ def train_test_split(ROOT, lookup_glob, n=None):
         min_diff: minimum height diff between field and CHM data
         n: number of resampled points per class
         """
-    test = test_split("{}/data/raw/test_with_uid.csv".format(ROOT), field_data_path="{}/data/raw/2020_vst_december.csv".format(ROOT))
+    field = pd.read_csv("{}/data/raw/2020_vst_december.csv".format(ROOT))
+    field = field[~field.elevation.isnull()]
+    field = field[~field.growthForm.isin(["liana","small shrub"])]
+    field = field[~field.growthForm.isnull()]
+    field = field[~field.plantStatus.isnull()]        
+    field = field[field.plantStatus.str.contains("Live")]    
+    field = field[~(field.canopyPosition.isin(["Full shade", "Mostly shaded"]))]
+    field = field[(field.height > 3) | (field.height.isnull())]
+    field = field[field.stemDiameter > 10]
+    field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
+    field = field[~(field.eventID.str.contains("2014"))]
+    field = field.groupby("individualID").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1))
+    
+    #Create shapefile
+    field["geometry"] = [Point(x,y) for x,y in zip(field["itcEasting"], field["itcNorthing"])]
+    shp = gpd.GeoDataFrame(field)
+    
+    #HOTFIX, BLAN has some data in 18N UTM, reproject to 17N update columns
+    BLAN_errors = shp[(shp.siteID == "BLAN") & (shp.utmZone == "18N")]
+    BLAN_errors.set_crs(epsg=32618, inplace=True)
+    BLAN_errors.to_crs(32617,inplace=True)
+    BLAN_errors["utmZone"] = "17N"
+    BLAN_errors["itcEasting"] = BLAN_errors.geometry.apply(lambda x: x.coords[0][0])
+    BLAN_errors["itcNorthing"] = BLAN_errors.geometry.apply(lambda x: x.coords[0][1])
+    
+    #reupdate
+    shp.loc[BLAN_errors.index] = BLAN_errors
+    
+    #Oak Right Lab has no AOP data
+    shp = shp[~(shp.siteID.isin(["PUUM","ORNL"]))]
+    
     #Interpolate CHM height
-    test = filter_CHM(test, lookup_glob)
-    
-    #remove CHM points under 4m diff  
-    test = test[abs(test.height - test.CHM_height) < 4]  
-    
-    #atleast five records in train
-    train = train_split("{}/data/raw/2020_vst_december.csv".format(ROOT), test.individualID, test.taxonID.unique())
-    
-    filtered_train = filter_CHM(train, lookup_glob)
-    filtered_train = filtered_train[filtered_train.CHM_height>1] 
-    #Maintain heights that are NA in the CHM subtraction.
-    filtered_train = filtered_train[abs(filtered_train.height - filtered_train.CHM_height) < 4]  
-    filtered_train = filtered_train.groupby("taxonID").filter(lambda x: x.shape[0] >= 5)
-    
-    filtered_train = filtered_train[filtered_train.taxonID.isin(test.taxonID.unique())]
-    test = test[test.taxonID.isin(filtered_train.taxonID.unique())]
-
-    #resample
-    if not n is None:
-        filtered_train  =  filtered_train.groupby("taxonID").apply(lambda x: sample_if(x,n)).reset_index(drop=True)
+    if lookup_glob:
+        shp = filter_CHM(shp, lookup_glob)
+        shp = shp[shp.CHM_height > 1]
         
+        #remove CHM points under 4m diff  
+        shp = shp[(shp.height.isnull()) | (abs(test.height - test.CHM_height) < 4)]  
+        
+    #atleast 10 data samples overall
+    shp = shp.groupby("taxonID").filter(lambda x: x.shape[0] > 10)
+    
+    #set seed.
+    np.random.seed(1)
+    
+    most_species = 0
+    if debug:
+        iterations = 1
+    else:
+        iterations = 10
+        
+    for x in np.arange(iterations):
+        train, test = sample_plots(shp)
+        if len(train.taxonID.unique()) > most_species:
+            print(len(train.taxonID.unique()))
+            saved_train = train
+            saved_test = test
+            most_species = len(train.taxonID.unique())
+    
+    train = saved_train
+    test = saved_test
+    
     print("There are {} records for {} species for {} sites in filtered train".format(
-        filtered_train.shape[0],
-        len(filtered_train.taxonID.unique()),
-        len(filtered_train.siteID.unique())
+        train.shape[0],
+        len(train.taxonID.unique()),
+        len(train.siteID.unique())
     ))
     
     print("There are {} records for {} species for {} sites in test".format(
@@ -184,29 +169,12 @@ def train_test_split(ROOT, lookup_glob, n=None):
         len(test.siteID.unique())
     ))
     
-    #just to be safe, assert no test in train
-
-    check_empty = test[test.individualID.isin(filtered_train.individualID.unique())]
-    assert check_empty.empty
-    
-    #remove any test species that don't have site distributions in train
-    to_remove = []
-    for index,row in test.iterrows():
-        if filtered_train[(filtered_train.taxonID==row["taxonID"]) & (filtered_train.siteID==row["siteID"])].empty:
-            print("removing {} at {}".format(row["taxonID"],row["siteID"]))
-            to_remove.append(index)
-    
-    add_to_train = test[test.index.isin(to_remove)]
-    test = test[~test.index.isin(to_remove)]
-    filtered_train = pd.concat([filtered_train, add_to_train])
-    
     #Give tests a unique index to match against
     test["id"] = test.index.values
     filtered_train["id"] = filtered_train.index.values
     
     test.to_file("{}/data/processed/test.shp".format(ROOT))
     train.to_file("{}/data/processed/train.shp".format(ROOT))    
-    filtered_train.to_file("{}/data/processed/CHM_filtered_train.shp".format(ROOT))    
     
     #Create files for indexing
     #Create and save a new species and site label dict

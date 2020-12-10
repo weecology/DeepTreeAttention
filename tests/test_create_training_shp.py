@@ -1,4 +1,6 @@
 from DeepTreeAttention.generators import create_training_shp
+from DeepTreeAttention.trees import __file__ as ROOT
+import os
 import pytest
 import geopandas as gpd
 from shapely.geometry import Point
@@ -12,37 +14,11 @@ def testdata():
     assert not shp.empty
     
     return shp
-
-def test_test_split():
-    path = "data/raw/test_with_uid.csv"
-    field_data_path = "data/raw/2020_vst_december.csv"
     
-    shp = create_training_shp.test_split(path, field_data_path)
-    assert not shp.empty
-    assert all([x in ["siteID","plotID","elevation","domainID","test_index","individualID","height","taxonID","itcEasting","itcNorthing","plantStatus","scientificName","canopyPosition","geometry"] for x in shp.columns])
-    assert all(shp.plantStatus.str.contains("Live"))
-    
-    print("There are {} records for {} species for {} sites in train".format(
-        shp.shape[0],
-        len(shp.taxonID.unique()),
-        len(shp.siteID.unique())
-    ))
-    
-def test_train_split(testdata):
+def test_train_test_split():
     path = "data/raw/2020_vst_december.csv"
-    shp = create_training_shp.train_split(path, testdata.individualID, testdata.taxonID, debug=True)
-    assert not shp.empty
-    assert all([x in ["siteID","plotID","height","elevation","domainID","individualID","taxonID",
-                      "plantStatus","scientificName","itcEasting","canopyPosition","itcNorthing","geometry"] for x in shp.columns])
-    
-    assert all(shp.plantStatus.str.contains("Live"))
-    
-    print("There are {} records for {} species for {} sites in train".format(
-        shp.shape[0],
-        len(shp.taxonID.unique()),
-        len(shp.siteID.unique())
-    ))    
-    
+    shp = create_training_shp.train_test_split(os.path.dirname(os.path.dirname(ROOT)), debug=True)
+    assert not shp.empty    
     
 #def test_filter_CHM():
     #lookup_glob = "data/raw/*CHM*"
