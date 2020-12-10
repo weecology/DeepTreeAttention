@@ -190,7 +190,7 @@ def train_test_split(ROOT, lookup_glob, n=None):
     
     #remove any test species that don't have site distributions in train
     to_remove = []
-    for index,row in test.iterrows:
+    for index,row in test.iterrows():
         if filtered_train[(filtered_train.taxonID==row["taxonID"] & filtered_train.siteID==row["siteID"])].empty:
             print("removing {} at {}".format(row["taxonID"],row["siteID"]))
             to_remove.append(index)
