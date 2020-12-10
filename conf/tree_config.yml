@@ -12,7 +12,7 @@ train:
     domain_class_file: /home/b.weinstein/DeepTreeAttention/data/processed/domain_class_labels.csv
     min_height_diff: 10 #minimum height diffs
     checkpoint_dir: #Load RGB and HSI sub models from dir
-    pretraining_dir: /orange/idtrees-collab/DeepTreeAttention/snapshots//20201208_130721/ #Semi-supervised HSI
+    pretraining_dir: #Semi-supervised HSI
     resampled_per_taxa: 50
     HSI:
         sensor_channels: 369
