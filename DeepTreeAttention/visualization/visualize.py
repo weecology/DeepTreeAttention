@@ -78,8 +78,7 @@ def plot_crown_position(path, y_true, y_pred, box_index):
     #get canopy dictionary
     canopy_dict = {}
     for index in box_index:
-        data_index = index.decode().split("_")[-1]
-        canopy_dict[index] = train_shp[train_shp.index.astype(str) == data_index].canopyPosi.values[0]
+        canopy_dict[index] = train_shp[train_shp.index.astype(str) == index].canopyPosi.values[0]
     
     ax = canopyPosition_barplot(y_true, y_pred, box_index, canopy_dict)
     
