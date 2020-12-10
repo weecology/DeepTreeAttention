@@ -191,11 +191,13 @@ def train_test_split(ROOT, lookup_glob, n=None):
     #remove any test species that don't have site distributions in train
     to_remove = []
     for index,row in test.iterrows():
-        if filtered_train[(filtered_train.taxonID==row["taxonID"] & filtered_train.siteID==row["siteID"])].empty:
+        if filtered_train[(filtered_train.taxonID==row["taxonID"]) & (filtered_train.siteID==row["siteID"])].empty:
             print("removing {} at {}".format(row["taxonID"],row["siteID"]))
             to_remove.append(index)
     
+    add_to_train = test[test.index.isin(to_remove)]
     test = test[~test.index.isin(to_remove)]
+    filtered_train = pd.concat([filtered_train, add_to_train])
     
     #Give tests a unique index to match against
     test["id"] = test.index.values
