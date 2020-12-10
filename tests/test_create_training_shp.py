@@ -17,8 +17,7 @@ def testdata():
     
 def test_train_test_split():
     path = "data/raw/2020_vst_december.csv"
-    shp = create_training_shp.train_test_split(os.path.dirname(os.path.dirname(ROOT)), debug=True)
-    assert not shp.empty    
+    create_training_shp.train_test_split(os.path.dirname(os.path.dirname(ROOT)), debug=True)
     
 #def test_filter_CHM():
     #lookup_glob = "data/raw/*CHM*"
