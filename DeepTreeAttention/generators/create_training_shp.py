@@ -132,7 +132,7 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False):
         shp = shp[shp.CHM_height > 1]
         
         #remove CHM points under 4m diff  
-        shp = shp[(shp.height.isnull()) | (abs(test.height - test.CHM_height) < 4)]  
+        shp = shp[(shp.height.isnull()) | (abs(shp.height - shp.CHM_height) < 4)]  
         
     #atleast 10 data samples overall
     shp = shp.groupby("taxonID").filter(lambda x: x.shape[0] > 10)
@@ -173,30 +173,32 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False):
     test["id"] = test.index.values
     train["id"] = train.index.values
     
-    test.to_file("{}/data/processed/test.shp".format(ROOT))
-    train.to_file("{}/data/processed/train.shp".format(ROOT))    
+    if not debug:    
+        test.to_file("{}/data/processed/test.shp".format(ROOT))
+        train.to_file("{}/data/processed/train.shp".format(ROOT))    
     
-    #Create files for indexing
-    #Create and save a new species and site label dict
-    unique_species_labels = np.concatenate([train.taxonID.unique(), test.taxonID.unique()])
-    unique_species_labels = np.unique(unique_species_labels)
-    
-    species_label_dict = {}
-    for index, label in enumerate(unique_species_labels):
-        species_label_dict[label] = index
-    pd.DataFrame(species_label_dict.items(), columns=["taxonID","label"]).to_csv("{}/data/processed/species_class_labels.csv".format(ROOT))    
-    
-    unique_site_labels = np.concatenate([train.siteID.unique(), test.siteID.unique()])
-    unique_site_labels = np.unique(unique_site_labels)
-    site_label_dict = {}
-    for index, label in enumerate(unique_site_labels):
-        site_label_dict[label] = index
-    pd.DataFrame(site_label_dict.items(), columns=["siteID","label"]).to_csv("{}/data/processed/site_class_labels.csv".format(ROOT))  
-    
-    unique_domain_labels = np.concatenate([train.domainID.unique(), test.domainID.unique()])
-    unique_domain_labels = np.unique(unique_domain_labels)
-    domain_label_dict = {}
-    for index, label in enumerate(unique_domain_labels):
-        domain_label_dict[label] = index
-    pd.DataFrame(domain_label_dict.items(), columns=["domainID","label"]).to_csv("{}/data/processed/domain_class_labels.csv".format(ROOT))  
+        #Create files for indexing
+        #Create and save a new species and site label dict
+        unique_species_labels = np.concatenate([train.taxonID.unique(), test.taxonID.unique()])
+        unique_species_labels = np.unique(unique_species_labels)
+        
+        species_label_dict = {}
+        for index, label in enumerate(unique_species_labels):
+            species_label_dict[label] = index
+        pd.DataFrame(species_label_dict.items(), columns=["taxonID","label"]).to_csv("{}/data/processed/species_class_labels.csv".format(ROOT))    
+        
+        unique_site_labels = np.concatenate([train.siteID.unique(), test.siteID.unique()])
+        unique_site_labels = np.unique(unique_site_labels)
+        site_label_dict = {}
+        for index, label in enumerate(unique_site_labels):
+            site_label_dict[label] = index
+        pd.DataFrame(site_label_dict.items(), columns=["siteID","label"]).to_csv("{}/data/processed/site_class_labels.csv".format(ROOT))  
+        
+        unique_domain_labels = np.concatenate([train.domainID.unique(), test.domainID.unique()])
+        unique_domain_labels = np.unique(unique_domain_labels)
+        domain_label_dict = {}
+        for index, label in enumerate(unique_domain_labels):
+            domain_label_dict[label] = index
+        pd.DataFrame(domain_label_dict.items(), columns=["domainID","label"]).to_csv("{}/data/processed/domain_class_labels.csv".format(ROOT))  
+        
         
