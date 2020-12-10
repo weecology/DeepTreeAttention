@@ -144,7 +144,7 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False):
     if debug:
         iterations = 1
     else:
-        iterations = 10
+        iterations = 20
         
     for x in np.arange(iterations):
         train, test = sample_plots(shp)
