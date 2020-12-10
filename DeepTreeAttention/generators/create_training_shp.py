@@ -188,6 +188,15 @@ def train_test_split(ROOT, lookup_glob, n=None):
     check_empty = test[test.individualID.isin(filtered_train.individualID.unique())]
     assert check_empty.empty
     
+    #remove any test species that don't have site distributions in train
+    to_remove = []
+    for index,row in test.iterrows:
+        if filtered_train[(filtered_train.taxonID==row["taxonID"] & filtered_train.siteID==row["siteID"])].empty:
+            print("removing {} at {}".format(row["taxonID"],row["siteID"]))
+            to_remove.append(index)
+    
+    test = test[~test.index.isin(to_remove)]
+    
     #Give tests a unique index to match against
     test["id"] = test.index.values
     filtered_train["id"] = filtered_train.index.values
