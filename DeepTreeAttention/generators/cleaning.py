@@ -8,6 +8,7 @@ import geopandas as gpd
 def clean_labels():     
     att= trees.AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
     att.create()
+    att.ensemble()
     att.ensemble_model.load_weights("{}/Ensemble_model.h5".format(att.config["train"]["checkpoint_dir"]))
     att.read_data(mode="ensemble")
     
@@ -57,5 +58,5 @@ def clean_labels():
     return joined_gdf
     
 if __name__ == "__main__":
-    joined_gdf = clean_labels()
+    joined_gdf = cleaning.clean_labels()
     joined_gdf.head()
