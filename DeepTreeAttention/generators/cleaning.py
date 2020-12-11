@@ -6,7 +6,7 @@ import pandas as pd
 import geopandas as gpd
 
 def clean_labels():     
-    att= trees.AttentionModel()
+    att= trees.AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
     att.create()
     att.ensemble_model.load_weights("{}/Ensemble_model.h5".format(att.config["train"]["checkpoint_dir"]))
     att.read_data(mode="ensemble")
