@@ -20,7 +20,7 @@ from DeepTreeAttention.models import metadata
 from  DeepTreeAttention.models import layers
 from DeepTreeAttention.generators import boxes
 from DeepTreeAttention.callbacks import callbacks
-
+from DeepTreeAttention.generators import cleaning
 
 class AttentionModel():
     """The main class holding train, predict and evaluate methods"""
@@ -390,6 +390,53 @@ class AttentionModel():
                     validation_data=self.val_split,
                     callbacks=callback_list,
                     class_weight=class_weight)
+    
+    def find_outliers(self):
+        self.autoencoder_model = cleaning.autoencoder_model(height=self.HSI_size, width=self.HSI_size, channels=self.HSI_channels)
+        self.autoencoder_model.fit(
+            self.train_split,
+            epochs = self.config["autoencoder"]["epochs"],
+            validation_data=self.val_split
+        )
+        
+        self.train_split_with_ids = boxes.tf_dataset(
+            tfrecords=self.train_records,
+            batch_size=1,                    
+            shuffle=False,
+            mode="HSI_autoencoder",
+            ids=True,
+            cache=False,
+            augmentation=False,
+            cores=self.config["cpu_workers"])    
+        
+        #Get the true labels since they are not shuffled
+        y_true = [ ]
+        y_pred = [ ]
+        box_index = [ ]
+        loss_object = tf.keras.losses.MeanSquaredError()
+        
+        for index, batch in self.train_split_with_ids:
+            data,label = batch
+            prediction = self.autoencoder_model.predict(data)  
+            error = loss_object(prediction, data)
+            y_pred.append(error.numpy())
+            box_index.append(index.numpy()[0])     
+                        
+        results = pd.DataFrame({"error":y_pred, "box_index":box_index})
+        results["id"] = results["box_index"]
+        
+        #Read original data        
+        #Merge
+        joined_gdf = self.train_shp.merge(results, on="id")
+        joined_gdf = joined_gdf.drop(columns=["box_index"])
+        
+        #outlier threshold
+        threshold = joined_gdf.error.quantile(self.config["autoencoder"]["quantile"])
+        
+        error_df = joined_gdf[joined_gdf.error> threshold]
+        
+        return error_df
+        
         
     def ensemble_predict(self):
         """Predict species id for each box in a single shapefile
@@ -420,7 +467,7 @@ class AttentionModel():
         y_pred = np.argmax(y_pred, 1)
             
         results = pd.DataFrame({"true":y_true,"predicted":y_pred, "box_index":box_index})
-        results["id"] = results["box_index"].apply(lambda x: int(x.decode("utf-8")))
+        results["id"] = results["box_index"]
         
         #Read original data        
         shapefile = self.config["evaluation"]["ground_truth_path"]
