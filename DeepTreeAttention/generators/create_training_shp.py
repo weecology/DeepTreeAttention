@@ -111,6 +111,10 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False):
     field = field[~(field.eventID.str.contains("2014"))]
     field = field.groupby("individualID").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1)).reset_index(drop=True)
     
+    #List of hand cleaned errors
+    known_errors = ["NEON.PLA.D03.OSBS.03422","NEON.PLA.D03.OSBS.03422","NEON.PLA.D03.OSBS.03382"]
+    field = field[~field.individualID.isin(known_errors)]
+    
     #Create shapefile
     field["geometry"] = [Point(x,y) for x,y in zip(field["itcEasting"], field["itcNorthing"])]
     shp = gpd.GeoDataFrame(field)
