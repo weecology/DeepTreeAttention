@@ -85,6 +85,9 @@ def sample_plots(shp):
     train = pd.concat([train, add_to_train])
     test = test[~test.index.isin(to_remove)]    
     
+    train = train[train.taxonID.isin(test.taxonID)]
+    test = test[test.taxonID.isin(train.taxonID)]
+    
     return train, test
 
 def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False):
@@ -144,7 +147,7 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False):
     if debug:
         iterations = 1
     else:
-        iterations = 300
+        iterations = 500
         
     for x in np.arange(iterations):
         train, test = sample_plots(shp)
