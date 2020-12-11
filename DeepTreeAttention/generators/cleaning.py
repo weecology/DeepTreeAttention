@@ -30,7 +30,7 @@ def autoencoder_model(height, width, channels):
     decoded = layers.Conv2D(channels, (3, 3), activation='sigmoid', padding='same')(x)
     
     autoencoder = tfk.Model(sensor_inputs, decoded)
-    autoencoder.compile(optimizer='adam', loss='binary_crossentropy')
+    autoencoder.compile(optimizer='adam', loss='mse')
     
     return autoencoder
     
