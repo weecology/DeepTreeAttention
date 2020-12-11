@@ -132,7 +132,7 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False):
     #Interpolate CHM height
     if lookup_glob:
         shp = filter_CHM(shp, lookup_glob)
-        shp = shp[shp.CHM_height > 1]
+        shp = shp[(shp.height.isnull()) | (shp.CHM_height > 1)]
         
         #remove CHM points under 4m diff  
         shp = shp[(shp.height.isnull()) | (abs(shp.height - shp.CHM_height) < 4)]  
