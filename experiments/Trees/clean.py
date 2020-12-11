@@ -19,5 +19,6 @@ experiment.log_parameter("log_dir",save_dir)
 
 #Create a class and run
 model = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml", log_dir=save_dir)
+model.read_data("HSI_autoencoder")
 error_df = model.find_outliers()
 error_df.to_csv("{}/outliers.csv".format(save_dir))
