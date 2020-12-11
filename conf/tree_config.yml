@@ -42,6 +42,10 @@ train:
     training_fraction: 0.9
     gpus: 1
     pretrain: True #Train the submodels before ensembling all together
+
+autoencoder:
+    epochs: 10
+    quantile: 0.05
     
 callbacks:
     snapshots_path: /../models/

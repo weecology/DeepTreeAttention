@@ -137,7 +137,7 @@ def generate_tfrecords(
     if species_label_dict is not None:
         gdf = gdf[gdf[label_column].isin(list(species_label_dict.keys()))]
     
-    gdf["box_index"] = ["{}_{}".format(basename, x) for x in gdf.index.values]
+    gdf["box_index"] = gdf.index.values
     labels = []
     HSI_crops = []
     RGB_crops = []
@@ -298,7 +298,7 @@ def create_record(HSI_image, RGB_image, index, domain, site, elevation, height, 
     if label is not None:
         example = tf.train.Example(features=tf.train.Features(
             feature={
-                'box_index': _bytes_feature(index.encode()),
+                'box_index': _int64_feature(index),
                 'HSI_image/data': tf.train.Feature(float_list=tf.train.FloatList(value=HSI_image.reshape(-1))),
                 'label': _int64_feature(label),
                 'domain': _int64_feature(domain),                    
@@ -319,7 +319,7 @@ def create_record(HSI_image, RGB_image, index, domain, site, elevation, height, 
     else:
         example = tf.train.Example(features=tf.train.Features(
             feature={
-                'box_index': _bytes_feature(index.encode()),
+                'box_index': _int64_feature(index),
                 'HSI_image/data': tf.train.Feature(float_list=tf.train.FloatList(value=HSI_image.reshape(-1))),
                 'HSI_image/height': _int64_feature(HSI_rows),
                 'HSI_image/width': _int64_feature(HSI_cols),
@@ -416,6 +416,23 @@ def _HSI_parse_(tfrecord):
     
     return loaded_HSI_image, one_hot_labels
 
+def _HSI_autoencoder_parse_(tfrecord):
+    features = {
+    }
+    
+    features['HSI_image/data'] = tf.io.FixedLenFeature([20*20*369], tf.float32)        
+    features["HSI_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
+    features["HSI_image/width"] = tf.io.FixedLenFeature([], tf.int64)
+    features["HSI_image/depth"] = tf.io.FixedLenFeature([], tf.int64)
+    
+    example = tf.io.parse_single_example(tfrecord, features)
+
+    # Load HSI image from file
+    HSI_image_shape = tf.stack([example['HSI_image/height'],example['HSI_image/width'], example['HSI_image/depth']])
+    loaded_HSI_image = tf.reshape(example['HSI_image/data'], HSI_image_shape, name="cast_loaded_HSI_image")
+    
+    return loaded_HSI_image, loaded_HSI_image
+
 def _HSI_submodel_parse_(tfrecord):
     features = {
         "classes": tf.io.FixedLenFeature([], tf.int64),
@@ -491,7 +508,7 @@ def _RGB_submodel_parse_(tfrecord):
 
 def _box_index_parse_(tfrecord):
     features = {
-        'box_index': tf.io.FixedLenFeature([], tf.string), 
+        'box_index': tf.io.FixedLenFeature([], tf.int64), 
     }
     example = tf.io.parse_single_example(tfrecord, features)
     
@@ -593,7 +610,11 @@ def tf_dataset(tfrecords,
         if cache:
             dataset = dataset.cache()        
         if augmentation:
-            dataset = dataset.map(ensemble_augment, num_parallel_calls=cores)                
+            dataset = dataset.map(ensemble_augment, num_parallel_calls=cores)        
+    elif mode == "HSI_autoencoder":
+        dataset = dataset.map(_HSI_autoencoder_parse_)
+        if cache:
+            dataset = dataset.cache()            
     elif mode == "HSI":
         dataset = dataset.map(_HSI_parse_)
         if cache:
