@@ -413,7 +413,7 @@ class AttentionModel():
         y_true = [ ]
         y_pred = [ ]
         box_index = [ ]
-        loss_object = tf.keras.losses.MeanSquaredError()
+        loss_object = tf.keras.losses.cosine_similarity()
         
         for index, batch in self.train_split_with_ids:
             data,label = batch

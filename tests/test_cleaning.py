@@ -100,4 +100,5 @@ def tfrecords(mod, tmpdir):
 def test_autoencoder_model(mod, tfrecords):
     mod.read_data("HSI_autoencoder")
     results = mod.find_outliers()
+    
     assert not results.empty
