@@ -156,7 +156,7 @@ def generate_tfrecords(
         
         HSI_crops.append(HSI_crop)
         RGB_crops.append(RGB_crop)
-        indices.append(row["box_index"])
+        indices.append(int(row["box_index"]))
 
     #If passes a species label dict
     if species_label_dict is None:
