@@ -182,4 +182,6 @@ if __name__ == "__main__":
     per_species.to_csv("{}/perspecies.csv".format(save_dir))
     experiment.log_asset("{}/perspecies.csv".format(save_dir))
     
-    
+    per_site = predicted_shp.groupby("siteID").apply(lambda x: x["match"].sum()/len(x))
+    per_site.to_csv("{}/persite.csv".format(save_dir))
+    experiment.log_asset("{}/persite.csv".format(save_dir))    

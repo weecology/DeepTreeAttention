@@ -413,12 +413,11 @@ class AttentionModel():
         y_true = [ ]
         y_pred = [ ]
         box_index = [ ]
-        loss_object = tf.keras.losses.cosine_similarity()
         
         for index, batch in self.train_split_with_ids:
             data,label = batch
             prediction = self.autoencoder_model.predict(data)  
-            error = loss_object(prediction, data)
+            error = tf.keras.losses.cosine_similarity(prediction, data)
             y_pred.append(error.numpy())
             box_index.append(index.numpy()[0])     
                         
