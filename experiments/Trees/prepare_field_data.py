@@ -250,7 +250,7 @@ def create_crops(merged_boxes, hyperspectral_pool=None, rgb_pool=None, sensor="h
         labels.append(row["taxonID"])
         elevations.append(elevation)
         heights.append(height)
-        box_index.append("{}".format(int(row["id"])))
+        box_index.append(row["id"])
         
     return crops, labels, domains, sites, heights, elevations, box_index
 
