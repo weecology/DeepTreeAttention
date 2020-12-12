@@ -44,8 +44,8 @@ train:
     pretrain: True #Train the submodels before ensembling all together
 
 autoencoder:
-    epochs: 10
-    quantile: 0.05
+    epochs: 100
+    quantile: 0.95
     
 callbacks:
     snapshots_path: /../models/
