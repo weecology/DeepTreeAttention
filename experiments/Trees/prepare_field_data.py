@@ -326,7 +326,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_HSI_box=0, exte
     predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
     
     #Write merged boxes to file as an interim piece of data to inspect.
-    interim_dir = os.path.dirname(os.path.dirname(ROOT))
+    interim_dir = os.path.dirname(os.path.abspath(ROOT))
     predicted_trees.to_file("{}/data/interim/{}_boxes.shp".format(interim_dir, plot))
     
     #Crop HSI
