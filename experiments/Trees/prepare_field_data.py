@@ -18,7 +18,7 @@ from DeepTreeAttention.utils.paths import find_sensor_path, convert_h5
 from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.utils import start_cluster
 from DeepTreeAttention.generators import create_training_shp
-from DeepTreeAttention.trees import __file__ as ROOT
+from DeepTreeAttention import __file__ as ROOT
 from distributed import wait
 from random import randint
 from time import sleep
@@ -326,7 +326,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_HSI_box=0, exte
     predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
     
     #Write merged boxes to file as an interim piece of data to inspect.
-    interim_dir = os.path.dirname(ROOT)
+    interim_dir = os.path.dirname(os.path.dirname(ROOT))
     predicted_trees.to_file("{}/data/interim/{}_boxes.shp".format(interim_dir, plot))
     
     #Crop HSI
