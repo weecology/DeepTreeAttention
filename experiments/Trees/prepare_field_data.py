@@ -175,7 +175,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     for value, group in merged_boxes.groupby("box_id"):
         if group.shape[0] > 1:
             print("removing {} points for within a deepforest box".format(group.shape[0]-1))
-            cleaned_points.append(group[group.CHM_height == group.CHM_height.max()])
+            cleaned_points.append(group[group.height == group.height.max()])
      
     merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_points),crs=merged_boxes.crs)
     
@@ -326,7 +326,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_HSI_box=0, exte
     predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
     
     #Write merged boxes to file as an interim piece of data to inspect.
-    interim_dir = os.path.dirname(os.path.abspath(ROOT))
+    interim_dir = os.path.abspath(ROOT)
     predicted_trees.to_file("{}/data/interim/{}_boxes.shp".format(interim_dir, plot))
     
     #Crop HSI

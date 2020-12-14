@@ -25,7 +25,7 @@ train:
         crop_size: 100
         weighted_sum: True
         epochs: 120
-        extend_box: 3 #expand DeepForest bounding boxes by x meters at edge
+        extend_box: 0 #expand DeepForest bounding boxes by x meters at edge
     metadata:
         epochs: 80
     ensemble:
