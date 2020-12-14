@@ -176,7 +176,9 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
         if group.shape[0] > 1:
             print("removing {} points for within a deepforest box".format(group.shape[0]-1))
             cleaned_points.append(group[group.CHM_height == group.CHM_height.max()])
-            
+     
+    merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_points),crs=merged_boxes.crs)
+    
     #assert plot_data.shape[0] == merged_boxes.shape[0]
     return merged_boxes
 
