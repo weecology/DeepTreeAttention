@@ -127,6 +127,8 @@ def create_boxes(plot_data, size=2):
     fixed_boxes["ymax"] = None
     fixed_boxes["ymin"] = None
     
+    fixed_boxes["box_id"] = fixed_boxes.index.apply(lambda x: "fixed_box_{}".format(x))
+    
     return fixed_boxes
     
 def process_plot(plot_data, rgb_pool, deepforest_model):
@@ -157,7 +159,6 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     if not missing_ids.empty:
         created_boxes= create_boxes(missing_ids)
         merged_boxes = merged_boxes.append(created_boxes)
-    
     
     #If there are multiple boxes per point, take the center box
     grouped = merged_boxes.groupby("individual")
