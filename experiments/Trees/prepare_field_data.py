@@ -18,6 +18,7 @@ from DeepTreeAttention.utils.paths import find_sensor_path, convert_h5
 from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.utils import start_cluster
 from DeepTreeAttention.generators import create_training_shp
+from DeepTreeAttention.trees import __file__ as ROOT
 from distributed import wait
 from random import randint
 from time import sleep
@@ -94,6 +95,10 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=10):
     
     #Buffer slightly 
     boxes.geometry = boxes.geometry.buffer(1)
+    
+    #Give an id field
+    boxes["box_id"] = np.arange(boxes.shape[0])
+    
     return boxes
 
 def choose_box(group, plot_data):
@@ -142,7 +147,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
 
     if boxes.empty:
         raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
-        
+    
     #Merge results with field data, buffer on edge 
     merged_boxes = gpd.sjoin(boxes, plot_data)
     
@@ -152,8 +157,9 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     if not missing_ids.empty:
         created_boxes= create_boxes(missing_ids)
         merged_boxes = merged_boxes.append(created_boxes)
-        
-    #If there are multiple boxes, take the center box
+    
+    
+    #If there are multiple boxes per point, take the center box
     grouped = merged_boxes.groupby("individual")
     
     cleaned_boxes = []
@@ -164,7 +170,14 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_boxes),crs=merged_boxes.crs)
     merged_boxes = merged_boxes.drop(columns=["xmin","xmax","ymin","ymax"])
     
-    assert plot_data.shape[0] == merged_boxes.shape[0]
+    #if there are multiple points per box, take the tallest point.
+    cleaned_points = []
+    for value, group in merged_boxes.groupby("box_id"):
+        if group.shape[0] > 1:
+            print("removing {} points for within a deepforest box".format(group.shape[0]-1))
+            cleaned_points.append(group[group.CHM_height == group.CHM_height.max()])
+            
+    #assert plot_data.shape[0] == merged_boxes.shape[0]
     return merged_boxes
 
 def crop_image(sensor_path, box, expand=0): 
@@ -294,7 +307,7 @@ def create_records(HSI_crops, RGB_crops, labels, domains, sites, heights, elevat
     
     return filenames
 
-def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_HSI_box=0, extend_RGB_box=0, hyperspectral_savedir=".",saved_model=None, deepforest_model=None):
+def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_HSI_box=0, extend_RGB_box=0, hyperspectral_savedir=".", saved_model=None, deepforest_model=None):
     """wrapper function for dask, see main.py"""
     from deepforest import deepforest
 
@@ -309,6 +322,10 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_HSI_box=0, exte
     #Filter data and process
     plot_data = df[df.plotID == plot]
     predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
+    
+    #Write merged boxes to file as an interim piece of data to inspect.
+    interim_dir = os.path.dirname(ROOT)
+    predicted_trees.to_file("{}/data/interim/{}_boxes.shp".format(interim_dir, plot))
     
     #Crop HSI
     plot_HSI_crops, plot_labels, plot_domains, plot_sites, plot_heights, plot_elevations, plot_box_index = create_crops(
