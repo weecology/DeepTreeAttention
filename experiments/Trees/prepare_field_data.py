@@ -176,6 +176,8 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
         if group.shape[0] > 1:
             print("removing {} points for within a deepforest box".format(group.shape[0]-1))
             cleaned_points.append(group[group.height == group.height.max()])
+        else:
+            cleaned_points.append(group)
      
     merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_points),crs=merged_boxes.crs)
     
@@ -549,13 +551,14 @@ if __name__ == "__main__":
     #Read config from top level dir
     config = parse_yaml("{}/conf/tree_config.yml".format(ROOT))
     
-    #Create train test split
-    create_training_shp.train_test_split(ROOT, lookup_glob, n=config["train"]["resampled_per_taxa"])
-    
     #create dask client
-    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="11GB")
+    client = start_cluster.start(cpus=config["cpu_workers"], mem_size="10GB")
     #client = None
     
+    #Create train test split
+    create_training_shp.train_test_split(ROOT, lookup_glob, n=config["train"]["resampled_per_taxa"], client=client)
+    
+
     #test data
     main(
         field_data=config["evaluation"]["ground_truth_path"],

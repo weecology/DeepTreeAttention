@@ -6,6 +6,7 @@ import rasterstats
 
 from shapely.geometry import Point
 from DeepTreeAttention.utils.paths import find_sensor_path
+from distributed import as_completed
 
 def non_zero_99_quantile(x):
     """Get height quantile of all cells that are no zero"""
@@ -90,13 +91,14 @@ def sample_plots(shp):
     
     return train, test
 
-def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False):
+def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = None):
     """Create the train test split
     Args:
         ROOT: 
         lookup_glob: The recursive glob path for the canopy height models to create a pool of .tif to search
         min_diff: minimum height diff between field and CHM data
         n: number of resampled points per class
+        client: optional dask client
         """
     field = pd.read_csv("{}/data/raw/2020_vst_december.csv".format(ROOT))
     field = field[~field.elevation.isnull()]
@@ -153,14 +155,25 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False):
         iterations = 1
     else:
         iterations = 500
+    
+    if client:
+        for x in np.arange(iterations):
+            futures = client.submit(sample_plots, shp=shp)
         
-    for x in np.arange(iterations):
-        train, test = sample_plots(shp)
-        if len(train.taxonID.unique()) > most_species:
-            print(len(train.taxonID.unique()))
-            saved_train = train
-            saved_test = test
-            most_species = len(train.taxonID.unique())
+        for x in as_completed(futures):
+            if len(x.result().taxonID.unique()) > most_species:
+                print(len(train.taxonID.unique()))
+                saved_train = train
+                saved_test = test
+                most_species = len(train.taxonID.unique())            
+    else:
+        for x in np.arange(iterations):
+            train, test = sample_plots(shp)
+            if len(train.taxonID.unique()) > most_species:
+                print(len(train.taxonID.unique()))
+                saved_train = train
+                saved_test = test
+                most_species = len(train.taxonID.unique())
     
     train = saved_train
     test = saved_test
