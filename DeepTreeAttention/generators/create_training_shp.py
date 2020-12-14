@@ -113,8 +113,8 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False):
     
     #List of hand cleaned errors
     known_errors = ["NEON.PLA.D03.OSBS.03422","NEON.PLA.D03.OSBS.03422","NEON.PLA.D03.OSBS.03382", "NEON.PLA.D17.TEAK.01883"]
-    field = field[~field.individualID.isin(known_errors)]
-    field = field[~field.plotID == "SOAP_054"]
+    field = field[~(field.individualID.isin(known_errors))]
+    field = field[~(field.plotID == "SOAP_054")]
     
     #Create shapefile
     field["geometry"] = [Point(x,y) for x,y in zip(field["itcEasting"], field["itcNorthing"])]
