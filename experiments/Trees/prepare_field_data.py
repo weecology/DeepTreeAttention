@@ -127,7 +127,7 @@ def create_boxes(plot_data, size=2):
     fixed_boxes["ymax"] = None
     fixed_boxes["ymin"] = None
     
-    fixed_boxes["box_id"] = fixed_boxes.index.apply(lambda x: "fixed_box_{}".format(x), axis=1)
+    fixed_boxes["box_id"] = fixed_boxes.index.to_series().apply(lambda x: "fixed_box_{}".format(x))
     
     return fixed_boxes
     
