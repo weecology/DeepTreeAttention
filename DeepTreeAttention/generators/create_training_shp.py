@@ -157,8 +157,10 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = N
         iterations = 500
     
     if client:
+        futures = [ ]
         for x in np.arange(iterations):
-            futures = client.submit(sample_plots, shp=shp)
+            future = client.submit(sample_plots, shp=shp)
+            futures.append(future)
         
         for x in as_completed(futures):
             if len(x.result().taxonID.unique()) > most_species:
