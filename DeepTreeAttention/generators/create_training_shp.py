@@ -163,7 +163,8 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = N
             futures.append(future)
         
         for x in as_completed(futures):
-            if len(x.result().taxonID.unique()) > most_species:
+            train, test = x.result()
+            if len(train.taxonID.unique()) > most_species:
                 print(len(train.taxonID.unique()))
                 saved_train = train
                 saved_test = test
