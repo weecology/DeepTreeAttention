@@ -61,7 +61,7 @@ def sample_if(x,n):
     """
     if x.shape[0] < n:
         to_sample = n - x.shape[0]
-        new_rows =  x.sample(to_sample, replace=False)
+        new_rows =  x.sample(to_sample, replace=True)
         return pd.concat([x, new_rows])
     else:
         return x
