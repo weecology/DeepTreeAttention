@@ -68,6 +68,7 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=10):
     img = img[:,:,::-1]
     
     #reshape to 400x400m
+    print("Original shape is {}".format(img.shape))
     resized = resize(img, 400, 400)
     boxes = deepforest_model.predict_image(numpy_image = resized, return_plot=False)
     
@@ -92,10 +93,7 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=10):
     # combine column to a shapely Box() object, save shapefile
     boxes['geometry'] = boxes.apply(lambda x: shapely.geometry.box(x.xmin,x.ymin,x.xmax,x.ymax), axis=1)
     boxes = gpd.GeoDataFrame(boxes, geometry='geometry')    
-    
-    #Buffer slightly 
-    boxes.geometry = boxes.geometry.buffer(1)
-    
+        
     #Give an id field
     boxes["box_id"] = np.arange(boxes.shape[0])
     
@@ -131,7 +129,7 @@ def create_boxes(plot_data, size=2):
     
     return fixed_boxes
     
-def process_plot(plot_data, rgb_pool, deepforest_model):
+def process_plot(plot_data, rgb_pool, deepforest_model, debug = False):
     """For a given NEON plot, find the correct sensor data, predict trees and associate bounding boxes with field data
     Args:
         plot_data: geopandas dataframe in a utm projection
@@ -150,6 +148,10 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     if boxes.empty:
         raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
     
+    if debug:
+        interim_dir = os.path.abspath(ROOT)
+        boxes.to_file("{}/data/interim/{}_boxes_raw.shp".format(interim_dir, plot_data.plotID.unique()[0]))        
+        
     #Merge results with field data, buffer on edge 
     merged_boxes = gpd.sjoin(boxes, plot_data)
     
@@ -326,7 +328,7 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_HSI_box=0, exte
         
     #Filter data and process
     plot_data = df[df.plotID == plot]
-    predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
+    predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model, debug=True)
     
     #Write merged boxes to file as an interim piece of data to inspect.
     interim_dir = os.path.abspath(ROOT)

@@ -172,10 +172,6 @@ if __name__ == "__main__":
     predicted_shp.to_file("{}/prediction.shp".format(save_dir))
     experiment.log_asset("{}/prediction.shp".format(save_dir))
     
-    #Plots - this function needs to be rewritten because the dataset is now nested: ids, (data, label). probably predict on batch.
-    ax = visualize.plot_crown_position(y_pred = predicted_shp.predicted_taxonID, y_true=predicted_shp.true_taxonID, box_index=predicted_shp.id, path = model.config["evaluation"]["ground_truth_path"])
-    experiment.log_figure(ax)
-    
     #per species accurracy
     predicted_shp["match"] = predicted_shp.apply(lambda x: x.true_taxonID == x.predicted_taxonID, 1)
     per_species = predicted_shp.groupby("true_taxonID").apply(lambda x: x["match"].sum()/len(x))
@@ -184,4 +180,8 @@ if __name__ == "__main__":
     
     per_site = predicted_shp.groupby("siteID").apply(lambda x: x["match"].sum()/len(x))
     per_site.to_csv("{}/persite.csv".format(save_dir))
-    experiment.log_asset("{}/persite.csv".format(save_dir))    
+    experiment.log_asset("{}/persite.csv".format(save_dir))   
+    
+    #Plots - this function needs to be rewritten because the dataset is now nested: ids, (data, label). probably predict on batch.
+    ax = visualize.plot_crown_position(y_pred = predicted_shp.predicted_taxonID, y_true=predicted_shp.true_taxonID, box_index=predicted_shp.id, path = model.config["evaluation"]["ground_truth_path"])
+    experiment.log_figure(ax)    
