@@ -60,7 +60,9 @@ def sample_if(x,n):
         species_counts: number of each species in total data
     """
     if x.shape[0] < n:
-        return x.sample(n=n, replace=True)
+        to_sample = n - x.shape[0]
+        new_rows =  x.sample(to_sample, replace=False)
+        return pd.concat([x, new_rows])
     else:
         return x
 
@@ -197,6 +199,10 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = N
     test["id"] = test.index.values
     train["id"] = train.index.values
     
+    #resample train
+    if not n is None:
+        train  =  train.groupby("taxonID").apply(lambda x: sample_if(x,n)).reset_index(drop=True)
+            
     if not debug:    
         test.to_file("{}/data/processed/test.shp".format(ROOT))
         train.to_file("{}/data/processed/train.shp".format(ROOT))    
