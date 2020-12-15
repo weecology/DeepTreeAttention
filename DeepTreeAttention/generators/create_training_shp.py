@@ -115,6 +115,9 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = N
     field = field[~(field.eventID.str.contains("2014"))]
     field = field.groupby("individualID").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1)).reset_index(drop=True)
     
+    #remove multibole
+    field = field[~(field.individualID.str.contains('[A-Z]$',regex=True))]
+
     #List of hand cleaned errors
     known_errors = ["NEON.PLA.D03.OSBS.03422","NEON.PLA.D03.OSBS.03422","NEON.PLA.D03.OSBS.03382", "NEON.PLA.D17.TEAK.01883"]
     field = field[~(field.individualID.isin(known_errors))]
