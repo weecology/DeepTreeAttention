@@ -400,15 +400,15 @@ class AttentionModel():
         self.autoencoder_model = cleaning.autoencoder_model(height=self.HSI_size, width=self.HSI_size, channels=self.HSI_channels)
         self.autoencoder_model.fit(
             self.train_split,
-            epochs = self.config["autoencoder"]["epochs"],
+            batch_size=self.config["train"]["batch_size"],
+            epochs=self.config["autoencoder"]["epochs"],
             validation_data=self.val_split
         )
         
         ## training data ##
-        
         self.train_split_with_ids = boxes.tf_dataset(
             tfrecords=self.train_records,
-            batch_size=1,                    
+            batch_size=self.config["train"]["batch_size"],
             shuffle=False,
             mode="HSI_autoencoder",
             ids=True,
@@ -417,7 +417,6 @@ class AttentionModel():
             cores=self.config["cpu_workers"])    
         
         #Get the true labels since they are not shuffled
-        y_true = [ ]
         y_pred = [ ]
         box_index = [ ]
         
@@ -425,10 +424,12 @@ class AttentionModel():
         for index, batch in self.train_split_with_ids:
             data,label = batch
             prediction = self.autoencoder_model.predict(data)  
-            error = mse(prediction, data)
-            y_pred.append(error.numpy())
-            box_index.append(index.numpy()[0])     
-                        
+            for x in np.arange(prediction.shape[0]):
+                print(x)
+                error = mse(prediction[x,:,:,:], data[x,:,:,:])
+                y_pred.append(error.numpy())
+                box_index.append(index.numpy()[x])            
+        
         results = pd.DataFrame({"error":y_pred, "box_index":box_index})
         results["id"] = results["box_index"]
         
@@ -450,10 +451,11 @@ class AttentionModel():
         for index, batch in self.val_split_with_ids:
             data,label = batch
             prediction = self.autoencoder_model.predict(data)  
-            error = mse(prediction, data)
-            y_pred.append(error.numpy())
-            box_index.append(index.numpy()[0])     
-                        
+            for x in np.arange(prediction.shape[0]):
+                error = mse(prediction[x,:,:,:], data[x,:,:,:])
+                y_pred.append(error.numpy())
+                box_index.append(index.numpy()[x])     
+            
         results = pd.DataFrame({"error":y_pred, "box_index":box_index})
         results["id"] = results["box_index"]
         
