@@ -443,7 +443,6 @@ class AttentionModel():
         
         ## repeat for test data ##
         #Get the true labels since they are not shuffled
-        y_true = [ ]
         y_pred = [ ]
         box_index = [ ]
         
@@ -464,7 +463,7 @@ class AttentionModel():
         joined_gdf = joined_gdf.drop(columns=["box_index"])
         
         #outlier threshold
-        test_error_df = joined_gdf[joined_gdf.error> threshold]
+        #test_error_df = joined_gdf[joined_gdf.error > threshold]
         
         return train_error_df, test_error_df
         
