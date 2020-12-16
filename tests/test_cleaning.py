@@ -103,3 +103,5 @@ def test_autoencoder_model(mod, tfrecords):
     train, test = mod.find_outliers()
     
     assert not train.empty
+    assert not test.empty
+    
