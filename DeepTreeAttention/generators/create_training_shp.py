@@ -93,7 +93,7 @@ def sample_plots(shp):
     
     return train, test
 
-def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = None):
+def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = None, regenerate=False):
     """Create the train test split
     Args:
         ROOT: 
@@ -159,36 +159,61 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = N
     #set seed.
     np.random.seed(1)
     
-    most_species = 0
-    if debug:
-        iterations = 1
-    else:
-        iterations = 500
-    
-    if client:
-        futures = [ ]
-        for x in np.arange(iterations):
-            future = client.submit(sample_plots, shp=shp)
-            futures.append(future)
+    #TODO make regenerate flag.
+    if regenerate:     
+        most_species = 0
+        if debug:
+            iterations = 1
+        else:
+            iterations = 500
         
-        for x in as_completed(futures):
-            train, test = x.result()
-            if len(train.taxonID.unique()) > most_species:
-                print(len(train.taxonID.unique()))
-                saved_train = train
-                saved_test = test
-                most_species = len(train.taxonID.unique())            
+        if client:
+            futures = [ ]
+            for x in np.arange(iterations):
+                future = client.submit(sample_plots, shp=shp)
+                futures.append(future)
+            
+            for x in as_completed(futures):
+                train, test = x.result()
+                if len(train.taxonID.unique()) > most_species:
+                    print(len(train.taxonID.unique()))
+                    saved_train = train
+                    saved_test = test
+                    most_species = len(train.taxonID.unique())            
+        else:
+            for x in np.arange(iterations):
+                train, test = sample_plots(shp)
+                if len(train.taxonID.unique()) > most_species:
+                    print(len(train.taxonID.unique()))
+                    saved_train = train
+                    saved_test = test
+                    most_species = len(train.taxonID.unique())
+        
+        train = saved_train
+        test = saved_test
     else:
-        for x in np.arange(iterations):
-            train, test = sample_plots(shp)
-            if len(train.taxonID.unique()) > most_species:
-                print(len(train.taxonID.unique()))
-                saved_train = train
-                saved_test = test
-                most_species = len(train.taxonID.unique())
+        
+        test_plots = pd.read_csv("{}/data/processed/test.shp".format(ROOT)).plotID.unique()
+        test = shp[shp.plotID.isin(test_plots)]
+        train = shp[~shp.plotID.isin(test_plots)]
+        
+        test = test.groupby("taxonID").filter(lambda x: x.shape[0] > 5)
+        
+        train = train[train.taxonID.isin(test.taxonID)]
+        test = test[test.taxonID.isin(train.taxonID)]
     
-    train = saved_train
-    test = saved_test
+        #remove any test species that don't have site distributions in train
+        to_remove = []
+        for index,row in test.iterrows():
+            if train[(train.taxonID==row["taxonID"]) & (train.siteID==row["siteID"])].empty:
+                to_remove.append(index)
+            
+        add_to_train = test[test.index.isin(to_remove)]
+        train = pd.concat([train, add_to_train])
+        test = test[~test.index.isin(to_remove)]    
+        
+        train = train[train.taxonID.isin(test.taxonID)]
+        test = test[test.taxonID.isin(train.taxonID)]        
     
     print("There are {} records for {} species for {} sites in filtered train".format(
         train.shape[0],
