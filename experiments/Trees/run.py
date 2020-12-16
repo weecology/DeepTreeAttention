@@ -171,6 +171,9 @@ if __name__ == "__main__":
     predicted_shp = model.ensemble_predict()
     predicted_shp.to_file("{}/prediction.shp".format(save_dir))
     experiment.log_asset("{}/prediction.shp".format(save_dir))
+    experiment.log_asset("{}/prediction.dbf".format(save_dir))
+    experiment.log_asset("{}/prediction.shx".format(save_dir))
+    experiment.log_asset("{}/prediction.cpg".format(save_dir))
     
     #per species accurracy
     predicted_shp["match"] = predicted_shp.apply(lambda x: x.true_taxonID == x.predicted_taxonID, 1)

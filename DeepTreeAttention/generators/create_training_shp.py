@@ -146,7 +146,7 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = N
         shp = filter_CHM(shp, lookup_glob)
         
         #Remove NULL CHM_heights
-        shp = shp[~(shp.CHM_height.isnull())]
+        #shp = shp[~(shp.CHM_height.isnull())]
         
         shp = shp[(shp.height.isnull()) | (shp.CHM_height > 1)]
         
