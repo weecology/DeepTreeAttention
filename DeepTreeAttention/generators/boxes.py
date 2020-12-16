@@ -391,7 +391,7 @@ def _ensemble_parse_(tfrecord):
     domains = tf.cast(example['number_of_domains'], tf.int32)    
     one_hot_domains = tf.one_hot(domain, domains)
     
-    return (loaded_HSI_image, loaded_RGB_image,  example['elevation'], example['height'], one_hot_sites, one_hot_domains), one_hot_labels
+    return (loaded_HSI_image, loaded_RGB_image,  example['elevation'], one_hot_sites, one_hot_domains), one_hot_labels
 
 def _HSI_parse_(tfrecord):
     features = {
