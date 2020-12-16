@@ -69,6 +69,11 @@ class AttentionModel():
         except:
             self.train_shp = None
         
+        try:
+            self.test_shp = gpd.read_file(self.config["evaluation"]["ground_truth_path"])
+        except:
+            self.test_shp = None
+                
     def generate(self, HSI_sensor_path, RGB_sensor_path, elevation, heights, domain, site, species_label_dict=None, train=True, chunk_size=1000, shapefile=None, csv_file=None,label_column="label"):
         """Predict species class for each DeepForest bounding box
             Args:
@@ -399,6 +404,8 @@ class AttentionModel():
             validation_data=self.val_split
         )
         
+        ## training data ##
+        
         self.train_split_with_ids = boxes.tf_dataset(
             tfrecords=self.train_records,
             batch_size=1,                    
@@ -414,10 +421,11 @@ class AttentionModel():
         y_pred = [ ]
         box_index = [ ]
         
+        mse = tf.keras.losses.MeanSquaredError()        
         for index, batch in self.train_split_with_ids:
             data,label = batch
             prediction = self.autoencoder_model.predict(data)  
-            error = tf.keras.losses.mean_squared_error(prediction, data)
+            error = mse(prediction, data)
             y_pred.append(error.numpy())
             box_index.append(index.numpy()[0])     
                         
@@ -431,10 +439,34 @@ class AttentionModel():
         
         #outlier threshold
         threshold = joined_gdf.error.quantile(self.config["autoencoder"]["quantile"])
+        train_error_df = joined_gdf[joined_gdf.error> threshold]
         
-        error_df = joined_gdf[joined_gdf.error> threshold]
+        ## repeat for test data ##
+        #Get the true labels since they are not shuffled
+        y_true = [ ]
+        y_pred = [ ]
+        box_index = [ ]
         
-        return error_df
+        mse = tf.keras.losses.MeanSquaredError()
+        for index, batch in self.val_split_with_ids:
+            data,label = batch
+            prediction = self.autoencoder_model.predict(data)  
+            error = mse(prediction, data)
+            y_pred.append(error.numpy())
+            box_index.append(index.numpy()[0])     
+                        
+        results = pd.DataFrame({"error":y_pred, "box_index":box_index})
+        results["id"] = results["box_index"]
+        
+        #Read original data        
+        #Merge
+        joined_gdf = self.test_shp.merge(results, on="id")
+        joined_gdf = joined_gdf.drop(columns=["box_index"])
+        
+        #outlier threshold
+        test_error_df = joined_gdf[joined_gdf.error> threshold]
+        
+        return train_error_df, test_error_df
         
         
     def ensemble_predict(self):
