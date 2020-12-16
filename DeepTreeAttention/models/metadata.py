@@ -18,22 +18,18 @@ def model(classes, sites, domains):
     elevation_layer = Dense(classes*2, activation='relu')(elevation_input)
     elevation_layer = tf.keras.layers.BatchNormalization()(elevation_layer)
     
-    #height
-    height_input = Input(shape=(1,), name="height_input")    
-    height_layer = Dense(classes*2, activation='relu')(height_input)
-    height_layer = tf.keras.layers.BatchNormalization()(height_layer)
     
-    joined_layer = tf.keras.layers.Concatenate()([elevation_layer, height_layer, site_layers, domain_layers])
+    joined_layer = tf.keras.layers.Concatenate()([elevation_layer, site_layers, domain_layers])
     #Bottleneck layer size should be the same as the concat features
     x = Dense(classes, activation='relu', name="last_relu")(joined_layer)
     output = Dense(classes, activation="softmax")(x)
     
-    return elevation_input, height_input, site_input, domain_input, output
+    return elevation_input, site_input, domain_input, output
 
 
 def create(classes, sites, domains, learning_rate):
-    elevation_input, height_input, site_input, domain_input, output= model(classes, sites, domains)
-    keras_model = tf.keras.Model([elevation_input, height_input, site_input, domain_input],output)
+    elevation_input, site_input, domain_input, output= model(classes, sites, domains)
+    keras_model = tf.keras.Model([elevation_input, site_input, domain_input],output)
     
     metric_list = [tf.keras.metrics.CategoricalAccuracy(name="acc")]    
     keras_model.compile(

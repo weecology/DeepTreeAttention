@@ -59,7 +59,7 @@ def test_generate_tfrecords(train, created_records):
 def test_metadata(created_records):    
     dataset = boxes.tf_dataset(created_records, batch_size=2, mode="metadata")
     for data, label_batch in dataset.take(1):
-        elevation, height, site, domain = data
+        elevation, site, domain = data
         assert elevation.numpy().shape == (2,)
         assert site.numpy().shape == (2,10)
         assert domain.numpy().shape == (2,16)
@@ -75,7 +75,7 @@ def test_RGB_submodel(created_records):
 def test_ensemble(created_records):    
     dataset = boxes.tf_dataset(created_records, batch_size=2, mode="ensemble")
     for data, label_batch in dataset.take(1):
-        HSI, RGB, elevation, height, site, domain = data
+        HSI, RGB, elevation, site, domain = data
         assert HSI.shape == (2,20,20,369)    
         assert RGB.shape == (2,100,100,3)    
         assert elevation.numpy().shape == (2,)

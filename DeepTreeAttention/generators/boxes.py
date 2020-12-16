@@ -543,7 +543,7 @@ def _metadata_parse_(tfrecord):
     classes = tf.cast(example['classes'], tf.int32)    
     one_hot_labels = tf.one_hot(example['label'], classes)
     
-    return (example['elevation'], example['height'], one_hot_sites, one_hot_domains), one_hot_labels
+    return (example['elevation'], one_hot_sites, one_hot_domains), one_hot_labels
 
 def augment(data, label):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
@@ -557,7 +557,7 @@ def augment(data, label):
 def ensemble_augment(data, label):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
     
-    HSI, RGB, elevation, height, site, domain = data
+    HSI, RGB, elevation, site, domain = data
     
     HSI = tf.image.rot90(HSI)
     HSI = tf.image.random_flip_left_right(HSI)
@@ -567,7 +567,7 @@ def ensemble_augment(data, label):
     #RGB = tf.image.random_flip_left_right(RGB)
     #RGB = tf.image.random_flip_up_down(RGB)   
     
-    data = HSI, RGB, elevation, height, site, domain
+    data = HSI, RGB, elevation, site, domain
     
     return data, label
 
