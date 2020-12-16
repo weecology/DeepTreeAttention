@@ -192,8 +192,7 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = N
         train = saved_train
         test = saved_test
     else:
-        
-        test_plots = pd.read_csv("{}/data/processed/test.shp".format(ROOT)).plotID.unique()
+        test_plots = gpd.read_file("{}/data/processed/test.shp".format(ROOT)).plotID.unique()
         test = shp[shp.plotID.isin(test_plots)]
         train = shp[~shp.plotID.isin(test_plots)]
         
