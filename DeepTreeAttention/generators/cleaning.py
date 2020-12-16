@@ -14,12 +14,14 @@ import geopandas as gpd
 def autoencoder_model(height, width, channels):
     input_shape = (height, width, channels)
     sensor_inputs = layers.Input(shape=input_shape, name="data_input")
+        
     x = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(sensor_inputs)
     x = layers.MaxPooling2D((2, 2), padding='same')(x)
     x = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(x)
     x = layers.MaxPooling2D((2, 2), padding='same')(x)
     x = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(x)
     encoded = layers.MaxPooling2D((2, 2), padding='same')(x)
+    
         
     x = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(encoded)
     x = layers.UpSampling2D((2, 2))(x)
@@ -27,13 +29,12 @@ def autoencoder_model(height, width, channels):
     x = layers.UpSampling2D((2, 2))(x)
     x = layers.Conv2D(64, (3, 3), activation='relu')(x)
     x = layers.UpSampling2D((2, 2))(x)
-    decoded = layers.Conv2D(channels, (3, 3), activation='sigmoid', padding='same')(x)
+    decoded = layers.Conv2D(channels, (3, 3), activation='sigmoid', padding='same', kernel_regularizer=tfk.regularizers.l2())(x)
     
     autoencoder = tfk.Model(sensor_inputs, decoded)
     autoencoder.compile(optimizer='adam', loss='mse')
     
     return autoencoder
-    
     
 def clean_labels():     
     att = trees.AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")

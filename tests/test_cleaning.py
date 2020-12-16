@@ -78,6 +78,7 @@ def mod(tmpdir):
     shp = gpd.read_file(test_predictions)
     shp["id"] = shp.index.values    
     mod.train_shp = shp
+    mod.test_shp = shp
     
     #Create a model with input sizes
     mod.create()
@@ -98,7 +99,7 @@ def tfrecords(mod, tmpdir):
 
 
 def test_autoencoder_model(mod, tfrecords):
-    mod.read_data("HSI_autoencoder")
-    results = mod.find_outliers()
+    mod.read_data("HSI_autoencoder", validation_split=True)
+    train, test = mod.find_outliers()
     
-    assert not results.empty
+    assert not train.empty

@@ -45,8 +45,7 @@ train:
 
 autoencoder:
     epochs: 100
-    quantile: 0.95
-    
+    quantile: 0.98
 callbacks:
     snapshots_path: /../models/
     project_name: DeepTreeAttention
