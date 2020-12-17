@@ -31,7 +31,7 @@ train:
     ensemble:
         freeze: False
         epochs: 120
-    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
+    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/pretraining/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/train.shp  #path to ground truth class shapefile   
     learning_rate: .001
     batch_size: 256
@@ -44,7 +44,7 @@ train:
     pretrain: True #Train the submodels before ensembling all together
 
 autoencoder:
-    epochs: 100
+    epochs: 50
     quantile: 0.98
 callbacks:
     snapshots_path: /../models/
