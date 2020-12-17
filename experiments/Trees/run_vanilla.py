@@ -27,7 +27,7 @@ experiment.log_parameter("log_dir",save_dir)
 model = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml", log_dir=save_dir)
 model.read_data("HSI")
 
-baseline = vanilla.create(height=model.config["train"]["HSI"]["crop_size"],width=model.config["train"]["HSI"]["crop_size"],channels=model.config["train"]["HSI"]["channels"], classes=model.classes)
+baseline = vanilla.create(height=model.config["train"]["HSI"]["crop_size"],width=model.config["train"]["HSI"]["crop_size"],channels=model.config["train"]["HSI"]["sensor_channels"], classes=model.classes)
 baseline.compile(
     loss="categorical_crossentropy",
     optimizer=tf.keras.optimizers.Adam(
