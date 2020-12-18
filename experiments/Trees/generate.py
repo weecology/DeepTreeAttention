@@ -38,10 +38,10 @@ completed_records = [x.result() for x in futures if x.result() is not None]
 #Create a dask dataframe of csv files
 df = dd.read_csv(completed_records, include_path_column = True)
 
-df = df[df.filtered_probability > 0.8]
+df = df[df.filtered_probability > 0.9]
 
 #Get a balanced set of species
-df = df.groupby("filtered_taxonID").apply(lambda x: x.reset_index().sort_values("filtered_probability", ascending=False).head(3000)).compute()
+df = df.groupby("filtered_taxonID").apply(lambda x: x.reset_index().sort_values("filtered_probability", ascending=False).head(500)).compute()
 
 #Filter by within site predictions
 field_data = pd.read_csv("/home/b.weinstein/DeepTreeAttention/data/raw/2020_vst_december.csv")
