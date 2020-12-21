@@ -362,7 +362,7 @@ class AttentionModel():
         
         if self.config["train"]["gpus"] > 1:
             with self.strategy.scope():        
-                self.ensemble_model = Hang.learned_ensemble(HSI_model=self.HSI_model, RGB_model=self.RGB_model, metadata_model= self.metadata_model, freeze=freeze, classes=self.classes)
+                self.ensemble_model = Hang.learned_ensemble(HSI_model=self.HSI_model, metadata_model= self.metadata_model, freeze=freeze, classes=self.classes)
                 
                 if train:
                     self.ensemble_model.compile(
@@ -379,7 +379,7 @@ class AttentionModel():
                         callbacks=callback_list,
                         class_weight=class_weight)                    
         else:
-            self.ensemble_model = Hang.learned_ensemble(HSI_model=self.HSI_model, RGB_model=self.RGB_model,metadata_model=self.metadata_model, freeze=freeze, classes=self.classes)
+            self.ensemble_model = Hang.learned_ensemble(HSI_model=self.HSI_model,metadata_model=self.metadata_model, freeze=freeze, classes=self.classes)
             if train:
                 self.ensemble_model.compile(
                     loss="categorical_crossentropy",
