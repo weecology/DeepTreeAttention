@@ -32,6 +32,7 @@ model.ensemble_model = tfk.models.load_model("{}/Ensemble.h5".format(model.confi
 hyperspectral_pool = glob.glob(model.config["hyperspectral_sensor_pool"], recursive=True)
 
 #Load field data
+ROOT = os.path.dirname(os.path.dirname(ROOT))
 train = gpd.read_file("{}/data/processed/train.shp".format(ROOT))
 test = gpd.read_file("{}/data/processed/test.shp".format(ROOT))
 
