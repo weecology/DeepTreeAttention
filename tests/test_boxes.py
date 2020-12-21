@@ -27,7 +27,7 @@ def created_records(tmpdir):
         RGB_sensor_path=test_sensor_tile,
         species_label_dict=None,
         RGB_size=100,
-        HSI_size=20,
+        HSI_size=40,
         classes=6,
         number_of_sites=10,
         number_of_domains=16
@@ -75,9 +75,8 @@ def test_RGB_submodel(created_records):
 def test_ensemble(created_records):    
     dataset = boxes.tf_dataset(created_records, batch_size=2, mode="ensemble")
     for data, label_batch in dataset.take(1):
-        HSI, RGB, elevation, site, domain = data
-        assert HSI.shape == (2,20,20,369)    
-        assert RGB.shape == (2,100,100,3)    
+        HSI, elevation, site, domain = data
+        assert HSI.shape == (2,40,40,369)    
         assert elevation.numpy().shape == (2,)
         assert site.numpy().shape == (2,10)
         assert domain.numpy().shape == (2,16)
@@ -91,4 +90,4 @@ def test_id_train(created_records):
     
     basename = os.path.splitext(os.path.basename(test_predictions))[0]
     shp["box_index"] = ["{}_{}".format(basename, x) for x in shp.index.values]
-    assert all([x.decode() in shp.box_index.values for x in ids.numpy()])
+    assert all([x in shp.box_index.values for x in ids.numpy()])

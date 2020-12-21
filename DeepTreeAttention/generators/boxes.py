@@ -353,15 +353,15 @@ def _ensemble_parse_(tfrecord):
     }
     
     #TO DO TURN BACK TO STRING PARSE
-    features['HSI_image/data'] = tf.io.FixedLenFeature([20*20*369], tf.float32)        
+    features['HSI_image/data'] = tf.io.FixedLenFeature([40*40*369], tf.float32)        
     features["HSI_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/width"] = tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/depth"] = tf.io.FixedLenFeature([], tf.int64)
     
-    features['RGB_image/data'] = tf.io.FixedLenFeature([100*100*3], tf.float32)        
-    features["RGB_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
-    features["RGB_image/width"] = tf.io.FixedLenFeature([], tf.int64)
-    features["RGB_image/depth"] = tf.io.FixedLenFeature([], tf.int64)             
+    #features['RGB_image/data'] = tf.io.FixedLenFeature([100*100*3], tf.float32)        
+    #features["RGB_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
+    #features["RGB_image/width"] = tf.io.FixedLenFeature([], tf.int64)
+    #features["RGB_image/depth"] = tf.io.FixedLenFeature([], tf.int64)             
     
     example = tf.io.parse_single_example(tfrecord, features)
     
@@ -371,11 +371,11 @@ def _ensemble_parse_(tfrecord):
     # Reshape to known shape
     loaded_HSI_image = tf.reshape(example['HSI_image/data'], HSI_image_shape, name="cast_loaded_HSI_image")
     
-    # Load RGB image from file
-    RGB_image_shape = tf.stack([example['RGB_image/height'],example['RGB_image/width'], example['RGB_image/depth']])
+    ## Load RGB image from file
+    #RGB_image_shape = tf.stack([example['RGB_image/height'],example['RGB_image/width'], example['RGB_image/depth']])
     
-    # Reshape to known shape
-    loaded_RGB_image = tf.reshape(example['RGB_image/data'], RGB_image_shape, name="cast_loaded_RGB_image")
+    ## Reshape to known shape
+    #loaded_RGB_image = tf.reshape(example['RGB_image/data'], RGB_image_shape, name="cast_loaded_RGB_image")
         
     site = example['site']
     sites = tf.cast(example['number_of_sites'], tf.int32)    
@@ -391,7 +391,7 @@ def _ensemble_parse_(tfrecord):
     domains = tf.cast(example['number_of_domains'], tf.int32)    
     one_hot_domains = tf.one_hot(domain, domains)
     
-    return (loaded_HSI_image, loaded_RGB_image,  example['elevation'], one_hot_sites, one_hot_domains), one_hot_labels
+    return (loaded_HSI_image,  example['elevation'], one_hot_sites, one_hot_domains), one_hot_labels
 
 def _HSI_parse_(tfrecord):
     features = {
@@ -399,7 +399,7 @@ def _HSI_parse_(tfrecord):
         "label": tf.io.FixedLenFeature([], tf.int64),   
     }
     
-    features['HSI_image/data'] = tf.io.FixedLenFeature([20*20*369], tf.float32)        
+    features['HSI_image/data'] = tf.io.FixedLenFeature([40*40*369], tf.float32)        
     features["HSI_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/width"] = tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/depth"] = tf.io.FixedLenFeature([], tf.int64)
@@ -420,7 +420,7 @@ def _HSI_autoencoder_parse_(tfrecord):
     features = {
     }
     
-    features['HSI_image/data'] = tf.io.FixedLenFeature([20*20*369], tf.float32)        
+    features['HSI_image/data'] = tf.io.FixedLenFeature([40*40*369], tf.float32)        
     features["HSI_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/width"] = tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/depth"] = tf.io.FixedLenFeature([], tf.int64)
@@ -439,7 +439,7 @@ def _HSI_submodel_parse_(tfrecord):
         "label": tf.io.FixedLenFeature([], tf.int64),   
     }
     
-    features['HSI_image/data'] = tf.io.FixedLenFeature([20*20*369], tf.float32)        
+    features['HSI_image/data'] = tf.io.FixedLenFeature([40*40*369], tf.float32)        
     features["HSI_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/width"] = tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/depth"] = tf.io.FixedLenFeature([], tf.int64)
@@ -557,7 +557,7 @@ def augment(data, label):
 def ensemble_augment(data, label):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
     
-    HSI, RGB, elevation, site, domain = data
+    HSI, elevation, site, domain = data
     
     HSI = tf.image.rot90(HSI)
     HSI = tf.image.random_flip_left_right(HSI)
@@ -567,7 +567,7 @@ def ensemble_augment(data, label):
     #RGB = tf.image.random_flip_left_right(RGB)
     #RGB = tf.image.random_flip_up_down(RGB)   
     
-    data = HSI, RGB, elevation, site, domain
+    data = HSI, elevation, site, domain
     
     return data, label
 
