@@ -42,7 +42,8 @@ train:
     training_fraction: 0.9
     gpus: 1
     pretrain: True #Train the submodels before ensembling all together
-
+neighbors:
+    model_dir:
 autoencoder:
     epochs: 50
     quantile: 0.98

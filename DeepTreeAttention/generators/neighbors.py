@@ -1,7 +1,10 @@
 #Context module. Use a pretrain model to extract the penultimate layer of the model for surrounding trees.
-import tensorflow.keras as tfk
-from DeepTreeAttention.generators.boxes import crop_image, resize
+import tensorflow as tf
+import rasterio
 
+from DeepTreeAttention.generators.boxes import crop_image, resize
+from DeepTreeAttention.utils.paths import find_sensor_path, elevation_from_tile
+from DeepTreeAttention.generators import neighbors
 
 from sklearn.neighbors import BallTree
 import numpy as np
@@ -26,7 +29,39 @@ def get_nearest(src_points, candidates, k_neighbors=1):
     # Return indices and distances
     return neighbor_geoms
 
-def neighbors(target, HSI_size, neighbor_pool, metadata, raster, model, n=5):
+def extract_features(df, x, model, hyperspectral_pool, HSI_size=20, k_neighbors=5):
+    """Generate features
+    Args:
+    df: a geopandas dataframe
+    x: individual id to use a target
+    model: model to extract layer features
+    hyperspectral_pool: glob dir to search for sensor files
+    HSI_size: size of HSI crop
+    k_neighbors: number of neighbors to extract
+    Returns:
+    feature_array: a feature matrix of encoded bottleneck layer
+    """
+    #Due to resampling, there will be multiple rows of the same point, all are identical.
+    target  =  df[df.individual == x].head(1)
+    sensor_path = find_sensor_path(bounds=target.total_bounds, lookup_pool=hyperspectral_pool) 
+    
+    #Encode metadata
+    site = target.siteID.values[0]
+    one_hot_sites = tf.one_hot(site, model.sites)
+    
+    domain = target.siteID.values[0]
+    one_hot_domains = tf.one_hot(domain, model.domains)
+    
+    elevation = elevation_from_tile(sensor_path)/1000
+    metadata = [elevation, one_hot_sites, one_hot_domains]
+    
+    neighbor_pool = df[~(df.individual == x)]
+    raster = rasterio.open(sensor_path)
+    feature_array = predict_neighbors(target, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=model, k_neighbors=k_neighbors)
+    
+    return feature_array
+
+def predict_neighbors(target, HSI_size, neighbor_pool, metadata, raster, model, k_neighbors=5):
     """Get features of surrounding n trees
     Args:
     target: geometry object of the target point
@@ -39,7 +74,7 @@ def neighbors(target, HSI_size, neighbor_pool, metadata, raster, model, n=5):
     """
         
     #Find neighbors
-    neighbor_geoms = get_nearest(target, candidates = neighbor_pool , k_neighbors=n)
+    neighbor_geoms = get_nearest(target, candidates = neighbor_pool , k_neighbors=k_neighbors)
     
     #extract crop for each neighbor
     features = [ ]
