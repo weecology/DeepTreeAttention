@@ -42,11 +42,11 @@ test = gpd.read_file("{}/data/processed/test.shp".format(ROOT))
 train_ids = train.individual.unique()
 train_dict = {}
 for x in train_ids:
-    train_dict[x] = neighbors.extract_features(df=train, x=x, model=model.ensemble_model, hyperspectral_pool=hyperspectral_pool)
+    train_dict[x] = neighbors.extract_features(df=train, x=x, model=model, hyperspectral_pool=hyperspectral_pool)
     
 #Test - unique ids
 test_ids = test.individual.unique()
 test_dict = {}
 for x in test_ids:
-    test_dict[x] = neighbors.extract_features(df=test, x=x, model=model.ensemble_model, hyperspectral_pool=hyperspectral_pool)
+    test_dict[x] = neighbors.extract_features(df=test, x=x, model=model, hyperspectral_pool=hyperspectral_pool)
 
