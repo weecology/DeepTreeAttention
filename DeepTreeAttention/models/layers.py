@@ -218,39 +218,3 @@ def submodule_consensus(spatial_layers, spectral_layers, weighted_sum=True):
         x = layers.Add()([spatial_layers, spectral_layers])
 
     return x
-
-
-
-class Weighted3Sum(layers.Layer):
-    """A custom keras layer to learn a weighted sum of 3 tensors"""
-
-    def __init__(self, **kwargs):
-        super(Weighted3Sum, self).__init__(**kwargs)
-
-    def build(self, input_shape=1):
-        
-        self.a = self.add_weight(name='alpha',
-                                 shape=(1),
-                                 initializer=tf.keras.initializers.Constant(0.5),
-                                 dtype='float32',
-                                 trainable=True)
-        
-        self.b = self.add_weight(name='beta',
-                                     shape=(1),
-                                     initializer=tf.keras.initializers.Constant(0.5),
-                                     dtype='float32',
-                                     trainable=True)
-        
-        self.g = self.add_weight(name='gamma',
-                                     shape=(1),
-                                         initializer=tf.keras.initializers.Constant(0.5),
-                                         dtype='float32',
-                                         trainable=True)
-        
-        super(Weighted3Sum, self).build(input_shape)
-
-    def call(self, model_outputs):
-        return (self.a * model_outputs[0]) +  (self.b * model_outputs[1]) + (self.g * model_outputs[2])
-
-    def compute_output_shape(self, input_shape):
-        return input_shape[0]

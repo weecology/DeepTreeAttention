@@ -32,9 +32,9 @@ Implementation of Hang et al. 2020 [Hyperspectral Image Classification with Atte
 - [x] Data pipeline to predict species class for a bounding box with weakly learned labels from random forest
 - [x] Training Pipeline for Hyperspectral DeepTreeAttention Model
 - [x] Add site metadata
-- [ ] Training Pipeline for RGB DeepTreeAttention Model (technically works but is ineffective)
+- [x] Training Pipeline for RGB DeepTreeAttention Model (technically works but is ineffective)
 - [x] Learned fusion among data inputs
-
+- [ ] Autoencoder for outlier detection
 # How to view the experiments
 
 This repo is being tested as an open source project on comet_ml. Comet is a great machine learning dashboard. The project link is [here](https://www.comet.ml/bw4sz/neontrees/view/wL0xwid3h619hL3JfxAGwnBxb).

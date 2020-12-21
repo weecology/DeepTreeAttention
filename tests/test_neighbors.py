@@ -25,7 +25,7 @@ def data():
 
 @pytest.fixture()
 def model():
-    HSI_model, _, _= create_models(height=40, width=40, channels=3, classes=2, learning_rate=0.001, weighted_sum=True)
+    HSI_model, _, _= create_models(height=20, width=20, channels=3, classes=2, learning_rate=0.001, weighted_sum=True)
     metadata_model = create_metadata(classes=2, sites=2, domains=2, learning_rate=0.01)
     ensemble_model = learned_ensemble(HSI_model=HSI_model, metadata_model=metadata_model, classes=2)
     feature_extractor = tfk.Model(ensemble_model.inputs, ensemble_model.get_layer("submodel_concat").output)
@@ -42,10 +42,12 @@ def metadata():
     
     return [elevation, site, domain]
     
-def test_get_neighbors(data, metadata, model):
+def test_predict_neighbors(data, metadata, model):
     target = data.iloc[0]
     neighbor_pool = data[~(data.index == target.index)]
     raster = rasterio.open(test_sensor_tile)
-    feature_array = neighbors.neighbors(target, metadata=metadata, HSI_size= 40, raster = raster, neighbor_pool = neighbor_pool, model=model,n=5)
+    feature_array = neighbors.predict_neighbors(target, metadata=metadata, HSI_size= 20, raster = raster, neighbor_pool = neighbor_pool, model=model,n=5)
     assert feature_array.shape[0] == 5
     assert feature_array.shape[1] == model.get_layer("submodel_concat").output.shape[1]
+
+    
