@@ -34,7 +34,7 @@ def extract_features(df, x, model, hyperspectral_pool, HSI_size=20, k_neighbors=
     Args:
     df: a geopandas dataframe
     x: individual id to use a target
-    model: model to extract layer features
+    model: A deeptreeattention model class to extract layer features
     hyperspectral_pool: glob dir to search for sensor files
     HSI_size: size of HSI crop
     k_neighbors: number of neighbors to extract
@@ -57,7 +57,7 @@ def extract_features(df, x, model, hyperspectral_pool, HSI_size=20, k_neighbors=
     
     neighbor_pool = df[~(df.individual == x)]
     raster = rasterio.open(sensor_path)
-    feature_array = predict_neighbors(target, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=model, k_neighbors=k_neighbors)
+    feature_array = predict_neighbors(target, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=model.ensemble_model, k_neighbors=k_neighbors)
     
     return feature_array
 
