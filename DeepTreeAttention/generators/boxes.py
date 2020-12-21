@@ -83,8 +83,8 @@ def generate_tfrecords(
                        species_label_dict,
                        chunk_size=1000,
                        savedir=".",
-                       HSI_size=40,
-                       RGB_size=40,
+                       HSI_size=20,
+                       RGB_size=100,
                        classes=20,
                        train=True,
                        extend_HSI_box=0,
@@ -353,7 +353,7 @@ def _ensemble_parse_(tfrecord):
     }
     
     #TO DO TURN BACK TO STRING PARSE
-    features['HSI_image/data'] = tf.io.FixedLenFeature([40*40*369], tf.float32)        
+    features['HSI_image/data'] = tf.io.FixedLenFeature([20*20*369], tf.float32)        
     features["HSI_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/width"] = tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/depth"] = tf.io.FixedLenFeature([], tf.int64)
@@ -399,7 +399,7 @@ def _HSI_parse_(tfrecord):
         "label": tf.io.FixedLenFeature([], tf.int64),   
     }
     
-    features['HSI_image/data'] = tf.io.FixedLenFeature([40*40*369], tf.float32)        
+    features['HSI_image/data'] = tf.io.FixedLenFeature([20*20*369], tf.float32)        
     features["HSI_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/width"] = tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/depth"] = tf.io.FixedLenFeature([], tf.int64)
@@ -420,7 +420,7 @@ def _HSI_autoencoder_parse_(tfrecord):
     features = {
     }
     
-    features['HSI_image/data'] = tf.io.FixedLenFeature([40*40*369], tf.float32)        
+    features['HSI_image/data'] = tf.io.FixedLenFeature([20*20*369], tf.float32)        
     features["HSI_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/width"] = tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/depth"] = tf.io.FixedLenFeature([], tf.int64)
@@ -439,7 +439,7 @@ def _HSI_submodel_parse_(tfrecord):
         "label": tf.io.FixedLenFeature([], tf.int64),   
     }
     
-    features['HSI_image/data'] = tf.io.FixedLenFeature([40*40*369], tf.float32)        
+    features['HSI_image/data'] = tf.io.FixedLenFeature([20*20*369], tf.float32)        
     features["HSI_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/width"] = tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/depth"] = tf.io.FixedLenFeature([], tf.int64)

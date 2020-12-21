@@ -27,7 +27,7 @@ def created_records(tmpdir):
         RGB_sensor_path=test_sensor_tile,
         species_label_dict=None,
         RGB_size=100,
-        HSI_size=40,
+        HSI_size=20,
         classes=6,
         number_of_sites=10,
         number_of_domains=16
@@ -76,7 +76,7 @@ def test_ensemble(created_records):
     dataset = boxes.tf_dataset(created_records, batch_size=2, mode="ensemble")
     for data, label_batch in dataset.take(1):
         HSI, elevation, site, domain = data
-        assert HSI.shape == (2,40,40,369)    
+        assert HSI.shape == (2,20,20,369)    
         assert elevation.numpy().shape == (2,)
         assert site.numpy().shape == (2,10)
         assert domain.numpy().shape == (2,16)
