@@ -3,6 +3,7 @@ from comet_ml import Experiment
 from datetime import datetime
 import glob
 import geopandas as gpd
+import pandas as pd
 from random import randint
 from time import sleep
 import tensorflow as tf
