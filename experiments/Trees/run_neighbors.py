@@ -35,6 +35,8 @@ hyperspectral_pool = glob.glob(model.config["hyperspectral_sensor_pool"], recurs
 ROOT = os.path.dirname(os.path.dirname(ROOT))
 train = gpd.read_file("{}/data/processed/train.shp".format(ROOT))
 test = gpd.read_file("{}/data/processed/test.shp".format(ROOT))
+domain_classes_file = "{}/data/processed/domain_class_labels.csv".format(ROOT),             
+site_classes_file =  "{}/data/processed/site_class_labels.csv".format(ROOT),       
 
 #client = start_cluster.start(cpus=2)
 
@@ -42,11 +44,11 @@ test = gpd.read_file("{}/data/processed/test.shp".format(ROOT))
 train_ids = train.individual.unique()
 train_dict = {}
 for x in train_ids:
-    train_dict[x] = neighbors.extract_features(df=train, x=x, model=model, hyperspectral_pool=hyperspectral_pool)
+    train_dict[x] = neighbors.extract_features(df=train, x=x, model=model, hyperspectral_pool=hyperspectral_pool, site_classes_file=site_classes_file, domain_classes_file=domain_classes_file)
     
 #Test - unique ids
 test_ids = test.individual.unique()
 test_dict = {}
 for x in test_ids:
-    test_dict[x] = neighbors.extract_features(df=test, x=x, model=model, hyperspectral_pool=hyperspectral_pool)
+    test_dict[x] = neighbors.extract_features(df=test, x=x, model=model, hyperspectral_pool=hyperspectral_pool, site_classes_file=site_classes_file, domain_classes_file=domain_classes_file)
 

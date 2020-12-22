@@ -29,7 +29,7 @@ def get_nearest(src_points, candidates, k_neighbors=1):
     # Return indices and distances
     return neighbor_geoms
 
-def extract_features(df, x, model, hyperspectral_pool, HSI_size=20, k_neighbors=5):
+def extract_features(df, x, model, hyperspectral_pool, site_label_dict, domain_label_dict, HSI_size=20, k_neighbors=5):
     """Generate features
     Args:
     df: a geopandas dataframe
@@ -37,6 +37,8 @@ def extract_features(df, x, model, hyperspectral_pool, HSI_size=20, k_neighbors=
     model: A deeptreeattention model class to extract layer features
     hyperspectral_pool: glob dir to search for sensor files
     HSI_size: size of HSI crop
+    site_label_dict: dictionary of numeric site labels
+    domain_label_dict: dictionary of numeric domain labels
     k_neighbors: number of neighbors to extract
     Returns:
     feature_array: a feature matrix of encoded bottleneck layer
@@ -47,10 +49,12 @@ def extract_features(df, x, model, hyperspectral_pool, HSI_size=20, k_neighbors=
     
     #Encode metadata
     site = target.siteID.values[0]
-    one_hot_sites = tf.one_hot(site, model.sites)
+    numeric_site = site_label_dict[site]
+    one_hot_sites = tf.one_hot(numeric_site, model.sites)
     
     domain = target.siteID.values[0]
-    one_hot_domains = tf.one_hot(domain, model.domains)
+    numeric_domain = domain_label_dict[domain]   
+    one_hot_domains = tf.one_hot(numeric_domain, model.domains)
     
     elevation = elevation_from_tile(sensor_path)/1000
     metadata = [elevation, one_hot_sites, one_hot_domains]
