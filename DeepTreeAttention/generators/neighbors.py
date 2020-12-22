@@ -52,7 +52,7 @@ def extract_features(df, x, model, hyperspectral_pool, site_label_dict, domain_l
     numeric_site = site_label_dict[site]
     one_hot_sites = tf.one_hot(numeric_site, model.sites)
     
-    domain = target.siteID.values[0]
+    domain = target.domainID.values[0]
     numeric_domain = domain_label_dict[domain]   
     one_hot_domains = tf.one_hot(numeric_domain, model.domains)
     
