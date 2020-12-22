@@ -44,11 +44,11 @@ site_classes_file =  "{}/data/processed/site_class_labels.csv".format(ROOT),
 train_ids = train.individual.unique()
 train_dict = {}
 for x in train_ids:
-    train_dict[x] = neighbors.extract_features(df=train, x=x, model=model, hyperspectral_pool=hyperspectral_pool, site_classes_file=site_classes_file, domain_classes_file=domain_classes_file)
+    train_dict[x] = neighbors.extract_features(df=train, x=x, model=model, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_classes_file, domain_label_dict=domain_classes_file)
     
 #Test - unique ids
 test_ids = test.individual.unique()
 test_dict = {}
 for x in test_ids:
-    test_dict[x] = neighbors.extract_features(df=test, x=x, model=model, hyperspectral_pool=hyperspectral_pool, site_classes_file=site_classes_file, domain_classes_file=domain_classes_file)
+    test_dict[x] = neighbors.extract_features(df=test, x=x, model=model, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_classes_file, domain_label_dict=domain_classes_file)
 
