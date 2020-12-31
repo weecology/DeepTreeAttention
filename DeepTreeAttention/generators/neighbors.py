@@ -65,12 +65,12 @@ def predict_neighbors(target, HSI_size, neighbor_pool, metadata, raster, model, 
     
     return features
 
-def extract_features(df, x, model, hyperspectral_pool, site_label_dict, domain_label_dict, HSI_size=20, k_neighbors=5):
+def extract_features(df, x, model_class, hyperspectral_pool, site_label_dict, domain_label_dict, HSI_size=20, k_neighbors=5):
     """Generate features
     Args:
     df: a geopandas dataframe
     x: individual id to use a target
-    model: A deeptreeattention model class to extract layer features
+    model_class: A deeptreeattention model class to extract layer features
     hyperspectral_pool: glob dir to search for sensor files
     HSI_size: size of HSI crop
     site_label_dict: dictionary of numeric site labels
@@ -86,11 +86,11 @@ def extract_features(df, x, model, hyperspectral_pool, site_label_dict, domain_l
     #Encode metadata
     site = target.siteID.values[0]
     numeric_site = site_label_dict[site]
-    one_hot_sites = tf.one_hot(numeric_site, model.sites)
+    one_hot_sites = tf.one_hot(numeric_site, model_class.sites)
     
     domain = target.domainID.values[0]
     numeric_domain = domain_label_dict[domain]   
-    one_hot_domains = tf.one_hot(numeric_domain, model.domains)
+    one_hot_domains = tf.one_hot(numeric_domain, model_class.domains)
     
     #ToDO bring h5 into here.
     #elevation = elevation_from_tile(sensor_path)/1000
@@ -99,16 +99,16 @@ def extract_features(df, x, model, hyperspectral_pool, site_label_dict, domain_l
     
     neighbor_pool = df[~(df.individual == x)]
     raster = rasterio.open(sensor_path)
-    feature_array = predict_neighbors(target, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=model.ensemble_model, k_neighbors=k_neighbors)
+    feature_array = predict_neighbors(target, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=model_class.ensemble_model, k_neighbors=k_neighbors)
     
     return feature_array
 
     
-def predict_dataframe(df, model, hyperspectral_pool, site_label_dict, domain_label_dict, HSI_size=20, k_neighbors=5):
-    """Get features of surrounding n trees
+def predict_dataframe(df, model_class, hyperspectral_pool, site_label_dict, domain_label_dict, HSI_size=20, k_neighbors=5):
+    """Iterate through a geopandas dataframe and get neighbors for each tree.
     Args:
     df: a geopandas dataframe
-    model: A deeptreeattention model class to extract layer features
+    model_class: A deeptreeattention model class to extract layer features
     hyperspectral_pool: glob dir to search for sensor files
     HSI_size: size of HSI crop
     site_label_dict: dictionary of numeric site labels
@@ -120,8 +120,15 @@ def predict_dataframe(df, model, hyperspectral_pool, site_label_dict, domain_lab
     
     #for each target in a dataframe, lookup the correct tile
     neighbor_features = {}
-    for index, row in df.iterrows():
-        x = row["geometry"]
-        neighbor_features[index] = extract_features(df=df, x=x, model=model, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict)
+    for index, row in df.iterrows():  
+        
+        neighbor_features[index] = extract_features(
+            df=df,
+            x=row["individual"].values[0],
+            model_class=model_class,
+            hyperspectral_pool=hyperspectral_pool,
+            site_label_dict=site_label_dict,
+            domain_label_dict=domain_label_dict
+        )
         
     return neighbor_features
