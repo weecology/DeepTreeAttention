@@ -4,7 +4,6 @@ import rasterio
 
 from DeepTreeAttention.generators.boxes import crop_image, resize
 from DeepTreeAttention.utils.paths import find_sensor_path, elevation_from_tile
-from DeepTreeAttention.generators import neighbors
 
 from sklearn.neighbors import BallTree
 import numpy as np
@@ -28,6 +27,43 @@ def get_nearest(src_points, candidates, k_neighbors=1):
 
     # Return indices and distances
     return neighbor_geoms
+
+def predict_neighbors(target, HSI_size, neighbor_pool, metadata, raster, model, k_neighbors=5):
+    """Get features of surrounding n trees
+    Args:
+    target: geometry object of the target point
+    neighbor_pool: geopandas dataframe with points
+    metadata: The metadata layer for each of the points, assumed to be identical for all neighbors
+    n: Number of neighbors
+    model: A model object to predict features
+    Returns:
+    n * m feature matrix, where n is number of neighbors and m is length of the penultimate model layer
+    """
+        
+    #Find neighbors
+    neighbor_geoms = get_nearest(target, candidates = neighbor_pool , k_neighbors=k_neighbors)
+    
+    #extract crop for each neighbor
+    features = [ ]
+    for neighbor in neighbor_geoms.geometry:
+        crop = crop_image(src=raster, box=neighbor)
+        
+        #reorder to channels last
+        crop = resize(crop, HSI_size, HSI_size)
+        crop = np.expand_dims(crop, 0)
+        
+        #create batch
+        elevation = np.expand_dims(metadata[0],axis=0)
+        site = np.expand_dims(metadata[1],axis=0)
+        domain = np.expand_dims(metadata[2],axis=0)
+        
+        batch  = [crop,elevation,site,domain]
+        feature = model(batch)
+        features.append(feature)
+    
+    features = np.vstack(features)
+    
+    return features
 
 def extract_features(df, x, model, hyperspectral_pool, site_label_dict, domain_label_dict, HSI_size=20, k_neighbors=5):
     """Generate features
@@ -56,7 +92,9 @@ def extract_features(df, x, model, hyperspectral_pool, site_label_dict, domain_l
     numeric_domain = domain_label_dict[domain]   
     one_hot_domains = tf.one_hot(numeric_domain, model.domains)
     
-    elevation = elevation_from_tile(sensor_path)/1000
+    #ToDO bring h5 into here.
+    #elevation = elevation_from_tile(sensor_path)/1000
+    elevation = 100/1000
     metadata = [elevation, one_hot_sites, one_hot_domains]
     
     neighbor_pool = df[~(df.individual == x)]
@@ -65,35 +103,25 @@ def extract_features(df, x, model, hyperspectral_pool, site_label_dict, domain_l
     
     return feature_array
 
-def predict_neighbors(target, HSI_size, neighbor_pool, metadata, raster, model, k_neighbors=5):
+    
+def predict_dataframe(df, model, hyperspectral_pool, site_label_dict, domain_label_dict, HSI_size=20, k_neighbors=5):
     """Get features of surrounding n trees
     Args:
-    target: geometry object of the target point
-    neighbor_pool: geopandas dataframe with points
-    metadata: The metadata layer for each of the points, assumed to be identical for all neighbors
-    n: Number of neighbors
-    model: A model object to predict features
+    df: a geopandas dataframe
+    model: A deeptreeattention model class to extract layer features
+    hyperspectral_pool: glob dir to search for sensor files
+    HSI_size: size of HSI crop
+    site_label_dict: dictionary of numeric site labels
+    domain_label_dict: dictionary of numeric domain labels
+    k_neighbors: number of neighbors to extract
     Returns:
-    n * m feature matrix, where n is number of neighbors and m is length of the penultimate model layer
+    feature_array: a feature matrix of encoded bottleneck layer
     """
+    
+    #for each target in a dataframe, lookup the correct tile
+    neighbor_features = {}
+    for index, row in df.iterrows():
+        x = row["geometry"]
+        neighbor_features[index] = extract_features(df=df, x=x, model=model, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict)
         
-    #Find neighbors
-    neighbor_geoms = get_nearest(target, candidates = neighbor_pool , k_neighbors=k_neighbors)
-    
-    #extract crop for each neighbor
-    features = [ ]
-    for neighbor in neighbor_geoms.geometry:
-        crop = crop_image(src=raster, box=neighbor)
-        crop = resize(crop, HSI_size, HSI_size)
-        crop = np.expand_dims(crop, 0)
-        #create batch
-        batch  = [crop,metadata[0],metadata[1],metadata[2]]
-        feature = model(batch)
-        features.append(feature)
-    
-    features = np.vstack(features)
-    
-    return features
-    
-        
-    
+    return neighbor_features

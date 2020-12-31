@@ -46,9 +46,9 @@ def crop_image(src, box, expand=0):
         
         #If expand is greater than increase both size
         if expand >= 0:
-            expanded_left = left-expand_width
-            expanded_bottom = bottom-expand_height
-            expanded_right = right+expand_width
+            expanded_left = left - expand_width
+            expanded_bottom = bottom - expand_height
+            expanded_right = right + expand_width
             expanded_top =  top+expand_height
         else:
             #Make sure of no negative boxes
@@ -57,7 +57,7 @@ def crop_image(src, box, expand=0):
             expanded_right = right-expand_width
             expanded_top =  top-expand_height            
         
-        window=rasterio.windows.from_bounds(expanded_left, expanded_bottom, expanded_right, expanded_top, transform=src.transform)
+        window = rasterio.windows.from_bounds(expanded_left, expanded_bottom, expanded_right, expanded_top, transform=src.transform)
         masked_image = src.read(window=window)
     except Exception as e:
         raise ValueError("sensor path: {} failed at reading window {} with error {}".format(src, box.bounds,e))
@@ -68,7 +68,7 @@ def crop_image(src, box, expand=0):
     #Skip empty frames
     if masked_image.size ==0:
         raise ValueError("Empty frame crop for box {} in sensor path {}".format(box, src))
-    
+        
     return masked_image
     
 def generate_tfrecords(
