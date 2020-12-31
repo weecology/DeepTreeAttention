@@ -16,6 +16,7 @@ def get_nearest(src_points, candidates, k_neighbors=1):
     tree = BallTree(coordinates, leaf_size=15, metric='haversine')
 
     # Find closest points and distances
+    src_points = src_points.reset_index(drop=True)    
     src_x = src_points.geometry.centroid.x
     src_y = src_points.geometry.centroid.y
     
@@ -97,7 +98,7 @@ def extract_features(df, x, model_class, hyperspectral_pool, site_label_dict, do
     elevation = 100/1000
     metadata = [elevation, one_hot_sites, one_hot_domains]
     
-    neighbor_pool = df[~(df.individual == x)]
+    neighbor_pool = df[~(df.individual == x)].reset_index(drop=True)
     raster = rasterio.open(sensor_path)
     feature_array = predict_neighbors(target, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=model_class.ensemble_model, k_neighbors=k_neighbors)
     
@@ -121,10 +122,9 @@ def predict_dataframe(df, model_class, hyperspectral_pool, site_label_dict, doma
     #for each target in a dataframe, lookup the correct tile
     neighbor_features = {}
     for index, row in df.iterrows():  
-        
         neighbor_features[index] = extract_features(
             df=df,
-            x=row["individual"].values[0],
+            x=row["individual"],
             model_class=model_class,
             hyperspectral_pool=hyperspectral_pool,
             site_label_dict=site_label_dict,

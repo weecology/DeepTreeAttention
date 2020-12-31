@@ -116,5 +116,5 @@ def test_extract_features(mod, df, tmpdir):
     assert feature_array.shape[1] == mod.ensemble_model.get_layer("submodel_concat").output.shape[1]    
     
 def test_predict_dataframe(mod, df):
-    results_dict = neighbors.predict_dataframe(df, model_class =  mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict)
+    results_dict = neighbors.predict_dataframe(df=df, model_class =  mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict)
     len(results_dict) == df.shape[0]
