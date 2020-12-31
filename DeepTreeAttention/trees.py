@@ -10,7 +10,6 @@ import tensorflow as tf
 
 from tensorflow.keras.models import load_model
 from tensorflow.keras import metrics
-from tensorflow.keras.utils import multi_gpu_model
 from sklearn.utils import class_weight
 
 #Local Modules
