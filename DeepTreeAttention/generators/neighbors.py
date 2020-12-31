@@ -7,6 +7,7 @@ from DeepTreeAttention.utils.paths import find_sensor_path, elevation_from_tile
 
 from sklearn.neighbors import BallTree
 import numpy as np
+import pandas as pd
 
 def get_nearest(src_points, candidates, k_neighbors=1):
     """Find nearest neighbors for all source points from a set of candidate points"""
@@ -16,7 +17,7 @@ def get_nearest(src_points, candidates, k_neighbors=1):
     tree = BallTree(coordinates, leaf_size=15, metric='haversine')
 
     # Find closest points and distances
-    src_points = src_points.reset_index(drop=True)    
+    #src_points = src_points.reset_index()    
     src_x = src_points.geometry.centroid.x
     src_y = src_points.geometry.centroid.y
     
@@ -46,8 +47,9 @@ def predict_neighbors(target, HSI_size, neighbor_pool, metadata, raster, model, 
     
     #extract crop for each neighbor
     features = [ ]
-    for neighbor in neighbor_geoms.geometry:
-        crop = crop_image(src=raster, box=neighbor)
+    distances = [ ]
+    for index, row in neighbor_geoms.iterrows():
+        crop = crop_image(src=raster, box=row["geometry"])
         
         #reorder to channels last
         crop = resize(crop, HSI_size, HSI_size)
@@ -61,10 +63,11 @@ def predict_neighbors(target, HSI_size, neighbor_pool, metadata, raster, model, 
         batch  = [crop,elevation,site,domain]
         feature = model(batch)
         features.append(feature)
+        distances.append(row["distance"])
     
     features = np.vstack(features)
     
-    return features
+    return features, distances
 
 def extract_features(df, x, model_class, hyperspectral_pool, site_label_dict, domain_label_dict, HSI_size=20, k_neighbors=5):
     """Generate features
@@ -82,6 +85,7 @@ def extract_features(df, x, model_class, hyperspectral_pool, site_label_dict, do
     """
     #Due to resampling, there will be multiple rows of the same point, all are identical.
     target  =  df[df.individual == x].head(1)
+    target = target.reset_index(drop=True)
     sensor_path = find_sensor_path(bounds=target.total_bounds, lookup_pool=hyperspectral_pool) 
     
     #Encode metadata
@@ -100,9 +104,9 @@ def extract_features(df, x, model_class, hyperspectral_pool, site_label_dict, do
     
     neighbor_pool = df[~(df.individual == x)].reset_index(drop=True)
     raster = rasterio.open(sensor_path)
-    feature_array = predict_neighbors(target, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=model_class.ensemble_model, k_neighbors=k_neighbors)
+    feature_array, distances = predict_neighbors(target, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=model_class.ensemble_model, k_neighbors=k_neighbors)
     
-    return feature_array
+    return feature_array, distances
 
     
 def predict_dataframe(df, model_class, hyperspectral_pool, site_label_dict, domain_label_dict, HSI_size=20, k_neighbors=5):
@@ -122,9 +126,10 @@ def predict_dataframe(df, model_class, hyperspectral_pool, site_label_dict, doma
     #for each target in a dataframe, lookup the correct tile
     neighbor_features = {}
     for index, row in df.iterrows():  
+        row = pd.DataFrame(row).transpose()
         neighbor_features[index] = extract_features(
             df=df,
-            x=row["individual"],
+            x=row["individual"].values[0],
             model_class=model_class,
             hyperspectral_pool=hyperspectral_pool,
             site_label_dict=site_label_dict,

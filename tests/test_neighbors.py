@@ -105,15 +105,19 @@ def test_predict_neighbors(data, metadata, mod):
     target = data.iloc[0]
     neighbor_pool = data[~(data.index == target.index)]
     raster = rasterio.open(test_sensor_tile)
-    feature_array = neighbors.predict_neighbors(target, metadata=metadata, HSI_size=20, raster=raster, neighbor_pool=neighbor_pool, model=mod.ensemble_model, k_neighbors=5)
+    feature_array, distances = neighbors.predict_neighbors(target, metadata=metadata, HSI_size=20, raster=raster, neighbor_pool=neighbor_pool, model=mod.ensemble_model, k_neighbors=5)
     assert feature_array.shape[0] == 5
     assert feature_array.shape[1] == mod.ensemble_model.get_layer("submodel_concat").output.shape[1]
 
+    assert len(distances) == 5
+    
 def test_extract_features(mod, df, tmpdir):
     x = df.individual.values[0]
-    feature_array = neighbors.extract_features(df=df, x=x, model_class=mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict)
+    feature_array, distances = neighbors.extract_features(df=df, x=x, model_class=mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict)
     assert feature_array.shape[0] == 5
     assert feature_array.shape[1] == mod.ensemble_model.get_layer("submodel_concat").output.shape[1]    
+    
+    assert len(distances) == 5
     
 def test_predict_dataframe(mod, df):
     results_dict = neighbors.predict_dataframe(df=df, model_class =  mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict)
