@@ -88,6 +88,4 @@ def test_id_train(created_records):
         data, label = batch
         assert ids.numpy().shape == (2,)
     
-    basename = os.path.splitext(os.path.basename(test_predictions))[0]
-    shp["box_index"] = ["{}_{}".format(basename, x) for x in shp.index.values]
-    assert all([x in shp.box_index.values for x in ids.numpy()])
+    assert all([x in shp.index.values for x in ids.numpy()])
