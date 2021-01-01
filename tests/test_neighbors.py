@@ -113,12 +113,22 @@ def test_predict_neighbors(data, metadata, mod):
     
 def test_extract_features(mod, df, tmpdir):
     x = df.individual.values[0]
-    feature_array, distances = neighbors.extract_features(df=df, x=x, model_class=mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict)
+    feature_array, distances = neighbors.extract_features(df=df, x=x, model_class=mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict, k_neighbors=5)
     assert feature_array.shape[0] == 5
     assert feature_array.shape[1] == mod.ensemble_model.get_layer("submodel_concat").output.shape[1]    
     
     assert len(distances) == 5
     
 def test_predict_dataframe(mod, df):
-    results_dict = neighbors.predict_dataframe(df=df, model_class =  mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict)
-    len(results_dict) == df.shape[0]
+    results_dict = neighbors.predict_dataframe(df=df, model_class =  mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict, k_neighbors=5)
+    assert len(results_dict) == df.shape[0]
+
+def test_predict_dataframe_with_padding(mod, df):
+    #manipulate the input data to less than k_neighbors, the algorithm should pad with zeros.
+    df = df.head(3)
+    results_dict = neighbors.predict_dataframe(df=df, model_class=mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict)
+    
+    assert len(results_dict) == df.shape[0]
+    
+    assert len(results_dict[0][0]) == 5
+    assert len(results_dict[0][1]) == 5

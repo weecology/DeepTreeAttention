@@ -9,8 +9,14 @@ from sklearn.neighbors import BallTree
 import numpy as np
 import pandas as pd
 
-def get_nearest(src_points, candidates, k_neighbors=1):
-    """Find nearest neighbors for all source points from a set of candidate points"""
+def get_nearest(src_points, candidates, k_neighbors=1, distance_threshold=None):
+    """Find nearest neighbors for all source points from a set of candidate points
+    Args:
+    src_points: an array of x,y location of the target
+    candidates: pandas df
+    k_neighbors: number of neighbors
+    distance_threshold = minimum distance in meters
+    """
 
     # Create tree from the candidate points
     coordinates = np.vstack(candidates.geometry.centroid.apply(lambda geom: (geom.x,geom.y)))
@@ -22,11 +28,21 @@ def get_nearest(src_points, candidates, k_neighbors=1):
     src_y = src_points.geometry.centroid.y
     
     src_points = np.array([src_x, src_y]).reshape(-1,2)
-    distances, indices = tree.query(src_points, k=k_neighbors)
+    
+    #If there are not enough neighbors, reduce K, then pad to original
+    if k_neighbors > candidates.shape[0]:
+        effective_neighbors = candidates.shape[0]
+    else:
+        effective_neighbors = k_neighbors
+    
+    distances, indices = tree.query(src_points, k=effective_neighbors)
     
     neighbor_geoms = candidates[candidates.index.isin(indices[0])]
     neighbor_geoms["distance"] = distances[0]
 
+    if distance_threshold:
+        neighbor_geoms = neighbor_geoms[neighbor_geoms.distance > distance_threshold]
+    
     # Return indices and distances
     return neighbor_geoms
 
@@ -65,6 +81,13 @@ def predict_neighbors(target, HSI_size, neighbor_pool, metadata, raster, model, 
         features.append(feature)
         distances.append(row["distance"])
     
+    
+    #if there are fewer than k_neighbors, pad with 0's and large distances (?)
+    if len(features) < k_neighbors:
+        for x in np.arange(k_neighbors - len(features)):
+            features.append(np.zeros(feature.shape))
+            distances.append(9999)
+            
     features = np.vstack(features)
     
     return features, distances
