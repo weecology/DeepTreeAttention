@@ -10,6 +10,8 @@ import cv2
 import math
 
 from rasterio.windows import from_bounds
+from DeepTreeAttention.generators import neighbors
+
 from shapely import wkt
 
 def image_normalize(image):
@@ -92,7 +94,9 @@ def generate_tfrecords(
                        shuffle=True,
                        shapefile=None,
                        csv_file=None,
-                       label_column="label"):
+                       label_column="label",
+                       ensemble_model=None,
+                       k_neighbors=5):
     """Yield one instance of data with one hot labels
     Args:
         chunk_size: number of windows per tfrecord
@@ -108,6 +112,9 @@ def generate_tfrecords(
         number_of_sites: total number of sites used for one-hot encoding
         extend_HSI_box: units in meters to expand DeepForest bounding box to give crop more context
         extend_RGB_box: units in meters to expand DeepForest bounding box to give crop more context
+        include_neighbors: logical, whether to extract HSI data from neighbor trees.
+        ensemble_model: an ensemble model that predicts neighbor features
+        k_neighbors: number of neighbors to extract
 
     Returns:
         filename: tfrecords path
@@ -142,6 +149,11 @@ def generate_tfrecords(
     HSI_crops = []
     RGB_crops = []
     indices = []
+    neighbor_arrays = []
+    neighbor_distances = []
+    
+    #Give an individual column
+    gdf["individual"] = gdf.index.values
     
     for index, row in gdf.iterrows():
         #Add training label, ignore unclassified 0 class
@@ -157,7 +169,19 @@ def generate_tfrecords(
         HSI_crops.append(HSI_crop)
         RGB_crops.append(RGB_crop)
         indices.append(int(row["box_index"]))
-
+    
+        #extract neighbors
+        #Encode metadata
+        one_hot_sites = tf.one_hot(site, number_of_sites)  
+        one_hot_domains = tf.one_hot(domain, number_of_domains)
+        metadata = [elevation, one_hot_sites, one_hot_domains]
+        
+        neighbor_pool = gdf[~(gdf.individual == row["individual"])].reset_index(drop=True)
+        raster = rasterio.open(HSI_sensor_path)
+        neighbor_array, neighbor_distance = neighbors.predict_neighbors(row, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=ensemble_model, k_neighbors=k_neighbors)
+        neighbor_arrays.append(neighbor_array)
+        neighbor_distances.append(neighbor_distance)
+            
     #If passes a species label dict
     if species_label_dict is None:
         #Create and save a new species and site label dict
@@ -172,9 +196,9 @@ def generate_tfrecords(
     #shuffle before writing to help with validation data split
     if shuffle:
         if train:
-            z = list(zip(HSI_crops, RGB_crops, heights, indices, numeric_species_labels))
+            z = list(zip(HSI_crops, RGB_crops, heights, indices, numeric_species_labels, neighbor_arrays, neighbor_distances))
             random.shuffle(z)
-            HSI_crops, RGB_crops, heights, indices, numeric_species_labels = zip(*z)
+            HSI_crops, RGB_crops, heights, indices, numeric_species_labels, neighbor_arrays, neighbor_distances = zip(*z)
 
     #get keys and divide into chunks for a single tfrecord
     filenames = []
@@ -184,6 +208,8 @@ def generate_tfrecords(
         chunk_RGB_crops = RGB_crops[i:i + chunk_size]        
         chunk_index = indices[i:i + chunk_size]
         chunk_height = heights[i:i + chunk_size]
+        chunk_neighbor_arrays = neighbor_arrays[i:i + chunk_size]
+        chunk_neighbor_distances = neighbor_distances[i:i + chunk_size]
         
         #All records in a single shapefile are the same site
         chunk_sites = np.repeat(site, len(chunk_index))
@@ -212,8 +238,10 @@ def generate_tfrecords(
                        heights=chunk_height,
                        elevations= chunk_elevations,
                        indices=chunk_index,
+                       neighbor_arrays=chunk_neighbor_arrays,
+                       neighbor_distances=chunk_neighbor_distances,
                        number_of_sites=number_of_sites,
-                       number_of_domains=number_of_domains,                       
+                       number_of_domains=number_of_domains,     
                        classes=classes)
 
         filenames.append(filename)
@@ -230,7 +258,7 @@ def _int64_feature(value):
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-def write_tfrecord(filename, HSI_images, RGB_images, domains, sites, elevations, heights, indices, number_of_domains, number_of_sites, classes, labels=None):
+def write_tfrecord(filename, HSI_images, RGB_images, domains, sites, elevations, heights, indices, number_of_domains, number_of_sites, classes, neighbor_arrays, neighbor_distances, labels=None):
     """Write a training or prediction tfrecord
         Args:
             train: True -> create a training record with labels. False -> a prediciton record with raster indices
@@ -250,7 +278,9 @@ def write_tfrecord(filename, HSI_images, RGB_images, domains, sites, elevations,
                 height=heights[index],                
                 elevation=elevations[index],
                 number_of_sites=number_of_sites,
-                number_of_domains=number_of_domains,                                       
+                number_of_domains=number_of_domains,   
+                neighbor_arrays=neighbor_arrays[index],
+                neighbor_distances=neighbor_distances[index],
                 classes=classes)
             writer.write(tf_example.SerializeToString())
     else:
@@ -264,14 +294,16 @@ def write_tfrecord(filename, HSI_images, RGB_images, domains, sites, elevations,
                 height=heights[index],
                 RGB_image = RGB_images[index],
                 number_of_sites=number_of_sites,
-                number_of_domains=number_of_domains,                                       
+                number_of_domains=number_of_domains,   
+                neighbor_arrays=neighbor_arrays[index],
+                neighbor_distances=neighbor_distances[index],                
                 classes=classes)
             writer.write(tf_example.SerializeToString())
 
     writer.close()
 
 
-def create_record(HSI_image, RGB_image, index, domain, site, elevation, height, classes, number_of_sites,number_of_domains, label=None):
+def create_record(HSI_image, RGB_image, index, domain, site, elevation, height, classes, number_of_sites,number_of_domains, neighbor_arrays=None, neighbor_distances=None, label=None):
     """
     Generate one record from an image 
     Args:
@@ -295,51 +327,41 @@ def create_record(HSI_image, RGB_image, index, domain, site, elevation, height, 
     RGB_cols = RGB_image.shape[1]
     RGB_depth = RGB_image.shape[2]
 
+    feature={
+        'box_index': _int64_feature(index),
+        'HSI_image/data': tf.train.Feature(float_list=tf.train.FloatList(value=HSI_image.reshape(-1))),
+        'domain': _int64_feature(domain),                    
+        'site': _int64_feature(site),    
+        'elevation': _float32_feature(elevation),                                
+        'HSI_image/height': _int64_feature(HSI_rows),
+        'HSI_image/width': _int64_feature(HSI_cols),
+        'HSI_image/depth': _int64_feature(HSI_depth),
+        'RGB_image/data': tf.train.Feature(float_list=tf.train.FloatList(value=RGB_image.reshape(-1))),                            
+        'RGB_image/height': _int64_feature(RGB_rows),
+        'RGB_image/width': _int64_feature(RGB_cols),
+        'RGB_image/depth': _int64_feature(RGB_depth),                
+        'classes': _int64_feature(classes),                
+        'number_of_domains': _int64_feature(number_of_domains),                
+        'number_of_sites': _int64_feature(number_of_sites),
+        'height': _float32_feature(height)
+    }
+    
     if label is not None:
-        example = tf.train.Example(features=tf.train.Features(
-            feature={
-                'box_index': _int64_feature(index),
-                'HSI_image/data': tf.train.Feature(float_list=tf.train.FloatList(value=HSI_image.reshape(-1))),
-                'label': _int64_feature(label),
-                'domain': _int64_feature(domain),                    
-                'site': _int64_feature(site),    
-                'elevation': _float32_feature(elevation),                                
-                'HSI_image/height': _int64_feature(HSI_rows),
-                'HSI_image/width': _int64_feature(HSI_cols),
-                'HSI_image/depth': _int64_feature(HSI_depth),
-                'RGB_image/data': tf.train.Feature(float_list=tf.train.FloatList(value=RGB_image.reshape(-1))),                            
-                'RGB_image/height': _int64_feature(RGB_rows),
-                'RGB_image/width': _int64_feature(RGB_cols),
-                'RGB_image/depth': _int64_feature(RGB_depth),                
-                'classes': _int64_feature(classes),                
-                'number_of_domains': _int64_feature(number_of_domains),                
-                'number_of_sites': _int64_feature(number_of_sites),
-                'height': _float32_feature(height)
-            }))
-    else:
-        example = tf.train.Example(features=tf.train.Features(
-            feature={
-                'box_index': _int64_feature(index),
-                'HSI_image/data': tf.train.Feature(float_list=tf.train.FloatList(value=HSI_image.reshape(-1))),
-                'HSI_image/height': _int64_feature(HSI_rows),
-                'HSI_image/width': _int64_feature(HSI_cols),
-                'HSI_image/depth': _int64_feature(HSI_depth),
-                'RGB_image/data': tf.train.Feature(float_list=tf.train.FloatList(value=RGB_image.reshape(-1))),                            
-                'RGB_image/height': _int64_feature(RGB_rows),
-                'RGB_image/width': _int64_feature(RGB_cols),
-                'RGB_image/depth': _int64_feature(RGB_depth),        
-                'classes': _int64_feature(classes),
-                'domain': _int64_feature(domain),                                    
-                'site': _int64_feature(site),               
-                'elevation': _float32_feature(elevation),    
-                'number_of_domains': _int64_feature(number_of_domains),                                
-                'number_of_sites': _int64_feature(number_of_sites),
-                'height': _float32_feature(height)
-            }))
-
+        feature["label"] = _int64_feature(label)
+    
+    if neighbor_arrays is not None:
+        #all arrays should have same shape.
+        feature["k_neighbors"] = _int64_feature(neighbor_arrays.shape[0])
+        feature["n_neighbor_features"] = _int64_feature(neighbor_arrays.shape[1])
+        feature["neighbor_arrays"] = _bytes_feature(neighbor_arrays.tobytes())
+        feature["neighbor_distances"] = tf.train.Feature(float_list=tf.train.FloatList(value=neighbor_distances))
+        
     # Serialize to string and write to file
+    example = tf.train.Example(features=tf.train.Features(feature=feature))
+
     return example
 
+#TODO, I need a seperate ensemble parser for training the ensemble before neighbors and one afterwards. Also neighbor distances needs to be size encoded.
 def _ensemble_parse_(tfrecord):
     features = {
         "classes": tf.io.FixedLenFeature([], tf.int64),
@@ -349,20 +371,18 @@ def _ensemble_parse_(tfrecord):
         "height": tf.io.FixedLenFeature([], tf.float32),     
         "domain": tf.io.FixedLenFeature([], tf.int64),  
         "number_of_domains": tf.io.FixedLenFeature([], tf.int64),           
-        "elevation": tf.io.FixedLenFeature([], tf.float32),        
+        "elevation": tf.io.FixedLenFeature([], tf.float32),   
+        "k_neighbors": tf.io.FixedLenFeature([],tf.int64),
+        "n_neighbor_features": tf.io.FixedLenFeature([],tf.int64),
+        'neighbor_arrays' : tf.io.FixedLenFeature([], tf.string),   
+        'neighbor_distances': tf.io.FixedLenFeature([5],tf.float32)
     }
     
-    #TO DO TURN BACK TO STRING PARSE
     features['HSI_image/data'] = tf.io.FixedLenFeature([20*20*369], tf.float32)        
     features["HSI_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/width"] = tf.io.FixedLenFeature([], tf.int64)
     features["HSI_image/depth"] = tf.io.FixedLenFeature([], tf.int64)
-    
-    #features['RGB_image/data'] = tf.io.FixedLenFeature([100*100*3], tf.float32)        
-    #features["RGB_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
-    #features["RGB_image/width"] = tf.io.FixedLenFeature([], tf.int64)
-    #features["RGB_image/depth"] = tf.io.FixedLenFeature([], tf.int64)             
-    
+          
     example = tf.io.parse_single_example(tfrecord, features)
     
     # Load HSI image from file
@@ -371,12 +391,12 @@ def _ensemble_parse_(tfrecord):
     # Reshape to known shape
     loaded_HSI_image = tf.reshape(example['HSI_image/data'], HSI_image_shape, name="cast_loaded_HSI_image")
     
-    ## Load RGB image from file
-    #RGB_image_shape = tf.stack([example['RGB_image/height'],example['RGB_image/width'], example['RGB_image/depth']])
+    ## Parse and reshape neighbor matrix
+    flat_neighbor_arrays = tf.io.decode_raw(example["neighbor_arrays"], tf.float32)
+    neighbor_array_shape = tf.stack([example["k_neighbors"], example["n_neighbor_features"]])
     
-    ## Reshape to known shape
-    #loaded_RGB_image = tf.reshape(example['RGB_image/data'], RGB_image_shape, name="cast_loaded_RGB_image")
-        
+    neighbor_arrays = tf.reshape(flat_neighbor_arrays, neighbor_array_shape)
+    
     site = example['site']
     sites = tf.cast(example['number_of_sites'], tf.int32)    
     
@@ -391,7 +411,7 @@ def _ensemble_parse_(tfrecord):
     domains = tf.cast(example['number_of_domains'], tf.int32)    
     one_hot_domains = tf.one_hot(domain, domains)
     
-    return (loaded_HSI_image, example['elevation'], one_hot_sites, one_hot_domains), one_hot_labels
+    return (loaded_HSI_image, neighbor_arrays, example['elevation'], one_hot_sites, one_hot_domains), one_hot_labels
 
 def _HSI_parse_(tfrecord):
     features = {
@@ -557,17 +577,13 @@ def augment(data, label):
 def ensemble_augment(data, label):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
     
-    HSI, elevation, site, domain = data
+    HSI, neighbor_array, elevation, site, domain = data
     
     HSI = tf.image.rot90(HSI)
     HSI = tf.image.random_flip_left_right(HSI)
     HSI = tf.image.random_flip_up_down(HSI)    
-    
-    #RGB = tf.image.rot90(RGB)
-    #RGB = tf.image.random_flip_left_right(RGB)
-    #RGB = tf.image.random_flip_up_down(RGB)   
-    
-    data = HSI, elevation, site, domain
+
+    data = HSI,neighbor_array, elevation, site, domain
     
     return data, label
 

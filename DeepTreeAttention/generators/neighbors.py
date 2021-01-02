@@ -1,18 +1,67 @@
 #Context module. Use a pretrain model to extract the penultimate layer of the model for surrounding trees.
 import tensorflow as tf
 import rasterio
-
-from DeepTreeAttention.generators.boxes import crop_image, resize
-from DeepTreeAttention.utils.paths import find_sensor_path, elevation_from_tile
-
-from sklearn.neighbors import BallTree
+import cv2
 import numpy as np
 import pandas as pd
+
+from DeepTreeAttention.utils.paths import find_sensor_path, elevation_from_tile
+from sklearn.neighbors import BallTree
+
+def resize(img, height, width):
+    # resize image
+    dim = (width, height)
+    resized = cv2.resize(img, dim, interpolation=cv2.INTER_NEAREST)
+
+    return resized
+
+def crop_image(src, box, expand=0): 
+    """Read sensor data and crop a bounding box
+    Args:
+        src: a rasterio opened path
+        box: geopandas geometry polygon object
+        expand: add padding in percent to the edge of the crop
+    Returns:
+        masked_image: a crop of sensor data at specified bounds
+    """
+    #Read data and mask
+    try:    
+        left, bottom, right, top = box.bounds
+        
+        expand_width = (right - left) * expand /2
+        expand_height = (top - bottom) * expand / 2
+        
+        #If expand is greater than increase both size
+        if expand >= 0:
+            expanded_left = left - expand_width
+            expanded_bottom = bottom - expand_height
+            expanded_right = right + expand_width
+            expanded_top =  top+expand_height
+        else:
+            #Make sure of no negative boxes
+            expanded_left = left+expand_width
+            expanded_bottom = bottom+expand
+            expanded_right = right-expand_width
+            expanded_top =  top-expand_height            
+        
+        window = rasterio.windows.from_bounds(expanded_left, expanded_bottom, expanded_right, expanded_top, transform=src.transform)
+        masked_image = src.read(window=window)
+    except Exception as e:
+        raise ValueError("sensor path: {} failed at reading window {} with error {}".format(src, box.bounds,e))
+        
+    #Roll depth to channel last
+    masked_image = np.rollaxis(masked_image, 0, 3)
+    
+    #Skip empty frames
+    if masked_image.size ==0:
+        raise ValueError("Empty frame crop for box {} in sensor path {}".format(box, src))
+        
+    return masked_image
 
 def get_nearest(src_points, candidates, k_neighbors=1, distance_threshold=None):
     """Find nearest neighbors for all source points from a set of candidate points
     Args:
-    src_points: an array of x,y location of the target
+    src_points: an pandas row with a geometry column
     candidates: pandas df
     k_neighbors: number of neighbors
     distance_threshold = minimum distance in meters
@@ -80,7 +129,6 @@ def predict_neighbors(target, HSI_size, neighbor_pool, metadata, raster, model, 
         feature = model(batch)
         features.append(feature)
         distances.append(row["distance"])
-    
     
     #if there are fewer than k_neighbors, pad with 0's and large distances (?)
     if len(features) < k_neighbors:
