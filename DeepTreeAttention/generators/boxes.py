@@ -132,6 +132,7 @@ def generate_tfrecords(
         gdf = pd.read_csv(csv_file)
         gdf['geometry'] = gdf['geometry'].apply(wkt.loads)
         gdf = gpd.GeoDataFrame(gdf)
+        
         #assign crs
         gdf.crs = RGB_src.crs
                 
@@ -150,7 +151,7 @@ def generate_tfrecords(
     RGB_crops = []
     indices = []
     neighbor_arrays = []
-    neighbor_distances = []
+    neighbor_distances = []   
     
     #Give an individual column
     gdf["individual"] = gdf.index.values
@@ -171,17 +172,20 @@ def generate_tfrecords(
         indices.append(int(row["box_index"]))
     
         #extract neighbors
-        #Encode metadata
-        one_hot_sites = tf.one_hot(site, number_of_sites)  
-        one_hot_domains = tf.one_hot(domain, number_of_domains)
-        metadata = [elevation, one_hot_sites, one_hot_domains]
-        
-        neighbor_pool = gdf[~(gdf.individual == row["individual"])].reset_index(drop=True)
-        raster = rasterio.open(HSI_sensor_path)
-        neighbor_array, neighbor_distance = neighbors.predict_neighbors(row, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=ensemble_model, k_neighbors=k_neighbors)
-        neighbor_arrays.append(neighbor_array)
-        neighbor_distances.append(neighbor_distance)
+        if ensemble_model is not None:         
+            one_hot_sites = tf.one_hot(site, number_of_sites)  
+            one_hot_domains = tf.one_hot(domain, number_of_domains)
+            metadata = [elevation, one_hot_sites, one_hot_domains]
             
+            neighbor_pool = gdf[~(gdf.individual == row["individual"])].reset_index(drop=True)
+            raster = rasterio.open(HSI_sensor_path)
+            neighbor_array, neighbor_distance = neighbors.predict_neighbors(row, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=ensemble_model, k_neighbors=k_neighbors)
+            neighbor_arrays.append(neighbor_array)
+            neighbor_distances.append(neighbor_distance)
+        else:
+            neighbor_arrays.append(None)
+            neighbor_distances.append(None)        
+                
     #If passes a species label dict
     if species_label_dict is None:
         #Create and save a new species and site label dict
@@ -208,8 +212,10 @@ def generate_tfrecords(
         chunk_RGB_crops = RGB_crops[i:i + chunk_size]        
         chunk_index = indices[i:i + chunk_size]
         chunk_height = heights[i:i + chunk_size]
+        
+        #if neighbors
         chunk_neighbor_arrays = neighbor_arrays[i:i + chunk_size]
-        chunk_neighbor_distances = neighbor_distances[i:i + chunk_size]
+        chunk_neighbor_distances = neighbor_distances[i:i + chunk_size]            
         
         #All records in a single shapefile are the same site
         chunk_sites = np.repeat(site, len(chunk_index))
@@ -236,7 +242,7 @@ def generate_tfrecords(
                        domains = chunk_domains,
                        sites=chunk_sites,
                        heights=chunk_height,
-                       elevations= chunk_elevations,
+                       elevations=chunk_elevations,
                        indices=chunk_index,
                        neighbor_arrays=chunk_neighbor_arrays,
                        neighbor_distances=chunk_neighbor_distances,
@@ -258,52 +264,46 @@ def _int64_feature(value):
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-def write_tfrecord(filename, HSI_images, RGB_images, domains, sites, elevations, heights, indices, number_of_domains, number_of_sites, classes, neighbor_arrays, neighbor_distances, labels=None):
+def write_tfrecord(filename, HSI_images, RGB_images, domains, sites, elevations, heights, indices, number_of_domains, number_of_sites, classes, neighbor_arrays=None, neighbor_distances=None, labels=None):
     """Write a training or prediction tfrecord
         Args:
             train: True -> create a training record with labels. False -> a prediciton record with raster indices
         """
     writer = tf.io.TFRecordWriter(filename)
 
-    if labels is not None:
-        #Write parser
-        for index, image in enumerate(HSI_images):
-            tf_example = create_record(
-                index=indices[index],
-                domain=domains[index],
-                site = sites[index],
-                HSI_image = HSI_images[index],
-                RGB_image = RGB_images[index],
-                label=labels[index],
-                height=heights[index],                
-                elevation=elevations[index],
-                number_of_sites=number_of_sites,
-                number_of_domains=number_of_domains,   
-                neighbor_arrays=neighbor_arrays[index],
-                neighbor_distances=neighbor_distances[index],
-                classes=classes)
-            writer.write(tf_example.SerializeToString())
-    else:
-        for index, image in enumerate(HSI_images):
-            tf_example = create_record(
-                index=indices[index],
-                domain = domains[index],
-                site = sites[index],
-                elevation = elevations[index],
-                HSI_image=image,
-                height=heights[index],
-                RGB_image = RGB_images[index],
-                number_of_sites=number_of_sites,
-                number_of_domains=number_of_domains,   
-                neighbor_arrays=neighbor_arrays[index],
-                neighbor_distances=neighbor_distances[index],                
-                classes=classes)
-            writer.write(tf_example.SerializeToString())
+    #if labels do not exist, iterate None
+    if labels is None:
+        labels = np.repeat(None, len(HSI_images))
+    
+    if neighbor_arrays is None:
+        neighbor_arrays = np.repeat(None, len(HSI_images))
+    
+    if neighbor_distances is None:
+        neighbor_distances = np.repeat(None, len(HSI_images))    
+    
+    zipped = zip(indices, domains, sites, HSI_images, RGB_images, labels, heights, elevations, neighbor_arrays, neighbor_distances)
+    
+    for index, domain, site, HSI_image, RGB_image, label, height, elevation, neighbor_array, neighbor_distance in zipped:
+        tf_example = create_record(
+            index=index,
+            domain=domain,
+            site = site,
+            HSI_image = HSI_image,
+            RGB_image = RGB_image,
+            label=label,
+            height=height,                
+            elevation=elevation,
+            number_of_sites=number_of_sites,
+            number_of_domains=number_of_domains,   
+            neighbor_arrays=neighbor_array,
+            neighbor_distances=neighbor_distance,
+            classes=classes)
+        writer.write(tf_example.SerializeToString())
 
     writer.close()
 
 
-def create_record(HSI_image, RGB_image, index, domain, site, elevation, height, classes, number_of_sites,number_of_domains, neighbor_arrays=None, neighbor_distances=None, label=None):
+def create_record(HSI_image, RGB_image, index, domain, site, elevation, height, classes, number_of_sites, number_of_domains, neighbor_arrays=None, neighbor_distances=None, label=None):
     """
     Generate one record from an image 
     Args:

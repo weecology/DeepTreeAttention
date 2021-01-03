@@ -14,7 +14,6 @@ from DeepTreeAttention.models.Hang2020_geographic import create_models, learned_
 from DeepTreeAttention.models.metadata import create as create_metadata
 from DeepTreeAttention.trees import AttentionModel
 
-
 ##Global variables
 #random label predictions just for testing
 test_predictions = "data/raw/2019_BART_5_320000_4881000_image_small.shp"
