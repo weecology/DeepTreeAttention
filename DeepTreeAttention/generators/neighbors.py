@@ -98,7 +98,7 @@ def get_nearest(src_points, candidates, k_neighbors=1, distance_threshold=None):
 def predict_neighbors(target, HSI_size, neighbor_pool, metadata, raster, model, k_neighbors=5):
     """Get features of surrounding n trees
     Args:
-    target: geometry object of the target point
+        target: geometry object of the target point
     neighbor_pool: geopandas dataframe with points
     metadata: The metadata layer for each of the points, assumed to be identical for all neighbors
     n: Number of neighbors

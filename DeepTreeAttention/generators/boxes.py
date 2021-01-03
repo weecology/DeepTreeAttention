@@ -361,8 +361,7 @@ def create_record(HSI_image, RGB_image, index, domain, site, elevation, height, 
 
     return example
 
-#TODO, I need a seperate ensemble parser for training the ensemble before neighbors and one afterwards. Also neighbor distances needs to be size encoded.
-def _ensemble_parse_(tfrecord):
+def _neighbor_parse_(tfrecord):
     features = {
         "classes": tf.io.FixedLenFeature([], tf.int64),
         "label": tf.io.FixedLenFeature([], tf.int64),
@@ -412,6 +411,52 @@ def _ensemble_parse_(tfrecord):
     one_hot_domains = tf.one_hot(domain, domains)
     
     return (loaded_HSI_image, neighbor_arrays, example['elevation'], one_hot_sites, one_hot_domains), one_hot_labels
+
+def _ensemble_parse_(tfrecord):
+    features = {
+        "classes": tf.io.FixedLenFeature([], tf.int64),
+        "label": tf.io.FixedLenFeature([], tf.int64),
+        "site": tf.io.FixedLenFeature([], tf.int64),  
+        "number_of_sites": tf.io.FixedLenFeature([], tf.int64),  
+        "height": tf.io.FixedLenFeature([], tf.float32),     
+        "domain": tf.io.FixedLenFeature([], tf.int64),  
+        "number_of_domains": tf.io.FixedLenFeature([], tf.int64),           
+        "elevation": tf.io.FixedLenFeature([], tf.float32),   
+        "k_neighbors": tf.io.FixedLenFeature([],tf.int64),
+        "n_neighbor_features": tf.io.FixedLenFeature([],tf.int64),
+        'neighbor_arrays' : tf.io.FixedLenFeature([], tf.string),   
+        'neighbor_distances': tf.io.FixedLenFeature([5],tf.float32)
+    }
+    
+    features['HSI_image/data'] = tf.io.FixedLenFeature([20*20*369], tf.float32)        
+    features["HSI_image/height"] =  tf.io.FixedLenFeature([], tf.int64)
+    features["HSI_image/width"] = tf.io.FixedLenFeature([], tf.int64)
+    features["HSI_image/depth"] = tf.io.FixedLenFeature([], tf.int64)
+          
+    example = tf.io.parse_single_example(tfrecord, features)
+    
+    # Load HSI image from file
+    HSI_image_shape = tf.stack([example['HSI_image/height'],example['HSI_image/width'], example['HSI_image/depth']])
+    
+    # Reshape to known shape
+    loaded_HSI_image = tf.reshape(example['HSI_image/data'], HSI_image_shape, name="cast_loaded_HSI_image")
+    
+    ## Parse and reshape neighbor matrix    
+    site = example['site']
+    sites = tf.cast(example['number_of_sites'], tf.int32)    
+    
+    #one hot
+    one_hot_sites = tf.one_hot(site, sites)
+    
+    #labels
+    classes = tf.cast(example['classes'], tf.int32)    
+    one_hot_labels = tf.one_hot(example['label'], classes)
+    
+    domain = example['domain']
+    domains = tf.cast(example['number_of_domains'], tf.int32)    
+    one_hot_domains = tf.one_hot(domain, domains)
+    
+    return (loaded_HSI_image, example['elevation'], one_hot_sites, one_hot_domains), one_hot_labels
 
 def _HSI_parse_(tfrecord):
     features = {
@@ -577,6 +622,19 @@ def augment(data, label):
 def ensemble_augment(data, label):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
     
+    HSI, elevation, site, domain = data
+    
+    HSI = tf.image.rot90(HSI)
+    HSI = tf.image.random_flip_left_right(HSI)
+    HSI = tf.image.random_flip_up_down(HSI)    
+
+    data = HSI, elevation, site, domain
+    
+    return data, label
+
+def neighbor_augment(data, label):
+    """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
+    
     HSI, neighbor_array, elevation, site, domain = data
     
     HSI = tf.image.rot90(HSI)
@@ -653,8 +711,14 @@ def tf_dataset(tfrecords,
             dataset = dataset.map(augment, num_parallel_calls=cores)                
     elif mode == "metadata":
         dataset = dataset.map(_metadata_parse_)
+    elif mode == "neighbors":
+        dataset = dataset.map(_neighbor_parse_, num_parallel_calls=cores)
+        if cache:
+            dataset = dataset.cache()        
+        if augmentation:
+            dataset = dataset.map(neighbor_augment, num_parallel_calls=cores)        
     else:
-        raise ValueError("Accepted types = 'ensemble', 'HSI', 'HSI_submodel', 'RGB', 'RGB_submodel', 'metadata'")   
+        raise ValueError("Accepted types = 'ensemble', 'HSI', 'HSI_submodel', 'RGB', 'RGB_submodel', 'metadata', 'HSI_autoencoder', 'neighbors'")   
                         
     if ids:
         ids_dataset = tf.data.TFRecordDataset(tfrecords, num_parallel_reads=cores)     

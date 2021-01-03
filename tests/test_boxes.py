@@ -112,6 +112,16 @@ def test_RGB_submodel(created_records):
 def test_ensemble(created_records):    
     dataset = boxes.tf_dataset(created_records, batch_size=2, mode="ensemble")
     for data, label_batch in dataset.take(1):
+        HSI, elevation, site, domain = data
+        
+        assert HSI.shape == (2,20,20,369)    
+        assert elevation.numpy().shape == (2,)
+        assert site.numpy().shape == (2,10)
+        assert domain.numpy().shape == (2,10)
+
+def test_neighbor(created_records):    
+    dataset = boxes.tf_dataset(created_records, batch_size=2, mode="neighbors")
+    for data, label_batch in dataset.take(1):
         HSI, neighbor_array, elevation, site, domain = data
         
         assert HSI.shape == (2,20,20,369)    
@@ -119,7 +129,7 @@ def test_ensemble(created_records):
         assert elevation.numpy().shape == (2,)
         assert site.numpy().shape == (2,10)
         assert domain.numpy().shape == (2,10)
-
+        
 def test_id_train(created_records):
     shp = gpd.read_file(test_predictions)        
     dataset = boxes.tf_dataset(created_records, batch_size=2, ids=True, mode = "RGB")
