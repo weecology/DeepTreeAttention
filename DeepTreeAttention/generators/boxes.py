@@ -422,10 +422,6 @@ def _ensemble_parse_(tfrecord):
         "domain": tf.io.FixedLenFeature([], tf.int64),  
         "number_of_domains": tf.io.FixedLenFeature([], tf.int64),           
         "elevation": tf.io.FixedLenFeature([], tf.float32),   
-        "k_neighbors": tf.io.FixedLenFeature([],tf.int64),
-        "n_neighbor_features": tf.io.FixedLenFeature([],tf.int64),
-        'neighbor_arrays' : tf.io.FixedLenFeature([], tf.string),   
-        'neighbor_distances': tf.io.FixedLenFeature([5],tf.float32)
     }
     
     features['HSI_image/data'] = tf.io.FixedLenFeature([20*20*369], tf.float32)        
