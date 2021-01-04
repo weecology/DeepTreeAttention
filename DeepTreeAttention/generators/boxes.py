@@ -81,7 +81,6 @@ def generate_tfrecords(
                        number_of_sites,
                        number_of_domains,                       
                        elevation,
-                       heights,
                        species_label_dict,
                        chunk_size=1000,
                        savedir=".",
@@ -104,7 +103,6 @@ def generate_tfrecords(
         domain: metadata site domain as integer
         site: metadata site label as integer
         elevation: height above sea level in meters
-        heights: height in m
         label_dict: taxonID -> numeric label
         RGB_size: size in pixels of one side of image
         HSI_size: size in pixels of one side of image
@@ -200,9 +198,9 @@ def generate_tfrecords(
     #shuffle before writing to help with validation data split
     if shuffle:
         if train:
-            z = list(zip(HSI_crops, RGB_crops, heights, indices, numeric_species_labels, neighbor_arrays, neighbor_distances))
+            z = list(zip(HSI_crops, RGB_crops, indices, numeric_species_labels, neighbor_arrays, neighbor_distances))
             random.shuffle(z)
-            HSI_crops, RGB_crops, heights, indices, numeric_species_labels, neighbor_arrays, neighbor_distances = zip(*z)
+            HSI_crops, RGB_crops, indices, numeric_species_labels, neighbor_arrays, neighbor_distances = zip(*z)
 
     #get keys and divide into chunks for a single tfrecord
     filenames = []
@@ -211,7 +209,6 @@ def generate_tfrecords(
         chunk_HSI_crops = HSI_crops[i:i + chunk_size]
         chunk_RGB_crops = RGB_crops[i:i + chunk_size]        
         chunk_index = indices[i:i + chunk_size]
-        chunk_height = heights[i:i + chunk_size]
         
         #if neighbors
         chunk_neighbor_arrays = neighbor_arrays[i:i + chunk_size]
@@ -241,7 +238,6 @@ def generate_tfrecords(
                        labels=chunk_labels,
                        domains = chunk_domains,
                        sites=chunk_sites,
-                       heights=chunk_height,
                        elevations=chunk_elevations,
                        indices=chunk_index,
                        neighbor_arrays=chunk_neighbor_arrays,
@@ -264,7 +260,7 @@ def _int64_feature(value):
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-def write_tfrecord(filename, HSI_images, RGB_images, domains, sites, elevations, heights, indices, number_of_domains, number_of_sites, classes, neighbor_arrays=None, neighbor_distances=None, labels=None):
+def write_tfrecord(filename, HSI_images, RGB_images, domains, sites, elevations, indices, number_of_domains, number_of_sites, classes, neighbor_arrays=None, neighbor_distances=None, labels=None):
     """Write a training or prediction tfrecord
         Args:
             train: True -> create a training record with labels. False -> a prediciton record with raster indices
@@ -281,9 +277,9 @@ def write_tfrecord(filename, HSI_images, RGB_images, domains, sites, elevations,
     if neighbor_distances is None:
         neighbor_distances = np.repeat(None, len(HSI_images))    
     
-    zipped = zip(indices, domains, sites, HSI_images, RGB_images, labels, heights, elevations, neighbor_arrays, neighbor_distances)
+    zipped = zip(indices, domains, sites, HSI_images, RGB_images, labels, elevations, neighbor_arrays, neighbor_distances)
     
-    for index, domain, site, HSI_image, RGB_image, label, height, elevation, neighbor_array, neighbor_distance in zipped:
+    for index, domain, site, HSI_image, RGB_image, label, elevation, neighbor_array, neighbor_distance in zipped:
         tf_example = create_record(
             index=index,
             domain=domain,
@@ -291,7 +287,6 @@ def write_tfrecord(filename, HSI_images, RGB_images, domains, sites, elevations,
             HSI_image = HSI_image,
             RGB_image = RGB_image,
             label=label,
-            height=height,                
             elevation=elevation,
             number_of_sites=number_of_sites,
             number_of_domains=number_of_domains,   
@@ -303,7 +298,7 @@ def write_tfrecord(filename, HSI_images, RGB_images, domains, sites, elevations,
     writer.close()
 
 
-def create_record(HSI_image, RGB_image, index, domain, site, elevation, height, classes, number_of_sites, number_of_domains, neighbor_arrays=None, neighbor_distances=None, label=None):
+def create_record(HSI_image, RGB_image, index, domain, site, elevation, classes, number_of_sites, number_of_domains, neighbor_arrays=None, neighbor_distances=None, label=None):
     """
     Generate one record from an image 
     Args:
@@ -343,7 +338,6 @@ def create_record(HSI_image, RGB_image, index, domain, site, elevation, height, 
         'classes': _int64_feature(classes),                
         'number_of_domains': _int64_feature(number_of_domains),                
         'number_of_sites': _int64_feature(number_of_sites),
-        'height': _float32_feature(height)
     }
     
     if label is not None:
@@ -367,7 +361,6 @@ def _neighbor_parse_(tfrecord):
         "label": tf.io.FixedLenFeature([], tf.int64),
         "site": tf.io.FixedLenFeature([], tf.int64),  
         "number_of_sites": tf.io.FixedLenFeature([], tf.int64),  
-        "height": tf.io.FixedLenFeature([], tf.float32),     
         "domain": tf.io.FixedLenFeature([], tf.int64),  
         "number_of_domains": tf.io.FixedLenFeature([], tf.int64),           
         "elevation": tf.io.FixedLenFeature([], tf.float32),   
@@ -418,7 +411,6 @@ def _ensemble_parse_(tfrecord):
         "label": tf.io.FixedLenFeature([], tf.int64),
         "site": tf.io.FixedLenFeature([], tf.int64),  
         "number_of_sites": tf.io.FixedLenFeature([], tf.int64),  
-        "height": tf.io.FixedLenFeature([], tf.float32),     
         "domain": tf.io.FixedLenFeature([], tf.int64),  
         "number_of_domains": tf.io.FixedLenFeature([], tf.int64),           
         "elevation": tf.io.FixedLenFeature([], tf.float32),   
@@ -583,7 +575,6 @@ def _metadata_parse_(tfrecord):
         "number_of_sites": tf.io.FixedLenFeature([], tf.int64), 
         "domain": tf.io.FixedLenFeature([], tf.int64),  
         "number_of_domains": tf.io.FixedLenFeature([], tf.int64),          
-        "height": tf.io.FixedLenFeature([], tf.float32),     
         "elevation": tf.io.FixedLenFeature([], tf.float32),  
         "classes": tf.io.FixedLenFeature([], tf.int64),
         "label": tf.io.FixedLenFeature([], tf.int64)   
