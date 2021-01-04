@@ -44,6 +44,7 @@ train:
     pretrain: True #Train the submodels before ensembling all together
 neighbors:
     model_dir:
+    k_neighbors: 5
 autoencoder:
     epochs: 50
     quantile: 0.98

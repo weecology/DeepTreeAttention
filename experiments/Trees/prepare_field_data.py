@@ -19,10 +19,7 @@ from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.utils import start_cluster
 from DeepTreeAttention.generators import create_training_shp
 from DeepTreeAttention import __file__ as ROOT
-from distributed import wait
-from random import randint
-from time import sleep
-
+from distributed import wait       
 
 def normalize(image):
     """normalize a 3d numoy array simiiar to tf.image.per_image_standardization"""
@@ -183,7 +180,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model, debug = False):
             cleaned_points.append(group)
      
     merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_points),crs=merged_boxes.crs)
-    
+        
     #assert plot_data.shape[0] == merged_boxes.shape[0]
     return merged_boxes
 
@@ -314,6 +311,7 @@ def create_records(HSI_crops, RGB_crops, labels, domains, sites, heights, elevat
     
     return filenames
 
+
 def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_HSI_box=0, extend_RGB_box=0, hyperspectral_savedir=".", saved_model=None, deepforest_model=None):
     """wrapper function for dask, see main.py"""
     from deepforest import deepforest
@@ -351,6 +349,8 @@ def run(plot, df, rgb_pool=None, hyperspectral_pool=None, extend_HSI_box=0, exte
         sensor="rgb",
         expand=extend_RGB_box,
         hyperspectral_savedir=hyperspectral_savedir)    
+    
+    #get neighbors  
     
     #Assert they are the same
     assert len(plot_rgb_crops) == len(plot_HSI_crops)

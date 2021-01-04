@@ -31,7 +31,7 @@ def test_neighbors(HSI_image, metadata_data):
     sensor_inputs, sensor_outputs, spatial, spectral = Hang.define_model(classes=2, height=height, width=width, channels=channels)    
     model1 = tf.keras.Model(inputs=sensor_inputs, outputs=sensor_outputs)
     
-    metadata_model = metadata.create(classes=2, sites=10, domains =10, learning_rate=0.001)
+    metadata_model = metadata.create(classes=2, sites=10, domains=10, learning_rate=0.001)
     ensemble = Hang.learned_ensemble(HSI_model=model1, metadata_model=metadata_model, classes=2)
     ensemble = tf.keras.Model(ensemble.inputs, ensemble.get_layer("submodel_concat").output)
     

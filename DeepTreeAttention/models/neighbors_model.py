@@ -19,7 +19,11 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     n_features = ensemble_model.get_layer("submodel_concat").output.shape[1]
     input_shape = (k_neighbors, n_features)
     neighbor_inputs = tf.keras.layers.Input(shape=input_shape, name="neighbor_input")
-    flatten_neighbors = tf.keras.layers.Flatten(name="flatten_inputs")(neighbor_inputs)
+    
+    #mask out zero padding if less than k_neighbors
+    masked_inputs = tf.keras.layers.Masking()(neighbor_inputs)
+    
+    flatten_neighbors = tf.keras.layers.Flatten(name="flatten_inputs")(masked_inputs)
     neighbor_features = tf.keras.layers.Dense(n_features, activation="relu",name="neighbor_feature_dense")(flatten_neighbors)
     neighbor_features = tf.keras.backend.l2_normalize(neighbor_features)
         
