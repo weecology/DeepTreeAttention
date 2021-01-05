@@ -1,13 +1,11 @@
 
 #Testing script that lives outside of pytest due to DeepForest dependency in a new conda env. PYTHONPATH manually added to root dir for relative paths.
 import os
-import pytest
-import tensorflow
-import numpy as np
 from matplotlib import pyplot as plt
 import geopandas as gpd
 import pandas as pd
 import glob
+import tempfile
 
 import prepare_field_data
 from DeepTreeAttention.generators import boxes
@@ -69,6 +67,7 @@ def test_run():
         plot=plot,
         df = df,
         rgb_pool=rgb_pool,
+        savedir=tempfile.TemporaryDirectory()
     ) 
     
 #Run tests

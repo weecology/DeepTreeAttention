@@ -121,7 +121,7 @@ def create_boxes(plot_data, size=1):
     
     return fixed_boxes
     
-def process_plot(plot_data, rgb_pool, deepforest_model, debug = False):
+def process_plot(plot_data, rgb_pool, deepforest_model):
     """For a given NEON plot, find the correct sensor data, predict trees and associate bounding boxes with field data
     Args:
         plot_data: geopandas dataframe in a utm projection
@@ -140,10 +140,6 @@ def process_plot(plot_data, rgb_pool, deepforest_model, debug = False):
     if boxes.empty:
         raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
     
-    if debug:
-        interim_dir = os.path.abspath(ROOT)
-        boxes.to_file("{}/data/interim/{}_boxes_raw.shp".format(interim_dir, plot_data.plotID.unique()[0]))        
-        
     #Merge results with field data, buffer on edge 
     merged_boxes = gpd.sjoin(boxes, plot_data)
     
@@ -193,7 +189,7 @@ def run(plot, df, savedir, rgb_pool=None, saved_model=None, deepforest_model=Non
         
     #Filter data and process
     plot_data = df[df.plotID == plot]
-    predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model, debug=True)
+    predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
     
     #Write merged boxes to file as an interim piece of data to inspect.
     predicted_trees.to_file("{}/{}_boxes.shp".format(savedir, plot))
@@ -273,7 +269,7 @@ if __name__ == "__main__":
         field_data=config["evaluation"]["ground_truth_path"],    
         rgb_dir=config["rgb_sensor_pool"],
         client=client,
-        savedir="{}/data/deepforest_boxes/train/".format(ROOT),
+        savedir="{}/data/deepforest_boxes/test/".format(ROOT),
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )
     
@@ -286,6 +282,7 @@ if __name__ == "__main__":
         field_data=config["train"]["ground_truth_path"],      
         rgb_dir=config["rgb_sensor_pool"],
         client=client,
+        savedir="{}/data/deepforest_boxes/train/".format(ROOT),        
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )
     

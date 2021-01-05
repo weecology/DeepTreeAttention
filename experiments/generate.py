@@ -1,12 +1,10 @@
 #Generate tfrecords
 import glob
-import numpy as np
 import os
 import pandas as pd
-from dask import dataframe as dd
+import geopandas as gpd
 
 from DeepTreeAttention.trees import AttentionModel, __file__
-from DeepTreeAttention.generators import boxes
 from DeepTreeAttention.utils.start_cluster import start
 from DeepTreeAttention.utils.paths import *
 
@@ -21,9 +19,7 @@ old_files = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
 #get root dir full path
 client = start(cpus=60, mem_size="10GB") 
 
-plots_to_run = glob.glob("data/interim/*.shp")
-
-def run(record):
+def run(record, savedir):
     """Take a plot of deepforest prediction (see prepare_field_data.py) and generate crops for training/evalution"""
     #Read record
     df = gpd.read_file(record)
@@ -48,7 +44,6 @@ def run(record):
     
     #Convert h5 hyperspec
     hyperspec_path = lookup_and_convert(shapefile=record, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, savedir=att.config["hyperspectral_tif_dir"])
-    
     rgb_path = find_sensor_path(shapefile=record, lookup_pool=rgb_pool)
     
     #infer site, only 1 per plot.
@@ -62,6 +57,8 @@ def run(record):
     h5_path = find_sensor_path(shapefile=record, lookup_pool=hyperspectral_pool)    
     elevation = elevation_from_tile(h5_path)
     
+    ensemble_model = tf.keras.Model(ensemble_model.inputs, ensemble_model.get_layer("submodel_concat").output)
+    
     #Generate record when complete   
     tfrecords = att.generate(
         csv_file=record,
@@ -73,14 +70,34 @@ def run(record):
         site=numeric_site,
         elevation=elevation,
         label_column="filtered_taxonID",
-        species_label_dict=species_label_dict
+        species_label_dict=species_label_dict,
+        ensemble_model=ensemble_model,
+        savedir=savedir
     )
     
     return tfrecords
+
+#test
+plots_to_run = glob.glob("data/deepforest_boxes/test/*.shp")
+
+test_tfrecords = []
+for record in plots_to_run:
+    future = client.submit(run, record=record,  savedir="/orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/")
+    train_tfrecords.append(future)
     
+wait(test_tfrecords)
+for x in test_tfrecords:
+    try:
+        print(x.result())
+    except Exception as e:
+        print("{} failed with {}".format(x, e))
+        pass
+
+#train
+plots_to_run = glob.glob("data/deepforest_boxes/train/*.shp")
 train_tfrecords = []
 for record in plots_to_run:
-    future = client.submit(run, record=record)
+    future = client.submit(run, record=record, savedir="/orange/idtrees-collab/DeepTreeAttention/tfrecords/train/")
     train_tfrecords.append(future)
     
 wait(train_tfrecords)
@@ -90,4 +107,4 @@ for x in train_tfrecords:
     except Exception as e:
         print("{} failed with {}".format(x, e))
         pass
-        
+      

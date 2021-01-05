@@ -82,11 +82,11 @@ def mod(tmpdir):
     mod.config["train"]["tfrecords"] = train_dir
     mod.classes_file = "data/processed/species_class_labels.csv"
     created_records = mod.generate(shapefile=test_predictions, site=0, domain=1, elevation=100,
-                                   heights=np.random.random(shp.shape[0]),
                                    HSI_sensor_path=test_sensor_tile,
                                    RGB_sensor_path=test_sensor_tile,
                                    train=True,
-                                   chunk_size=2)  
+                                   chunk_size=2,
+                                   savedir = mod.config["train"]["tfrecords"]) 
     
     #create a fake label file
     pd.DataFrame({"taxonID":["Ben","Jon"],"label":[0,1]}).to_csv(label_file)
