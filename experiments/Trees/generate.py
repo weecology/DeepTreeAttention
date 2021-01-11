@@ -11,6 +11,7 @@ from DeepTreeAttention.trees import AttentionModel, __file__
 from DeepTreeAttention.utils.start_cluster import start
 from DeepTreeAttention.utils.paths import *
 from distributed import wait
+from DeepTreeAttention.models.layers import WeightedSum
 
 #Delete any file previous run
 old_files = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/*")
@@ -59,7 +60,8 @@ def run(record, savedir):
     h5_path = find_sensor_path(bounds=df.total_bounds, lookup_pool=hyperspectral_pool)    
     elevation = elevation_from_tile(h5_path)
     
-    ensemble_model = tf.keras.Model(ensemble_model.inputs, ensemble_model.get_layer("submodel_concat").output)
+    att.ensemble_model = tf.keras.models.load_model("{}/Ensemble.h5".format(att.config["neighbors"]["model_dir"]), custom_objects={"WeightedSum":WeightedSum})    
+    ensemble_model = tf.keras.Model(att.ensemble_model.inputs, att.ensemble_model.get_layer("submodel_concat").output)
     
     #Generate record when complete   
     tfrecords = att.generate(
