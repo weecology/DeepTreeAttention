@@ -227,9 +227,10 @@ def generate_tfrecords(
         else:
             chunk_labels = None
 
-        #resize crops
+        #resize crops and ensure dtypes
         resized_HSI_crops = [resize(x, HSI_size, HSI_size).astype(np.float32) for x in chunk_HSI_crops]
         resized_RGB_crops = [resize(x, RGB_size, RGB_size).astype(np.float32) for x in chunk_RGB_crops]
+        chunk_neighbor_arrays = [x.astype(np.float32) for x in chunk_neighbor_arrays]
         
         resized_HSI_crops = [image_normalize(x) for x in resized_HSI_crops]
 

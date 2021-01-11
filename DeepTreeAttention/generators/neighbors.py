@@ -188,7 +188,8 @@ def extract_features(df, x, model_class, hyperspectral_pool, site_label_dict, do
     else:        
         raster = rasterio.open(sensor_path)
         feature_array, distances = predict_neighbors(target, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=model_class.ensemble_model, k_neighbors=k_neighbors)
-        
+    
+    #enforce dtype    
     return feature_array, distances
 
     
