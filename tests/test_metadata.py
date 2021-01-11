@@ -11,7 +11,6 @@ def classes():
 @pytest.fixture()
 def data():
     #simulate data
-    height = np.random.random(1)    
     elevation = np.random.random(1)
     sites = np.zeros(23)
     sites[8] = 1
@@ -21,7 +20,7 @@ def data():
     domain[8] = 1
     domain = np.expand_dims(domain,0)
     
-    return elevation, height, sites, domain
+    return elevation, sites, domain
 
 #Test full model makes the correct number of predictions.
 def test_model(data, classes):

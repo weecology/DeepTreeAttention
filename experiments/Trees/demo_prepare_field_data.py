@@ -1,13 +1,11 @@
 
 #Testing script that lives outside of pytest due to DeepForest dependency in a new conda env. PYTHONPATH manually added to root dir for relative paths.
 import os
-import pytest
-import tensorflow
-import numpy as np
 from matplotlib import pyplot as plt
 import geopandas as gpd
 import pandas as pd
 import glob
+import tempfile
 
 import prepare_field_data
 from DeepTreeAttention.generators import boxes
@@ -16,12 +14,9 @@ from deepforest import deepforest
 data_dir = os.path.dirname(prepare_field_data.__file__)
 data_path = "{}/test_data/sample.shp".format(data_dir)
 rgb_dir = "{}/test_data/rgb/*.tif".format(data_dir)
-hyperspectral_dir = "{}/test_data/HSI/*.tif".format(data_dir)
-hyperspectral_savedir = "{}/test_data/HSI/".format(data_dir)
 
 ROOT = os.path.dirname(os.path.dirname(data_dir))
 
-hyperspectral_pool = glob.glob(hyperspectral_dir, recursive=True)
 rgb_pool = glob.glob(rgb_dir, recursive=True)
 
 height = 100
@@ -63,59 +58,19 @@ def test_process_plot():
     deepforest_model.use_release()
     
     merged_boxes = prepare_field_data.process_plot(plot_data=df, rgb_pool=rgb_pool, deepforest_model=deepforest_model)
-    assert df.shape[0] <= merged_boxes.shape[0]
+    assert df.shape[0] >= merged_boxes.shape[0]
     
 def test_run():
     df = gpd.read_file(data_path)
     plot = df.plotID.unique()[0]
-    counter = prepare_field_data.run(
+    prepare_field_data.run(
         plot=plot,
         df = df,
         rgb_pool=rgb_pool,
-        hyperspectral_pool=hyperspectral_pool,
-        extend_HSI_box=0,
-        extend_RGB_box=0,
-        hyperspectral_savedir=hyperspectral_savedir
+        savedir=tempfile.TemporaryDirectory()
     ) 
     
-    #all have same length
-    assert len(counter) == 8
-    
-def test_main():
-    created_records = prepare_field_data.main(
-        field_data=data_path,
-        hyperspectral_dir=hyperspectral_dir,
-        RGB_size=height,
-        HSI_size=width,
-        rgb_dir=rgb_dir,
-        hyperspectral_savedir=hyperspectral_savedir,
-        extend_HSI_box=0,
-        extend_RGB_box=0
-    )
-    
-    dataset = boxes.tf_dataset(created_records, batch_size=1, mode="RGB")
-    iterator = dataset.make_one_shot_iterator()
-    next_element = iterator.get_next()
-    
-    with tensorflow.Session() as sess:
-        labels = []
-        counter=0        
-        while True:
-            try:
-                data, label = sess.run(next_element)
-                assert data.shape == (1, height, width, 3)
-                assert label.shape  == (1,5)
-                
-                plt.imshow(data[0].astype("uint8"))                
-                labels.append(label)
-                counter+=1
-            except tensorflow.errors.OutOfRangeError:
-                break
-    input_data = gpd.read_file(data_path)
-    assert counter == input_data.shape[0]
-
 #Run tests
 test_empty_plot()
 test_process_plot()
 test_run()
-test_main()

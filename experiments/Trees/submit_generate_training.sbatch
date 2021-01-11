@@ -21,3 +21,4 @@ cd /home/b.weinstein/DeepTreeAttention/experiments/Trees/
 
 #Generate only once using DeepForest requires less than tensorflow 2.0
 python prepare_field_data.py
+

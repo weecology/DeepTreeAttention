@@ -1,9 +1,12 @@
 #test species id boxes
 import pytest
 import os
-from DeepTreeAttention.generators import boxes
 import geopandas as gpd
 import numpy as np
+import tensorflow as tf
+
+from DeepTreeAttention.generators import boxes
+from DeepTreeAttention.models import Hang2020_geographic, metadata
 
 #random label predictions just for testing
 test_predictions = "data/raw/2019_BART_5_320000_4881000_image_small.shp"
@@ -14,13 +17,23 @@ test_sensor_tile = "data/raw/2019_BART_5_320000_4881000_image_crop.tif"
 test_hsi_tile = "data/raw/2019_BART_5_320000_4881000_image_hyperspectral_crop.tif"
 
 @pytest.fixture()
-def created_records(tmpdir):
+def ensemble_model():
+    sensor_inputs, sensor_outputs, spatial, spectral = Hang2020_geographic.define_model(classes=2, height=20, width=20, channels=369)    
+    model1 = tf.keras.Model(inputs=sensor_inputs, outputs=sensor_outputs)
+    
+    metadata_model = metadata.create(classes=2, sites=10, domains =10, learning_rate=0.001)
+    ensemble_model = Hang2020_geographic.learned_ensemble(HSI_model=model1, metadata_model=metadata_model, classes=2)
+    ensemble_model = tf.keras.Model(ensemble_model.inputs, ensemble_model.get_layer("submodel_concat").output)
+    
+    return ensemble_model
+    
+@pytest.fixture()
+def created_records(tmpdir, ensemble_model):
     shp = gpd.read_file(test_predictions)    
     created_records = boxes.generate_tfrecords(
         shapefile=test_predictions,
         domain=1,
         site = 1,
-        heights=np.random.random(shp.shape[0])*10,        
         elevation=100.0,
         savedir=tmpdir,
         HSI_sensor_path=test_hsi_tile,
@@ -30,13 +43,35 @@ def created_records(tmpdir):
         HSI_size=20,
         classes=6,
         number_of_sites=10,
-        number_of_domains=16
+        number_of_domains=10,
+        ensemble_model=ensemble_model
     )
     
     return created_records
+
+def test_generate_records(tmpdir, ensemble_model):
+    shp = gpd.read_file(test_predictions)    
+    created_records = boxes.generate_tfrecords(
+        shapefile=test_predictions,
+        domain=1,
+        site = 1,
+        elevation=100.0,
+        savedir=tmpdir,
+        HSI_sensor_path=test_hsi_tile,
+        RGB_sensor_path=test_sensor_tile,
+        species_label_dict=None,
+        RGB_size=100,
+        HSI_size=20,
+        classes=6,
+        number_of_sites=10,
+        number_of_domains=10,
+        ensemble_model=ensemble_model
+    )
+    
+    assert len(created_records) > 0 
     
 @pytest.mark.parametrize("train",[True, False])
-def test_generate_tfrecords(train, created_records):
+def test_tf_dataset(train, created_records):
     assert all([os.path.exists(x) for x in created_records])
     
     if train:
@@ -62,7 +97,7 @@ def test_metadata(created_records):
         elevation, site, domain = data
         assert elevation.numpy().shape == (2,)
         assert site.numpy().shape == (2,10)
-        assert domain.numpy().shape == (2,16)
+        assert domain.numpy().shape == (2,10)
         
 def test_RGB_submodel(created_records):    
     dataset = boxes.tf_dataset(created_records, batch_size=2, mode = "RGB_submodel")
@@ -76,11 +111,23 @@ def test_ensemble(created_records):
     dataset = boxes.tf_dataset(created_records, batch_size=2, mode="ensemble")
     for data, label_batch in dataset.take(1):
         HSI, elevation, site, domain = data
+        
         assert HSI.shape == (2,20,20,369)    
         assert elevation.numpy().shape == (2,)
         assert site.numpy().shape == (2,10)
-        assert domain.numpy().shape == (2,16)
+        assert domain.numpy().shape == (2,10)
 
+def test_neighbor(created_records):    
+    dataset = boxes.tf_dataset(created_records, batch_size=2, mode="neighbors")
+    for data, label_batch in dataset.take(1):
+        HSI, neighbor_array, elevation, site, domain = data
+        
+        assert HSI.shape == (2,20,20,369)    
+        assert neighbor_array.shape == (2,5,4)            
+        assert elevation.numpy().shape == (2,)
+        assert site.numpy().shape == (2,10)
+        assert domain.numpy().shape == (2,10)
+        
 def test_id_train(created_records):
     shp = gpd.read_file(test_predictions)        
     dataset = boxes.tf_dataset(created_records, batch_size=2, ids=True, mode = "RGB")
@@ -88,6 +135,4 @@ def test_id_train(created_records):
         data, label = batch
         assert ids.numpy().shape == (2,)
     
-    basename = os.path.splitext(os.path.basename(test_predictions))[0]
-    shp["box_index"] = ["{}_{}".format(basename, x) for x in shp.index.values]
-    assert all([x in shp.box_index.values for x in ids.numpy()])
+    assert all([x in shp.index.values for x in ids.numpy()])

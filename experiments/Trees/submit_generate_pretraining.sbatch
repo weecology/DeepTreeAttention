@@ -18,4 +18,4 @@ export LD_LIBRARY_PATH=/home/b.weinstein/miniconda3/envs/DeepTreeAttention_38/li
 cd /home/b.weinstein/DeepTreeAttention/experiments/Trees/
 
 #Generate only once using DeepForest requires less than tensorflow 2.0
-python generate.py
+python generate_unsupervised.py

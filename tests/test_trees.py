@@ -95,11 +95,12 @@ def tfrecords(mod, tmpdir):
     shp = gpd.read_file(test_predictions)
     
     created_records = mod.generate(shapefile=test_predictions, site=0, domain=1, elevation=100,
-                                   heights=np.random.random(shp.shape[0]),
                                    HSI_sensor_path=test_sensor_hyperspec,
                                    RGB_sensor_path=test_sensor_tile,
                                    train=True,
-                                   chunk_size=2)    
+                                   chunk_size=2,
+                                   savedir = mod.config["train"]["tfrecords"]
+                                   )    
     return created_records
 
 
@@ -109,11 +110,13 @@ def test_generate(mod):
         shapefile=test_predictions,
         domain=1,
         site=0,
-        heights=np.random.random(shp.shape[0]),
         elevation=100,
         HSI_sensor_path=test_sensor_hyperspec,
         RGB_sensor_path=test_sensor_tile,
-        train=True, chunk_size=2)  
+        train=True, 
+        chunk_size=2,
+        savedir = mod.config["train"]["tfrecords"]
+    )  
     
     assert all([os.path.exists(x) for x in created_records])
 
