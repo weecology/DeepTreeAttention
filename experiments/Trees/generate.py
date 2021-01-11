@@ -3,11 +3,11 @@ import glob
 import os
 import pandas as pd
 import geopandas as gpd
+import tensorflow as tf
 
 from DeepTreeAttention.trees import AttentionModel, __file__
 from DeepTreeAttention.utils.start_cluster import start
 from DeepTreeAttention.utils.paths import *
-
 from distributed import wait
 
 #Delete any file previous run
