@@ -43,7 +43,7 @@ train:
     gpus: 1
     pretrain: True #Train the submodels before ensembling all together
 neighbors:
-    model_dir:
+    model_dir: /orange/idtrees-collab/DeepTreeAttention/snapshots//20201221_125454/
 autoencoder:
     epochs: 50
     quantile: 0.98
