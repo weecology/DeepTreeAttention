@@ -22,10 +22,14 @@ old_files = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
 #get root dir full path
 client = start(cpus=60, mem_size="10GB") 
 
-def run(record, savedir):
+def run(record, savedir, raw_box_dir):
     """Take a plot of deepforest prediction (see prepare_field_data.py) and generate crops for training/evalution"""
     #Read record
     df = gpd.read_file(record)
+    
+    #get bounding boxes from the surrounding trees
+    basename = os.path.basename(record)
+    raw_boxes ="{}/{}".format(raw_box_dir, basename)
     
     att = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml")
     ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -66,6 +70,7 @@ def run(record, savedir):
     #Generate record when complete   
     tfrecords = att.generate(
         shapefile=record,
+        raw_boxes=raw_boxes,
         HSI_sensor_path=hyperspec_path,
         RGB_sensor_path=rgb_path,
         chunk_size=500,
@@ -87,7 +92,7 @@ plots_to_run = glob.glob("{}/data/deepforest_boxes/evaluation/*.shp".format(ROOT
 
 test_tfrecords = []
 for record in plots_to_run:
-    future = client.submit(run, record=record,  savedir="/orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/")
+    future = client.submit(run, record=record,  savedir="/orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/", raw_box_dir="{}/data/deepforest_boxes_raw/evaluation/".format(ROOT))
     test_tfrecords.append(future)
     
 wait(test_tfrecords)
@@ -103,7 +108,7 @@ for x in test_tfrecords:
 plots_to_run = glob.glob("{}/data/deepforest_boxes/train/*.shp".format(ROOT))
 train_tfrecords = []
 for record in plots_to_run:
-    future = client.submit(run, record=record, savedir="/orange/idtrees-collab/DeepTreeAttention/tfrecords/train/")
+    future = client.submit(run, record=record, savedir="/orange/idtrees-collab/DeepTreeAttention/tfrecords/train/", raw_box_dir="{}/data/deepforest_boxes_raw/train/".format(ROOT))
     train_tfrecords.append(future)
     
 wait(train_tfrecords)

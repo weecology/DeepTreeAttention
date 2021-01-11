@@ -172,10 +172,9 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
      
     merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_points),crs=merged_boxes.crs)
         
-    #assert plot_data.shape[0] == merged_boxes.shape[0]
-    return merged_boxes
+    return boxes, merged_boxes
 
-def run(plot, df, savedir, rgb_pool=None, saved_model=None, deepforest_model=None):
+def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, deepforest_model=None):
     """wrapper function for dask, see main.py"""
     from deepforest import deepforest
 
@@ -189,15 +188,17 @@ def run(plot, df, savedir, rgb_pool=None, saved_model=None, deepforest_model=Non
         
     #Filter data and process
     plot_data = df[df.plotID == plot]
-    predicted_trees = process_plot(plot_data, rgb_pool, deepforest_model)
+    predicted_trees, raw_boxes = process_plot(plot_data, rgb_pool, deepforest_model)
     
     #Write merged boxes to file as an interim piece of data to inspect.
     predicted_trees.to_file("{}/{}_boxes.shp".format(savedir, plot))
+    raw_boxes.to_file("{}/{}_boxes.shp".format(raw_box_savedir, plot))
 
 def main(
     field_data,
     rgb_dir, 
     savedir,
+    raw_box_savedir,
     saved_model=None, 
     client=None, 
     shuffle=True):
@@ -207,6 +208,7 @@ def main(
         height: height in meters of the resized training image
         width: width in meters of the resized training image
         savedir: direcory to save predicted bounding boxes
+        raw_box_savedir: directory save all bounding boxes in the image
         client: dask client object to use
     Returns:
         None: .shp bounding boxes are written to savedir
@@ -271,6 +273,7 @@ if __name__ == "__main__":
         rgb_dir=config["rgb_sensor_pool"],
         client=client,
         savedir="{}/data/deepforest_boxes/evaluation/".format(ROOT),
+        raw_box_savedir="{}/data/deepforest_boxes_raw/evaluation/".format(ROOT),        
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )
     
@@ -283,7 +286,8 @@ if __name__ == "__main__":
         field_data=config["train"]["ground_truth_path"],      
         rgb_dir=config["rgb_sensor_pool"],
         client=client,
-        savedir="{}/data/deepforest_boxes/train/".format(ROOT),        
+        savedir="{}/data/deepforest_boxes/train/".format(ROOT),    
+        raw_box_savedir="{}/data/deepforest_boxes_raw/train/".format(ROOT),                
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )
     

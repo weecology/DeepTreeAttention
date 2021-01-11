@@ -44,13 +44,13 @@ def created_records(tmpdir, ensemble_model):
         classes=6,
         number_of_sites=10,
         number_of_domains=10,
-        ensemble_model=ensemble_model
+        ensemble_model=ensemble_model,
+        raw_boxes=test_predictions
     )
     
     return created_records
 
 def test_generate_records(tmpdir, ensemble_model):
-    shp = gpd.read_file(test_predictions)    
     created_records = boxes.generate_tfrecords(
         shapefile=test_predictions,
         domain=1,
@@ -65,7 +65,8 @@ def test_generate_records(tmpdir, ensemble_model):
         classes=6,
         number_of_sites=10,
         number_of_domains=10,
-        ensemble_model=ensemble_model
+        ensemble_model=ensemble_model,
+        raw_boxes=test_predictions
     )
     
     assert len(created_records) > 0 

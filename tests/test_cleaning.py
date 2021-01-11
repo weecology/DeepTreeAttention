@@ -94,7 +94,8 @@ def tfrecords(mod, tmpdir):
                                    RGB_sensor_path=test_sensor_tile,
                                    train=True,
                                    chunk_size=2,
-                                   savedir = mod.config["train"]["tfrecords"])    
+                                   savedir = mod.config["train"]["tfrecords"],
+                                   raw_boxes=test_predictions)    
     return created_records
 
 

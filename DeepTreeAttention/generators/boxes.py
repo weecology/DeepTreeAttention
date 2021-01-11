@@ -95,7 +95,8 @@ def generate_tfrecords(
                        csv_file=None,
                        label_column="label",
                        ensemble_model=None,
-                       k_neighbors=5):
+                       k_neighbors=5,
+                       raw_boxes=None):
     """Yield one instance of data with one hot labels
     Args:
         chunk_size: number of windows per tfrecord
@@ -113,7 +114,7 @@ def generate_tfrecords(
         include_neighbors: logical, whether to extract HSI data from neighbor trees.
         ensemble_model: an ensemble model that predicts neighbor features
         k_neighbors: number of neighbors to extract
-
+        raw_boxes: a geodataframe of boxes to choose for neighbor analysis
     Returns:
         filename: tfrecords path
     """
@@ -143,7 +144,7 @@ def generate_tfrecords(
     if species_label_dict is not None:
         gdf = gdf[gdf[label_column].isin(list(species_label_dict.keys()))]
     
-    gdf["box_index"] = gdf.index.values
+    gdf["box_id"] = gdf.index.values
     labels = []
     HSI_crops = []
     RGB_crops = []
@@ -167,15 +168,17 @@ def generate_tfrecords(
         
         HSI_crops.append(HSI_crop)
         RGB_crops.append(RGB_crop)
-        indices.append(int(row["box_index"]))
+        indices.append(int(row["box_id"]))
     
         #extract neighbors
-        if ensemble_model is not None:         
+        if ensemble_model is not None:       
+            neighbor_pool = gpd.read_file(raw_boxes)
+            
             one_hot_sites = tf.one_hot(site, number_of_sites)  
             one_hot_domains = tf.one_hot(domain, number_of_domains)
             metadata = [elevation, one_hot_sites, one_hot_domains]
             
-            neighbor_pool = gdf[~(gdf.individual == row["individual"])].reset_index(drop=True)
+            neighbor_pool = neighbor_pool[~(neighbor_pool.box_id == row["box_id"])].reset_index(drop=True)
             raster = rasterio.open(HSI_sensor_path)
             neighbor_array, neighbor_distance = neighbors.predict_neighbors(row, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=ensemble_model, k_neighbors=k_neighbors)
             neighbor_arrays.append(neighbor_array)
