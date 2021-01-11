@@ -72,8 +72,7 @@ def convert_h5(hyperspectral_h5_path, rgb_path, savedir):
 
 
 def lookup_and_convert(shapefile, rgb_pool, hyperspectral_pool, savedir):
-    hyperspectral_h5_path = find_sensor_path(shapefile=shapefile,
-                                             lookup_pool=hyperspectral_pool)
+    hyperspectral_h5_path = find_sensor_path(shapefile=shapefile,lookup_pool=hyperspectral_pool)
     rgb_path = find_sensor_path(shapefile=shapefile, lookup_pool=rgb_pool)
 
     #convert .h5 hyperspec tile if needed
