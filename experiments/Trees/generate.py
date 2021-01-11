@@ -85,7 +85,7 @@ plots_to_run = glob.glob("{}/data/deepforest_boxes/evaluation/*.shp".format(ROOT
 test_tfrecords = []
 for record in plots_to_run:
     future = client.submit(run, record=record,  savedir="/orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/")
-    train_tfrecords.append(future)
+    test_tfrecords.append(future)
     
 wait(test_tfrecords)
 for x in test_tfrecords:
