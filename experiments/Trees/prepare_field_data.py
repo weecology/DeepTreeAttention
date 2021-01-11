@@ -224,7 +224,8 @@ def main(
                 plot=plot,
                 df=df,
                 rgb_pool=rgb_pool,
-                saved_model=saved_model
+                saved_model=saved_model,
+                savedir=savedir
             )
             futures.append(future)
         
