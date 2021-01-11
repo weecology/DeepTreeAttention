@@ -73,7 +73,7 @@ def run(record, savedir):
         domain=numeric_domain,
         site=numeric_site,
         elevation=elevation,
-        label_column="filtered_taxonID",
+        label_column="taxonID",
         species_label_dict=species_label_dict,
         ensemble_model=ensemble_model,
         savedir=savedir
