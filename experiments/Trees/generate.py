@@ -56,7 +56,7 @@ def run(record, savedir):
     numeric_domain = domain_label_dict[domain] 
     
     #infer elevation
-    h5_path = find_sensor_path(shapefile=record, lookup_pool=hyperspectral_pool)    
+    h5_path = find_sensor_path(bounds=df.total_bounds, lookup_pool=hyperspectral_pool)    
     elevation = elevation_from_tile(h5_path)
     
     ensemble_model = tf.keras.Model(ensemble_model.inputs, ensemble_model.get_layer("submodel_concat").output)
