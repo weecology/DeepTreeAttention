@@ -18,7 +18,7 @@ save_dir = "{}/{}".format("/orange/idtrees-collab/DeepTreeAttention/snapshots/",
 os.mkdir(save_dir)
 
 experiment = Experiment(project_name="neontrees", workspace="bw4sz")
-experiment.add_tag("Cleaning")
+experiment.add_tag("neighbors")
 
 #Create output folder
 experiment.log_parameter("timestamp",timestamp)
@@ -30,7 +30,7 @@ model.create()
 model.ensemble_model = tfk.models.load_model("{}/Ensemble.h5".format(model.config["neighbors"]["model_dir"]), custom_objects={"WeightedSum":WeightedSum})
 model.read_data("neighbors")
 
-neighbor = neighbors_model.create(ensemble_model = model.ensemble_model, k_neighbors=model.config["neighbor"]["k_neighbors"], classes=model.classes)
+neighbor = neighbors_model.create(ensemble_model = model.ensemble_model, k_neighbors=model.config["neighbors"]["k_neighbors"], classes=model.classes)
 
 labeldf = pd.read_csv(model.classes_file)
 label_names = list(labeldf.taxonID.values)
