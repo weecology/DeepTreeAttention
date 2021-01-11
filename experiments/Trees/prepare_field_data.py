@@ -270,7 +270,7 @@ if __name__ == "__main__":
         field_data=config["evaluation"]["ground_truth_path"],    
         rgb_dir=config["rgb_sensor_pool"],
         client=client,
-        savedir="{}/data/deepforest_boxes/test/".format(ROOT),
+        savedir="{}/data/deepforest_boxes/evaluation/".format(ROOT),
         saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
     )
     
