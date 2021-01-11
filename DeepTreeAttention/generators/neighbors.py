@@ -168,15 +168,24 @@ def extract_features(df, x, model_class, hyperspectral_pool, site_label_dict, do
     numeric_domain = domain_label_dict[domain]   
     one_hot_domains = tf.one_hot(numeric_domain, model_class.domains)
     
-    #ToDO bring h5 into here.
-    #elevation = elevation_from_tile(sensor_path)/1000
-    elevation = 100/1000
+    #for tests, dummy elevation variable
+    try:
+        elevation = elevation_from_tile(sensor_path)/1000
+    except:
+        elevation = 100/1000
+    
     metadata = [elevation, one_hot_sites, one_hot_domains]
     
     neighbor_pool = df[~(df.individual == x)].reset_index(drop=True)
-    raster = rasterio.open(sensor_path)
-    feature_array, distances = predict_neighbors(target, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=model_class.ensemble_model, k_neighbors=k_neighbors)
     
+    #If there are no neighbors, return 0's
+    if neighbor_pool.empty:
+        feature_array = np.zeros((k_neighbors, model_class.ensemble_model.output.shape[1]))
+        distances = np.repeat(9999, k_neighbors)
+    else:        
+        raster = rasterio.open(sensor_path)
+        feature_array, distances = predict_neighbors(target, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=model_class.ensemble_model, k_neighbors=k_neighbors)
+        
     return feature_array, distances
 
     

@@ -73,7 +73,7 @@ class AttentionModel():
         except:
             self.test_shp = None
                 
-    def generate(self, HSI_sensor_path, RGB_sensor_path, elevation, domain, site, savedir, species_label_dict=None, train=True, chunk_size=1000, shapefile=None, csv_file=None,label_column="label", ensemble_model=None):
+    def generate(self, HSI_sensor_path, RGB_sensor_path, elevation, domain, site, savedir, species_label_dict=None, train=True, chunk_size=1000, shapefile=None, csv_file=None,label_column="label", ensemble_model=None, raw_boxes=None):
         """Predict species class for each DeepForest bounding box
             Args:
                 shapefile: a DeepForest shapefile (see NeonCrownMaps) with a bounding box and utm projection
@@ -82,6 +82,7 @@ class AttentionModel():
                 sensor_path: supply a known path to a sensor geoTIFF tile. 
                 chunk_size: number of crops per tfrecord
                 label_column: name of column to take taxonID labels
+                raw_boxes: .shp of neighbor boxes to select
             """
 
         self.classes = pd.read_csv(self.classes_file).shape[0]        
@@ -105,7 +106,8 @@ class AttentionModel():
                                                    extend_RGB_box=self.config["train"]["RGB"]["extend_box"],
                                                    label_column=label_column,
                                                    shuffle=True,
-                                                   ensemble_model=ensemble_model)
+                                                   ensemble_model=ensemble_model,
+                                                   raw_boxes=raw_boxes)
 
         return created_records
 
