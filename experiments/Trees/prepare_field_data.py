@@ -172,7 +172,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
      
     merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_points),crs=merged_boxes.crs)
         
-    return boxes, merged_boxes
+    return merged_boxes, boxes 
 
 def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, deepforest_model=None):
     """wrapper function for dask, see main.py"""
