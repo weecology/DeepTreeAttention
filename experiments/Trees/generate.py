@@ -2,6 +2,7 @@
 import glob
 import os
 import pandas as pd
+import traceback
 import geopandas as gpd
 import tensorflow as tf
 
@@ -93,6 +94,7 @@ for x in test_tfrecords:
         print(x.result())
     except Exception as e:
         print("{} failed with {}".format(x, e))
+        print(traceback.print_tb(e.__traceback__))
         pass
 
 #train
@@ -108,5 +110,6 @@ for x in train_tfrecords:
         print(x.result())
     except Exception as e:
         print("{} failed with {}".format(x, e))
+        print(traceback.print_tb(e.__traceback__))
         pass
       
