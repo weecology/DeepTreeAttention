@@ -45,8 +45,8 @@ def run(record, savedir):
     hyperspectral_pool = glob.glob(att.config["hyperspectral_sensor_pool"], recursive=True)
     
     #Convert h5 hyperspec
-    hyperspec_path = lookup_and_convert(shapefile=record, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, savedir=att.config["hyperspectral_tif_dir"])
-    rgb_path = find_sensor_path(shapefile=record, lookup_pool=rgb_pool)
+    hyperspec_path = lookup_and_convert(bounds=df.total_bounds, rgb_pool=rgb_pool, hyperspectral_pool=hyperspectral_pool, savedir=att.config["hyperspectral_tif_dir"])
+    rgb_path = find_sensor_path(bounds=df.total_bounds, lookup_pool=rgb_pool)
     
     #infer site, only 1 per plot.
     site = df.siteID.unique()[0]
