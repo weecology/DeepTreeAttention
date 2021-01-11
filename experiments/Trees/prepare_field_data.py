@@ -227,7 +227,8 @@ def main(
                 df=df,
                 rgb_pool=rgb_pool,
                 saved_model=saved_model,
-                savedir=savedir
+                savedir=savedir,
+                raw_box_savedir=raw_box_savedir
             )
             futures.append(future)
         
@@ -244,7 +245,8 @@ def main(
                     df=df,
                     rgb_pool=rgb_pool,  
                     saved_model=saved_model,
-                    deepforest_model=deepforest_model
+                    deepforest_model=deepforest_model,
+                    raw_box_savedir=raw_box_savedir
                 )
             except Exception as e:
                 print("Plot failed with {}".format(e))      
