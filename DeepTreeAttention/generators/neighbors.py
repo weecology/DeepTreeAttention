@@ -114,7 +114,10 @@ def predict_neighbors(target, HSI_size, neighbor_pool, metadata, raster, model, 
     features = [ ]
     distances = [ ]
     for index, row in neighbor_geoms.iterrows():
-        crop = crop_image(src=raster, box=row["geometry"])
+        try:
+            crop = crop_image(src=raster, box=row["geometry"])
+        except:
+            continue
         
         #reorder to channels last
         crop = resize(crop, HSI_size, HSI_size)
