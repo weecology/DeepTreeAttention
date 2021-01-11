@@ -65,7 +65,7 @@ def run(record, savedir):
     
     #Generate record when complete   
     tfrecords = att.generate(
-        csv_file=record,
+        shapefile=record,
         HSI_sensor_path=hyperspec_path,
         RGB_sensor_path=rgb_path,
         chunk_size=500,
