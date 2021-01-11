@@ -5,6 +5,7 @@ import pandas as pd
 import geopandas as gpd
 import tensorflow as tf
 
+from DeepTreeAttention import __file__ as ROOT
 from DeepTreeAttention.trees import AttentionModel, __file__
 from DeepTreeAttention.utils.start_cluster import start
 from DeepTreeAttention.utils.paths import *
@@ -78,7 +79,8 @@ def run(record, savedir):
     return tfrecords
 
 #test
-plots_to_run = glob.glob("data/deepforest_boxes/evaluation/*.shp")
+ROOT = os.path.dirname(os.path.dirname(ROOT))
+plots_to_run = glob.glob("{}/data/deepforest_boxes/evaluation/*.shp".format(ROOT))
 
 test_tfrecords = []
 for record in plots_to_run:
@@ -94,7 +96,7 @@ for x in test_tfrecords:
         pass
 
 #train
-plots_to_run = glob.glob("data/deepforest_boxes/train/*.shp")
+plots_to_run = glob.glob("{}/data/deepforest_boxes/train/*.shp".format(ROOT))
 train_tfrecords = []
 for record in plots_to_run:
     future = client.submit(run, record=record, savedir="/orange/idtrees-collab/DeepTreeAttention/tfrecords/train/")
