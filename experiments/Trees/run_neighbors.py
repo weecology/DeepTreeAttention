@@ -23,13 +23,14 @@ experiment.add_tag("neighbors")
 #Create output folder
 experiment.log_parameter("timestamp",timestamp)
 experiment.log_parameter("log_dir",save_dir)
-experiment.log_parameters(model.config["neighbors"])
 
 #Create a class and run
 model = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml", log_dir=save_dir)
 model.create()
 model.ensemble_model = tfk.models.load_model("{}/Ensemble.h5".format(model.config["neighbors"]["model_dir"]), custom_objects={"WeightedSum":WeightedSum})
 model.read_data("neighbors")
+
+experiment.log_parameters(model.config["neighbors"])
 
 neighbor = neighbors_model.create(ensemble_model = model.ensemble_model, k_neighbors=model.config["neighbors"]["k_neighbors"], classes=model.classes, freeze=model.config["neighbors"]["freeze"])
 
