@@ -36,9 +36,8 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     #This may not be not right multiplication
     joined_features = tf.keras.layers.Dot(name="target_neighbor_multiply",axes=(1,2))([query_features, key_features])
     
-    #Scale before softmax temperature
-    joined_features = tf.keras.layers.Lambda(lambda x: x/(0.1 * K.sqrt(n_features)))
-                                             
+    #Scale before softmax temperature (fixed at sqrt(5) for the moment)
+    joined_features = tf.keras.layers.Lambda(lambda x: x/(0.1 *2.236068))(joined_features)
     joined_features = tf.keras.layers.Softmax()(joined_features)
     
     #Skip connection for value features
