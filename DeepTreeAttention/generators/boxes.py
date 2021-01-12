@@ -183,6 +183,9 @@ def generate_tfrecords(
             neighbor_array, neighbor_distance = neighbors.predict_neighbors(row, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=ensemble_model, k_neighbors=k_neighbors)
             neighbor_arrays.append(neighbor_array)
             neighbor_distances.append(neighbor_distance)
+
+            neighbor_arrays = [x.astype(np.float32) for x in neighbor_arrays]
+            
         else:
             neighbor_arrays.append(None)
             neighbor_distances.append(None)        
@@ -230,7 +233,6 @@ def generate_tfrecords(
         #resize crops and ensure dtypes
         resized_HSI_crops = [resize(x, HSI_size, HSI_size).astype(np.float32) for x in chunk_HSI_crops]
         resized_RGB_crops = [resize(x, RGB_size, RGB_size).astype(np.float32) for x in chunk_RGB_crops]
-        chunk_neighbor_arrays = [x.astype(np.float32) for x in chunk_neighbor_arrays]
         
         resized_HSI_crops = [image_normalize(x) for x in resized_HSI_crops]
 
@@ -407,7 +409,7 @@ def _neighbor_parse_(tfrecord):
     domains = tf.cast(example['number_of_domains'], tf.int32)    
     one_hot_domains = tf.one_hot(domain, domains)
     
-    return (loaded_HSI_image, neighbor_arrays, example['elevation'], one_hot_sites, one_hot_domains), one_hot_labels
+    return (loaded_HSI_image, example['elevation'], one_hot_sites, one_hot_domains, neighbor_arrays), one_hot_labels
 
 def _ensemble_parse_(tfrecord):
     features = {

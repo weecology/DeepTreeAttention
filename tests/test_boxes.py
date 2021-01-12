@@ -121,7 +121,7 @@ def test_ensemble(created_records):
 def test_neighbor(created_records):    
     dataset = boxes.tf_dataset(created_records, batch_size=2, mode="neighbors")
     for data, label_batch in dataset.take(1):
-        HSI, neighbor_array, elevation, site, domain = data
+        HSI, elevation, site, domain, neighbor_array = data
         
         assert HSI.shape == (2,20,20,369)    
         assert neighbor_array.shape == (2,5,4)            
