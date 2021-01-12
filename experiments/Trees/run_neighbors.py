@@ -52,3 +52,5 @@ neighbor.fit(
     validation_data=model.val_split,
     callbacks=callback_list)
 
+#save
+neighbor.save("{}/neighbors.h5".format(save_dir))

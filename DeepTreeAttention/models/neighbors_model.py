@@ -1,5 +1,6 @@
 #Define spatial neighbor learning
 import tensorflow as tf
+from tensorflow.keras import backend as K
 
 def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     """Define a neighbor model based on a ensemble model
@@ -23,26 +24,29 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     #mask out zero padding if less than k_neighbors
     masked_inputs = tf.keras.layers.Masking(mask_value=0)(neighbor_inputs)
     
-    flatten_neighbors = tf.keras.layers.Flatten(name="flatten_inputs")(masked_inputs)
-    neighbor_features = tf.keras.layers.Dense(n_features, activation="relu",name="neighbor_feature_dense")(flatten_neighbors)
-    neighbor_features = tf.keras.backend.l2_normalize(neighbor_features)
+    key_features = tf.keras.layers.Dense(n_features, activation="relu",name="neighbor_feature_dense")(masked_inputs)
+    key_features = tf.keras.backend.l2_normalize(key_features)
         
     #strip off previous head layers, target features are the HSI + metadata from the target tree
-    target_features = ensemble_model.get_layer("submodel_concat").output
-    target_features = tf.keras.layers.Dense(n_features, activation="relu",name="target_feature_dense")(target_features)
-    target_features = tf.keras.backend.l2_normalize(target_features)  
+    query_features = ensemble_model.get_layer("submodel_concat").output
+    query_features = tf.keras.layers.Dense(n_features, activation="relu",name="target_feature_dense")(query_features)
+    query_features = tf.keras.backend.l2_normalize(query_features)  
     
     #Multiply to neighbor features
-    joined_features = tf.keras.layers.Multiply(name="target_neighbor_multiply")([target_features, neighbor_features])
+    #This may not be not right multiplication
+    joined_features = tf.keras.layers.Dot(name="target_neighbor_multiply",axes=(1,2))([query_features, key_features])
     joined_features = tf.keras.layers.Softmax()(joined_features)
     
-    #Skip connection for neighbor features
-    neighbor_features = tf.keras.layers.Dense(n_features, activation="relu",name="skip_neighbor_feature_dense")(flatten_neighbors)
-    joined_features = tf.keras.layers.Multiply()([joined_features, neighbor_features])
-    context_vector = tf.keras.layers.Dense(classes, name="context_vector", activation="softmax")(joined_features)
+    #Skip connection for value features
+    value_features = tf.keras.layers.Dense(n_features, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
+    context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([value_features, joined_features])
+    context_vector = tf.keras.layers.Dense(n_features, name="context_vector", activation="relu")(context_vector)
     
     #Add as residual to original matrix
-    output = tf.keras.layers.Add(name="ensemble_add_bias")([context_vector,ensemble_model.output])
+    context_residual = tf.keras.layers.Add(name="ensemble_add_bias")([context_vector,ensemble_model.get_layer("submodel_concat").output])
+    
+    merged_layers = tf.keras.layers.Dropout(0.7)(context_residual)
+    output = tf.keras.layers.Dense(classes,name="ensemble_learn",activation="softmax")(merged_layers)
     
     return ensemble_model.inputs, neighbor_inputs, output
 
