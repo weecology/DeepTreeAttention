@@ -23,6 +23,7 @@ experiment.add_tag("neighbors")
 #Create output folder
 experiment.log_parameter("timestamp",timestamp)
 experiment.log_parameter("log_dir",save_dir)
+experiment.log_parameters(model.config["neighbors"])
 
 #Create a class and run
 model = AttentionModel(config="/home/b.weinstein/DeepTreeAttention/conf/tree_config.yml", log_dir=save_dir)
