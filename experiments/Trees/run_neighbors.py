@@ -30,7 +30,7 @@ model.create()
 model.ensemble_model = tfk.models.load_model("{}/Ensemble.h5".format(model.config["neighbors"]["model_dir"]), custom_objects={"WeightedSum":WeightedSum})
 model.read_data("neighbors")
 
-neighbor = neighbors_model.create(ensemble_model = model.ensemble_model, k_neighbors=model.config["neighbors"]["k_neighbors"], classes=model.classes)
+neighbor = neighbors_model.create(ensemble_model = model.ensemble_model, k_neighbors=model.config["neighbors"]["k_neighbors"], classes=model.classes, freeze=model.config["neighbors"]["freeze"])
 
 labeldf = pd.read_csv(model.classes_file)
 label_names = list(labeldf.taxonID.values)
@@ -40,7 +40,7 @@ callback_list = callbacks.create(
     train_data = model.train_split,
     validation_data = model.val_split,
     train_shp = model.train_shp,
-    log_dir=None,
+    log_dir=save_dir,
     label_names=label_names,
     submodel=False)
 

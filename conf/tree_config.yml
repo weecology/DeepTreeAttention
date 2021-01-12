@@ -45,6 +45,7 @@ train:
 neighbors:
     model_dir: /orange/idtrees-collab/DeepTreeAttention/snapshots//20201221_125454/
     k_neighbors: 5
+    freeze: True
 autoencoder:
     epochs: 50
     quantile: 0.98
