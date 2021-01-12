@@ -40,7 +40,7 @@ callback_list = callbacks.create(
     train_data = model.train_split,
     validation_data = model.val_split,
     train_shp = model.train_shp,
-    log_dir=None,
+    log_dir=save_dir,
     label_names=label_names,
     submodel=False)
 
