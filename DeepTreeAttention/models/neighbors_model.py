@@ -20,26 +20,8 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     input_shape = (k_neighbors, n_features)
     neighbor_inputs = tf.keras.layers.Input(shape=input_shape, name="neighbor_input")
     
-    #mask out zero padding if less than k_neighbors
-    masked_inputs = tf.keras.layers.Masking()(neighbor_inputs)
-    
-    flatten_neighbors = tf.keras.layers.Flatten(name="flatten_inputs")(masked_inputs)
-    neighbor_features = tf.keras.layers.Dense(n_features, activation="relu",name="neighbor_feature_dense")(flatten_neighbors)
-    neighbor_features = tf.keras.backend.l2_normalize(neighbor_features)
-        
     #strip off previous head layers, target features are the HSI + metadata from the target tree
-    target_features = ensemble_model.get_layer("submodel_concat").output
-    target_features = tf.keras.layers.Dense(n_features, activation="relu",name="target_feature_dense")(target_features)
-    target_features = tf.keras.backend.l2_normalize(target_features)  
-    
-    #Multiply to neighbor features
-    joined_features = tf.keras.layers.Multiply(name="target_neighbor_multiply")([target_features, neighbor_features])
-    joined_features = tf.keras.layers.Softmax()(joined_features)
-    
-    #Skip connection for neighbor features
-    neighbor_features = tf.keras.layers.Dense(n_features, activation="relu",name="skip_neighbor_feature_dense")(flatten_neighbors)
-    joined_features = tf.keras.layers.Multiply()([joined_features, neighbor_features])
-    output = tf.keras.layers.Dense(classes, name="neighbor_softmax", activation="softmax")(joined_features)
+    output = ensemble_model.output
             
     return ensemble_model.inputs, neighbor_inputs, output
 

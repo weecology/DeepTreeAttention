@@ -33,7 +33,6 @@ def test_neighbors(HSI_image, metadata_data):
     
     metadata_model = metadata.create(classes=2, sites=10, domains=10, learning_rate=0.001)
     ensemble = Hang.learned_ensemble(HSI_model=model1, metadata_model=metadata_model, classes=2)
-    ensemble = tf.keras.Model(ensemble.inputs, ensemble.get_layer("submodel_concat").output)
     
     neighbor_array = []
     for x in np.arange(5):
