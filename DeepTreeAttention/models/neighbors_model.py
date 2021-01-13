@@ -22,8 +22,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     neighbor_inputs = tf.keras.layers.Input(shape=input_shape, name="neighbor_input")
     
     #mask out zero padding if less than k_neighbors
-    #masked_inputs = tf.keras.layers.Masking(mask_value=0)(neighbor_inputs)
-    masked_inputs = neighbor_inputs
+    masked_inputs = tf.keras.layers.Masking(mask_value=0)(neighbor_inputs)
     
     key_features = tf.keras.layers.Dense(n_features, activation="relu",name="neighbor_feature_dense")(masked_inputs)
     key_features = tf.keras.backend.l2_normalize(key_features)
@@ -38,7 +37,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     joined_features = tf.keras.layers.Dot(name="target_neighbor_multiply",axes=(1,2))([query_features, key_features])
     
     #Scale before softmax temperature (fixed at sqrt(5) for the moment)
-    joined_features = tf.keras.layers.Lambda(lambda x: x/(0.1 *2.236068))(joined_features)
+    joined_features = tf.keras.layers.Lambda(lambda x: x/(0.01 *2.236068))(joined_features)
     joined_features = tf.keras.layers.Softmax()(joined_features)
     
     #Skip connection for value features
