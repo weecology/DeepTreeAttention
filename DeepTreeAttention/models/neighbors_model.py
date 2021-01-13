@@ -25,20 +25,20 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     masked_inputs = tf.keras.layers.Masking(mask_value=0)(neighbor_inputs)
     
     key_features = tf.keras.layers.Dense(n_features, activation="relu",name="neighbor_feature_dense")(masked_inputs)
-    key_features = tf.keras.backend.l2_normalize(key_features)
+    key_features = tf.keras.backend.l2_normalize(key_features, axis=0)
         
     #strip off previous head layers, target features are the HSI + metadata from the target tree
     query_features = ensemble_model.get_layer("submodel_concat").output
     query_features = tf.keras.layers.Dense(n_features, activation="relu",name="target_feature_dense")(query_features)
-    query_features = tf.keras.backend.l2_normalize(query_features)  
+    query_features = tf.keras.backend.l2_normalize(query_features, axis=0)  
     
     #Multiply to neighbor features
     #This may not be not right multiplication
     joined_features = tf.keras.layers.Dot(name="target_neighbor_multiply",axes=(1,2))([query_features, key_features])
     
     #Scale before softmax temperature (fixed at sqrt(5) for the moment)
-    joined_features = tf.keras.layers.Lambda(lambda x: x/(0.01 *2.236068))(joined_features)
-    joined_features = tf.keras.layers.Softmax()(joined_features)
+    joined_features = tf.keras.layers.Lambda(lambda x: x/(0.01 *10.58))(joined_features)
+    joined_features = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
     
     #Skip connection for value features
     value_features = tf.keras.layers.Dense(n_features, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
