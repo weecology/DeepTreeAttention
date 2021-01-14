@@ -12,7 +12,7 @@ train:
     domain_class_file: /home/b.weinstein/DeepTreeAttention/data/processed/domain_class_labels.csv
     min_height_diff: 10 #minimum height diffs
     checkpoint_dir: #Load RGB and HSI sub models from dir
-    pretraining_dir:  #Semi-supervised HSI
+    pretraining_dir: #Semi-supervised HSI
     resampled_per_taxa: 50
     HSI:
         sensor_channels: 369
@@ -27,14 +27,14 @@ train:
         epochs: 120
         extend_box: 0 #expand DeepForest bounding boxes by x meters at edge
     metadata:
-        epochs: 80
+        epochs: 100
     ensemble:
         freeze: False
         epochs: 120
-    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/pretraining/
+    tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/train.shp  #path to ground truth class shapefile   
     learning_rate: .001
-    batch_size: 256
+    batch_size: 128
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
     steps:
     shuffle: True
@@ -43,9 +43,9 @@ train:
     gpus: 1
     pretrain: True #Train the submodels before ensembling all together
 neighbors:
-    model_dir: /orange/idtrees-collab/DeepTreeAttention/snapshots/20201216_193021/
+    model_dir: /orange/idtrees-collab/DeepTreeAttention/snapshots//20201221_125454/
     k_neighbors: 5
-    freeze: True
+    freeze: False
 autoencoder:
     epochs: 50
     quantile: 0.98
