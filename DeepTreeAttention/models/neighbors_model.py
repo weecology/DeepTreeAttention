@@ -36,14 +36,15 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     #This may not be not right multiplication
     joined_features = tf.keras.layers.Dot(name="target_neighbor_multiply",axes=(1,2))([query_features, key_features])
     
-    #Scale before softmax temperature (fixed at sqrt(5) for the moment)
-    joined_features = tf.keras.layers.Lambda(lambda x: x/(0.01 *10.58))(joined_features)
+    #Scale before softmax temperature (fixed at sqrt(112) for the moment)
+    #joined_features = tf.keras.layers.Lambda(lambda x: x/(0.01 *10.58))(joined_features)
     joined_features = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
     
     #Skip connection for value features
     value_features = tf.keras.layers.Dense(n_features, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
     context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([value_features, joined_features])
     context_vector = tf.keras.layers.Dense(n_features, name="context_vector", activation="relu")(context_vector)
+    context_vector = tf.keras.backend.l2_normalize(context_vector,axis=-1)  
     
     #Add as residual to original matrix
     context_residual = tf.keras.layers.Add(name="ensemble_add_bias")([context_vector,ensemble_model.get_layer("submodel_concat").output])
