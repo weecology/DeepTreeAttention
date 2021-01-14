@@ -47,8 +47,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     context_vector = tf.keras.backend.l2_normalize(context_vector,axis=-1)  
     
     #Add as residual to original matrix normalized
-    original_features = tf.keras.backend.l2_normalize(ensemble_model.get_layer("submodel_concat").output, axis=-1)
-    context_residual = tf.keras.layers.Add(name="ensemble_add_bias")([context_vector,original_features])
+    context_residual = tf.keras.layers.Add(name="ensemble_add_bias")([context_vector,ensemble_model.get_layer("submodel_concat").output])
     
     merged_layers = tf.keras.layers.Dropout(0.2)(context_residual)
     output = tf.keras.layers.Dense(classes,name="ensemble_learn",activation="softmax")(merged_layers)
