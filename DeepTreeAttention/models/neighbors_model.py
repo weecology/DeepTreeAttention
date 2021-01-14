@@ -23,10 +23,10 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     
     #original featuers from target tree
     original_features = ensemble_model.get_layer("submodel_concat").output
-    original_features = tf.keras.backend.expand_dims(original_features, axis=1)
     
-    #append to original inputs
-    fused_inputs = tf.keras.backend.concatenate([neighbor_inputs,original_features],axis=1)
+    #append to original inputs, add a dim to make it a matrix
+    original_features_matrix = tf.keras.backend.expand_dims(original_features, axis=1)
+    fused_inputs = tf.keras.backend.concatenate([neighbor_inputs,original_features_matrix],axis=1)
 
     #mask out zero padding if less than k_neighbors
     masked_inputs = tf.keras.layers.Masking(mask_value=0)(fused_inputs)
@@ -40,7 +40,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     
     #Multiply to neighbor features
     #This may not be not right multiplication
-    joined_features = tf.keras.layers.Dot(name="target_neighbor_multiply",axes=(2,2))([query_features, key_features])
+    joined_features = tf.keras.layers.Dot(name="target_neighbor_multiply",axes=(1,2))([query_features, key_features])
     
     #Scale before softmax temperature (fixed at sqrt(112) for the moment)
     joined_features = tf.keras.layers.Lambda(lambda x: x/(0.1 *10.58))(joined_features)
@@ -48,7 +48,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     
     #Skip connection for value features
     value_features = tf.keras.layers.Dense(n_features, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
-    context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(2,1))([joined_features,value_features])
+    context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([joined_features,value_features])
     context_vector = tf.keras.layers.Dense(n_features, name="context_vector", activation="relu")(context_vector)
     context_vector = tf.keras.backend.l2_normalize(context_vector,axis=-1)  
     

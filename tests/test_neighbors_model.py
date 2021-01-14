@@ -48,4 +48,4 @@ def test_neighbors(HSI_image, metadata_data):
     neighbor_model = neighbors_model.create(ensemble_model = ensemble, freeze=False, k_neighbors=5, classes=2)
     prediction = neighbor_model.predict([HSI_image] + metadata_data + [neighbor_array])
     
-    assert prediction.shape == (1,1,2)    
+    assert prediction.shape == (1,2)    
