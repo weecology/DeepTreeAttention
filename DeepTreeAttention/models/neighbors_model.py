@@ -25,12 +25,12 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     masked_inputs = tf.keras.layers.Masking(mask_value=0)(neighbor_inputs)
     
     key_features = tf.keras.layers.Dense(n_features, activation="relu",name="neighbor_feature_dense")(masked_inputs)
-    key_features = tf.keras.backend.l2_normalize(key_features)
+    #key_features = tf.keras.backend.l2_normalize(key_features)
         
     #strip off previous head layers, target features are the HSI + metadata from the target tree
     query_features = ensemble_model.get_layer("submodel_concat").output
     query_features = tf.keras.layers.Dense(n_features, activation="relu",name="target_feature_dense")(query_features)
-    query_features = tf.keras.backend.l2_normalize(query_features)  
+    #query_features = tf.keras.backend.l2_normalize(query_features)  
     
     #Multiply to neighbor features
     #This may not be not right multiplication
