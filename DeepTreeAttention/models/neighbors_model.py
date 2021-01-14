@@ -37,7 +37,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     joined_features = tf.keras.layers.Dot(name="target_neighbor_multiply",axes=(1,2))([query_features, key_features])
     
     #Scale before softmax temperature (fixed at sqrt(112) for the moment)
-    joined_features = tf.keras.layers.Lambda(lambda x: x/(1 *10.58))(joined_features)
+    joined_features = tf.keras.layers.Lambda(lambda x: x/(0.1 *10.58))(joined_features)
     joined_features = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
     
     #Skip connection for value features
@@ -46,8 +46,9 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     context_vector = tf.keras.layers.Dense(n_features, name="context_vector", activation="relu")(context_vector)
     context_vector = tf.keras.backend.l2_normalize(context_vector,axis=-1)  
     
-    #Add as residual to original matrix
-    context_residual = tf.keras.layers.Add(name="ensemble_add_bias")([context_vector,ensemble_model.get_layer("submodel_concat").output])
+    #Add as residual to original matrix normalized
+    original_features = tf.keras.backend.l2_normalize(ensemble_model.get_layer("submodel_concat").output, axis=-1)
+    context_residual = tf.keras.layers.Add(name="ensemble_add_bias")([context_vector,original_features])
     
     merged_layers = tf.keras.layers.Dropout(0.7)(context_residual)
     output = tf.keras.layers.Dense(classes,name="ensemble_learn",activation="softmax")(merged_layers)
