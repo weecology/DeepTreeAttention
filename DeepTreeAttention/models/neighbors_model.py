@@ -56,7 +56,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     #Add as residual to original matrix normalized
     context_residual = WeightedSum(name="ensemble_add_bias")([context_vector,original_features])
     
-    merged_layers = tf.keras.layers.Dropout(0.7)(context_residual)
+    merged_layers = tf.keras.layers.Dropout(0.8)(context_residual)
     output = tf.keras.layers.Dense(classes,name="ensemble_learn",activation="softmax")(merged_layers)
     
     return ensemble_model.inputs, neighbor_inputs, output
