@@ -106,29 +106,6 @@ if __name__ == "__main__":
                 
                 model.train(submodel="metadata", experiment=experiment)
                 model.metadata_model.save("{}/metadata_model.h5".format(save_dir))
-                
-            ###Train subnetworks
-            #experiment.log_parameter("Train subnetworks", True)
-            #with experiment.context_manager("RGB_spatial_subnetwork"):
-                #print("Train RGB spatial subnetwork")
-                #model.read_data(mode="RGB_submodel")
-                #model.train(submodel="spatial", sensor="RGB", experiment=experiment)
-                
-            #with experiment.context_manager("RGB_spectral_subnetwork"):
-                #print("Train RGB spectral subnetwork")    
-                #model.train(submodel="spectral", sensor="RGB", experiment=experiment)
-                    
-            ##Train full RGB model
-            #with experiment.context_manager("RGB_model"):
-                #experiment.log_parameter("Class Weighted", True)
-                #model.read_data(mode="RGB")
-                #model.train(sensor="RGB", experiment=experiment)
-                #model.RGB_model.save("{}/RGB_model.h5".format(save_dir))
-                
-                ##Get Alpha score for the weighted spectral/spatial average. Higher alpha favors spatial network.
-                #if model.config["train"]["RGB"]["weighted_sum"]:
-                    #estimate_a = model.RGB_model.get_layer("weighted_sum").get_weights()
-                    #experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
             
             ##Train subnetwork
             experiment.log_parameter("Train subnetworks", True)
@@ -168,7 +145,7 @@ if __name__ == "__main__":
     model.ensemble_model.save("{}/Ensemble.h5".format(save_dir))
     
     #save predictions
-    predicted_shp = model.ensemble_predict()
+    predicted_shp = model.predict(model = model.ensemble_model)
     predicted_shp.to_file("{}/prediction.shp".format(save_dir))
     experiment.log_asset("{}/prediction.shp".format(save_dir))
     experiment.log_asset("{}/prediction.dbf".format(save_dir))
@@ -186,5 +163,5 @@ if __name__ == "__main__":
     experiment.log_asset("{}/persite.csv".format(save_dir))   
     
     #Plots - this function needs to be rewritten because the dataset is now nested: ids, (data, label). probably predict on batch.
-    ax = visualize.plot_crown_position(y_pred = predicted_shp.predicted_taxonID, y_true=predicted_shp.true_taxonID, box_index=predicted_shp.id, path = model.config["evaluation"]["ground_truth_path"])
-    experiment.log_figure(ax)    
+    #ax = visualize.plot_crown_position(y_pred = predicted_shp.predicted_taxonID, y_true=predicted_shp.true_taxonID, box_index=predicted_shp.id, path = model.config["evaluation"]["ground_truth_path"])
+    #experiment.log_figure(ax)    

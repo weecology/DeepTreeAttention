@@ -26,7 +26,7 @@ def HSI_image():
     image = np.zeros((1,20, 20, 369), dtype=tf.keras.backend.floatx())
     return image
 
-def test_neighbors(HSI_image, metadata_data):
+def test_define(HSI_image, metadata_data):
     batch, height, width, channels = HSI_image.shape     
     sensor_inputs, sensor_outputs, spatial, spectral = Hang.define_model(classes=2, height=height, width=width, channels=channels)    
     model1 = tf.keras.Model(inputs=sensor_inputs, outputs=sensor_outputs)

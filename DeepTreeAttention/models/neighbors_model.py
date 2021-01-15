@@ -1,6 +1,7 @@
 #Define spatial neighbor learning
 import tensorflow as tf
 from tensorflow.keras import backend as K
+from DeepTreeAttention.models.layers import WeightedSum
 
 def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     """Define a neighbor model based on a ensemble model
@@ -53,7 +54,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     context_vector = tf.keras.backend.l2_normalize(context_vector,axis=-1)  
     
     #Add as residual to original matrix normalized
-    context_residual = tf.keras.layers.Multiply(name="ensemble_add_bias")([context_vector,original_features])
+    context_residual = WeightedSum(name="ensemble_add_bias")([context_vector,original_features])
     
     merged_layers = tf.keras.layers.Dropout(0.7)(context_residual)
     output = tf.keras.layers.Dense(classes,name="ensemble_learn",activation="softmax")(merged_layers)

@@ -465,14 +465,12 @@ class AttentionModel():
         return train_error_df, test_error_df
         
         
-    def ensemble_predict(self):
+    def predict(self, model):
         """Predict species id for each box in a single shapefile
         Args:
-            shapefile: path to a shapefile
-            record_dirname: directory to save generated records
-            create_records: overwrite previous records
+            model: model object to use to predict
         Returns:
-            fname: path to predicted shapefile
+            joined_gdf: geodataframe predicted shapefile
         """
         #Get the true labels since they are not shuffled
         y_true = [ ]
@@ -480,7 +478,7 @@ class AttentionModel():
         box_index = [ ]
         for index, batch in self.val_split_with_ids:
             data,label = batch
-            prediction = self.ensemble_model.predict_on_batch(data)            
+            prediction = model.predict_on_batch(data)            
             y_true.append(label)
             y_pred.append(prediction)
             box_index.append(index)            
