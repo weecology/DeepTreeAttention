@@ -61,3 +61,6 @@ experiment.log_asset("{}/prediction.shp".format(save_dir))
 experiment.log_asset("{}/prediction.dbf".format(save_dir))
 experiment.log_asset("{}/prediction.shx".format(save_dir))
 experiment.log_asset("{}/prediction.cpg".format(save_dir))
+
+estimate_a = model.neighbor_model.get_layer("ensemble_add_bias").get_weights()
+experiment.log_metric(name="target_versus_context_weight", value=estimate_a[0][0])
