@@ -55,7 +55,7 @@ neighbor.fit(
 #save
 neighbor.save("{}/neighbors.h5".format(save_dir))
 
-predicted_shp = model.predict(model = neighbor_model)
+predicted_shp = model.predict(model = neighbor)
 predicted_shp.to_file("{}/prediction.shp".format(save_dir))
 experiment.log_asset("{}/prediction.shp".format(save_dir))
 experiment.log_asset("{}/prediction.dbf".format(save_dir))
