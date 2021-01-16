@@ -409,7 +409,7 @@ def _neighbor_parse_(tfrecord):
     domains = tf.cast(example['number_of_domains'], tf.int32)    
     one_hot_domains = tf.one_hot(domain, domains)
     
-    return (loaded_HSI_image, example['elevation'], one_hot_sites, one_hot_domains, neighbor_arrays), one_hot_labels
+    return (loaded_HSI_image, example['elevation'], one_hot_sites, one_hot_domains, neighbor_arrays, example['neighbor_distances']), one_hot_labels
 
 def _ensemble_parse_(tfrecord):
     features = {
@@ -628,13 +628,13 @@ def ensemble_augment(data, label):
 def neighbor_augment(data, label):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
     
-    HSI, neighbor_array, elevation, site, domain = data
+    HSI, neighbor_array, elevation, site, domain, distances = data
     
     HSI = tf.image.rot90(HSI)
     HSI = tf.image.random_flip_left_right(HSI)
     HSI = tf.image.random_flip_up_down(HSI)    
 
-    data = HSI,neighbor_array, elevation, site, domain
+    data = HSI,neighbor_array, elevation, site, domain, distances
     
     return data, label
 

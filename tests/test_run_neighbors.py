@@ -116,12 +116,13 @@ def test_run_neighbors(mod, tfrecords):
     label_names = list(labeldf.taxonID.values)
     
     for data, labels in mod.train_split:
-        HSI_image, elevation, site, domains, neighbor_array  = data
+        HSI_image, elevation, site, domains, neighbor_array, distances  = data
         assert HSI_image.shape == (2,20,20,369)
         assert elevation.shape == (2)
         assert site.shape == (2,mod.sites)
         assert domains.shape == (2, mod.domains)
         assert neighbor_array.shape == (2,mod.config["neighbors"]["k_neighbors"], mod.ensemble_model.output.shape[1])
+        assert distances.shape == (2,mod.config["neighbors"]["k_neighbors"])
         assert labels.shape == (2, mod.classes)
         
     neighbor.fit(

@@ -22,13 +22,19 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     input_shape = (k_neighbors, n_features)
     neighbor_inputs = tf.keras.layers.Input(shape=input_shape, name="neighbor_input")
     
+    neighbor_distances = tf.keras.layers.Input(shape=(k_neighbors), name="neighbor_distance_input")
+
     #original featuers from target tree
     original_features = ensemble_model.get_layer("submodel_concat").output
     
     #append to original inputs, add a dim to make it a matrix
     original_features_matrix = tf.keras.backend.expand_dims(original_features, axis=1)
     fused_inputs = tf.keras.backend.concatenate([neighbor_inputs,original_features_matrix],axis=1)
-
+    
+    #add a small distance for itself?
+    self_distance = tf.Variable([[0.0001]])
+    fused_distances = tf.keras.backend.concatenate([neighbor_distances,self_distance],axis=1)  
+        
     #mask out zero padding if less than k_neighbors
     masked_inputs = tf.keras.layers.Masking(mask_value=0)(fused_inputs)
     
@@ -50,9 +56,12 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     #joined_features = tf.where(joined_features!=0, joined_features, -999)
     joined_features = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
     
+    #Scale by distance to target
+    scaled_features = tf.keras.layers.Lambda(lambda x: x[0]/x[1])([joined_features,fused_distances])
+    
     #Skip connection for value features
     value_features = tf.keras.layers.Dense(n_features, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
-    context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([joined_features,value_features])
+    context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([scaled_features,value_features])
     context_vector = tf.keras.layers.Dense(n_features, name="context_vector", activation="relu")(context_vector)
     context_vector = tf.keras.backend.l2_normalize(context_vector,axis=-1)  
     
@@ -62,7 +71,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     merged_layers = tf.keras.layers.Dropout(0.5)(context_residual)
     output = tf.keras.layers.Dense(classes,name="ensemble_learn",activation="softmax")(merged_layers)
     
-    return ensemble_model.inputs, neighbor_inputs, output
+    return ensemble_model.inputs, neighbor_inputs, neighbor_distances, output
 
 def create(ensemble_model, k_neighbors, classes, freeze=False, learning_rate=0.001):
     """Create a neighbor model based on a ensemble model
@@ -74,9 +83,9 @@ def create(ensemble_model, k_neighbors, classes, freeze=False, learning_rate=0.0
         model: a tf keras model for inference
     """
     
-    ensemble_model_inputs, neighbor_inputs, output = define(ensemble_model=ensemble_model, k_neighbors=k_neighbors, freeze=freeze, classes=classes)
+    ensemble_model_inputs, neighbor_inputs, distances, output = define(ensemble_model=ensemble_model, k_neighbors=k_neighbors, freeze=freeze, classes=classes)
             
-    neighbor_model = tf.keras.Model([ensemble_model_inputs, neighbor_inputs], output)
+    neighbor_model = tf.keras.Model([ensemble_model_inputs, neighbor_inputs, distances], output)
     
     metric_list = [tf.keras.metrics.CategoricalAccuracy(name="acc")]    
     

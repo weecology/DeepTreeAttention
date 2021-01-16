@@ -37,15 +37,19 @@ def test_define(HSI_image, metadata_data):
     extractor = tf.keras.Model(ensemble.inputs,ensemble.get_layer("submodel_concat").output)
     
     neighbor_array = []
+    neighbor_distance = []
     for x in np.arange(5):
         prediction = extractor.predict([HSI_image] + metadata_data)
         neighbor_array.append(prediction)
+        neighbor_distance.append(np.random.rand())
     
     #stack and batch
     neighbor_array = np.vstack(neighbor_array)
     neighbor_array = np.expand_dims(neighbor_array, axis=0)
     
+    neighbor_distance = np.expand_dims(neighbor_distance, axis=0)
+    
     neighbor_model = neighbors_model.create(ensemble_model = ensemble, freeze=False, k_neighbors=5, classes=2)
-    prediction = neighbor_model.predict([HSI_image] + metadata_data + [neighbor_array])
+    prediction = neighbor_model.predict([HSI_image] + metadata_data + [neighbor_array] + [neighbor_distance])
     
     assert prediction.shape == (1,2)    
