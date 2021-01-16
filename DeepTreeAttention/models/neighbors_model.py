@@ -3,6 +3,16 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 from DeepTreeAttention.models.layers import WeightedSum
 
+@tf.function
+def const(tensor):
+    batch_size = tf.shape(tensor)[0]
+    constant = tf.constant([0.0001])
+    constant = tf.expand_dims(constant, axis=0)
+    constant = tf.broadcast_to(constant, shape=(batch_size, 1))
+    output = tf.keras.backend.concatenate([tensor, constant])
+    
+    return output
+
 def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     """Define a neighbor model based on a ensemble model
     Args:
@@ -32,8 +42,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     fused_inputs = tf.keras.backend.concatenate([neighbor_inputs,original_features_matrix],axis=1)
     
     #add a small distance for itself?
-    self_distance = tf.Variable([[0.0001]])
-    fused_distances = tf.keras.backend.concatenate([neighbor_distances,self_distance],axis=1)  
+    fused_distances  = tf.keras.layers.Lambda(const)(neighbor_distances) 
         
     #mask out zero padding if less than k_neighbors
     masked_inputs = tf.keras.layers.Masking(mask_value=0)(fused_inputs)

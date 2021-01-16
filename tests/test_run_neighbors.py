@@ -127,5 +127,5 @@ def test_run_neighbors(mod, tfrecords):
         
     neighbor.fit(
         mod.train_split,
-        epochs=mod.config["train"]["ensemble"]["epochs"])    
+        epochs=2)    
     
