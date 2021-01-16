@@ -47,7 +47,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     joined_features = tf.keras.layers.Lambda(lambda x: x/(0.1 *10.58))(joined_features)
     
     #Zero out any masked entries
-    joined_features = tf.where(joined_features=0, joined_features, tf.float64.min)
+    joined_features = tf.where(joined_features!=0, joined_features, -999)
     joined_features = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
     
     #Skip connection for value features
