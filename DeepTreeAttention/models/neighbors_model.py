@@ -45,6 +45,9 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     
     #Scale before softmax temperature (fixed at sqrt(112) for the moment)
     joined_features = tf.keras.layers.Lambda(lambda x: x/(0.1 *10.58))(joined_features)
+    
+    #Zero out any masked entries
+    joined_features = tf.where(joined_features!=0, joined_features, tf.float64.min)
     joined_features = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
     
     #Skip connection for value features
@@ -56,7 +59,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     #Add as residual to original matrix normalized
     context_residual = WeightedSum(name="ensemble_add_bias")([context_vector,original_features])
     
-    merged_layers = tf.keras.layers.Dropout(0.8)(context_residual)
+    merged_layers = tf.keras.layers.Dropout(0.5)(context_residual)
     output = tf.keras.layers.Dense(classes,name="ensemble_learn",activation="softmax")(merged_layers)
     
     return ensemble_model.inputs, neighbor_inputs, output
