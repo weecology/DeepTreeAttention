@@ -59,7 +59,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     attention_weights = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
     
     #Skip connection for value features
-    value_features = tf.keras.layers.Dense(n_features, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
+    value_features = tf.keras.layers.Dense(n_features/2, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
     context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([attention_weights,value_features])
     context_vector = tf.keras.layers.Dense(n_features, name="context_vector", activation="relu")(context_vector)
     context_vector = tf.keras.backend.l2_normalize(context_vector,axis=-1)  
@@ -67,7 +67,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     #Add as residual to original matrix normalized
     context_residual = WeightedSum(name="ensemble_add_bias")([context_vector,original_features])
     
-    merged_layers = tf.keras.layers.Dropout(0.8)(context_residual)
+    merged_layers = tf.keras.layers.Dropout(0.5)(context_residual)
     output = tf.keras.layers.Dense(classes,name="ensemble_learn",activation="softmax")(merged_layers)
     
     return ensemble_model.inputs, neighbor_inputs, neighbor_distances, output
