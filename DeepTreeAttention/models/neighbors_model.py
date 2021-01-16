@@ -3,16 +3,6 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 from DeepTreeAttention.models.layers import WeightedSum, ExponentialDecay
 
-@tf.function
-def tile(tensor):
-    batch_size = tf.shape(tensor)[0]
-    constant = tf.constant([0.1])
-    constant = tf.expand_dims(constant, axis=0)
-    constant = tf.broadcast_to(constant, shape=(batch_size, 1))
-    output = tf.keras.backend.concatenate([tensor, constant])
-    
-    return output
-
 def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     """Define a neighbor model based on a ensemble model
     Args:
@@ -56,12 +46,12 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
         
     #Zero out any masked entries
     #joined_features = tf.where(joined_features!=0, joined_features, -999)
-    attention_weights = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
-    scaled_attention = ExponentialDecay(name="distance_decay")(attention_weights, neighbor_distances)
+    scaled_features = ExponentialDecay(name="distance_decay")(joined_features, neighbor_distances)    
+    attention_weights = tf.keras.layers.Softmax(name="Attention_softmax")(scaled_features)
     
     #Skip connection for value features
     value_features = tf.keras.layers.Dense(n_features, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
-    context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([scaled_attention,value_features])
+    context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([attention_weights,value_features])
     context_vector = tf.keras.layers.Dense(n_features, name="context_vector", activation="relu")(context_vector)
     context_vector = tf.keras.backend.l2_normalize(context_vector,axis=-1)  
     
