@@ -6,7 +6,7 @@ from DeepTreeAttention.models.layers import WeightedSum
 @tf.function
 def const(tensor):
     batch_size = tf.shape(tensor)[0]
-    constant = tf.constant([0.0001])
+    constant = tf.constant([0.1])
     constant = tf.expand_dims(constant, axis=0)
     constant = tf.broadcast_to(constant, shape=(batch_size, 1))
     output = tf.keras.backend.concatenate([tensor, constant])
@@ -61,16 +61,16 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     #Scale before softmax temperature (fixed at sqrt(112) for the moment)
     joined_features = tf.keras.layers.Lambda(lambda x: x/(0.1 *10.58))(joined_features)
     
-    #Zero out any masked entries
-    #joined_features = tf.where(joined_features!=0, joined_features, -999)
-    joined_features = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
-    
     #Scale by distance to target
     scaled_features = tf.keras.layers.Lambda(lambda x: x[0]/x[1])([joined_features,fused_distances])
     
+    #Zero out any masked entries
+    #joined_features = tf.where(joined_features!=0, joined_features, -999)
+    attention_weights = tf.keras.layers.Softmax(name="Attention_softmax")(scaled_features)
+    
     #Skip connection for value features
     value_features = tf.keras.layers.Dense(n_features, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
-    context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([scaled_features,value_features])
+    context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([attention_weights,value_features])
     context_vector = tf.keras.layers.Dense(n_features, name="context_vector", activation="relu")(context_vector)
     context_vector = tf.keras.backend.l2_normalize(context_vector,axis=-1)  
     
