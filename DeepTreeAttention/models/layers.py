@@ -186,6 +186,21 @@ def spatial_attention(filters, classes, x):
     return attention_layers, output, class_pool
 
 
+class ExponentialDecay(layers.Layer):
+    """A custom keras layer to learn a weighted sum of tensors"""
+
+    def __init__(self, **kwargs):
+        super(ExponentialDecay, self).__init__(**kwargs)
+
+    def build(self, input_shape=1):
+        self.decay_lambda = self.add_weight(name='lambda',trainable=True, dtype="float32")
+    
+        super(ExponentialDecay, self).build(input_shape)
+
+    def call(self, distances, features):
+        return tf.exp(-self.decay_lambda * distances)  * features
+
+
 class WeightedSum(layers.Layer):
     """A custom keras layer to learn a weighted sum of tensors"""
 

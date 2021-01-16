@@ -1,7 +1,7 @@
 #Define spatial neighbor learning
 import tensorflow as tf
 from tensorflow.keras import backend as K
-from DeepTreeAttention.models.layers import WeightedSum
+from DeepTreeAttention.models.layers import WeightedSum, ExponentialDecay
 
 @tf.function
 def tile(tensor):
@@ -57,7 +57,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     #Zero out any masked entries
     #joined_features = tf.where(joined_features!=0, joined_features, -999)
     attention_weights = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
-    scaled_attention = tf.keras.layers.Multiply()([attention_weights, neighbor_distances])
+    scaled_attention = ExponentialDecay(name="distance_decay")(attention_weights, neighbor_distances)
     
     #Skip connection for value features
     value_features = tf.keras.layers.Dense(n_features/2, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
