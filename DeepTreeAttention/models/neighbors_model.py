@@ -4,7 +4,7 @@ from tensorflow.keras import backend as K
 from DeepTreeAttention.models.layers import WeightedSum
 
 @tf.function
-def const(tensor):
+def tile(tensor):
     batch_size = tf.shape(tensor)[0]
     constant = tf.constant([0.1])
     constant = tf.expand_dims(constant, axis=0)
@@ -33,19 +33,12 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     neighbor_inputs = tf.keras.layers.Input(shape=input_shape, name="neighbor_input")
     
     neighbor_distances = tf.keras.layers.Input(shape=(k_neighbors), name="neighbor_distance_input")
-
+    
     #original featuers from target tree
     original_features = ensemble_model.get_layer("submodel_concat").output
-    
-    #append to original inputs, add a dim to make it a matrix
-    original_features_matrix = tf.keras.backend.expand_dims(original_features, axis=1)
-    fused_inputs = tf.keras.backend.concatenate([neighbor_inputs,original_features_matrix],axis=1)
-    
-    #add a small distance for itself?
-    fused_distances  = tf.keras.layers.Lambda(const)(neighbor_distances) 
-        
+                
     #mask out zero padding if less than k_neighbors
-    masked_inputs = tf.keras.layers.Masking(mask_value=0)(fused_inputs)
+    masked_inputs = tf.keras.layers.Masking(mask_value=0)(neighbor_inputs)
     
     key_features = tf.keras.layers.Dense(n_features, activation="relu",name="neighbor_feature_dense")(masked_inputs)
     key_features = tf.keras.backend.l2_normalize(key_features, axis=-1)
@@ -60,10 +53,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     
     #Scale before softmax temperature (fixed at sqrt(112) for the moment)
     joined_features = tf.keras.layers.Lambda(lambda x: x/(0.1 *10.58))(joined_features)
-    
-    #Scale by distance to target
-    #scaled_features = tf.keras.layers.Lambda(lambda x: x[0]/x[1])([joined_features,fused_distances])
-    
+        
     #Zero out any masked entries
     #joined_features = tf.where(joined_features!=0, joined_features, -999)
     attention_weights = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
