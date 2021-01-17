@@ -42,15 +42,17 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     joined_features = tf.keras.layers.Dot(name="target_neighbor_multiply",axes=(1,2))([query_features, key_features])
     
     #Scale before softmax temperature (fixed at sqrt(112) for the moment)
-    #joined_features = tf.keras.layers.Lambda(lambda x: x/(0.1 *10.58))(joined_features)
+    joined_features = tf.keras.layers.Lambda(lambda x: x/(0.1 *10.58))(joined_features)
         
     #Zero out any masked entries
     #joined_features = tf.where(joined_features!=0, joined_features, -999)
-    scaled_features = ExponentialDecay(name="distance_decay")(joined_features, neighbor_distances)    
-    attention_weights = tf.keras.layers.Softmax(name="Attention_softmax")(scaled_features)
+    attention_weights = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
+    attention_weights = ExponentialDecay(name="distance_decay")(attention_weights, neighbor_distances)    
     
     #Skip connection for value features
     value_features = tf.keras.layers.Dense(n_features, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
+    value_features = tf.keras.layers.Dropout(0.8)(value_features)
+    
     context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([attention_weights,value_features])
     context_vector = tf.keras.layers.Dense(n_features, name="context_vector", activation="relu")(context_vector)
     context_vector = tf.keras.backend.l2_normalize(context_vector,axis=-1)  
