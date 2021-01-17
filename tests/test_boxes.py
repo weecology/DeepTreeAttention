@@ -69,7 +69,15 @@ def test_generate_records(tmpdir, ensemble_model):
         raw_boxes=test_predictions
     )
     
-    assert len(created_records) > 0 
+    shp = gpd.read_file(test_predictions)
+    
+    dataset = boxes.tf_dataset(created_records, batch_size=1)
+    
+    counter = 0
+    for batch in dataset:
+        counter +=1
+    
+    assert counter == shp.shape[0] 
     
 @pytest.mark.parametrize("train",[True, False])
 def test_tf_dataset(train, created_records):

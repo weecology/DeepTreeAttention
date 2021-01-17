@@ -73,10 +73,10 @@ class AttentionModel():
         except:
             self.test_shp = None
                 
-    def generate(self, HSI_sensor_path, RGB_sensor_path, elevation, domain, site, savedir, species_label_dict=None, train=True, chunk_size=1000, shapefile=None, csv_file=None,label_column="label", ensemble_model=None, raw_boxes=None):
+    def generate(self, HSI_sensor_path, RGB_sensor_path, elevation, domain, site, savedir, ensemble_model, raw_boxes, species_label_dict=None, train=True, chunk_size=1000, shapefile=None, csv_file=None,label_column="label"):
         """Predict species class for each DeepForest bounding box
             Args:
-                shapefile: a DeepForest shapefile (see NeonCrownMaps) with a bounding box and utm projection
+                shapefile: a shapefile (see NeonCrownMaps) with a bounding box in utm projection and label, columns -> xmin, ymin,xmax,ymax, label
                 train: generate a training record that yields, image, label, or a prediction record with metadata? Default True
                 site: site metadata label in numeric
                 sensor_path: supply a known path to a sensor geoTIFF tile. 
@@ -491,18 +491,15 @@ class AttentionModel():
         y_true = np.argmax(y_true, 1)
         y_pred = np.argmax(y_pred, 1)
             
-        results = pd.DataFrame({"true":y_true,"predicted":y_pred, "box_index":box_index})
-        results["id"] = results["box_index"]
+        results = pd.DataFrame({"true":y_true,"predicted":y_pred, "box_id":box_index})
         
         #Read original data        
         shapefile = self.config["evaluation"]["ground_truth_path"]
         gdf = gpd.read_file(shapefile)        
 
         #Merge
-        joined_gdf = gdf.merge(results, on="id")
-        
-        joined_gdf = joined_gdf.drop(columns=["box_index"])
-        
+        joined_gdf = gdf.merge(results, on="box_id")
+                
         labeldf = pd.read_csv(self.classes_file)
         label_names = list(labeldf.taxonID.values)
         

@@ -100,7 +100,8 @@ def tfrecords(mod, tmpdir):
                                    train=True,
                                    chunk_size=2,
                                    savedir = mod.config["train"]["tfrecords"],
-                                   raw_boxes=test_predictions
+                                   raw_boxes=test_predictions,
+                                   ensemble_model = mod.HSI_model
                                    )    
     return created_records
 
@@ -116,10 +117,20 @@ def test_generate(mod):
         RGB_sensor_path=test_sensor_tile,
         train=True, 
         chunk_size=2,
-        savedir = mod.config["train"]["tfrecords"]
+        savedir = mod.config["train"]["tfrecords"],
+        raw_boxes=test_predictions,
+        ensemble_model = mod.HSI_model        
     )  
     
     assert all([os.path.exists(x) for x in created_records])
+    
+    dataset = boxes.tf_dataset(created_records, batch_size=1)
+    counter = 0
+    for batch in dataset:
+        batch
+        counter+=1
+        
+    assert counter == shp.shape[0]
 
 def test_split_data(mod, tfrecords):
     #Create class
@@ -197,4 +208,14 @@ def test_train_callbacks(tfrecords, mod):
 
     mod.read_data(mode="RGB")
     mod.train(experiment=experiment, sensor="RGB")
+
+def test_predict(tfrecords,mod):
+    mod.config["evaluation"]["ground_truth_path"] = test_predictions
+    mod.config["evaluation"]["tfrecords"] = os.path.dirname(tfrecords[0])
+    mod.read_data(mode="HSI")
+    df = gpd.read_file(test_predictions)
+    shp = mod.predict(mod.HSI_model)
+    
+    assert df.shape[0] == shp.shape[0]
+    
     
