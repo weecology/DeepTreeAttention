@@ -66,7 +66,8 @@ def test_generate_records(tmpdir, ensemble_model):
         number_of_sites=10,
         number_of_domains=10,
         ensemble_model=ensemble_model,
-        raw_boxes=test_predictions
+        raw_boxes=test_predictions,
+        k_neighbors=2
     )
     
     shp = gpd.read_file(test_predictions)

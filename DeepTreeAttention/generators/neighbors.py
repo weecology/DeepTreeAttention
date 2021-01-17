@@ -158,8 +158,10 @@ def extract_features(df, x, model_class, hyperspectral_pool, site_label_dict, do
     feature_array: a feature matrix of encoded bottleneck layer
     """
     #Due to resampling, there will be multiple rows of the same point, all are identical.
-    target  =  df[df.individual == x].head(1)
-    target = target.reset_index(drop=True)
+    #Always pick itself as neighbor 1
+    #target  =  df[df.individual == x].head(1)
+    #target = target.reset_index(drop=True)
+    target = df
     sensor_path = find_sensor_path(bounds=target.total_bounds, lookup_pool=hyperspectral_pool) 
     
     #Encode metadata

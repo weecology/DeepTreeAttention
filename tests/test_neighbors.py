@@ -86,8 +86,7 @@ def mod(tmpdir):
                                    RGB_sensor_path=test_sensor_tile,
                                    train=True,
                                    chunk_size=2,
-                                   savedir = mod.config["train"]["tfrecords"],
-                                   raw_boxes=test_predictions) 
+                                   savedir = mod.config["train"]["tfrecords"])
     
     #create a fake label file
     pd.DataFrame({"taxonID":["Ben","Jon"],"label":[0,1]}).to_csv(label_file)
