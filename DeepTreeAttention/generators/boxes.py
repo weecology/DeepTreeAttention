@@ -178,7 +178,6 @@ def generate_tfrecords(
             one_hot_domains = tf.one_hot(domain, number_of_domains)
             metadata = [elevation, one_hot_sites, one_hot_domains]
             
-            neighbor_pool = neighbor_pool[~(neighbor_pool.box_id == row["box_id"])].reset_index(drop=True)
             raster = rasterio.open(HSI_sensor_path)
             neighbor_array, neighbor_distance = neighbors.predict_neighbors(row, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=ensemble_model, k_neighbors=k_neighbors)
             neighbor_arrays.append(neighbor_array)

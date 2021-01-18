@@ -73,7 +73,7 @@ class AttentionModel():
         except:
             self.test_shp = None
                 
-    def generate(self, HSI_sensor_path, RGB_sensor_path, elevation, domain, site, savedir, ensemble_model=None, raw_boxes=None, species_label_dict=None, train=True, chunk_size=1000, shapefile=None, csv_file=None,label_column="label"):
+    def generate(self, HSI_sensor_path, RGB_sensor_path, elevation, domain, site, savedir, species_label_dict=None, train=True, chunk_size=1000, shapefile=None, csv_file=None,label_column="label",ensemble_model=None, raw_boxes=None):
         """Predict species class for each DeepForest bounding box
             Args:
                 shapefile: a shapefile (see NeonCrownMaps) with a bounding box in utm projection and label, columns -> xmin, ymin,xmax,ymax, label
@@ -456,7 +456,7 @@ class AttentionModel():
         joined_gdf = self.test_shp.merge(results, on="box_id")
         
         #outlier threshold
-        #test_error_df = joined_gdf[joined_gdf.error > threshold]
+        test_error_df = joined_gdf[joined_gdf.error > threshold]
         
         return train_error_df, test_error_df
         

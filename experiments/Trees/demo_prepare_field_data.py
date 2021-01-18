@@ -57,7 +57,7 @@ def test_process_plot():
     deepforest_model = deepforest.deepforest()
     deepforest_model.use_release()
     
-    merged_boxes = prepare_field_data.process_plot(plot_data=df, rgb_pool=rgb_pool, deepforest_model=deepforest_model)
+    merged_boxes, boxes = prepare_field_data.process_plot(plot_data=df, rgb_pool=rgb_pool, deepforest_model=deepforest_model)
     assert df.shape[0] >= merged_boxes.shape[0]
     
 def test_run():

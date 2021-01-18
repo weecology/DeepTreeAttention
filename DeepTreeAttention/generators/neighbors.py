@@ -159,9 +159,8 @@ def extract_features(df, x, model_class, hyperspectral_pool, site_label_dict, do
     """
     #Due to resampling, there will be multiple rows of the same point, all are identical.
     #Always pick itself as neighbor 1
-    #target  =  df[df.individual == x].head(1)
-    #target = target.reset_index(drop=True)
-    target = df
+    target  =  df[df.individual == x].head(1)
+    target = target.reset_index(drop=True)
     sensor_path = find_sensor_path(bounds=target.total_bounds, lookup_pool=hyperspectral_pool) 
     
     #Encode metadata
@@ -177,11 +176,13 @@ def extract_features(df, x, model_class, hyperspectral_pool, site_label_dict, do
     try:
         elevation = elevation_from_tile(sensor_path)/1000
     except:
+        print("Dummy variable for elevation debug")
         elevation = 100/1000
     
     metadata = [elevation, one_hot_sites, one_hot_domains]
     
-    neighbor_pool = df[~(df.individual == x)].reset_index(drop=True)
+    #neighbor_pool = df[~(df.individual == x)].reset_index(drop=True)
+    neighbor_pool = df
     
     #If there are no neighbors, return 0's
     if neighbor_pool.empty:

@@ -99,9 +99,7 @@ def tfrecords(mod, tmpdir):
                                    RGB_sensor_path=test_sensor_tile,
                                    train=True,
                                    chunk_size=2,
-                                   savedir = mod.config["train"]["tfrecords"],
-                                   raw_boxes=test_predictions,
-                                   ensemble_model = mod.HSI_model
+                                   savedir = mod.config["train"]["tfrecords"]
                                    )    
     return created_records
 
@@ -117,9 +115,7 @@ def test_generate(mod):
         RGB_sensor_path=test_sensor_tile,
         train=True, 
         chunk_size=2,
-        savedir = mod.config["train"]["tfrecords"],
-        raw_boxes=test_predictions,
-        ensemble_model = mod.HSI_model        
+        savedir = mod.config["train"]["tfrecords"]    
     )  
     
     assert all([os.path.exists(x) for x in created_records])
