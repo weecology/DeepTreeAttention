@@ -227,8 +227,8 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = N
     ))
     
     #Give tests a unique index to match against
-    test["id"] = test.index.values
-    train["id"] = train.index.values
+    test["box_id"] = test.index.values
+    train["box_id"] = train.index.values
     
     #resample train
     if not n is None:
