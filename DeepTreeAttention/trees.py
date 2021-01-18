@@ -425,11 +425,11 @@ class AttentionModel():
                 y_pred.append(error.numpy())
                 box_index.append(index.numpy()[x])            
         
-        results = pd.DataFrame({"error":y_pred, "box_id":box_index})
+        results = pd.DataFrame({"error":y_pred, "point_id":box_index})
         
         #Read original data        
         #Merge
-        joined_gdf = self.train_shp.merge(results, on="box_id")
+        joined_gdf = self.train_shp.merge(results, on="point_id")
         
         #outlier threshold
         threshold = joined_gdf.error.quantile(self.config["autoencoder"]["quantile"])
@@ -449,11 +449,11 @@ class AttentionModel():
                 y_pred.append(error.numpy())
                 box_index.append(index.numpy()[x])     
             
-        results = pd.DataFrame({"error":y_pred, "box_id":box_index})
+        results = pd.DataFrame({"error":y_pred, "point_id":box_index})
         
         #Read original data        
         #Merge
-        joined_gdf = self.test_shp.merge(results, on="box_id")
+        joined_gdf = self.test_shp.merge(results, on="point_id")
         
         #outlier threshold
         test_error_df = joined_gdf[joined_gdf.error > threshold]
@@ -487,14 +487,14 @@ class AttentionModel():
         y_true = np.argmax(y_true, 1)
         y_pred = np.argmax(y_pred, 1)
             
-        results = pd.DataFrame({"true":y_true,"predicted":y_pred, "box_id":box_index})
+        results = pd.DataFrame({"true":y_true,"predicted":y_pred, "point_id":box_index})
         
         #Read original data        
         shapefile = self.config["evaluation"]["ground_truth_path"]
         gdf = gpd.read_file(shapefile)        
 
         #Merge
-        joined_gdf = gdf.merge(results, on="box_id")
+        joined_gdf = gdf.merge(results, on="point_id")
                 
         labeldf = pd.read_csv(self.classes_file)
         label_names = list(labeldf.taxonID.values)

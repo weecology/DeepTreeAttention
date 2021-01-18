@@ -168,7 +168,7 @@ def generate_tfrecords(
         
         HSI_crops.append(HSI_crop)
         RGB_crops.append(RGB_crop)
-        indices.append(int(row["box_id"]))
+        indices.append(int(row["point_id"]))
     
         #extract neighbors
         if ensemble_model is not None:       
