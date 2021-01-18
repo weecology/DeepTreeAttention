@@ -425,13 +425,11 @@ class AttentionModel():
                 y_pred.append(error.numpy())
                 box_index.append(index.numpy()[x])            
         
-        results = pd.DataFrame({"error":y_pred, "box_index":box_index})
-        results["id"] = results["box_index"]
+        results = pd.DataFrame({"error":y_pred, "box_id":box_index})
         
         #Read original data        
         #Merge
-        joined_gdf = self.train_shp.merge(results, on="id")
-        joined_gdf = joined_gdf.drop(columns=["box_index"])
+        joined_gdf = self.train_shp.merge(results, on="box_id")
         
         #outlier threshold
         threshold = joined_gdf.error.quantile(self.config["autoencoder"]["quantile"])
@@ -451,13 +449,11 @@ class AttentionModel():
                 y_pred.append(error.numpy())
                 box_index.append(index.numpy()[x])     
             
-        results = pd.DataFrame({"error":y_pred, "box_index":box_index})
-        results["id"] = results["box_index"]
+        results = pd.DataFrame({"error":y_pred, "box_id":box_index})
         
         #Read original data        
         #Merge
-        joined_gdf = self.test_shp.merge(results, on="id")
-        test_error_df = joined_gdf.drop(columns=["box_index"])
+        joined_gdf = self.test_shp.merge(results, on="box_id")
         
         #outlier threshold
         #test_error_df = joined_gdf[joined_gdf.error > threshold]
