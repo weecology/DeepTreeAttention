@@ -44,7 +44,7 @@ train:
     pretrain: True #Train the submodels before ensembling all together
 neighbors:
     model_dir: /orange/idtrees-collab/DeepTreeAttention/snapshots//20201221_125454/
-    k_neighbors: 5
+    k_neighbors: 2
     freeze: False
 autoencoder:
     epochs: 50

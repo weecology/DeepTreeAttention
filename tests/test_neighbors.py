@@ -104,34 +104,34 @@ def test_predict_neighbors(data, metadata, mod):
     target = data.iloc[0]
     neighbor_pool = data[~(data.box_id == target.box_id)]
     raster = rasterio.open(test_sensor_tile)
-    feature_array, distances = neighbors.predict_neighbors(target, metadata=metadata, HSI_size=20, raster=raster, neighbor_pool=neighbor_pool, model=mod.ensemble_model, k_neighbors=5)
-    assert feature_array.shape[0] == 5
+    feature_array, distances = neighbors.predict_neighbors(target, metadata=metadata, HSI_size=20, raster=raster, neighbor_pool=neighbor_pool, model=mod.ensemble_model, k_neighbors=2)
+    assert feature_array.shape[0] == 2
     assert feature_array.shape[1] == mod.ensemble_model.get_layer("submodel_concat").output.shape[1]
 
-    assert len(distances) == 5
+    assert len(distances) == 2
   
     
 def test_extract_features(mod, df, tmpdir):
     x = df.individual.values[0]
-    feature_array, distances = neighbors.extract_features(df=df, x=x, model_class=mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict, k_neighbors=5)
+    feature_array, distances = neighbors.extract_features(df=df, x=x, model_class=mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict, k_neighbors=2)
     
-    assert feature_array.shape[0] == 5
+    assert feature_array.shape[0] == 2
     assert feature_array.shape[1] == mod.ensemble_model.get_layer("submodel_concat").output.shape[1]    
-    assert len(distances) == 5
+    assert len(distances) == 2
  
     
 def test_extract_features_empty(mod, df, tmpdir):
     x = df.individual.values[0]
     df = df[df.individual == x]
     
-    feature_array, distances = neighbors.extract_features(df=df, x=x, model_class=mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict, k_neighbors=5)
+    feature_array, distances = neighbors.extract_features(df=df, x=x, model_class=mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict, k_neighbors=2)
     
-    assert feature_array.shape[0] == 5
+    assert feature_array.shape[0] == 2
     assert feature_array.shape[1] == mod.ensemble_model.get_layer("submodel_concat").output.shape[1]    
-    assert len(distances) == 5
+    assert len(distances) == 2
     
 def test_predict_dataframe(mod, df):
-    results_dict = neighbors.predict_dataframe(df=df, model_class =  mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict, k_neighbors=5)
+    results_dict = neighbors.predict_dataframe(df=df, model_class =  mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict, k_neighbors=2)
     assert len(results_dict) == df.shape[0]
 
 def test_predict_dataframe_with_padding(mod, df):
@@ -141,5 +141,5 @@ def test_predict_dataframe_with_padding(mod, df):
     
     assert len(results_dict) == df.shape[0]
     
-    assert len(results_dict[0][0]) == 5
-    assert len(results_dict[0][1]) == 5
+    assert len(results_dict[0][0]) == 2
+    assert len(results_dict[0][1]) == 2
