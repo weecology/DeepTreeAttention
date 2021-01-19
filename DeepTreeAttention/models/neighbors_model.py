@@ -46,7 +46,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
         
     #Zero out any masked entries
     attention_weights = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
-    attention_weights = ExponentialDecay(name="distance_decay")(attention_weights, neighbor_distances)    
+    #attention_weights = ExponentialDecay(name="distance_decay")(attention_weights, neighbor_distances)    
     
     #Skip connection for value features
     value_features = tf.keras.layers.Dense(n_features, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
