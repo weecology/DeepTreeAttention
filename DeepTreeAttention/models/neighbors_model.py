@@ -46,11 +46,10 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
         
     #Zero out any masked entries
     attention_weights = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
-    #attention_weights = ExponentialDecay(name="distance_decay")(attention_weights, neighbor_distances)    
     
     #Skip connection for value features
     value_features = tf.keras.layers.Dense(n_features, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
-    #value_features = tf.keras.layers.Dropout(0.5)(value_features)
+    value_features = tf.keras.layers.Dropout(0.8)(value_features)
     
     context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([attention_weights,value_features])
     context_vector = tf.keras.layers.Dense(n_features, name="context_vector", activation="relu")(context_vector)
