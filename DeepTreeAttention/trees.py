@@ -107,7 +107,8 @@ class AttentionModel():
                                                    label_column=label_column,
                                                    shuffle=True,
                                                    ensemble_model=ensemble_model,
-                                                   raw_boxes=raw_boxes)
+                                                   raw_boxes=raw_boxes,
+                                                   k_neighbors=self.config["neighbors"]["k_neighbors"])
 
         return created_records
 

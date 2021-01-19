@@ -75,6 +75,7 @@ def mod(tmpdir):
     mod.sites = 23
     mod.domains = 15
     
+    
     #Create a model with input sizes
     mod.create()
     return mod
