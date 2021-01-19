@@ -485,10 +485,12 @@ class AttentionModel():
         box_index = np.concatenate(box_index)
         box_index = list(box_index)
         
+        #Get scores before labels
+        scores = np.amax(y_pred,1)
         y_true = np.argmax(y_true, 1)
         y_pred = np.argmax(y_pred, 1)
-            
-        results = pd.DataFrame({"true":y_true,"predicted":y_pred, "point_id":box_index})
+                    
+        results = pd.DataFrame({"true":y_true,"predicted":y_pred, "point_id":box_index,"score":scores})
         
         #Read original data        
         shapefile = self.config["evaluation"]["ground_truth_path"]
