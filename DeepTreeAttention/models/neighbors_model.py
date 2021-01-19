@@ -60,7 +60,6 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     
     merged_layers = tf.keras.layers.Dropout(0.8)(context_residual)
     merged_layers = tf.keras.layers.Dense(classes,name="ensemble_learn_bottleneck",activation="relu")(merged_layers)
-    merged_layers = tf.keras.layers.Dropout(0.8)(merged_layers)    
     output = tf.keras.layers.Dense(classes,name="ensemble_learn",activation="softmax")(merged_layers)
     
     return ensemble_model.inputs, neighbor_inputs, neighbor_distances, output

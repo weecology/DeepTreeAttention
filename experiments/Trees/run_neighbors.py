@@ -65,5 +65,5 @@ experiment.log_asset("{}/prediction.cpg".format(save_dir))
 estimate_a = neighbor.get_layer("ensemble_add_bias").get_weights()
 experiment.log_metric(name="target_versus_context_weight", value=estimate_a[0][0])
 
-estimate_lambda = neighbor.get_layer("distance_decay").get_weights()
-experiment.log_metric(name="distance_decay_rate", value=estimate_lambda[0])
+#estimate_lambda = neighbor.get_layer("distance_decay").get_weights()
+#experiment.log_metric(name="distance_decay_rate", value=estimate_lambda[0])
