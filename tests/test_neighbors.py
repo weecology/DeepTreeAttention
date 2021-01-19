@@ -137,7 +137,7 @@ def test_predict_dataframe(mod, df):
 def test_predict_dataframe_with_padding(mod, df):
     #manipulate the input data to less than k_neighbors, the algorithm should pad with zeros.
     df = df.head(3)
-    results_dict = neighbors.predict_dataframe(df=df, model_class=mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict)
+    results_dict = neighbors.predict_dataframe(df=df, model_class=mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict, k_neighbors=2)
     
     assert len(results_dict) == df.shape[0]
     
