@@ -220,7 +220,8 @@ def predict_dataframe(df, model_class, hyperspectral_pool, site_label_dict, doma
             model_class=model_class,
             hyperspectral_pool=hyperspectral_pool,
             site_label_dict=site_label_dict,
-            domain_label_dict=domain_label_dict
+            domain_label_dict=domain_label_dict,
+            k_neighbors=k_neighbors
         )
         
     return neighbor_features
