@@ -42,7 +42,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     joined_features = tf.keras.layers.Dot(name="target_neighbor_multiply",axes=(1,2))([query_features, key_features])
     
     #Scale before softmax temperature (fixed at sqrt(112) for the moment)
-    joined_features = tf.keras.layers.Lambda(lambda x: x/(0.01 *10.58))(joined_features)
+    joined_features = tf.keras.layers.Lambda(lambda x: x/(0.1 *10.58))(joined_features)
         
     #Zero out any masked entries
     attention_weights = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
