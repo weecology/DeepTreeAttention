@@ -30,7 +30,7 @@ train:
         epochs: 100
     ensemble:
         freeze: False
-        epochs: 120
+        epochs: 200
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/train.shp  #path to ground truth class shapefile   
     learning_rate: .001
