@@ -78,18 +78,18 @@ def sample_plots(shp):
     train = train[train.taxonID.isin(test.taxonID)]
     test = test[test.taxonID.isin(train.taxonID)]
 
-    #remove any test species that don't have site distributions in train
-    to_remove = []
-    for index,row in test.iterrows():
-        if train[(train.taxonID==row["taxonID"]) & (train.siteID==row["siteID"])].empty:
-            to_remove.append(index)
+    ##remove any test species that don't have site distributions in train
+    #to_remove = []
+    #for index,row in test.iterrows():
+        #if train[(train.taxonID==row["taxonID"]) & (train.siteID==row["siteID"])].empty:
+            #to_remove.append(index)
         
-    add_to_train = test[test.index.isin(to_remove)]
-    train = pd.concat([train, add_to_train])
-    test = test[~test.index.isin(to_remove)]    
+    #add_to_train = test[test.index.isin(to_remove)]
+    #train = pd.concat([train, add_to_train])
+    #test = test[~test.index.isin(to_remove)]    
     
-    train = train[train.taxonID.isin(test.taxonID)]
-    test = test[test.taxonID.isin(train.taxonID)]
+    #train = train[train.taxonID.isin(test.taxonID)]
+    #test = test[test.taxonID.isin(train.taxonID)]
     
     return train, test
 
