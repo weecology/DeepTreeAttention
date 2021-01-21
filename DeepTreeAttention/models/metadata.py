@@ -1,25 +1,22 @@
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Input
 
 def model(classes, sites, domains):
     # create model
     #site label
     site_input = Input(shape=(sites,),name="site_input")
-    site_layers = Dense(classes*2, activation='relu')(site_input)
-    site_layers = tf.keras.layers.BatchNormalization()(site_layers)
+    site_layers = tf.keras.layers.BatchNormalization()(site_input)
     
     domain_input = Input(shape=(domains,),name="domain_input")
-    domain_layers = Dense(classes*2, activation='relu',name="domain_activation")(domain_input)
-    domain_layers = tf.keras.layers.BatchNormalization()(domain_layers)
+    domain_layers = tf.keras.layers.BatchNormalization()(domain_input)
     
     #elevation
     elevation_input = Input(shape=(1,), name="elevation_input")    
-    elevation_layer = Dense(classes*2, activation='relu')(elevation_input)
-    elevation_layer = tf.keras.layers.BatchNormalization()(elevation_layer)
+    elevation_layer = tf.keras.layers.BatchNormalization()(elevation_input)
     
-    joined_layer = tf.keras.layers.Concatenate()([elevation_layer, site_layers, domain_layers])
     #Bottleneck layer size should be the same as the concat features
+    joined_layer = tf.keras.layers.Concatenate()([elevation_layer, site_layers, domain_layers])
+    
     x = Dense(classes, activation='relu', name="last_relu")(joined_layer)
     output = Dense(classes, activation="softmax")(x)
     
