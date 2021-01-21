@@ -102,7 +102,7 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = N
         n: number of resampled points per class
         client: optional dask client
         """
-    field = pd.read_csv("{}/data/raw/2020_vst_december.csv".format(ROOT))
+    field = pd.read_csv("{}/data/raw/neon_vst_data_2021.csv".format(ROOT))
     field = field[~field.elevation.isnull()]
     field = field[~field.growthForm.isin(["liana","small shrub"])]
     field = field[~field.growthForm.isnull()]
