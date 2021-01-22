@@ -94,10 +94,7 @@ def mod(tmpdir):
     
     mod.create()
     mod.ensemble(experiment=None, train=False)
-    
-    #turn ensemble model into a feature extractor of the 2nd to last layer.
-    mod.ensemble_model = tfk.Model(mod.ensemble_model.inputs, mod.ensemble_model.get_layer("submodel_concat").output)
-    
+        
     return mod
 
 def test_predict_neighbors(data, metadata, mod):
@@ -106,7 +103,7 @@ def test_predict_neighbors(data, metadata, mod):
     raster = rasterio.open(test_sensor_tile)
     feature_array, distances = neighbors.predict_neighbors(target, metadata=metadata, HSI_size=20, raster=raster, neighbor_pool=neighbor_pool, model=mod.ensemble_model, k_neighbors=2)
     assert feature_array.shape[0] == 2
-    assert feature_array.shape[1] == mod.ensemble_model.get_layer("submodel_concat").output.shape[1]
+    assert feature_array.shape[1] == mod.ensemble_model.output.shape[1]
 
     assert len(distances) == 2
   
@@ -116,7 +113,7 @@ def test_extract_features(mod, df, tmpdir):
     feature_array, distances = neighbors.extract_features(df=df, x=x, model_class=mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict, k_neighbors=2)
     
     assert feature_array.shape[0] == 2
-    assert feature_array.shape[1] == mod.ensemble_model.get_layer("submodel_concat").output.shape[1]    
+    assert feature_array.shape[1] == mod.ensemble_model.output.shape[1]    
     assert len(distances) == 2
  
     
@@ -127,7 +124,7 @@ def test_extract_features_empty(mod, df, tmpdir):
     feature_array, distances = neighbors.extract_features(df=df, x=x, model_class=mod, hyperspectral_pool=hyperspectral_pool, site_label_dict=site_label_dict, domain_label_dict=domain_label_dict, k_neighbors=2)
     
     assert feature_array.shape[0] == 2
-    assert feature_array.shape[1] == mod.ensemble_model.get_layer("submodel_concat").output.shape[1]    
+    assert feature_array.shape[1] == mod.ensemble_model.output.shape[1]    
     assert len(distances) == 2
     
 def test_predict_dataframe(mod, df):

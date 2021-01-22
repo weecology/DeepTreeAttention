@@ -87,7 +87,7 @@ def ensemble_model(mod):
     
     metadata_model = metadata.create(classes=2, sites=23, domains=15, learning_rate=0.001)
     ensemble = Hang.learned_ensemble(HSI_model=model1, metadata_model=metadata_model, classes=2)
-    ensemble = tf.keras.Model(ensemble.inputs, ensemble.get_layer("submodel_concat").output)
+    ensemble = tf.keras.Model(ensemble.inputs, ensemble.output)
     
     return ensemble
     
@@ -107,10 +107,7 @@ def tfrecords(mod, ensemble_model, tmpdir):
 def test_run_neighbors(mod, tfrecords):
     #Create a class and run
     mod.ensemble(experiment=None, train=False)
-    
-    #turn ensemble model into a feature extractor of the 2nd to last layer.
-    mod.ensemble_model = tf.keras.Model(mod.ensemble_model.inputs, mod.ensemble_model.get_layer("submodel_concat").output)    
-       
+           
     mod.read_data("neighbors")
     neighbor = neighbors_model.create(ensemble_model = mod.ensemble_model, k_neighbors=mod.config["neighbors"]["k_neighbors"], classes=mod.classes)
     labeldf = pd.read_csv(mod.classes_file)
