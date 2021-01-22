@@ -14,8 +14,16 @@ from distributed import wait
 from DeepTreeAttention.models.layers import WeightedSum
 
 #Delete any file previous run
+ROOT = os.path.dirname(os.path.dirname(ROOT))
 old_files = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/*")
 [os.remove(x) for x in old_files]
+
+old_files = glob.glob("{}/data/deepforest_boxes/evaluation/*.shp".format(ROOT))
+[os.remove(x) for x in old_files]
+
+old_files = glob.glob("{}/data/deepforest_boxes/train/*.shp".format(ROOT))
+[os.remove(x) for x in old_files]
+
 old_files = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/train/*")
 [os.remove(x) for x in old_files]
 
@@ -87,7 +95,6 @@ def run(record, savedir, raw_box_dir):
     return tfrecords
 
 #test
-ROOT = os.path.dirname(os.path.dirname(ROOT))
 plots_to_run = glob.glob("{}/data/deepforest_boxes/evaluation/*.shp".format(ROOT))
 
 test_tfrecords = []
