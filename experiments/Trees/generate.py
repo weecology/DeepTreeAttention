@@ -14,7 +14,6 @@ from distributed import wait
 from DeepTreeAttention.models.layers import WeightedSum
 
 #Delete any file previous run
-ROOT = os.path.dirname(os.path.dirname(ROOT))
 old_files = glob.glob("/orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/*")
 [os.remove(x) for x in old_files]
 
