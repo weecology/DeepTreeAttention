@@ -1,7 +1,6 @@
 #Define spatial neighbor learning
 import tensorflow as tf
-from tensorflow.keras import backend as K
-from DeepTreeAttention.models.layers import WeightedSum, ExponentialDecay
+from DeepTreeAttention.models.layers import WeightedSum
 
 def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     """Define a neighbor model based on a ensemble model
