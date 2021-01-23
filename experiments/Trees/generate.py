@@ -67,6 +67,7 @@ def run(record, savedir, raw_box_dir):
     elevation = elevation_from_tile(h5_path)
     
     att.ensemble_model = tf.keras.models.load_model("{}/Ensemble.h5".format(att.config["neighbors"]["model_dir"]), custom_objects={"WeightedSum":WeightedSum})    
+    ensemble_model = tf.keras.Model(att.ensemble_model.inputs, att.ensemble_model.get_layer("ensemble_learn").output)
     
     #Generate record when complete   
     tfrecords = att.generate(
@@ -81,7 +82,7 @@ def run(record, savedir, raw_box_dir):
         elevation=elevation,
         label_column="taxonID",
         species_label_dict=species_label_dict,
-        ensemble_model=att.ensemble_model,
+        ensemble_model=ensemble_model,
         savedir=savedir
     )
     

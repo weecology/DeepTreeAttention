@@ -113,7 +113,8 @@ def learned_ensemble(HSI_model, metadata_model, classes, freeze=True):
     merged_layers = layers.Concatenate(name="submodel_concat")([stripped_HSI_model.output, stripped_metadata.output])    
     merged_layers = layers.Dropout(0.7)(merged_layers)
     #merged_layers = layers.Dense(classes*2,name="ensemble_relu",activation="relu")(merged_layers)
-    ensemble_softmax = layers.Dense(classes,name="ensemble_learn",activation="softmax")(merged_layers)
+    ensemble_learn = layers.Dense(classes,name="ensemble_learn")(merged_layers)
+    ensemble_softmax = layers.Softmax()(ensemble_learn)
 
     #Take joint inputs    
     ensemble_model = tf.keras.Model(inputs=HSI_model.inputs+metadata_model.inputs,
