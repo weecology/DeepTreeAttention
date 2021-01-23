@@ -26,9 +26,9 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     original_features = ensemble_model.get_layer("ensemble_learn").output
                 
     #mask out zero padding if less than k_neighbors
-    masked_inputs = tf.keras.layers.Masking(mask_value=0)(neighbor_inputs)
+    #masked_inputs = tf.keras.layers.Masking(mask_value=0)(neighbor_inputs)
     
-    key_features = tf.keras.layers.Dense(classes, activation="relu",name="neighbor_feature_dense")(masked_inputs)
+    key_features = tf.keras.layers.Dense(classes, activation="relu",name="neighbor_feature_dense")(neighbor_inputs)
         
     #strip off previous head layers, target features are the HSI + metadata from the target tree
     query_features = tf.keras.layers.Dense(classes, activation="relu",name="target_feature_dense")(original_features)
@@ -44,9 +44,9 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     attention_weights = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
     
     #Skip connection for value features
-    value_features = tf.keras.layers.Dense(classes, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
+    #value_features = tf.keras.layers.Dense(classes, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
     
-    context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([attention_weights,value_features])
+    context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([attention_weights,neighbor_inputs])
     #context_vector = tf.keras.layers.Dense(classes, name="context_vector", activation="relu")(context_vector)
     
     #Add as residual to original matrix normalized
