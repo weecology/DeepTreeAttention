@@ -8,7 +8,6 @@ import pytest
 import pandas as pd
 
 from DeepTreeAttention.models import neighbors_model
-from DeepTreeAttention.callbacks import callbacks
 from DeepTreeAttention.trees import AttentionModel
 from DeepTreeAttention.models import Hang2020_geographic as Hang
 from DeepTreeAttention.models import metadata
