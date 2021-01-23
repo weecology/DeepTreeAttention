@@ -47,7 +47,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     value_features = tf.keras.layers.Dense(classes, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
     
     context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([attention_weights,value_features])
-    context_vector = tf.keras.layers.Dense(classes, name="context_vector", activation="relu")(context_vector)
+    #context_vector = tf.keras.layers.Dense(classes, name="context_vector", activation="relu")(context_vector)
     
     #Add as residual to original matrix normalized
     context_residual = WeightedSum(name="ensemble_add_bias")([context_vector,original_features])
