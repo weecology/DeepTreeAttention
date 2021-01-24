@@ -23,7 +23,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     neighbor_distances = tf.keras.layers.Input(shape=(k_neighbors), name="neighbor_distance_input")
     
     #original featuers from target tree
-    original_features = ensemble_model.output
+    original_features = ensemble_model.get_layer("ensemble_learn").output
                 
     #mask out zero padding if less than k_neighbors
     masked_inputs = tf.keras.layers.Masking(mask_value=0)(neighbor_inputs)
@@ -34,17 +34,17 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     query_features = tf.keras.layers.Dense(classes, activation="relu",name="target_feature_dense")(original_features)
     
     #Multiply to neighbor features
-    #This may not be not right multiplication
     joined_features = tf.keras.layers.Dot(name="target_neighbor_multiply",axes=(1,2))([query_features, key_features])
     
     #Scale before softmax temperature (fixed at sqrt(112) for the moment)
-    joined_features = tf.keras.layers.Lambda(lambda x: x/(0.1 *7.41))(joined_features)
+    joined_features = tf.keras.layers.Lambda(lambda x: x/(0.1 *10.58))(joined_features)
         
     #Zero out any masked entries
     attention_weights = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
     
     #Skip connection for value features
     value_features = tf.keras.layers.Dense(classes, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
+    
     context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([attention_weights,value_features])
     context_vector = tf.keras.layers.Dense(classes, name="context_vector", activation="relu")(context_vector)
     
