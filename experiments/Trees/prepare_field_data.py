@@ -267,7 +267,7 @@ if __name__ == "__main__":
     #client = None
     
     #Create train test split
-    create_training_shp.train_test_split(ROOT, lookup_glob, n=config["train"]["resampled_per_taxa"], client=client, regenerate=True)
+    create_training_shp.train_test_split(ROOT, lookup_glob, n=config["train"]["resampled_per_taxa"], client=client, regenerate=False)
 
     #test data
     main(
