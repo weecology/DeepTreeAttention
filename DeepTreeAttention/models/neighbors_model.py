@@ -37,7 +37,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     #Multiply to neighbor features
     joined_features = tf.keras.layers.Dot(name="target_neighbor_multiply",axes=(1,2))([query_features, key_features])
     
-    #Scale before softmax temperature (fixed at sqrt(112) for the moment)
+    #Scale before softmax temperature
     joined_features = tf.keras.layers.Lambda(lambda x: x/(0.01 *math.sqrt(classes)))(joined_features)
         
     #Zero out any masked entries
