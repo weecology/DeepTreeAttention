@@ -6,8 +6,8 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=40GB
 #SBATCH --time=24:00:00       #Time limit hrs:min:sec
-#SBATCH --output=/home/b.weinstein/logs/Neighbor_%j.out   # Standard output and error log
-#SBATCH --error=/home/b.weinstein/logs/Neighbor_%j.err
+#SBATCH --output=/home/b.weinstein/logs/Extract_%j.out   # Standard output and error log
+#SBATCH --error=/home/b.weinstein/logs/Extract_%j.err
 #SBATCH --partition=gpu
 #SBATCH --nodes=1
 #SBATCH --gpus=1
