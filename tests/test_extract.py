@@ -76,9 +76,10 @@ def test_save_images_to_matlab(mod,tfrecords, tmpdir):
     #For testing purposes, split a val set
     mod.config["evaluation"]["tfrecords"] =  mod.config["train"]["tfrecords"]
     extract.save_images_to_matlab(DeepTreeAttention=mod, classes=["Ben"], savedir=tmpdir)
+    
     printed_images = glob.glob("{}/*.mat".format(tmpdir))
     
-    assert len(printed_images) == 1
+    assert len(printed_images) == 9
     
     
     

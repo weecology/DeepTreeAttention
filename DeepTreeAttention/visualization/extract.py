@@ -37,7 +37,7 @@ def save_images_to_matlab(DeepTreeAttention, savedir, classes):
             if taxon in selected_labels:
                 counter[taxon] +=1
                 filename = "{}/{}_{}.mat".format(savedir, taxon, counter[taxon])
-                io.savemat(filename, image)
+                io.savemat(filename,  dict({"image":image}))
     
     print("Saved {}".format(counter))
 
