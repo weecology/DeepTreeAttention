@@ -6,57 +6,8 @@ import numpy as np
 import pandas as pd
 
 from DeepTreeAttention.utils.paths import find_sensor_path, elevation_from_tile
+from DeepTreeAttention.utils.image import image_normalize, resize, crop_image
 from sklearn.neighbors import BallTree
-
-def resize(img, height, width):
-    # resize image
-    dim = (width, height)
-    resized = cv2.resize(img, dim, interpolation=cv2.INTER_NEAREST)
-
-    return resized
-
-def crop_image(src, box, expand=0): 
-    """Read sensor data and crop a bounding box
-    Args:
-        src: a rasterio opened path
-        box: geopandas geometry polygon object
-        expand: add padding in percent to the edge of the crop
-    Returns:
-        masked_image: a crop of sensor data at specified bounds
-    """
-    #Read data and mask
-    try:    
-        left, bottom, right, top = box.bounds
-        
-        expand_width = (right - left) * expand /2
-        expand_height = (top - bottom) * expand / 2
-        
-        #If expand is greater than increase both size
-        if expand >= 0:
-            expanded_left = left - expand_width
-            expanded_bottom = bottom - expand_height
-            expanded_right = right + expand_width
-            expanded_top =  top+expand_height
-        else:
-            #Make sure of no negative boxes
-            expanded_left = left+expand_width
-            expanded_bottom = bottom+expand
-            expanded_right = right-expand_width
-            expanded_top =  top-expand_height            
-        
-        window = rasterio.windows.from_bounds(expanded_left, expanded_bottom, expanded_right, expanded_top, transform=src.transform)
-        masked_image = src.read(window=window)
-    except Exception as e:
-        raise ValueError("sensor path: {} failed at reading window {} with error {}".format(src, box.bounds,e))
-        
-    #Roll depth to channel last
-    masked_image = np.rollaxis(masked_image, 0, 3)
-    
-    #Skip empty frames
-    if masked_image.size ==0:
-        raise ValueError("Empty frame crop for box {} in sensor path {}".format(box, src))
-        
-    return masked_image
 
 def get_nearest(src_points, candidates, k_neighbors=1, distance_threshold=None):
     """Find nearest neighbors for all source points from a set of candidate points
@@ -87,6 +38,9 @@ def get_nearest(src_points, candidates, k_neighbors=1, distance_threshold=None):
     distances, indices = tree.query(src_points, k=effective_neighbors)
     
     neighbor_geoms = candidates[candidates.index.isin(indices[0])]
+    neighbor_geoms = neighbor_geoms.loc[indices[0]]
+    
+    #order by the indices
     neighbor_geoms["distance"] = distances[0]
 
     if distance_threshold:
@@ -110,6 +64,9 @@ def predict_neighbors(target, HSI_size, neighbor_pool, metadata, raster, model, 
     #Find neighbors
     neighbor_geoms = get_nearest(target, candidates = neighbor_pool , k_neighbors=k_neighbors)
     
+    #Always put itself first
+    neighbor_geoms = neighbor_geoms.sort_values("distance")
+    
     #extract crop for each neighbor
     features = [ ]
     distances = [ ]
@@ -121,15 +78,16 @@ def predict_neighbors(target, HSI_size, neighbor_pool, metadata, raster, model, 
         
         #reorder to channels last
         crop = resize(crop, HSI_size, HSI_size)
+        crop = image_normalize(crop)        
         crop = np.expand_dims(crop, 0)
         
         #create batch
         elevation = np.expand_dims(metadata[0],axis=0)
         site = np.expand_dims(metadata[1],axis=0)
         domain = np.expand_dims(metadata[2],axis=0)
-        
         batch  = [crop,elevation,site,domain]
-        feature = model(batch)
+        
+        feature = model.predict(batch)
         features.append(feature)
         distances.append(row["distance"])
     
@@ -181,7 +139,6 @@ def extract_features(df, x, model_class, hyperspectral_pool, site_label_dict, do
     
     metadata = [elevation, one_hot_sites, one_hot_domains]
     
-    #neighbor_pool = df[~(df.individual == x)].reset_index(drop=True)
     neighbor_pool = df
     
     #If there are no neighbors, return 0's

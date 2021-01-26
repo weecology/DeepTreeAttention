@@ -87,6 +87,7 @@ def create_models(height, width, channels, classes, learning_rate, weighted_sum=
             lr=float(learning_rate)),
         metrics=metric_list)
     
+    
     return model, spatial_model, spectral_model
 
 def strip_sensor_softmax(model, classes, index, squeeze=False, squeeze_size=128):

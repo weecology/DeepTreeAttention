@@ -9,14 +9,12 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow.keras.models import load_model
-from tensorflow.keras import metrics
 from sklearn.utils import class_weight
 
 #Local Modules
 from DeepTreeAttention.utils.config import parse_yaml
 from DeepTreeAttention.models import Hang2020_geographic as Hang
 from DeepTreeAttention.models import metadata
-from  DeepTreeAttention.models import layers
 from DeepTreeAttention.generators import boxes
 from DeepTreeAttention.callbacks import callbacks
 from DeepTreeAttention.generators import cleaning
@@ -105,7 +103,7 @@ class AttentionModel():
                                                    extend_HSI_box=self.config["train"]["HSI"]["extend_box"],
                                                    extend_RGB_box=self.config["train"]["RGB"]["extend_box"],
                                                    label_column=label_column,
-                                                   shuffle=True,
+                                                   shuffle=self.config["train"]["shuffle"],
                                                    ensemble_model=ensemble_model,
                                                    raw_boxes=raw_boxes,
                                                    k_neighbors=self.config["neighbors"]["k_neighbors"])
@@ -150,13 +148,32 @@ class AttentionModel():
             
                 #create a metadata model
                 self.metadata_model = metadata.create(classes=self.classes, sites=self.sites, domains=self.domains, learning_rate=self.config["train"]["learning_rate"])
+                self.ensemble_model = Hang.learned_ensemble(HSI_model=self.HSI_model, metadata_model= self.metadata_model, freeze=self.config["ensemble"]["freeze"], classes=self.classes)
+                self.ensemble_model.compile(
+                    loss="categorical_crossentropy",
+                    optimizer=tf.keras.optimizers.Adam(
+                    lr=float(self.config["train"]["learning_rate"])),
+                    metrics=[tf.keras.metrics.CategoricalAccuracy(
+                                                                 name='acc')])      
+                                
         else:
             self.HSI_model, self.HSI_spatial, self.HSI_spectral = Hang.create_models(self.HSI_size, self.HSI_size, self.HSI_channels, self.classes, self.config["train"]["learning_rate"])
             self.RGB_model, self.RGB_spatial, self.RGB_spectral = Hang.create_models(self.RGB_size, self.RGB_size, self.RGB_channels, self.classes, self.config["train"]["learning_rate"])
             
             #create a metadata model
             self.metadata_model = metadata.create(classes=self.classes, sites=self.sites, domains=self.domains, learning_rate=self.config["train"]["learning_rate"])
-        
+            
+            #create an ensemble model
+            self.ensemble_model = Hang.learned_ensemble(HSI_model=self.HSI_model, metadata_model= self.metadata_model, freeze=self.config["train"]["ensemble"]["freeze"], classes=self.classes)
+            
+            #Compile ensemble
+            self.ensemble_model.compile(
+                loss="categorical_crossentropy",
+                optimizer=tf.keras.optimizers.Adam(
+                lr=float(self.config["train"]["learning_rate"])),
+                metrics=[tf.keras.metrics.CategoricalAccuracy(
+                                                             name='acc')])      
+            
     def read_data(self, mode, ids=False, validation_split=False):
         """Read tfrecord into datasets from config
             Args:
@@ -326,11 +343,8 @@ class AttentionModel():
                         callbacks=callback_list,
                         class_weight=class_weight)
         
-    def ensemble(self, experiment, class_weight=None, freeze = True, train=True):
-        self.classes = pd.read_csv(self.classes_file).shape[0] 
-        
-        self.read_data(mode="ensemble")      
-        
+    def ensemble(self, experiment, class_weight=None):
+                
         if self.val_split is None:
             print("Cannot run callbacks without validation data, skipping...")
             callback_list = None
@@ -352,45 +366,15 @@ class AttentionModel():
                                              train_data=self.train_split,
                                              label_names=label_names,
                                              train_shp=self.train_shp,    
-                                             submodel="ensemble")
+                                             submodel="ensemble")    
             
-            print("callback list is {}".format(callback_list))
-        
-        if self.config["train"]["gpus"] > 1:
-            with self.strategy.scope():        
-                self.ensemble_model = Hang.learned_ensemble(HSI_model=self.HSI_model, metadata_model= self.metadata_model, freeze=freeze, classes=self.classes)
-                
-                if train:
-                    self.ensemble_model.compile(
-                        loss="categorical_crossentropy",
-                        optimizer=tf.keras.optimizers.Adam(
-                        lr=float(self.config["train"]["learning_rate"])),
-                        metrics=[tf.keras.metrics.CategoricalAccuracy(
-                                                                     name='acc')])
-                    #Train ensemble layer
-                    self.ensemble_model.fit(
-                        self.train_split,
-                        epochs=self.config["train"]["ensemble"]["epochs"],
-                        validation_data=self.val_split,
-                        callbacks=callback_list,
-                        class_weight=class_weight)                    
-        else:
-            self.ensemble_model = Hang.learned_ensemble(HSI_model=self.HSI_model,metadata_model=self.metadata_model, freeze=freeze, classes=self.classes)
-            if train:
-                self.ensemble_model.compile(
-                    loss="categorical_crossentropy",
-                    optimizer=tf.keras.optimizers.Adam(
-                    lr=float(self.config["train"]["learning_rate"])),
-                    metrics=[tf.keras.metrics.CategoricalAccuracy(
-                                                                 name='acc')])            
-                        
-                #Train ensemble layer
-                self.ensemble_model.fit(
-                    self.train_split,
-                    epochs=self.config["train"]["ensemble"]["epochs"],
-                    validation_data=self.val_split,
-                    callbacks=callback_list,
-                    class_weight=class_weight)
+        #Train ensemble layer
+        self.ensemble_model.fit(
+            self.train_split,
+            epochs=self.config["train"]["ensemble"]["epochs"],
+            validation_data=self.val_split,
+            callbacks=callback_list,
+            class_weight=class_weight)
     
     def find_outliers(self):
         self.autoencoder_model = cleaning.autoencoder_model(height=self.HSI_size, width=self.HSI_size, channels=self.HSI_channels)

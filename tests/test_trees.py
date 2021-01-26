@@ -192,7 +192,7 @@ def test_ensemble(tfrecords, mod):
     mod.read_data(mode="ensemble")
     mod.config["train"]["ensemble"]["epochs"] = 1   
     mod.config["train"]["ensemble"]["batch_size"] = 2
-    mod.ensemble(experiment=experiment, class_weight=None, train=True)
+    mod.ensemble(experiment=experiment, class_weight=None)
          
 @pytest.mark.skipif(is_travis, reason="Cannot load comet on TRAVIS")
 def test_train_callbacks(tfrecords, mod):

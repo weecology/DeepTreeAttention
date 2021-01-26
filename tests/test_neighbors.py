@@ -10,8 +10,6 @@ import tensorflow.keras as tfk
 import tensorflow as tf
 
 from DeepTreeAttention.generators import neighbors
-from DeepTreeAttention.models.Hang2020_geographic import create_models, learned_ensemble
-from DeepTreeAttention.models.metadata import create as create_metadata
 from DeepTreeAttention.trees import AttentionModel
 
 ##Global variables
@@ -50,8 +48,6 @@ def metadata(mod):
     numeric_domain = domain_label_dict[domain]   
     one_hot_domains = tf.one_hot(numeric_domain, mod.domains)
     
-    #ToDO bring h5 into here.
-    #elevation = elevation_from_tile(sensor_path)/1000
     elevation = 100/1000
     metadata = [elevation, one_hot_sites, one_hot_domains]
     
@@ -78,10 +74,16 @@ def mod(tmpdir):
     
     label_file = "{}/label_file.csv".format(train_dir)
     
-    shp = gpd.read_file(test_predictions)
     mod.config["train"]["tfrecords"] = train_dir
     mod.classes_file = "data/processed/species_class_labels.csv"
-    created_records = mod.generate(shapefile=test_predictions, site=0, domain=1, elevation=100,
+    
+    domain = "D17"
+    numeric_domain = domain_label_dict[domain]   
+
+    site = "BART"    
+    numeric_site = site_label_dict[site]
+    
+    created_records = mod.generate(shapefile=test_predictions, site=numeric_site, domain=numeric_domain, elevation=100/1000,
                                    HSI_sensor_path=test_sensor_tile,
                                    RGB_sensor_path=test_sensor_tile,
                                    train=True,
@@ -99,14 +101,15 @@ def mod(tmpdir):
 
 def test_predict_neighbors(data, metadata, mod):
     target = data.iloc[0]
-    neighbor_pool = data[~(data.box_id == target.box_id)]
+    neighbor_pool = data
     raster = rasterio.open(test_sensor_tile)
     feature_array, distances = neighbors.predict_neighbors(target, metadata=metadata, HSI_size=20, raster=raster, neighbor_pool=neighbor_pool, model=mod.ensemble_model, k_neighbors=2)
+    
     assert feature_array.shape[0] == 2
     assert feature_array.shape[1] == mod.ensemble_model.output.shape[1]
 
     assert len(distances) == 2
-  
+
     
 def test_extract_features(mod, df, tmpdir):
     x = df.individual.values[0]
@@ -115,7 +118,10 @@ def test_extract_features(mod, df, tmpdir):
     assert feature_array.shape[0] == 2
     assert feature_array.shape[1] == mod.ensemble_model.output.shape[1]    
     assert len(distances) == 2
- 
+    
+    #asset first row is itself
+    distances[0] == 0
+
     
 def test_extract_features_empty(mod, df, tmpdir):
     x = df.individual.values[0]

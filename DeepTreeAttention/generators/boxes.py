@@ -6,72 +6,12 @@ import pandas as pd
 import rasterio
 import random
 import tensorflow as tf
-import cv2
-import math
 
-from rasterio.windows import from_bounds
+
 from DeepTreeAttention.generators import neighbors
-
+from DeepTreeAttention.utils.image import image_normalize, resize, crop_image
 from shapely import wkt
 
-def image_normalize(image):
-    """normalize a 3d numoy array simiiar to tf.image.per_image_standardization"""
-    mean = image.mean()
-    stddev = image.std()
-    adjusted_stddev = max(stddev, 1.0/math.sqrt(image.size))
-    standardized_image = (image - mean) / adjusted_stddev
-    
-    return standardized_image
-
-def resize(img, height, width):
-    # resize image
-    dim = (width, height)
-    resized = cv2.resize(img, dim, interpolation=cv2.INTER_NEAREST)
-
-    return resized
-
-def crop_image(src, box, expand=0): 
-    """Read sensor data and crop a bounding box
-    Args:
-        src: a rasterio opened path
-        box: geopandas geometry polygon object
-        expand: add padding in percent to the edge of the crop
-    Returns:
-        masked_image: a crop of sensor data at specified bounds
-    """
-    #Read data and mask
-    try:    
-        left, bottom, right, top = box.bounds
-        
-        expand_width = (right - left) * expand /2
-        expand_height = (top - bottom) * expand / 2
-        
-        #If expand is greater than increase both size
-        if expand >= 0:
-            expanded_left = left - expand_width
-            expanded_bottom = bottom - expand_height
-            expanded_right = right + expand_width
-            expanded_top =  top+expand_height
-        else:
-            #Make sure of no negative boxes
-            expanded_left = left+expand_width
-            expanded_bottom = bottom+expand
-            expanded_right = right-expand_width
-            expanded_top =  top-expand_height            
-        
-        window = rasterio.windows.from_bounds(expanded_left, expanded_bottom, expanded_right, expanded_top, transform=src.transform)
-        masked_image = src.read(window=window)
-    except Exception as e:
-        raise ValueError("sensor path: {} failed at reading window {} with error {}".format(src, box.bounds,e))
-        
-    #Roll depth to channel last
-    masked_image = np.rollaxis(masked_image, 0, 3)
-    
-    #Skip empty frames
-    if masked_image.size ==0:
-        raise ValueError("Empty frame crop for box {} in sensor path {}".format(box, src))
-        
-    return masked_image
     
 def generate_tfrecords(
                        HSI_sensor_path,
@@ -180,10 +120,8 @@ def generate_tfrecords(
             
             raster = rasterio.open(HSI_sensor_path)
             neighbor_array, neighbor_distance = neighbors.predict_neighbors(row, metadata=metadata, HSI_size=HSI_size, raster=raster, neighbor_pool=neighbor_pool, model=ensemble_model, k_neighbors=k_neighbors)
-            neighbor_arrays.append(neighbor_array)
+            neighbor_arrays.append(neighbor_array.astype("float32"))
             neighbor_distances.append(neighbor_distance)
-
-            neighbor_arrays = [x.astype(np.float32) for x in neighbor_arrays]
             
         else:
             neighbor_arrays.append(None)
@@ -202,6 +140,7 @@ def generate_tfrecords(
 
     #shuffle before writing to help with validation data split
     if shuffle:
+        print("Shuffling")
         if train:
             z = list(zip(HSI_crops, RGB_crops, indices, numeric_species_labels, neighbor_arrays, neighbor_distances))
             random.shuffle(z)
@@ -318,7 +257,6 @@ def create_record(HSI_image, RGB_image, index, domain, site, elevation, classes,
         tf example parser
     """
     
-    #Standardize HSI normalization, perform now instead of at runtime.
     HSI_rows = HSI_image.shape[0]
     HSI_cols = HSI_image.shape[1]
     HSI_depth = HSI_image.shape[2]
@@ -391,7 +329,6 @@ def _neighbor_parse_(tfrecord):
     ## Parse and reshape neighbor matrix
     flat_neighbor_arrays = tf.io.decode_raw(example["neighbor_arrays"], tf.float32)
     neighbor_array_shape = tf.stack([example["k_neighbors"], example["n_neighbor_features"]])
-    
     neighbor_arrays = tf.reshape(flat_neighbor_arrays, neighbor_array_shape)
     
     site = example['site']
@@ -627,13 +564,13 @@ def ensemble_augment(data, label):
 def neighbor_augment(data, label):
     """Ensemble preprocessing, assume HSI, RGB, Metadata order in data"""
     
-    HSI, neighbor_array, elevation, site, domain, distances = data
+    HSI, elevation, site, domain, neighbor_array, distances = data
     
     HSI = tf.image.rot90(HSI)
     HSI = tf.image.random_flip_left_right(HSI)
     HSI = tf.image.random_flip_up_down(HSI)    
 
-    data = HSI,neighbor_array, elevation, site, domain, distances
+    data = HSI,elevation, site, domain, neighbor_array, distances
     
     return data, label
 
@@ -707,8 +644,6 @@ def tf_dataset(tfrecords,
         dataset = dataset.map(_neighbor_parse_, num_parallel_calls=cores)
         if cache:
             dataset = dataset.cache()        
-        if augmentation:
-            dataset = dataset.map(neighbor_augment, num_parallel_calls=cores)        
     else:
         raise ValueError("Accepted types = 'ensemble', 'HSI', 'HSI_submodel', 'RGB', 'RGB_submodel', 'metadata', 'HSI_autoencoder', 'neighbors'")   
                         
