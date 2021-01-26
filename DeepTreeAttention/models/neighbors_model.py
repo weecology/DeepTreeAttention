@@ -30,9 +30,11 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     masked_inputs = tf.keras.layers.Masking(mask_value=0)(neighbor_inputs)
     
     key_features = tf.keras.layers.Dense(classes, activation="relu",name="neighbor_feature_dense")(masked_inputs)
-        
+    key_features = tf.keras.backend.l2_normalize(key_features,axis=-1)  
+    
     #strip off previous head layers, target features are the HSI + metadata from the target tree
     query_features = tf.keras.layers.Dense(classes, activation="relu",name="target_feature_dense")(original_features)
+    query_features = tf.keras.backend.l2_normalize(query_features,axis=-1)  
     
     #Multiply to neighbor features
     joined_features = tf.keras.layers.Dot(name="target_neighbor_multiply",axes=(1,2))([query_features, key_features])
