@@ -43,7 +43,7 @@ train:
     gpus: 1
     pretrain: True #Train the submodels before ensembling all together
 neighbors:
-    model_dir: /orange/idtrees-collab/DeepTreeAttention/snapshots/20210122_214132/
+    model_dir: /orange/idtrees-collab/DeepTreeAttention/snapshots/20210125_171322/
     k_neighbors: 4
     freeze: False
 autoencoder:
