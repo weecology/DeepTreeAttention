@@ -25,40 +25,15 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     
     #original featuers from target tree
     original_features = ensemble_model.get_layer("ensemble_learn").output
-                
-    #mask out zero padding if less than k_neighbors
-    #masked_inputs = tf.keras.layers.Masking(mask_value=0)(neighbor_inputs)
+    context_vector = tf.keras.layers.AveragePooling1D(pool_size=k_neighbors)(neighbor_inputs)
     
-    #key_features = tf.keras.layers.Dense(classes, activation="relu",name="neighbor_feature_dense")(masked_inputs)
-    #key_features = tf.keras.backend.l2_normalize(key_features,axis=-1)  
-    
-    #strip off previous head layers, target features are the HSI + metadata from the target tree
-    #query_features = tf.keras.layers.Dense(classes, activation="relu",name="target_feature_dense")(original_features)
-    #query_features = tf.keras.backend.l2_normalize(query_features,axis=-1)  
-    
-    #Multiply to neighbor features
-    #joined_features = tf.keras.layers.Dot(name="target_neighbor_multiply",axes=(1,2))([query_features, key_features])
-    
-    ##Scale before softmax temperature
-    #joined_features = tf.keras.layers.Lambda(lambda x: x/(0.1 *math.sqrt(classes)))(joined_features)
-        
-    ##Zero out any masked entries
-    #attention_weights = tf.keras.layers.Softmax(name="Attention_softmax")(joined_features)
-    
-    #Skip connection for value features
-    #value_features = tf.keras.layers.Dense(classes, activation="relu",name="skip_neighbor_feature_dense")(masked_inputs)
-    #value_features = tf.keras.layers.Dropout(rate=0.8)(value_features)
-    
-    context_vector = tf.keras.layers.Attention()([original_features, neighbor_inputs])
+    #Squueze 1st dim for addition with original features
     context_vector = tf.keras.backend.squeeze(context_vector,1)
-    
-    #context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([attention_weights,value_features])
-    #context_vector = tf.keras.layers.Dense(classes, name="context_vector", activation="relu")(context_vector)
     
     #Add as residual to original matrix normalized
     context_residual = WeightedSum(name="ensemble_add_bias")([context_vector,original_features])        
     output = tf.keras.layers.Softmax(name="neighbor_softmax")(context_residual)
-    
+
     return ensemble_model.inputs, neighbor_inputs, neighbor_distances, output
 
 def create(ensemble_model, k_neighbors, classes, freeze=False, learning_rate=0.001):
