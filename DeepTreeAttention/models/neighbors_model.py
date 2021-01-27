@@ -54,7 +54,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     
     #Add as residual to original matrix normalized
     context_residual = WeightedSum(name="ensemble_add_bias")([context_vector,original_features])        
-    output = tf.keras.layers.Softmax(classes,name="neighbor_softmax")(context_residual)
+    output = tf.keras.layers.Softmax(name="neighbor_softmax")(context_residual)
     
     return ensemble_model.inputs, neighbor_inputs, neighbor_distances, output
 
