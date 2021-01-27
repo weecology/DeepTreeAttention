@@ -22,10 +22,11 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     neighbor_inputs = tf.keras.layers.Input(shape=input_shape, name="neighbor_input")
     
     neighbor_distances = tf.keras.layers.Input(shape=(k_neighbors), name="neighbor_distance_input")
+    neighbor_features = tf.keras.layers.Dense(classes)(neighbor_inputs)
     
     #original featuers from target tree
     original_features = ensemble_model.get_layer("ensemble_learn").output
-    context_vector = tf.keras.layers.AveragePooling1D(pool_size=k_neighbors)(neighbor_inputs)
+    context_vector = tf.keras.layers.MaxPool1D(pool_size=k_neighbors)(neighbor_features)
     
     #Squueze 1st dim for addition with original features
     context_vector = tf.keras.backend.squeeze(context_vector,1)
