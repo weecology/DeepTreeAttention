@@ -12,7 +12,7 @@ from DeepTreeAttention.models.layers import WeightedSum
 from DeepTreeAttention.models import neighbors_model
 from DeepTreeAttention.callbacks import callbacks
 
-sleep(randint(0,5))
+sleep(randint(0,10))
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 save_dir = "{}/{}".format("/orange/idtrees-collab/DeepTreeAttention/snapshots/",timestamp)
 os.mkdir(save_dir)
