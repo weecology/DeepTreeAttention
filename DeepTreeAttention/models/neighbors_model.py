@@ -50,7 +50,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     #value_features = tf.keras.layers.Dropout(rate=0.8)(value_features)
     
     context_vector = tf.keras.layers.Attention()([original_features, neighbor_inputs])
-    context_vector = tf.keras.backend.squeeze(context_vector,0)
+    context_vector = tf.keras.backend.squeeze(context_vector,1)
     
     #context_vector = tf.keras.layers.Dot(name="lookup_function",axes=(1,1))([attention_weights,value_features])
     #context_vector = tf.keras.layers.Dense(classes, name="context_vector", activation="relu")(context_vector)
