@@ -95,7 +95,7 @@ def mod(tmpdir):
     mod.classes_file = label_file
     
     mod.create()
-    mod.ensemble(experiment=None, train=False)
+    mod.ensemble(experiment=None)
         
     return mod
 
