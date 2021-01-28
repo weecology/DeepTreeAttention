@@ -33,8 +33,8 @@ train:
         epochs: 120
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/train.shp  #path to ground truth class shapefile   
-    learning_rate: .001
-    batch_size: 128
+    learning_rate: .0001
+    batch_size: 256
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
     steps:
     shuffle: True
