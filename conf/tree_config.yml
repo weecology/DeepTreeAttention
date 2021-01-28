@@ -1,5 +1,5 @@
 #Parallel workers for data generation
-cpu_workers: 80
+cpu_workers: 40
 
 #Intermediate location to store .h5 converted geotiff hyperspec tiles
 hyperspectral_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/
@@ -16,7 +16,7 @@ train:
     resampled_per_taxa: 50
     HSI:
         sensor_channels: 369
-        crop_size: 20
+        crop_size: 10
         weighted_sum: True
         epochs: 120
         extend_box: 0 #expand DeepForest bounding boxes by x meters at edge
