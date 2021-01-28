@@ -100,11 +100,31 @@ def strip_sensor_softmax(model, classes, index, squeeze=False, squeeze_size=128)
         weighted_relu = layers.Dense(squeeze_size)(weighted_relu)
         
     stripped_model = tf.keras.Model(inputs=model.inputs, outputs = weighted_relu)
-    for x in model.layers:
-        x._name = x.name + str(index)
+    
+    #for x in model.layers:
+        #rename(model, x, x.name + str(index))        
     
     return stripped_model
 
+def rename(model, layer, new_name):
+    def _get_node_suffix(name):
+        for old_name in old_nodes:
+            if old_name.startswith(name):
+                return old_name[len(name):]
+
+    old_name = layer.name
+    old_nodes = list(model._network_nodes)
+    new_nodes = []
+
+    for l in model.layers:
+        if l.name == old_name:
+            l._name = new_name
+            # vars(l).__setitem__('_name', new)  # bypasses .__setattr__
+            new_nodes.append(new_name + _get_node_suffix(old_name))
+        else:
+            new_nodes.append(l.name + _get_node_suffix(l.name))
+    model._network_nodes = set(new_nodes)
+    
 def learned_ensemble(HSI_model, metadata_model, classes, freeze=True):
     stripped_HSI_model = strip_sensor_softmax(HSI_model, classes, index = "HSI", squeeze=True, squeeze_size=classes)      
     normalized_metadata = layers.BatchNormalization()(metadata_model.get_layer("last_relu").output)
