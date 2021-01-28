@@ -130,7 +130,9 @@ if __name__ == "__main__":
                     estimate_a = model.HSI_model.get_layer("weighted_sum").get_weights()
                     experiment.log_metric(name="spatial-spectral weight", value=estimate_a[0][0])
             
+            
     ##Ensemble
+    model.read_data(mode="ensemble")
     with experiment.context_manager("ensemble"):    
         print("Train Ensemble")
         model.ensemble(experiment=experiment)
