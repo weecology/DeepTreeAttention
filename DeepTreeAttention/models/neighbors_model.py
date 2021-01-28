@@ -29,16 +29,16 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     original_features = ensemble_model.get_layer("ensemble_learn").output
 
     #scale by confidence of initial prediction. 
-    scores_by_tree = tf.math.reduce_max(neighbor_inputs,2)
-    previous_confidence = tf.gather_nd(scores_by_tree,[0,0])
+    #scores_by_tree = tf.math.reduce_max(neighbor_inputs,2)
+    #previous_confidence = tf.gather_nd(scores_by_tree,[0,0])
     
-    scaled_context = tf.divide(context_vector, previous_confidence)
+    #scaled_context = tf.divide(context_vector, previous_confidence)
     
-    #Squueze 1st dim for addition with original features
-    scaled_context = tf.keras.backend.squeeze(scaled_context,1)
+    ##Squueze 1st dim for addition with original features
+    #scaled_context = tf.keras.backend.squeeze(scaled_context,1)
     
     #Add as residual to original matrix normalized
-    context_residual = WeightedSum(name="ensemble_add_bias")([scaled_context,original_features])        
+    context_residual = WeightedSum(name="ensemble_add_bias")([context_vector,original_features])        
     output = tf.keras.layers.Softmax(name="neighbor_softmax")(context_residual)
 
     return ensemble_model.inputs, neighbor_inputs, neighbor_distances, output
