@@ -33,10 +33,10 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     #scaled_context = tf.divide(context_vector, previous_confidence)
     
     ##Squueze 1st dim for addition with original features
-    #scaled_context = tf.keras.backend.squeeze(attention_features,1)
+    scaled_context = tf.keras.layers.GlobalAveragePooling1D()(attention_features)
     
     #Add as residual to original matrix normalized
-    context_residual = WeightedSum(name="ensemble_add_bias")([attention_features,original_features])      
+    context_residual = WeightedSum(name="ensemble_add_bias")([scaled_context,original_features])      
     context_residual = tf.keras.layers.Dense(classes)(context_residual)
     output = tf.keras.layers.Softmax(name="neighbor_softmax")(context_residual)
 
