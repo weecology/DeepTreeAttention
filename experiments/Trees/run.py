@@ -133,7 +133,7 @@ if __name__ == "__main__":
     ##Ensemble
     with experiment.context_manager("ensemble"):    
         print("Train Ensemble")
-        model.ensemble(freeze=model.config["train"]["ensemble"]["freeze"], experiment=experiment)
+        model.ensemble(experiment=experiment)
     
     #Final score, be absolutely sure you get all the data, feed slowly in batches of 1
     final_score = model.ensemble_model.evaluate(model.val_split.unbatch().batch(1))    
