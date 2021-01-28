@@ -26,7 +26,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     #original featuers from target tree
     original_features = ensemble_model.get_layer("ensemble_learn").output
 
-    attention_features = tf.keras.layers.Attention(use_scale=True)([original_features, neighbor_inputs])
+    attention_features = tf.keras.layers.Attention(use_scale=True,dropout=0.5)([original_features, neighbor_inputs])
     
     ##Squueze 1st dim for addition with original features
     scaled_context = tf.keras.layers.GlobalAveragePooling1D()(attention_features)
