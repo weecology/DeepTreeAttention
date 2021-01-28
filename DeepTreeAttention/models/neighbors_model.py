@@ -26,11 +26,7 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     #original featuers from target tree
     original_features = ensemble_model.get_layer("ensemble_learn").output
 
-    attention_features = tf.keras.layers.Attention()([original_features, neighbor_inputs])
-    
-    ##scale by confidence of initial prediction. 
-    #previous_confidence = tf.math.reduce_max(original_features)
-    #scaled_context = tf.divide(context_vector, previous_confidence)
+    attention_features = tf.keras.layers.Attention(dropout=0.4)([original_features, neighbor_inputs])
     
     ##Squueze 1st dim for addition with original features
     scaled_context = tf.keras.layers.GlobalAveragePooling1D()(attention_features)
