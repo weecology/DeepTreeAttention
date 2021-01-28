@@ -22,8 +22,8 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     neighbor_inputs = tf.keras.layers.Input(shape=input_shape, name="neighbor_input")
     
     neighbor_distances = tf.keras.layers.Input(shape=(k_neighbors), name="neighbor_distance_input")
-    neighbor_features = tf.keras.layers.MaxPool1D(pool_size=k_neighbors)(neighbor_inputs)
-    context_vector = tf.keras.layers.Dense(classes)(neighbor_features)
+    neighbor_features = tf.keras.layers.Dense(classes)(neighbor_inputs)
+    context_vector = tf.keras.layers.AveragePooling1D(pool_size=k_neighbors)(neighbor_features)
     
     #original featuers from target tree
     original_features = ensemble_model.get_layer("ensemble_learn").output
@@ -31,7 +31,6 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     #scale by confidence of initial prediction. 
     #scores_by_tree = tf.math.reduce_max(neighbor_inputs,2)
     #previous_confidence = tf.gather_nd(scores_by_tree,[0,0])
-    
     #scaled_context = tf.divide(context_vector, previous_confidence)
     
     ##Squueze 1st dim for addition with original features
