@@ -22,21 +22,20 @@ def define(ensemble_model, k_neighbors, classes=2, freeze=False):
     neighbor_inputs = tf.keras.layers.Input(shape=input_shape, name="neighbor_input")
     
     neighbor_distances = tf.keras.layers.Input(shape=(k_neighbors), name="neighbor_distance_input")
-    neighbor_features = tf.keras.layers.Dense(classes)(neighbor_inputs)
-    context_vector = tf.keras.layers.AveragePooling1D(pool_size=k_neighbors)(neighbor_features)
+    context_vector = tf.keras.layers.Conv1D(classes, kernel_size=(k_neighbors))(neighbor_inputs)
     
     #original featuers from target tree
     original_features = ensemble_model.get_layer("ensemble_learn").output
 
-    #scale by confidence of initial prediction. 
-    previous_confidence = tf.math.reduce_max(original_features)
-    scaled_context = tf.divide(context_vector, previous_confidence)
+    ##scale by confidence of initial prediction. 
+    #previous_confidence = tf.math.reduce_max(original_features)
+    #scaled_context = tf.divide(context_vector, previous_confidence)
     
     ##Squueze 1st dim for addition with original features
-    scaled_context = tf.keras.backend.squeeze(scaled_context,1)
+    context_vector = tf.keras.backend.squeeze(context_vector,1)
     
     #Add as residual to original matrix normalized
-    context_residual = WeightedSum(name="ensemble_add_bias")([scaled_context,original_features])      
+    context_residual = WeightedSum(name="ensemble_add_bias")([context_vector,original_features])      
     context_residual = tf.keras.layers.Dense(classes)(context_residual)
     output = tf.keras.layers.Softmax(name="neighbor_softmax")(context_residual)
 
