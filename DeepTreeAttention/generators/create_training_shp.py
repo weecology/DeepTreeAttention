@@ -113,7 +113,14 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = N
     field = field[field.stemDiameter > 10]
     field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
     field = field[~(field.eventID.str.contains("2014"))]
-    field = field.groupby("individualID").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1)).reset_index(drop=True)
+    with_heights = field[~field.height.isnull()]
+    with_heights = with_heights.loc[with_heights.groupby('individualID')['height'].idxmax()]
+    
+    missing_heights = field[field.height.isnull()]
+    missing_heights = missing_heights[~missing_heights.individualID.isin(with_heights.individualID)]
+    missing_heights = missing_heights.groupby("individualID").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1)).reset_index(drop=True)
+  
+    field = pd.concat([with_heights,missing_heights])
     
     #remove multibole
     field = field[~(field.individualID.str.contains('[A-Z]$',regex=True))]

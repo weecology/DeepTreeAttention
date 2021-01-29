@@ -5,7 +5,7 @@ import rasterio
 import numpy as np
 
 def image_normalize(image):
-    """normalize a 3d numoy array simiiar to tf.image.per_image_standardization"""
+    """normalize a 3d numpy array simiiar to tf.image.per_image_standardization"""
     mean = image.mean()
     stddev = image.std()
     adjusted_stddev = max(stddev, 1.0/math.sqrt(image.size))
