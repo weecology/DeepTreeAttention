@@ -33,7 +33,7 @@ train:
         epochs: 120
     tfrecords: /orange/idtrees-collab/DeepTreeAttention/tfrecords/train/
     ground_truth_path: /home/b.weinstein/DeepTreeAttention/data/processed/train.shp  #path to ground truth class shapefile   
-    learning_rate: .0001
+    learning_rate: .001
     batch_size: 256
     # Below are mostly for testing purposes, steps = 1 would train on just one batch. Set to blank for main environment to iterate over full data.
     steps:
@@ -43,8 +43,8 @@ train:
     gpus: 1
     pretrain: True #Train the submodels before ensembling all together
 neighbors:
-    model_dir: /orange/idtrees-collab/DeepTreeAttention/snapshots/20210125_171322/
-    k_neighbors: 8
+    model_dir: /orange/idtrees-collab/DeepTreeAttention/snapshots/20210128_154309/
+    k_neighbors: 4
     freeze: False
 autoencoder:
     epochs: 50
