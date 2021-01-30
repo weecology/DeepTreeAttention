@@ -33,11 +33,12 @@ def save_images_to_matlab(DeepTreeAttention, savedir, classes):
         images = data.numpy()
         labels = label.numpy()
         labels = np.argmax(labels,1)
-        for image, label in zip(images, labels):
+        ids = box_id.numpy()
+        for box_index, image, label in zip(ids, images, labels):
             taxon=label_names[label]
             if taxon in selected_labels:
                 counter[taxon] +=1
-                filename = "{}/{}_{}.mat".format(savedir, taxon, box_id)
+                filename = "{}/{}_{}.mat".format(savedir, taxon, box_index)
                 io.savemat(filename,  dict({"image":image}))
     
     print("Saved {}".format(counter))
