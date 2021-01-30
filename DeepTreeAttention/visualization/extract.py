@@ -28,7 +28,8 @@ def save_images_to_matlab(DeepTreeAttention, savedir, classes):
         counter[taxon] = 0 
         
     #Loop through the data and export data
-    for data, label in DeepTreeAttention.val_split:
+    for box_id, batch in DeepTreeAttention.val_split_with_ids:
+        data, label = batch
         images = data.numpy()
         labels = label.numpy()
         labels = np.argmax(labels,1)
@@ -36,7 +37,7 @@ def save_images_to_matlab(DeepTreeAttention, savedir, classes):
             taxon=label_names[label]
             if taxon in selected_labels:
                 counter[taxon] +=1
-                filename = "{}/{}_{}.mat".format(savedir, taxon, counter[taxon])
+                filename = "{}/{}_{}.mat".format(savedir, taxon, box_id)
                 io.savemat(filename,  dict({"image":image}))
     
     print("Saved {}".format(counter))
