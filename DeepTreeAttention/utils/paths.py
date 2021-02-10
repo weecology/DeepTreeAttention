@@ -102,8 +102,7 @@ def elevation_from_tile(path):
         elevation = h5[list(h5.keys())[0]]["Reflectance"]["Metadata"]["Ancillary_Imagery"]["Smooth_Surface_Elevation"].value.mean()
         h5.close()
     except Exception as e:
-        print("{} failed to read elevation from tile".format(path))
-        raise e
+        raise IOError("{} failed to read elevation from tile:".format(path, e))
  
     return elevation
 
