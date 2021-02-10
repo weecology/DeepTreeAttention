@@ -97,9 +97,14 @@ def domain_from_path(path):
     return domain_name
 
 def elevation_from_tile(path):
-    h5 = h5py.File(path, 'r')
-    elevation = h5[list(h5.keys())[0]]["Reflectance"]["Metadata"]["Ancillary_Imagery"]["Smooth_Surface_Elevation"].value.mean()
-    h5.close()
+    try:
+        h5 = h5py.File(path, 'r')
+        elevation = h5[list(h5.keys())[0]]["Reflectance"]["Metadata"]["Ancillary_Imagery"]["Smooth_Surface_Elevation"].value.mean()
+        h5.close()
+    except Exception as e:
+        print("{} failed to read elevation from tile".format(path))
+        raise e
+ 
     return elevation
 
     
