@@ -3,7 +3,7 @@
 #SBATCH --mail-type=END               # Mail events
 #SBATCH --mail-user=benweinstein2010@gmail.com  # Where to send mail
 #SBATCH --account=ewhite
-#SBATCH --cpus-per-task=30
+#SBATCH --cpus-per-task=10
 #SBATCH --mem=40GB
 #SBATCH --time=24:00:00       #Time limit hrs:min:sec
 #SBATCH --output=/home/b.weinstein/logs/DeepTreeAttention_%j.out   # Standard output and error log

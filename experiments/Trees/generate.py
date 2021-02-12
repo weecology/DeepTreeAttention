@@ -82,7 +82,7 @@ def run(record, savedir, raw_box_dir):
         elevation=elevation,
         label_column="taxonID",
         species_label_dict=species_label_dict,
-        ensemble_model=ensemble_model,
+        ensemble_model=None,
         savedir=savedir
     )
     
