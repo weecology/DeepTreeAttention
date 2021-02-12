@@ -6,8 +6,7 @@ import pandas as pd
 import rasterio
 import random
 import tensorflow as tf
-from skimage.io import savemat
-
+from scipy import io
 
 from DeepTreeAttention.generators import neighbors
 from DeepTreeAttention.utils.image import image_normalize, resize, crop_image
@@ -140,11 +139,10 @@ def generate_tfrecords(
     
     if HSI_crop_savedir is not None:
         #Write raw crops to file with index
-        numeric_species_labels
         for crop, index, label in zip(HSI_crops, indices, labels):
             if label in ["ACRU","QURU"]: 
                 filename = "{}/{}_{}.mat".format(HSI_crop_savedir,label,index)
-                savemat(filename,  dict({"index":index,"image":crop}))
+                io.savemat(filename,  dict({"index":index,"image":crop}))
                 
     numeric_species_labels = [species_label_dict[x] for x in labels]
 

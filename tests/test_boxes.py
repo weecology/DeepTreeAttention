@@ -44,9 +44,7 @@ def created_records(tmpdir, ensemble_model):
         classes=6,
         number_of_sites=10,
         number_of_domains=10,
-        ensemble_model=ensemble_model,
-        raw_boxes=test_predictions
-    )
+        ensemble_model=None    )
     
     return created_records
 
@@ -65,9 +63,7 @@ def test_generate_records(tmpdir, ensemble_model):
         classes=6,
         number_of_sites=10,
         number_of_domains=10,
-        ensemble_model=ensemble_model,
-        raw_boxes=test_predictions,
-        k_neighbors=2
+        ensemble_model=None
     )
     
     shp = gpd.read_file(test_predictions)
@@ -127,17 +123,17 @@ def test_ensemble(created_records):
         assert site.numpy().shape == (2,10)
         assert domain.numpy().shape == (2,10)
 
-def test_neighbor(created_records):    
-    dataset = boxes.tf_dataset(created_records, batch_size=2, mode="neighbors")
-    for data, label_batch in dataset.take(1):
-        HSI, elevation, site, domain, neighbor_array, distances = data
+#def test_neighbor(created_records):    
+    #dataset = boxes.tf_dataset(created_records, batch_size=2, mode="neighbors")
+    #for data, label_batch in dataset.take(1):
+        #HSI, elevation, site, domain, neighbor_array, distances = data
         
-        assert HSI.shape == (2,10,10,369)    
-        assert neighbor_array.shape == (2,5,4)     
-        assert distances.shape == (2,5)                    
-        assert elevation.numpy().shape == (2,)
-        assert site.numpy().shape == (2,10)
-        assert domain.numpy().shape == (2,10)
+        #assert HSI.shape == (2,10,10,369)    
+        #assert neighbor_array.shape == (2,5,4)     
+        #assert distances.shape == (2,5)                    
+        #assert elevation.numpy().shape == (2,)
+        #assert site.numpy().shape == (2,10)
+        #assert domain.numpy().shape == (2,10)
         
 def test_id_train(created_records):
     shp = gpd.read_file(test_predictions)        
