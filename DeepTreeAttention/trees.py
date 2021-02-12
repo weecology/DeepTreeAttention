@@ -71,7 +71,7 @@ class AttentionModel():
         except:
             self.test_shp = None
                 
-    def generate(self, HSI_sensor_path, RGB_sensor_path, elevation, domain, site, savedir, species_label_dict=None, train=True, chunk_size=1000, shapefile=None, csv_file=None,label_column="label",ensemble_model=None, raw_boxes=None):
+    def generate(self, HSI_sensor_path, RGB_sensor_path, elevation, domain, site, savedir, species_label_dict=None, train=True, chunk_size=1000, shapefile=None, csv_file=None,label_column="label",ensemble_model=None, raw_boxes=None, HSI_crop_savedir=None):
         """Predict species class for each DeepForest bounding box
             Args:
                 shapefile: a shapefile (see NeonCrownMaps) with a bounding box in utm projection and label, columns -> xmin, ymin,xmax,ymax, label
@@ -106,7 +106,8 @@ class AttentionModel():
                                                    shuffle=self.config["train"]["shuffle"],
                                                    ensemble_model=ensemble_model,
                                                    raw_boxes=raw_boxes,
-                                                   k_neighbors=self.config["neighbors"]["k_neighbors"])
+                                                   k_neighbors=self.config["neighbors"]["k_neighbors"],
+                                                   HSI_crop_savedir=self.config["HSI_crop_savedir"])
 
         return created_records
 

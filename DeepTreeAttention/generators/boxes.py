@@ -6,6 +6,7 @@ import pandas as pd
 import rasterio
 import random
 import tensorflow as tf
+from skimage.io import savemat
 
 
 from DeepTreeAttention.generators import neighbors
@@ -36,7 +37,8 @@ def generate_tfrecords(
                        label_column="label",
                        ensemble_model=None,
                        k_neighbors=5,
-                       raw_boxes=None):
+                       raw_boxes=None,
+                       HSI_crop_savedir=None):
     """Yield one instance of data with one hot labels
     Args:
         chunk_size: number of windows per tfrecord
@@ -136,6 +138,14 @@ def generate_tfrecords(
             species_label_dict[label] = index
         pd.DataFrame(species_label_dict.items(), columns=["taxonID","label"]).to_csv("{}/species_class_labels.csv".format(savedir))
     
+    if HSI_crop_savedir is not None:
+        #Write raw crops to file with index
+        numeric_species_labels
+        for crop, index, label in zip(HSI_crops, indices, labels):
+            if label in ["ACRU","QURU"]: 
+                filename = "{}/{}_{}.mat".format(HSI_crop_savedir,label,index)
+                savemat(filename,  dict({"index":index,"image":crop}))
+                
     numeric_species_labels = [species_label_dict[x] for x in labels]
 
     #shuffle before writing to help with validation data split
@@ -145,7 +155,7 @@ def generate_tfrecords(
             z = list(zip(HSI_crops, RGB_crops, indices, numeric_species_labels, neighbor_arrays, neighbor_distances))
             random.shuffle(z)
             HSI_crops, RGB_crops, indices, numeric_species_labels, neighbor_arrays, neighbor_distances = zip(*z)
-
+        
     #get keys and divide into chunks for a single tfrecord
     filenames = []
     counter = 0
@@ -167,7 +177,8 @@ def generate_tfrecords(
             chunk_labels = numeric_species_labels[i:i + chunk_size]
         else:
             chunk_labels = None
-
+        
+        
         #resize crops and ensure dtypes
         resized_HSI_crops = [resize(x, HSI_size, HSI_size).astype(np.float32) for x in chunk_HSI_crops]
         resized_RGB_crops = [resize(x, RGB_size, RGB_size).astype(np.float32) for x in chunk_RGB_crops]

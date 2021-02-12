@@ -93,7 +93,10 @@ plots_to_run = glob.glob("{}/data/deepforest_boxes/evaluation/*.shp".format(ROOT
 
 test_tfrecords = []
 for record in plots_to_run:
-    future = client.submit(run, record=record,  savedir="/orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/", raw_box_dir="{}/data/deepforest_boxes_raw/evaluation/".format(ROOT))
+    future = client.submit(run, record=record,
+                           savedir="/orange/idtrees-collab/DeepTreeAttention/tfrecords/evaluation/",
+                           raw_box_dir="{}/data/deepforest_boxes_raw/evaluation/".format(ROOT),
+                           HSI_crop_savedir="/orange/idtrees-collab/DeepTreeAttention/HSI_crops/")
     test_tfrecords.append(future)
     
 wait(test_tfrecords)
