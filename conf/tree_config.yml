@@ -6,6 +6,8 @@ hyperspectral_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/
 hyperspectral_sensor_pool: /orange/ewhite/NeonData/**/Reflectance/*.h5  #path to sensor data regex, recursive wildcards allowed
 rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif  #path to sensor data regex, recursive wildcards allowed
 
+#Intermediate save HSI crops
+HSI_crop_savedir: /orange/idtrees-collab/DeepTreeAttention/HSI_crops/
 train:
     species_class_file: /home/b.weinstein/DeepTreeAttention/data/processed/species_class_labels.csv
     site_class_file: /home/b.weinstein/DeepTreeAttention/data/processed/site_class_labels.csv
