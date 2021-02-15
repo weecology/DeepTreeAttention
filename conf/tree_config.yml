@@ -18,7 +18,7 @@ train:
     resampled_per_taxa: 50
     HSI:
         sensor_channels: 369
-        crop_size: 5
+        crop_size: 7
         weighted_sum: True
         epochs: 120
         extend_box: 0 #expand DeepForest bounding boxes by x meters at edge
