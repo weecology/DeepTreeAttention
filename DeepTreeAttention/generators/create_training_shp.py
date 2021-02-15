@@ -108,7 +108,18 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = N
     field = field[~field.growthForm.isnull()]
     field = field[~field.plantStatus.isnull()]        
     field = field[field.plantStatus.str.contains("Live")]    
-    field = field[~(field.canopyPosition.isin(["Full shade", "Mostly shaded"]))]
+    
+    groups = field.groupby("individualID")
+    shaded_ids = []
+    for name, group in groups:
+        shaded = any([x in ["Full shade", "Mostly shaded"] for x in group.canopyPosition.values])
+        if shaded:
+            if any([x in ["Open grown", "Full sun"] for x in group.canopyPosition.values]):
+                continue
+            else:
+                shaded_ids.append(group.individualID.unique()[0])
+        
+    field = field[~(field.individualID.isin(shaded_ids))]
     field = field[(field.height > 3) | (field.height.isnull())]
     field = field[field.stemDiameter > 10]
     field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
