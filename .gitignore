@@ -5,3 +5,7 @@ project.wpu
 __pycache__
 data/raw/
 data/processed/
+*.tif
+*.png
+*.wpr
+*.wpu
