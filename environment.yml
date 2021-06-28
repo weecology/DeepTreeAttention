@@ -1,0 +1,39 @@
+name: DeepTreeAttention
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - rasterio
+  - cudatoolkit
+  - scikit-learn
+  - scikit-image
+  - sphinx
+  - recommonmark
+  - pyyaml
+  - descartes
+  - pytest
+  - numpydoc
+  - h5py
+  - numpy
+  - pillow  
+  - bokeh
+  - pip
+  - matplotlib
+  - sphinx_rtd_theme
+  - pandas
+  - twine
+  - yapf
+  - pip:
+    - DeepForest
+    - geopandas
+    - rasterstats
+    - opencv-python
+    - sphinx-markdown-tables
+    - bumpversion
+    - comet_ml
+    - dask
+    - distributed
+    - dask_jobqueue
+    - tensorboard_plugin_profile
+    - pydot
+    - cleanlab
