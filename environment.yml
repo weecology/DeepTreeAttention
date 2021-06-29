@@ -16,6 +16,7 @@ dependencies:
   - h5py
   - numpy
   - pillow  
+  - pytest
   - bokeh
   - pip
   - matplotlib

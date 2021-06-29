@@ -1,0 +1,7 @@
+#Config
+gpus:
+workers: 0
+batch_size = 64
+train:
+    fast_dev_run: False
+    accelerator: ddp
