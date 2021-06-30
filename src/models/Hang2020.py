@@ -21,10 +21,12 @@ class conv_module(Module):
         if maxpool_kernel:
             self.max_pool = nn.MaxPool2d(maxpool_kernel)
         
-    def forward(self, x):
+    def forward(self, x, pool=False):
         x = self.conv_layer(x)
         x = self.bn1(x)
         x = F.relu(x)
+        if pool:
+            x = self.max_pool(x)
         
         return x
 
@@ -151,19 +153,19 @@ class spatial_network(Module):
         self.conv1 = conv_module(in_channels=bands, filters=32)
         self.attention_1 = spatial_attention(filters=32, classes = classes)
     
-        self.conv2 = conv_module(in_channels=bands, filters=64, maxpool_kernel=(2,2))
+        self.conv2 = conv_module(in_channels=32, filters=64, maxpool_kernel=(2,2))
         self.attention_2 = spatial_attention(filters=64, classes = classes)
     
-        self.conv3 = conv_module(in_channels=bands, filters=128, maxpool_kernel=(2,2))
+        self.conv3 = conv_module(in_channels=64, filters=128, maxpool_kernel=(2,2))
         self.attention_3 = spatial_attention(filters=128, classes = classes)
     
     def forward(self, x):
         """The forward method is written for training the joint scores of the three attention layers"""
         x = self.conv1(x)
         x, scores1 = self.attention_1(x)
-        x = self.conv2(x)
+        x = self.conv2(x, pool = True)
         x, scores2 = self.attention_2(x)
-        x = self.conv(x)        
+        x = self.conv3(x, pool = True)        
         x, scores3 = self.attention_3(x)
         
         return [scores1,scores2,scores3]
@@ -189,29 +191,13 @@ class spectral_network(Module):
         """The forward method is written for training the joint scores of the three attention layers"""
         x = self.conv1(x)
         x, scores1 = self.attention_1(x)
-        x = self.conv2(x)
+        x = self.conv2(x, pool = True)
         x, scores2 = self.attention_2(x)
-        x = self.conv3(x)        
+        x = self.conv3(x, pool = True)        
         x, scores3 = self.attention_3(x)
         
         return [scores1,scores2,scores3]
         
 def subnetwork_consensus(classes):
     pass
-
-class SpatialModel(Module):
-    def __init__(self, bands, classes):
-        super(SpatialModel, self).__init__()
-        self.spatial_attention = spatial_network(bands=bands, classes=classes)
-        self.fc1 = nn.Linear(in_features=10, out_features=classes)
-        
-    def forward(self, x):
-        joint_features = self.spatial_attention(x)
-        joint_features = torch.flatten(joint_features)
-        joint_features = self.fc1(joint_features)
-        #spectral_features = self.spectral_attention(x)
-        #joint_features = self.consensus_layer(spatial_features, spectral_features)
-        
-        return F.softmax(joint_features)
-
     

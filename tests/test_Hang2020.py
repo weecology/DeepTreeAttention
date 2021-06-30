@@ -11,6 +11,11 @@ def test_conv_module():
     output = m(image)
     assert output.shape == (20,32,11,11)
 
+def test_conv_module_maxpooling():
+    m = Hang2020.conv_module(in_channels=32, filters=64, maxpool_kernel=(2,2))
+    image = torch.randn(20, 32, 11, 11)
+    output = m(image, pool = True)
+    assert output.shape == (20,64,5,5)
 
 @pytest.mark.parametrize("conv_dimension",[(20,32,11,11),(20,64,5,5),(20,128,2,2)])
 def test_spatial_attention(conv_dimension):
@@ -35,8 +40,9 @@ def test_spectral_network():
     assert len(output) == 3
     assert output[0].shape[0] == 10
     
-def test_SpatialModel():
-    m = Hang2020.SpatialModel(bands=369, classes=10)
+def test_spatial_network():
+    m = Hang2020.spatial_network(bands=369, classes=10)
     image = torch.randn(20, 369, 11, 11)
     output = m(image)
-    assert output.shape[0] == 10
+    assert len(output) == 3
+    assert output[0].shape[0] == 10
