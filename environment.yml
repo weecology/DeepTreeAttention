@@ -24,6 +24,7 @@ dependencies:
   - pandas
   - twine
   - yapf
+  - torch >=1.9
   - pip:
     - DeepForest
     - geopandas

@@ -20,16 +20,75 @@ class conv_module(Module):
         x = F.relu(x)
         
         return x
-    
+
+class spatial_attention(Module):
+    """
+    Learn cross band spectral features with a set of convolutions and spectral pooling attention layers
+    """
+    def __init__(self, filters, classes):
+        super(spatial_attention,self).__init__()
+        self.channel_pool = nn.Conv2d(in_channels=filters, out_channels=1, kernel_size=1)
+        
+        # Weak Attention with adaptive kernel size based on size of incoming feature map
+        if filters == 32:
+            kernel_size = 7
+        elif filters == 64:
+            kernel_size = 5
+        elif filters == 128:
+            kernel_size = 3
+        else:
+            raise ValueError(
+                "Unknown incoming kernel size {} for attention layers".format(kernel_size))
+        
+        #TOOD check padding
+        self.attention_conv1 = nn.Conv2d(in_channels=1, out_channels=1, kernel_size=kernel_size, padding="same")
+        self.attention_conv2 = nn.Conv2d(in_channels=1, out_channels=1, kernel_size=kernel_size, padding="same")
+        
+        #Add a classfication branch with max pool based on size of the layer
+        #TODO calculate in channels for each flattened layer
+        if filters == 32:
+            pool_size = (4, 4)
+        elif filters == 64:
+            pool_size = (2, 2)
+        elif filters == 128:
+            pool_size = (1, 1)
+        else:
+            raise ValueError("Unknown filter size for max pooling")
+        
+        self.class_pool = nn.MaxPool2d(pool_size)
+        self.fc1 = nn.Linear(in_features=80, out_features=classes)
+        
+    def forward(self, x):
+        x = self.channel_pool(x)
+        x = F.relu(x)
+        attention = self.attention_conv1(x)
+        attention = F.relu(attention)
+        attention = self.attention_conv2(x)
+        attention = F.sigmoid(attention)
+        attention = torch.mul(x, attention)
+        
+        pooling = self.class_pool(attention)
+        pooling = torch.flatten(pooling)
+        
+        class_features = self.fc1(pooling)
+        class_probabilities = F.softmax(class_features)
+        
+        return class_probabilities
+        
 class spatial_network(Module):
+    """
+        Learn spatial features with alternating convolutional and attention pooling layers
+    """
     def __init__(self, bands, classes):
         super(spatial_network, self).__init__()
         
         #First submodel is 32 filters
         self.conv1 = conv_module(in_channels=bands, filters=32)
+        self.attention_1 = spatial_attention(filters=32, classes = classes)
     
     def forward(self, x):
         features = self.conv1(x)
+        features = self.attention_1(features)
         
         return features
     
@@ -45,7 +104,7 @@ class Hang2020(Module):
         self.spatial_attention = spatial_network(bands=bands, classes=classes)
         #self.spectral_attention = spectral_network(classes, bands)
         #self.consensus_layer = subnetwork_consensus(classes)
-        self.fc1 = nn.Linear(in_features=6146560, out_features=classes)
+        self.fc1 = nn.Linear(in_features=10, out_features=classes)
         
     def forward(self, x):
         joint_features = self.spatial_attention(x)
