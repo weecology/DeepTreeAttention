@@ -51,35 +51,43 @@ class spatial_attention(Module):
         self.attention_conv2 = nn.Conv2d(in_channels=1, out_channels=1, kernel_size=kernel_size, padding="same")
         
         #Add a classfication branch with max pool based on size of the layer
-        #TODO calculate in channels for each flattened layer
         if filters == 32:
             pool_size = (4, 4)
+            in_features = 2560
         elif filters == 64:
+            in_features = 5120
             pool_size = (2, 2)
         elif filters == 128:
+            in_features = 10240
             pool_size = (1, 1)
         else:
             raise ValueError("Unknown filter size for max pooling")
         
         self.class_pool = nn.MaxPool2d(pool_size)
-        self.fc1 = nn.Linear(in_features=80, out_features=classes)
+        self.fc1 = nn.Linear(in_features=in_features, out_features=classes)
         
     def forward(self, x):
-        x = self.channel_pool(x)
-        x = F.relu(x)
-        attention = self.attention_conv1(x)
+        """Calculate attention and class scores for batch"""
+        #Global pooling and add dimensions to keep the same shape
+        pooled_features = self.channel_pool(x)
+        pooled_features = F.relu(pooled_features)
+        
+        #Attention layers
+        attention = self.attention_conv1(pooled_features)
         attention = F.relu(attention)
-        attention = self.attention_conv2(x)
+        attention = self.attention_conv2(attention)
         attention = F.sigmoid(attention)
+        
+        #Add dummy dimension to make the shapes the same
         attention = torch.mul(x, attention)
         
-        pooling = self.class_pool(attention)
-        pooling = torch.flatten(pooling)
+        # Classification Head
+        pooled_attention_features = self.class_pool(attention)
+        pooled_attention_features = torch.flatten(pooled_attention_features)
+        class_features = self.fc1(pooled_attention_features)
+        class_scores = F.softmax(class_features)
         
-        class_features = self.fc1(pooling)
-        class_probabilities = F.softmax(class_features)
-        
-        return class_probabilities
+        return attention, class_scores
 
 class spectral_attention(Module):
     """

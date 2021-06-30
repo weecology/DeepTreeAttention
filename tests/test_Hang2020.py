@@ -10,12 +10,15 @@ def test_conv_module():
     image = torch.randn(20, 369, 11, 11)
     output = m(image)
     assert output.shape == (20,32,11,11)
-    
-def test_spatial_attention():
-    m = Hang2020.spatial_attention(filters=32, classes=10)
-    image = torch.randn(20, 32, 9, 9)
-    output = m(image)
-    assert output.shape[0] == 10
+
+
+@pytest.mark.parametrize("conv_dimension",[(20,32,11,11),(20,64,5,5),(20,128,2,2)])
+def test_spatial_attention(conv_dimension):
+    """Check spectral attention for each convoutional dimension"""
+    m = Hang2020.spatial_attention(filters=conv_dimension[1], classes=10)
+    image = torch.randn(conv_dimension)
+    attention, scores = m(image)
+    assert scores.shape[0] == 10
     
 @pytest.mark.parametrize("conv_dimension",[(20,32,11,11),(20,64,5,5),(20,128,2,2)])
 def test_spectral_attention(conv_dimension):
@@ -32,8 +35,8 @@ def test_spectral_network():
     assert len(output) == 3
     assert output[0].shape[0] == 10
     
-def test_Hang2020():
-    m = Hang2020.Hang2020(bands=369, classes=10)
+def test_SpatialModel():
+    m = Hang2020.SpatialModel(bands=369, classes=10)
     image = torch.randn(20, 369, 11, 11)
     output = m(image)
     assert output.shape[0] == 10
