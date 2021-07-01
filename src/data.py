@@ -2,10 +2,11 @@
 import glob
 import os
 from pytorch_lightning import LightningDataModule
-from src import utils
-from src import generate
-from src import __file__
-from src import dataset
+import utils
+import generate
+from . import __file__
+import dataset
+import start_cluster
 import torch
 
 def filter_data():
@@ -17,7 +18,9 @@ def split_train_test(df):
     """Split processed shapefile into train and test
     Args:
         df: pandas dataf
-    
+    Returns:
+        train: geopandas frame of points
+        test: geopandas frame of points
     """
     
     pass
@@ -32,27 +35,50 @@ class TreeData(LightningDataModule):
     def setup(self, regenerate = False):
         #Clean data from raw csv, regenerate from scratch or check for progress and complete
         if regenerate:
+            client = start_cluster.start(cpus=30)
             df = filter_data("{}/neon_vst_2021.csv".format(self.data_dir))
             train, test = split_train_test(df)   
-            train_crowns = generate.points_to_crowns(train)
-            test_crowns = generate.points_to_crowns(test)
+            
+            test.to_file("{}/processed/test_points.shp".format(self.data_dir))
+            train.to_file("{}/processed/train_points.shp".format(self.data_dir))
+            
+            generate.points_to_crowns(
+                field_data="{}/processed/test_points.shp".format(self.data_dir),
+                rgb_dir=self.config["rgb_sensor_pool"],
+                savedir=self.config["crown_dir"],
+                raw_box_savedir=self.config["crown_dir"],        
+            )
+                        
+            generate.points_to_crowns(
+                field_data="{}/processed/train_points.shp".format(self.data_dir),
+                rgb_dir=self.config["rgb_sensor_pool"],
+                savedir=self.config["crown_dir"],
+                raw_box_savedir=self.config["crown_dir"],        
+            )
+            
             generate.generate_crops(train_crowns, savedir=self.config["crop_dir"])    
-            generate.generate_crops(test_crowns, savedir=self.config["crop_dir"])         
+            generate.generate_crops(test_crowns, savedir=self.config["crop_dir"])  
+            client.close()
         if not os.path.exists("{}/processed/filtered_data.csv".format(self.data_dir)):
             filter_data()
-        if not os.path.exists("{}/processed/train_points.csv".format(self.data_dir)):
+        if not os.path.exists("{}/processed/train_points.shp".format(self.data_dir)):
             split_train_test()
         if not os.path.exists("{}/processed/train_crowns.shp".format(self.data_dir)):
             #test data
             generate.points_to_crowns(
-                field_data="{}/processed/train_crowns.shp".format(self.data_dir),
+                field_data="{}/processed/train_points.csv".format(self.data_dir),
                 rgb_dir=self.config["rgb_sensor_pool"],
                 savedir=self.config["crown_dir"],
                 raw_box_savedir=self.config["crown_dir"],        
-                saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
             )
                         
-            generate.points_to_crowns(df)
+            generate.points_to_crowns(
+                field_data="{}/processed/test_points.shp".format(self.data_dir),
+                rgb_dir=self.config["rgb_sensor_pool"],
+                savedir=self.config["crown_dir"],
+                raw_box_savedir=self.config["crown_dir"],        
+            )
+            
         if len(glob.glob(self.config["crop_dir"])) == 0:
             generate.generate_crops(savedir=self.config["crop_dir"])            
 

@@ -1,5 +1,4 @@
 #Convert NEON field sample points into bounding boxes of cropped image data for model training
-import cv2
 import glob
 import geopandas as gpd
 import rasterio
@@ -7,8 +6,8 @@ import numpy as np
 import shapely
 import pandas as pd
 import traceback
-from src.neon_paths import find_sensor_path
-from src import start_cluster
+from neon_paths import find_sensor_path
+import start_cluster
 from distributed import wait       
 
 def predict_trees(deepforest_model, rgb_path, bounds):
@@ -160,14 +159,11 @@ def points_to_crowns(
     rgb_dir, 
     savedir,
     raw_box_savedir,
-    saved_model=None, 
-    client=None, 
-    shuffle=True):
+    client=None):
     """Prepare NEON field data int
     Args:
         field_data: shp file with location and class of each field collected point
-        height: height in meters of the resized training image
-        width: width in meters of the resized training image
+        rgb_dir: glob to search RGB images
         savedir: direcory to save predicted bounding boxes
         raw_box_savedir: directory save all bounding boxes in the image
         client: dask client object to use
@@ -187,7 +183,6 @@ def points_to_crowns(
                 plot=plot,
                 df=df,
                 rgb_pool=rgb_pool,
-                saved_model=saved_model,
                 savedir=savedir,
                 raw_box_savedir=raw_box_savedir
             )
@@ -205,7 +200,6 @@ def points_to_crowns(
                     plot=plot,
                     df=df,
                     rgb_pool=rgb_pool,  
-                    saved_model=saved_model,
                     deepforest_model=deepforest_model,
                     raw_box_savedir=raw_box_savedir
                 )
