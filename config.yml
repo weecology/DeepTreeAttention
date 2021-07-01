@@ -1,4 +1,15 @@
 #Config
+
+### Data Generation
+#path to sensor data regex, recursive wildcards allowed
+rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif 
+CHM_sensor_pool: /orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif
+#Directoy to store cropped images from crowns
+crop_dir: 
+#Directory to score crown shapefiles
+crown_dir: 
+
+#Network Parameters
 gpus:
 workers: 0
 batch_size = 64

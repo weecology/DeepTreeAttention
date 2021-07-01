@@ -1,7 +1,9 @@
 #Ligthning data module
+import glob
 import os
 from pytorch_lightning import LightningDataModule
 from src import utils
+from src import generate
 from src import __file__
 from src import dataset
 import torch
@@ -11,8 +13,13 @@ def filter_data():
     """
     pass
 
-def split_train_test():
-    """Split processed shapefile into train and test"""
+def split_train_test(df):
+    """Split processed shapefile into train and test
+    Args:
+        df: pandas dataf
+    
+    """
+    
     pass
 
 class TreeData(LightningDataModule):
@@ -23,18 +30,31 @@ class TreeData(LightningDataModule):
         self.data_dir = "{}/data/".format(self.ROOT)
     
     def setup(self, regenerate = False):
-        #Clean data from raw csv
+        #Clean data from raw csv, regenerate from scratch or check for progress and complete
         if regenerate:
+            df = filter_data("{}/neon_vst_2021.csv".format(self.data_dir))
+            train, test = split_train_test(df)   
+            train_crowns = generate.points_to_crowns(train)
+            test_crowns = generate.points_to_crowns(test)
+            generate.generate_crops(train_crowns, savedir=self.config["crop_dir"])    
+            generate.generate_crops(test_crowns, savedir=self.config["crop_dir"])         
+        if not os.path.exists("{}/processed/filtered_data.csv".format(self.data_dir)):
             filter_data()
-        else:
-            if not os.path.exists("{}/processed/filtered_data.csv".format(self.data_dir)):
-                filter_data()
-        #Split train test
-        if regenerate:
+        if not os.path.exists("{}/processed/train_points.csv".format(self.data_dir)):
             split_train_test()
-        else:
-            if not os.path.exists("{}/processed/train.csv".format(self.data_dir)):
-                split_train_test()
+        if not os.path.exists("{}/processed/train_crowns.shp".format(self.data_dir)):
+            #test data
+            generate.points_to_crowns(
+                field_data="{}/processed/train_crowns.shp".format(self.data_dir),
+                rgb_dir=self.config["rgb_sensor_pool"],
+                savedir=self.config["crown_dir"],
+                raw_box_savedir=self.config["crown_dir"],        
+                saved_model="/home/b.weinstein/miniconda3/envs/DeepTreeAttention_DeepForest/lib/python3.7/site-packages/deepforest/data/NEON.h5"
+            )
+                        
+            generate.points_to_crowns(df)
+        if len(glob.glob(self.config["crop_dir"])) == 0:
+            generate.generate_crops(savedir=self.config["crop_dir"])            
 
     def train_dataloader(self):
         ds = dataset.TreeDataset(csv_file = "{}/processed/train.csv".format(self.ROOT))
