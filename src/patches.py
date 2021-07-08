@@ -21,17 +21,14 @@ def row_col_from_crown(crown, src):
     
     return img_centroids
                     
-def crown_to_pixel(path, rgb_pool, width=11, height=11):
-    gdf = gpd.read_file(path)
-    rgb_path = neon_paths.find_sensor_path(lookup_pool = rgb_pool, bounds = gdf.total_bounds)            
-    src = rasterio.open(rgb_path)
-    
-    #Loop though image and gather centroids
-    crown_patches = []
-    for crown in gdf.geometry:
-        img_centroids = row_col_from_crown(crown, src)
-        for indices in img_centroids:
-            row, col = indices
-            img = src.read(window = rasterio.windows.Window(col_off=col, row_off=row, width = width, height=height), boundless=True)
-            crown_patches.append(img)
+def crown_to_pixel(crown, rgb_path, width=11, height=11):
+    """Given a crown box, create the pixel crops"""
+    crown_patches = []    
+    src = rasterio.open(rgb_path)    
+    img_centroids = row_col_from_crown(crown, src)
+    for indices in img_centroids:
+        row, col = indices
+        img = src.read(window = rasterio.windows.Window(col_off=col, row_off=row, width = width, height=height), boundless=True)
+        crown_patches.append(img)
+
     return crown_patches

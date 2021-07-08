@@ -35,7 +35,7 @@ class TreeData(LightningDataModule):
     def setup(self, regenerate = False):
         #Clean data from raw csv, regenerate from scratch or check for progress and complete
         if regenerate:
-            client = start_cluster.start(cpus=30)
+            #client = start_cluster.start(cpus=30)
             df = filter_data("{}/neon_vst_2021.csv".format(self.data_dir))
             train, test = split_train_test(df)   
             
@@ -45,20 +45,27 @@ class TreeData(LightningDataModule):
             generate.points_to_crowns(
                 field_data="{}/processed/test_points.shp".format(self.data_dir),
                 rgb_dir=self.config["rgb_sensor_pool"],
-                savedir=self.config["crown_dir"],
+                savedir=self.config["validation"]["crown_dir"],
                 raw_box_savedir=self.config["crown_dir"],        
             )
                         
             generate.points_to_crowns(
                 field_data="{}/processed/train_points.shp".format(self.data_dir),
                 rgb_dir=self.config["rgb_sensor_pool"],
-                savedir=self.config["crown_dir"],
+                savedir=self.config["train"]["crown_dir"],
                 raw_box_savedir=self.config["crown_dir"],        
             )
             
-            generate.generate_crops(train_crowns, savedir=self.config["crop_dir"])    
-            generate.generate_crops(test_crowns, savedir=self.config["crop_dir"])  
-            client.close()
+            #For each shapefile, create crops and csv file
+            train_crops = []
+            for x in glob.glob("*.shp".format(self.config["train"]["crown_dir"])):
+                crop_df = generate.generate_crops(x, savedir=self.config["crop_dir"])
+                train_crops.append(crop_df)
+                
+            test_crops = []
+            for x in glob.glob("*.shp".format(self.config["validation"]["crown_dir"])):
+                crop_df = generate.generate_crops(x, savedir=self.config["crop_dir"])
+                test_crops.append(crop_df)                
         if not os.path.exists("{}/processed/filtered_data.csv".format(self.data_dir)):
             filter_data()
         if not os.path.exists("{}/processed/train_points.shp".format(self.data_dir)):

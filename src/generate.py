@@ -5,10 +5,11 @@ import rasterio
 import numpy as np
 import shapely
 import pandas as pd
-import traceback
-from neon_paths import find_sensor_path
-import start_cluster
-from distributed import wait       
+from src.neon_paths import find_sensor_path
+from src import start_cluster
+from src import patches
+from distributed import wait   
+import cv2
 
 def predict_trees(deepforest_model, rgb_path, bounds):
     """Predict an rgb path at specific utm bounds
@@ -175,35 +176,48 @@ def points_to_crowns(
     
     rgb_pool = glob.glob(rgb_dir, recursive=True)
     
-    if client is not None:
-        futures = []
-        for plot in plot_names:
-            future = client.submit(
-                run,
-                plot=plot,
-                df=df,
-                rgb_pool=rgb_pool,
-                savedir=savedir,
-                raw_box_savedir=raw_box_savedir
-            )
-            futures.append(future)
+    futures = []
+    for plot in plot_names:
+        future = client.submit(
+            run,
+            plot=plot,
+            df=df,
+            rgb_pool=rgb_pool,
+            savedir=savedir,
+            raw_box_savedir=raw_box_savedir
+        )
+        futures.append(future)
         
-        wait(futures)
-        
-    else:
-        from deepforest import main        
-        deepforest_model = main.deepforest()
-        deepforest_model.use_release()        
-        for plot in plot_names:
-            try:
-                run(
-                    plot=plot,
-                    df=df,
-                    rgb_pool=rgb_pool,  
-                    deepforest_model=deepforest_model,
-                    raw_box_savedir=raw_box_savedir
-                )
-            except Exception as e:
-                print("Plot failed with {}".format(e))      
-                traceback.print_exc()  
-                continue
+    wait(futures)
+    
+def generate_crops(shapefile, rgb_pool, crop_save_dir):
+    """
+    Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
+    Args:
+        shapefile: a .shp with geometry objects and an individual column
+        crop_save_dir: path to save image crops
+        rgb_glob: glob to search rgb files.
+    Returns:
+       annotations: pandas dataframe of filenames and individual IDs to link with data
+    """
+    
+    gdf = gpd.read_file(shapefile)
+    rgb_path = find_sensor_path(lookup_pool = rgb_pool, bounds = gdf.total_bounds)            
+    annotations = []
+    for index, row in gdf.iterrows():
+        counter = 0
+        crops = patches.crown_to_pixel(crown=row["geometry"], rgb_path=rgb_path)
+        filenames = []
+        ids = []
+        for x in crops:
+            filename = "{}/{}_{}.png".format(crop_save_dir, row["individual"], counter)
+            channnels_last = np.rollaxis(x,0,3)
+            cv2.imwrite(filename, channnels_last)
+            filenames.append(filename)
+            ids.append(row["individual"])
+            counter =+1
+        annotation = pd.DataFrame({"image_path":filenames, "individual":ids})
+        annotations.append(annotation)
+    annotations = pd.concat(annotations)
+    return annotations
+    

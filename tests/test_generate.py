@@ -70,3 +70,9 @@ def test_run(tmpdir):
     ) 
     
     assert len(glob.glob("{}/*.shp".format(tmpdir))) > 0
+
+def test_generate_crops(tmpdir):
+    data_path = "{}/tests/data/crown.shp".format(ROOT)
+    rgb_pool = glob.glob("{}/tests/data/*.tif".format(ROOT))
+    annotations = generate.generate_crops(shapefile=data_path, rgb_pool=rgb_pool, crop_save_dir=tmpdir)
+    assert not annotations.empty
