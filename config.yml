@@ -4,6 +4,13 @@
 #path to sensor data regex, recursive wildcards allowed
 rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif 
 CHM_sensor_pool: /orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif
+#Minimum number of samples per class to be included
+min_samples: 1
+#Resample so that lowest classes have atleast n samples
+min_resample:1
+# minimum CHM height, leave back to ignore
+filter_CHM: 
+
 #Directoy to store cropped images from crowns
 crop_dir: 
 

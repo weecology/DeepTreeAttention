@@ -2,28 +2,33 @@
 import glob
 import os
 from pytorch_lightning import LightningDataModule
-import utils
-import generate
+from src import utils
+from src import generate
 from . import __file__
-import dataset
-import start_cluster
+from src import dataset 
+from src import start_cluster
 import torch
+import pandas as pd
 
-def filter_data():
-    """Transform raw NEON data into clean shapefile    
+def filter_data(min_samples, filter_CHM=True):
+    """Transform raw NEON data into clean shapefile   
+    Args:
+        min_samples: each class must have x samples
     """
-    pass
+    
+    df = pd.read_csv(path)
 
-def split_train_test(df):
+
+def split_train_test(path, min_resample):
     """Split processed shapefile into train and test
     Args:
         df: pandas dataf
+        min_resample: classes will be sample to have atleast n samples
     Returns:
         train: geopandas frame of points
         test: geopandas frame of points
     """
-    
-    pass
+    return df
 
 class TreeData(LightningDataModule):
     def __init__(self):
@@ -32,12 +37,12 @@ class TreeData(LightningDataModule):
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
         self.data_dir = "{}/data/".format(self.ROOT)
     
-    def setup(self, regenerate = False):
+    def setup(self, csv_file, regenerate = False):
         #Clean data from raw csv, regenerate from scratch or check for progress and complete
         if regenerate:
             #client = start_cluster.start(cpus=30)
-            df = filter_data("{}/neon_vst_2021.csv".format(self.data_dir))
-            train, test = split_train_test(df)   
+            df = filter_data(csv_file, min_samples=self.config["min_samples"], filter_CHM=self.config["filter_CHM"])
+            train, test = split_train_test(df, resample = self.config["min_resample"])   
             
             test.to_file("{}/processed/test_points.shp".format(self.data_dir))
             train.to_file("{}/processed/train_points.shp".format(self.data_dir))
