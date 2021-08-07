@@ -7,7 +7,6 @@ from deepforest import main
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-
 ROOT = os.path.dirname(os.path.dirname(generate.__file__))
 rgb_pool = glob.glob("{}/tests/data/*.tif".format(ROOT))
 rgb_path = "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop.tif".format(ROOT)

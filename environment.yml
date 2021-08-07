@@ -1,10 +1,7 @@
 name: DeepTreeAttention
 channels:
-  - pytorch
   - conda-forge
 dependencies:
-  - rasterio
-  - cudatoolkit
   - scikit-learn
   - scikit-image
   - sphinx
@@ -14,22 +11,17 @@ dependencies:
   - pytest
   - numpydoc
   - h5py
-  - numpy
-  - pillow  
   - pytest
   - bokeh
   - pip
   - matplotlib
   - sphinx_rtd_theme
-  - pandas
   - twine
   - yapf
-  - torch >=1.9
   - pip:
     - DeepForest
     - geopandas
     - rasterstats
-    - opencv-python
     - sphinx-markdown-tables
     - bumpversion
     - comet_ml
@@ -38,4 +30,3 @@ dependencies:
     - dask_jobqueue
     - tensorboard_plugin_profile
     - pydot
-    - cleanlab
