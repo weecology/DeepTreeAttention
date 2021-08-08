@@ -3,7 +3,6 @@ channels:
   - conda-forge
 dependencies:
   - scikit-learn
-  - scikit-image
   - sphinx
   - recommonmark
   - pyyaml
@@ -20,7 +19,6 @@ dependencies:
   - yapf
   - pip:
     - DeepForest
-    - geopandas
     - rasterstats
     - sphinx-markdown-tables
     - bumpversion

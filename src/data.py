@@ -2,7 +2,6 @@
 import glob
 import os
 from pytorch_lightning import LightningDataModule
-from src import utils
 from src import generate
 from . import __file__
 from src import dataset 
