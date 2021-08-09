@@ -1,35 +1,23 @@
 #Ligthning data module
 import glob
+import geopandas as gpd
+import numpy as np
 import os
+import pandas as pd
 from pytorch_lightning import LightningDataModule
 from src import generate
 from . import __file__
 from src import dataset 
 from src import start_cluster
+from src import CHM
 import torch
-import pandas as pd
 import yaml
 
-def filter_CHM(CHM_pool, min_CHM_height=1, min_CHM_diff=4):
-    
-    if min_CHM_height is None:
-        return df
-    
-    #extract CHM height
-    shp = CHM_height(shp, CHM_pool)
-    
-    #Remove NULL CHM_heights
-    #shp = shp[~(shp.CHM_height.isnull())]
-    
-    shp = shp[(shp.height.isnull()) | (shp.CHM_height > min_CHM_height)]
-    
-    #remove CHM points under 4m diff  
-    shp = shp[(shp.height.isnull()) | (abs(shp.height - shp.CHM_height) < min_CHM_diff)]  
         
-def filter_data(path, min_samples=None):
+def filter_data(path, config):
     """Transform raw NEON data into clean shapefile   
     Args:
-        min_samples: each class must have x samples
+        config: DeepTreeAttention config dict, see config.yml
     """
     field = field[~field.elevation.isnull()]
     field = field[~field.growthForm.isin(["liana","small shrub"])]
@@ -49,7 +37,7 @@ def filter_data(path, min_samples=None):
         
     field = field[~(field.individualID.isin(shaded_ids))]
     field = field[(field.height > 3) | (field.height.isnull())]
-    field = field[field.stemDiameter > 10]
+    field = field[field.stemDiameter > config["min_stem_diameter"]]
     field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
     field = field[~(field.eventID.str.contains("2014"))]
     with_heights = field[~field.height.isnull()]
@@ -87,45 +75,18 @@ def filter_data(path, min_samples=None):
     #Oak Right Lab has no AOP data
     shp = shp[~(shp.siteID.isin(["PUUM","ORNL"]))]
 
-    
-    return df
+    return shp
 
-
-def split_train_test(path, config):
-    """Split processed shapefile into train and test
-    Args:
-        path: path to NEON vst data
-        config: a parse config dict, see config.yml
-    Returns:
-        train: geopandas frame of points
-        test: geopandas frame of points
-    """
-    
-    #Convert raw NEON data to cleaned tree points
-    df = filter_data(path, min_samples=config["min_samples"])
-    
-    #Filter points based on LiDAR height
-    df = filter_CHM(df, min_CHM_height=config["min_CHM_height"], min_CHM_diff=config["min_CHM_diff"])
-    
-    df[df.taxonID == ""]
-    
-    return df
-
-
-def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = None, regenerate=False):
+def train_test_split(savedir, config, debug=False, client = None, regenerate=False):
     """Create the train test split
     Args:
         ROOT: 
         lookup_glob: The recursive glob path for the canopy height models to create a pool of .tif to search
         min_diff: minimum height diff between field and CHM data
-        n: number of resampled points per class
         client: optional dask client
         """
-    field = pd.read_csv("{}/data/raw/neon_vst_data_2021.csv".format(ROOT))
 
-        
     #atleast 10 data samples overall
-    shp = shp.groupby("taxonID").filter(lambda x: x.shape[0] > 10)
     
     #set seed.
     np.random.seed(1)
@@ -163,7 +124,7 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = N
         train = saved_train
         test = saved_test
     else:
-        test_plots = gpd.read_file("{}/data/processed/test.shp".format(ROOT)).plotID.unique()
+        test_plots = gpd.read_file("{}/test.shp".format(ROOT)).plotID.unique()
         test = shp[shp.plotID.isin(test_plots)]
         train = shp[~shp.plotID.isin(test_plots)]
         
@@ -206,8 +167,8 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = N
         train  =  train.groupby("taxonID").apply(lambda x: sample_if(x,n)).reset_index(drop=True)
             
     if not debug:    
-        test.to_file("{}/data/processed/test.shp".format(ROOT))
-        train.to_file("{}/data/processed/train.shp".format(ROOT))    
+        test.to_file("{}/test.shp".format(save_dir))
+        train.to_file("{}/train.shp".format(save_dir))    
     
         #Create files for indexing
         #Create and save a new species and site label dict
@@ -217,7 +178,7 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = N
         species_label_dict = {}
         for index, label in enumerate(unique_species_labels):
             species_label_dict[label] = index
-        pd.DataFrame(species_label_dict.items(), columns=["taxonID","label"]).to_csv("{}/data/processed/species_class_labels.csv".format(ROOT))    
+        pd.DataFrame(species_label_dict.items(), columns=["taxonID","label"]).to_csv("{}/species_class_labels.csv".format(save_dir))    
         
         unique_site_labels = np.concatenate([train.siteID.unique(), test.siteID.unique()])
         unique_site_labels = np.unique(unique_site_labels)
@@ -233,8 +194,6 @@ def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = N
             domain_label_dict[label] = index
         pd.DataFrame(domain_label_dict.items(), columns=["domainID","label"]).to_csv("{}/data/processed/domain_class_labels.csv".format(ROOT))  
         
-
-
 def read_config(config_path):
     """Read config yaml file"""
     try:
@@ -258,8 +217,11 @@ class TreeData(LightningDataModule):
         #Clean data from raw csv, regenerate from scratch or check for progress and complete
         if regenerate:
             #client = start_cluster.start(cpus=30)
-            df = filter_data(csv_file, min_samples=self.config["min_samples"], filter_CHM=self.config["filter_CHM"])
-            train, test = split_train_test(df, self.config)   
+            df = filter_data(csv_file, config=self.config)
+            #Filter points based on LiDAR height
+            df = CHM.filter_CHM(df, config=self.config)      
+            df = df.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_samples"])
+            train, test = train_test_split(df,savedir="{}/processed".format(self.data_dir),config=self.config)   
             
             test.to_file("{}/processed/test_points.shp".format(self.data_dir))
             train.to_file("{}/processed/train_points.shp".format(self.data_dir))
@@ -291,7 +253,7 @@ class TreeData(LightningDataModule):
         if not os.path.exists("{}/processed/filtered_data.csv".format(self.data_dir)):
             filter_data()
         if not os.path.exists("{}/processed/train_points.shp".format(self.data_dir)):
-            split_train_test()
+            train_test_split(config=self.config)
         if not os.path.exists("{}/processed/train_crowns.shp".format(self.data_dir)):
             #test data
             generate.points_to_crowns(
