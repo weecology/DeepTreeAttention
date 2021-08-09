@@ -8,40 +8,67 @@ from src import dataset
 from src import start_cluster
 import torch
 import pandas as pd
+import yaml
 
-def filter_data(min_samples, filter_CHM=True):
+def filter_data(path, min_samples=None, filter_CHM=True):
     """Transform raw NEON data into clean shapefile   
     Args:
         min_samples: each class must have x samples
     """
-    
     df = pd.read_csv(path)
+    
+    if min_samples:
+        keep_taxa = df.taxonID.value_counts()
+        keep_taxa[keep_taxa > min_samples]
+    
+    df = df[df.taxonID.isin(keep_taxa)]
+    
+    if filter_CHM:
+        pass
+    
+    return df
 
 
 def split_train_test(path, min_resample):
     """Split processed shapefile into train and test
     Args:
-        df: pandas dataf
+        df: pandas datadf
         min_resample: classes will be sample to have atleast n samples
     Returns:
         train: geopandas frame of points
         test: geopandas frame of points
     """
+    
+    df[df.taxonID == ""]
+    
     return df
+
+
+def read_config(config_path):
+    """Read config yaml file"""
+    try:
+        with open(config_path, 'r') as f:
+            config = yaml.load(f, Loader=yaml.FullLoader)
+
+    except Exception as e:
+        raise FileNotFoundError("There is no config at {}, yields {}".format(
+            config_path, e))
+
+    return config
 
 class TreeData(LightningDataModule):
     def __init__(self):
         super().__init__()
-        self.config = utils.read_config()
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
         self.data_dir = "{}/data/".format(self.ROOT)
+        self.config = read_config("{}/config.yml".format(self.ROOT))        
     
     def setup(self, csv_file, regenerate = False):
         #Clean data from raw csv, regenerate from scratch or check for progress and complete
         if regenerate:
             #client = start_cluster.start(cpus=30)
             df = filter_data(csv_file, min_samples=self.config["min_samples"], filter_CHM=self.config["filter_CHM"])
-            train, test = split_train_test(df, resample = self.config["min_resample"])   
+            train, test = split_train_test(df, min_resample = self.config["min_resample"])   
             
             test.to_file("{}/processed/test_points.shp".format(self.data_dir))
             train.to_file("{}/processed/train_points.shp".format(self.data_dir))

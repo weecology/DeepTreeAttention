@@ -7,7 +7,7 @@ CHM_sensor_pool: /orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif
 #Minimum number of samples per class to be included
 min_samples: 1
 #Resample so that lowest classes have atleast n samples
-min_resample:1
+min_resample: 1
 # minimum CHM height, leave back to ignore
 filter_CHM: 
 
@@ -17,7 +17,7 @@ crop_dir:
 #Network Parameters
 gpus:
 workers: 0
-batch_size = 64
+batch_size: 64
 train:
     crown_dir:
     fast_dev_run: False
