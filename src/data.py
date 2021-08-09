@@ -10,38 +10,229 @@ import torch
 import pandas as pd
 import yaml
 
-def filter_data(path, min_samples=None, filter_CHM=True):
+def filter_CHM(CHM_pool, min_CHM_height=1, min_CHM_diff=4):
+    
+    if min_CHM_height is None:
+        return df
+    
+    #extract CHM height
+    shp = CHM_height(shp, CHM_pool)
+    
+    #Remove NULL CHM_heights
+    #shp = shp[~(shp.CHM_height.isnull())]
+    
+    shp = shp[(shp.height.isnull()) | (shp.CHM_height > min_CHM_height)]
+    
+    #remove CHM points under 4m diff  
+    shp = shp[(shp.height.isnull()) | (abs(shp.height - shp.CHM_height) < min_CHM_diff)]  
+        
+def filter_data(path, min_samples=None):
     """Transform raw NEON data into clean shapefile   
     Args:
         min_samples: each class must have x samples
     """
-    df = pd.read_csv(path)
+    field = field[~field.elevation.isnull()]
+    field = field[~field.growthForm.isin(["liana","small shrub"])]
+    field = field[~field.growthForm.isnull()]
+    field = field[~field.plantStatus.isnull()]        
+    field = field[field.plantStatus.str.contains("Live")]    
     
-    if min_samples:
-        keep_taxa = df.taxonID.value_counts()
-        keep_taxa[keep_taxa > min_samples]
+    groups = field.groupby("individualID")
+    shaded_ids = []
+    for name, group in groups:
+        shaded = any([x in ["Full shade", "Mostly shaded"] for x in group.canopyPosition.values])
+        if shaded:
+            if any([x in ["Open grown", "Full sun"] for x in group.canopyPosition.values]):
+                continue
+            else:
+                shaded_ids.append(group.individualID.unique()[0])
+        
+    field = field[~(field.individualID.isin(shaded_ids))]
+    field = field[(field.height > 3) | (field.height.isnull())]
+    field = field[field.stemDiameter > 10]
+    field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
+    field = field[~(field.eventID.str.contains("2014"))]
+    with_heights = field[~field.height.isnull()]
+    with_heights = with_heights.loc[with_heights.groupby('individualID')['height'].idxmax()]
     
-    df = df[df.taxonID.isin(keep_taxa)]
+    missing_heights = field[field.height.isnull()]
+    missing_heights = missing_heights[~missing_heights.individualID.isin(with_heights.individualID)]
+    missing_heights = missing_heights.groupby("individualID").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1)).reset_index(drop=True)
+  
+    field = pd.concat([with_heights,missing_heights])
     
-    if filter_CHM:
-        pass
+    #remove multibole
+    field = field[~(field.individualID.str.contains('[A-Z]$',regex=True))]
+
+    #List of hand cleaned errors
+    known_errors = ["NEON.PLA.D03.OSBS.03422","NEON.PLA.D03.OSBS.03422","NEON.PLA.D03.OSBS.03382", "NEON.PLA.D17.TEAK.01883"]
+    field = field[~(field.individualID.isin(known_errors))]
+    field = field[~(field.plotID == "SOAP_054")]
+    
+    #Create shapefile
+    field["geometry"] = [Point(x,y) for x,y in zip(field["itcEasting"], field["itcNorthing"])]
+    shp = gpd.GeoDataFrame(field)
+    
+    #HOTFIX, BLAN has some data in 18N UTM, reproject to 17N update columns
+    BLAN_errors = shp[(shp.siteID == "BLAN") & (shp.utmZone == "18N")]
+    BLAN_errors.set_crs(epsg=32618, inplace=True)
+    BLAN_errors.to_crs(32617,inplace=True)
+    BLAN_errors["utmZone"] = "17N"
+    BLAN_errors["itcEasting"] = BLAN_errors.geometry.apply(lambda x: x.coords[0][0])
+    BLAN_errors["itcNorthing"] = BLAN_errors.geometry.apply(lambda x: x.coords[0][1])
+    
+    #reupdate
+    shp.loc[BLAN_errors.index] = BLAN_errors
+    
+    #Oak Right Lab has no AOP data
+    shp = shp[~(shp.siteID.isin(["PUUM","ORNL"]))]
+
     
     return df
 
 
-def split_train_test(path, min_resample):
+def split_train_test(path, config):
     """Split processed shapefile into train and test
     Args:
-        df: pandas datadf
-        min_resample: classes will be sample to have atleast n samples
+        path: path to NEON vst data
+        config: a parse config dict, see config.yml
     Returns:
         train: geopandas frame of points
         test: geopandas frame of points
     """
     
+    #Convert raw NEON data to cleaned tree points
+    df = filter_data(path, min_samples=config["min_samples"])
+    
+    #Filter points based on LiDAR height
+    df = filter_CHM(df, min_CHM_height=config["min_CHM_height"], min_CHM_diff=config["min_CHM_diff"])
+    
     df[df.taxonID == ""]
     
     return df
+
+
+def train_test_split(ROOT=".", lookup_glob=None, n=None, debug=False, client = None, regenerate=False):
+    """Create the train test split
+    Args:
+        ROOT: 
+        lookup_glob: The recursive glob path for the canopy height models to create a pool of .tif to search
+        min_diff: minimum height diff between field and CHM data
+        n: number of resampled points per class
+        client: optional dask client
+        """
+    field = pd.read_csv("{}/data/raw/neon_vst_data_2021.csv".format(ROOT))
+
+        
+    #atleast 10 data samples overall
+    shp = shp.groupby("taxonID").filter(lambda x: x.shape[0] > 10)
+    
+    #set seed.
+    np.random.seed(1)
+    
+    #TODO make regenerate flag.
+    if regenerate:     
+        most_species = 0
+        if debug:
+            iterations = 1
+        else:
+            iterations = 500
+        
+        if client:
+            futures = [ ]
+            for x in np.arange(iterations):
+                future = client.submit(sample_plots, shp=shp)
+                futures.append(future)
+            
+            for x in as_completed(futures):
+                train, test = x.result()
+                if len(train.taxonID.unique()) > most_species:
+                    print(len(train.taxonID.unique()))
+                    saved_train = train
+                    saved_test = test
+                    most_species = len(train.taxonID.unique())            
+        else:
+            for x in np.arange(iterations):
+                train, test = sample_plots(shp)
+                if len(train.taxonID.unique()) > most_species:
+                    print(len(train.taxonID.unique()))
+                    saved_train = train
+                    saved_test = test
+                    most_species = len(train.taxonID.unique())
+        
+        train = saved_train
+        test = saved_test
+    else:
+        test_plots = gpd.read_file("{}/data/processed/test.shp".format(ROOT)).plotID.unique()
+        test = shp[shp.plotID.isin(test_plots)]
+        train = shp[~shp.plotID.isin(test_plots)]
+        
+        test = test.groupby("taxonID").filter(lambda x: x.shape[0] > 5)
+        
+        train = train[train.taxonID.isin(test.taxonID)]
+        test = test[test.taxonID.isin(train.taxonID)]
+    
+        #remove any test species that don't have site distributions in train
+        to_remove = []
+        for index,row in test.iterrows():
+            if train[(train.taxonID==row["taxonID"]) & (train.siteID==row["siteID"])].empty:
+                to_remove.append(index)
+            
+        add_to_train = test[test.index.isin(to_remove)]
+        train = pd.concat([train, add_to_train])
+        test = test[~test.index.isin(to_remove)]    
+        
+        train = train[train.taxonID.isin(test.taxonID)]
+        test = test[test.taxonID.isin(train.taxonID)]        
+    
+    print("There are {} records for {} species for {} sites in filtered train".format(
+        train.shape[0],
+        len(train.taxonID.unique()),
+        len(train.siteID.unique())
+    ))
+    
+    print("There are {} records for {} species for {} sites in test".format(
+        test.shape[0],
+        len(test.taxonID.unique()),
+        len(test.siteID.unique())
+    ))
+    
+    #Give tests a unique index to match against
+    test["point_id"] = test.index.values
+    train["point_id"] = train.index.values
+    
+    #resample train
+    if not n is None:
+        train  =  train.groupby("taxonID").apply(lambda x: sample_if(x,n)).reset_index(drop=True)
+            
+    if not debug:    
+        test.to_file("{}/data/processed/test.shp".format(ROOT))
+        train.to_file("{}/data/processed/train.shp".format(ROOT))    
+    
+        #Create files for indexing
+        #Create and save a new species and site label dict
+        unique_species_labels = np.concatenate([train.taxonID.unique(), test.taxonID.unique()])
+        unique_species_labels = np.unique(unique_species_labels)
+        
+        species_label_dict = {}
+        for index, label in enumerate(unique_species_labels):
+            species_label_dict[label] = index
+        pd.DataFrame(species_label_dict.items(), columns=["taxonID","label"]).to_csv("{}/data/processed/species_class_labels.csv".format(ROOT))    
+        
+        unique_site_labels = np.concatenate([train.siteID.unique(), test.siteID.unique()])
+        unique_site_labels = np.unique(unique_site_labels)
+        site_label_dict = {}
+        for index, label in enumerate(unique_site_labels):
+            site_label_dict[label] = index
+        pd.DataFrame(site_label_dict.items(), columns=["siteID","label"]).to_csv("{}/data/processed/site_class_labels.csv".format(ROOT))  
+        
+        unique_domain_labels = np.concatenate([train.domainID.unique(), test.domainID.unique()])
+        unique_domain_labels = np.unique(unique_domain_labels)
+        domain_label_dict = {}
+        for index, label in enumerate(unique_domain_labels):
+            domain_label_dict[label] = index
+        pd.DataFrame(domain_label_dict.items(), columns=["domainID","label"]).to_csv("{}/data/processed/domain_class_labels.csv".format(ROOT))  
+        
 
 
 def read_config(config_path):
@@ -68,7 +259,7 @@ class TreeData(LightningDataModule):
         if regenerate:
             #client = start_cluster.start(cpus=30)
             df = filter_data(csv_file, min_samples=self.config["min_samples"], filter_CHM=self.config["filter_CHM"])
-            train, test = split_train_test(df, min_resample = self.config["min_resample"])   
+            train, test = split_train_test(df, self.config)   
             
             test.to_file("{}/processed/test_points.shp".format(self.data_dir))
             train.to_file("{}/processed/train_points.shp".format(self.data_dir))

@@ -8,9 +8,10 @@ CHM_sensor_pool: /orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif
 min_samples: 1
 #Resample so that lowest classes have atleast n samples
 min_resample: 1
-# minimum CHM height, leave back to ignore
-filter_CHM: 
-
+# minimum CHM height, leave blank to skip CHM filtering
+min_CHM_height: 1
+#Minimum difference between measured height and CHM height
+min_CHM_diff: 4
 #Directoy to store cropped images from crowns
 crop_dir: 
 
