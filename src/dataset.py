@@ -1,5 +1,4 @@
 #Dataset class
-
 from torch.utils.data import Dataset
 
 class TreeDataset(Dataset):

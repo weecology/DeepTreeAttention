@@ -1,6 +1,7 @@
 #Ligthning data module
 import glob
 import geopandas as gpd
+from distributed import as_completed
 import numpy as np
 import os
 import pandas as pd
@@ -10,9 +11,9 @@ from . import __file__
 from src import dataset 
 from src import start_cluster
 from src import CHM
+from shapely.geometry import Point
 import torch
 import yaml
-
         
 def filter_data(path, config):
     """Transform raw NEON data into clean shapefile   
@@ -77,31 +78,24 @@ def filter_data(path, config):
 
     return shp
 
-def train_test_split(savedir, config, debug=False, client = None, regenerate=False):
+def train_test_split(shp, savedir, config, client = None, regenerate=False):
     """Create the train test split
-    Args:
-        ROOT: 
-        lookup_glob: The recursive glob path for the canopy height models to create a pool of .tif to search
-        min_diff: minimum height diff between field and CHM data
-        client: optional dask client
-        """
-
-    #atleast 10 data samples overall
     
+    Inferred config args:
+        Iterations (int): number of tries to find highest number of taxa in split data. If set to 1, assumed to be debugging and no data will be written
+    Args:
+        shp: a filter pandas dataframe (or geodataframe)  
+        client: optional dask client
+        regenerate: recreate the train_test split
+        """    
     #set seed.
     np.random.seed(1)
     
-    #TODO make regenerate flag.
     if regenerate:     
         most_species = 0
-        if debug:
-            iterations = 1
-        else:
-            iterations = 500
-        
         if client:
             futures = [ ]
-            for x in np.arange(iterations):
+            for x in np.arange(config["iterations"]):
                 future = client.submit(sample_plots, shp=shp)
                 futures.append(future)
             
@@ -113,7 +107,7 @@ def train_test_split(savedir, config, debug=False, client = None, regenerate=Fal
                     saved_test = test
                     most_species = len(train.taxonID.unique())            
         else:
-            for x in np.arange(iterations):
+            for x in np.arange(config["iterations"]):
                 train, test = sample_plots(shp)
                 if len(train.taxonID.unique()) > most_species:
                     print(len(train.taxonID.unique()))
@@ -124,12 +118,10 @@ def train_test_split(savedir, config, debug=False, client = None, regenerate=Fal
         train = saved_train
         test = saved_test
     else:
-        test_plots = gpd.read_file("{}/test.shp".format(ROOT)).plotID.unique()
+        test_plots = gpd.read_file("{}/processed/test.shp".format(savedir)).plotID.unique()
         test = shp[shp.plotID.isin(test_plots)]
         train = shp[~shp.plotID.isin(test_plots)]
-        
-        test = test.groupby("taxonID").filter(lambda x: x.shape[0] > 5)
-        
+                
         train = train[train.taxonID.isin(test.taxonID)]
         test = test[test.taxonID.isin(train.taxonID)]
     
@@ -161,14 +153,10 @@ def train_test_split(savedir, config, debug=False, client = None, regenerate=Fal
     #Give tests a unique index to match against
     test["point_id"] = test.index.values
     train["point_id"] = train.index.values
-    
-    #resample train
-    if not n is None:
-        train  =  train.groupby("taxonID").apply(lambda x: sample_if(x,n)).reset_index(drop=True)
             
-    if not debug:    
-        test.to_file("{}/test.shp".format(save_dir))
-        train.to_file("{}/train.shp".format(save_dir))    
+    if not config["iterations"]==1:    
+        test.to_file("{}/test.shp".format(savedir))
+        train.to_file("{}/train.shp".format(savedir))    
     
         #Create files for indexing
         #Create and save a new species and site label dict
@@ -178,21 +166,21 @@ def train_test_split(savedir, config, debug=False, client = None, regenerate=Fal
         species_label_dict = {}
         for index, label in enumerate(unique_species_labels):
             species_label_dict[label] = index
-        pd.DataFrame(species_label_dict.items(), columns=["taxonID","label"]).to_csv("{}/species_class_labels.csv".format(save_dir))    
+        pd.DataFrame(species_label_dict.items(), columns=["taxonID","label"]).to_csv("{}/processed/species_class_labels.csv".format(savedir))    
         
         unique_site_labels = np.concatenate([train.siteID.unique(), test.siteID.unique()])
         unique_site_labels = np.unique(unique_site_labels)
         site_label_dict = {}
         for index, label in enumerate(unique_site_labels):
             site_label_dict[label] = index
-        pd.DataFrame(site_label_dict.items(), columns=["siteID","label"]).to_csv("{}/data/processed/site_class_labels.csv".format(ROOT))  
+        pd.DataFrame(site_label_dict.items(), columns=["siteID","label"]).to_csv("{}/processed/site_class_labels.csv".format(savedir))  
         
         unique_domain_labels = np.concatenate([train.domainID.unique(), test.domainID.unique()])
         unique_domain_labels = np.unique(unique_domain_labels)
         domain_label_dict = {}
         for index, label in enumerate(unique_domain_labels):
             domain_label_dict[label] = index
-        pd.DataFrame(domain_label_dict.items(), columns=["domainID","label"]).to_csv("{}/data/processed/domain_class_labels.csv".format(ROOT))  
+        pd.DataFrame(domain_label_dict.items(), columns=["domainID","label"]).to_csv("{}/processed/domain_class_labels.csv".format(savedir))  
         
 def read_config(config_path):
     """Read config yaml file"""
@@ -249,7 +237,8 @@ class TreeData(LightningDataModule):
             test_crops = []
             for x in glob.glob("*.shp".format(self.config["validation"]["crown_dir"])):
                 crop_df = generate.generate_crops(x, savedir=self.config["crop_dir"])
-                test_crops.append(crop_df)                
+                test_crops.append(crop_df)   
+                
         if not os.path.exists("{}/processed/filtered_data.csv".format(self.data_dir)):
             filter_data()
         if not os.path.exists("{}/processed/train_points.shp".format(self.data_dir)):
