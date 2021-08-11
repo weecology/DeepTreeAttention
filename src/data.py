@@ -20,6 +20,7 @@ def filter_data(path, config):
     Args:
         config: DeepTreeAttention config dict, see config.yml
     """
+    field = pd.read_csv(path)
     field = field[~field.elevation.isnull()]
     field = field[~field.growthForm.isin(["liana","small shrub"])]
     field = field[~field.growthForm.isnull()]
@@ -78,15 +79,35 @@ def filter_data(path, config):
 
     return shp
 
+def sample_plots(shp, test_fraction=0.1, min_samples=5):
+    """Sample and split a pandas dataframe based on plotID
+    Args:
+        shp: pandas dataframe of filtered tree locations
+        test_fraction: proportion of plots in test datasets
+        min_samples: minimum number of samples per class
+    """
+    #split by plot level
+    test_plots = shp.plotID.drop_duplicates().sample(frac=test_fraction)
+    
+    test = shp[shp.plotID.isin(test_plots)]
+    train = shp[~shp.plotID.isin(test_plots)]
+    
+    test = test.groupby("taxonID").filter(lambda x: x.shape[0] > min_samples)
+    
+    train = train[train.taxonID.isin(test.taxonID)]
+    test = test[test.taxonID.isin(train.taxonID)]
+    
+    return train, test
+    
 def train_test_split(shp, savedir, config, client = None, regenerate=False):
     """Create the train test split
-    
-    Inferred config args:
-        Iterations (int): number of tries to find highest number of taxa in split data. If set to 1, assumed to be debugging and no data will be written
     Args:
         shp: a filter pandas dataframe (or geodataframe)  
+        savedir: directly to save train/test and metadata csv files
         client: optional dask client
         regenerate: recreate the train_test split
+    Returns:
+        None: train.shp and test.shp are written as side effect
         """    
     #set seed.
     np.random.seed(1)
@@ -96,7 +117,7 @@ def train_test_split(shp, savedir, config, client = None, regenerate=False):
         if client:
             futures = [ ]
             for x in np.arange(config["iterations"]):
-                future = client.submit(sample_plots, shp=shp)
+                future = client.submit(sample_plots, shp=shp, min_samples=config["min_samples"], test_fraction=config["test_fraction"])
                 futures.append(future)
             
             for x in as_completed(futures):
@@ -125,15 +146,16 @@ def train_test_split(shp, savedir, config, client = None, regenerate=False):
         train = train[train.taxonID.isin(test.taxonID)]
         test = test[test.taxonID.isin(train.taxonID)]
     
+        ### This criteria was in the original repo, but I don't see the need Aug/9/2021
         #remove any test species that don't have site distributions in train
-        to_remove = []
-        for index,row in test.iterrows():
-            if train[(train.taxonID==row["taxonID"]) & (train.siteID==row["siteID"])].empty:
-                to_remove.append(index)
+        ##to_remove = []
+        ##for index,row in test.iterrows():
+            ##if train[(train.taxonID==row["taxonID"]) & (train.siteID==row["siteID"])].empty:
+                ##to_remove.append(index)
             
-        add_to_train = test[test.index.isin(to_remove)]
-        train = pd.concat([train, add_to_train])
-        test = test[~test.index.isin(to_remove)]    
+        #add_to_train = test[test.index.isin(to_remove)]
+        #train = pd.concat([train, add_to_train])
+        #test = test[~test.index.isin(to_remove)]    
         
         train = train[train.taxonID.isin(test.taxonID)]
         test = test[test.taxonID.isin(train.taxonID)]        
@@ -195,56 +217,45 @@ def read_config(config_path):
     return config
 
 class TreeData(LightningDataModule):
+    """
+    Lightning data module to convert raw NEON data into HSI pixel crops based on the config.yml file. 
+    The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
+    Use regenerate=True to override this behavior in setup()
+    """
     def __init__(self):
         super().__init__()
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
         self.data_dir = "{}/data/".format(self.ROOT)
         self.config = read_config("{}/config.yml".format(self.ROOT))        
     
-    def setup(self, csv_file, regenerate = False):
+    def setup(self, csv_file, regenerate = False, client = None):
         #Clean data from raw csv, regenerate from scratch or check for progress and complete
         if regenerate:
-            #client = start_cluster.start(cpus=30)
+            #remove any previous runs
+            try:
+                os.remove("{}/processed/test_points.shp".format(self.data_dir))
+                os.remove(" ".format(self.data_dir))
+                os.remove("{}/processed/filtered_data.csv".format(self.data_dir))
+                os.remove("{}/processed/train_crowns.shp".format(self.data_dir))
+                for x in glob.glob(self.config["crop_dir"]):
+                    os.remove(x)
+            except:
+                pass
+                
+            #Convert raw neon data to x,y tree locatins
             df = filter_data(csv_file, config=self.config)
             #Filter points based on LiDAR height
-            df = CHM.filter_CHM(df, config=self.config)      
+            df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
             df = df.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_samples"])
             train, test = train_test_split(df,savedir="{}/processed".format(self.data_dir),config=self.config)   
             
             test.to_file("{}/processed/test_points.shp".format(self.data_dir))
             train.to_file("{}/processed/train_points.shp".format(self.data_dir))
-            
-            generate.points_to_crowns(
-                field_data="{}/processed/test_points.shp".format(self.data_dir),
-                rgb_dir=self.config["rgb_sensor_pool"],
-                savedir=self.config["validation"]["crown_dir"],
-                raw_box_savedir=self.config["crown_dir"],        
-            )
-                        
-            generate.points_to_crowns(
-                field_data="{}/processed/train_points.shp".format(self.data_dir),
-                rgb_dir=self.config["rgb_sensor_pool"],
-                savedir=self.config["train"]["crown_dir"],
-                raw_box_savedir=self.config["crown_dir"],        
-            )
-            
-            #For each shapefile, create crops and csv file
-            train_crops = []
-            for x in glob.glob("*.shp".format(self.config["train"]["crown_dir"])):
-                crop_df = generate.generate_crops(x, savedir=self.config["crop_dir"])
-                train_crops.append(crop_df)
                 
-            test_crops = []
-            for x in glob.glob("*.shp".format(self.config["validation"]["crown_dir"])):
-                crop_df = generate.generate_crops(x, savedir=self.config["crop_dir"])
-                test_crops.append(crop_df)   
-                
-        if not os.path.exists("{}/processed/filtered_data.csv".format(self.data_dir)):
-            filter_data()
-        if not os.path.exists("{}/processed/train_points.shp".format(self.data_dir)):
-            train_test_split(config=self.config)
+        if regenerate == False and not os.path.exists("{}/processed/train_points.shp".format(self.data_dir)):
+            return ValueError("regenerate is {}, but {}/processed/train_points.shp does not exist".format(regenerate, self.data_dir))
         if not os.path.exists("{}/processed/train_crowns.shp".format(self.data_dir)):
-            #test data
+            #test data 
             generate.points_to_crowns(
                 field_data="{}/processed/train_points.csv".format(self.data_dir),
                 rgb_dir=self.config["rgb_sensor_pool"],

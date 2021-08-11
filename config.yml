@@ -3,7 +3,7 @@
 ### Data Generation
 #path to sensor data regex, recursive wildcards allowed
 rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif 
-CHM_sensor_pool: /orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif
+CHM_pool: /orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif
 #NEON data filtering
 min_stem_diameter: 10
 #Minimum number of samples per class to be included
