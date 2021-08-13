@@ -145,7 +145,12 @@ def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, dee
 
     #create deepforest model
     deepforest_model = main.deepforest()
-    deepforest_model.use_release()
+    
+    #check local release if there is no internet
+    try:
+        deepforest_model.use_release()
+    except:
+        deepforest_model.use_release(check_release=False)
 
     #Filter data and process
     plot_data = df[df.plotID == plot]
@@ -160,7 +165,7 @@ def points_to_crowns(
     rgb_dir, 
     savedir,
     raw_box_savedir,
-    client=None):
+    client):
     """Prepare NEON field data int
     Args:
         field_data: shp file with location and class of each field collected point
@@ -189,6 +194,12 @@ def points_to_crowns(
         futures.append(future)
         
     wait(futures)
+    
+    results = []
+    for x in futures:
+        results.append(x.result())
+        
+    return futures
     
 def generate_crops(shapefile, rgb_pool, crop_save_dir):
     """

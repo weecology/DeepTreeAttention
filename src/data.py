@@ -139,7 +139,10 @@ def train_test_split(shp, savedir, config, client = None, regenerate=False):
         train = saved_train
         test = saved_test
     else:
-        test_plots = gpd.read_file("{}/processed/test.shp".format(savedir)).plotID.unique()
+        try:
+            test_plots = gpd.read_file("{}/test.shp".format(savedir)).plotID.unique()
+        except:
+            raise FileNotFoundError("regenerate is {}, but {} is not found".format(regenerate, "{}/test.shp".format(savedir)))
         test = shp[shp.plotID.isin(test_plots)]
         train = shp[~shp.plotID.isin(test_plots)]
                 
@@ -175,34 +178,8 @@ def train_test_split(shp, savedir, config, client = None, regenerate=False):
     #Give tests a unique index to match against
     test["point_id"] = test.index.values
     train["point_id"] = train.index.values
-            
-    if not config["iterations"]==1:    
-        test.to_file("{}/test.shp".format(savedir))
-        train.to_file("{}/train.shp".format(savedir))    
     
-        #Create files for indexing
-        #Create and save a new species and site label dict
-        unique_species_labels = np.concatenate([train.taxonID.unique(), test.taxonID.unique()])
-        unique_species_labels = np.unique(unique_species_labels)
-        
-        species_label_dict = {}
-        for index, label in enumerate(unique_species_labels):
-            species_label_dict[label] = index
-        pd.DataFrame(species_label_dict.items(), columns=["taxonID","label"]).to_csv("{}/processed/species_class_labels.csv".format(savedir))    
-        
-        unique_site_labels = np.concatenate([train.siteID.unique(), test.siteID.unique()])
-        unique_site_labels = np.unique(unique_site_labels)
-        site_label_dict = {}
-        for index, label in enumerate(unique_site_labels):
-            site_label_dict[label] = index
-        pd.DataFrame(site_label_dict.items(), columns=["siteID","label"]).to_csv("{}/processed/site_class_labels.csv".format(savedir))  
-        
-        unique_domain_labels = np.concatenate([train.domainID.unique(), test.domainID.unique()])
-        unique_domain_labels = np.unique(unique_domain_labels)
-        domain_label_dict = {}
-        for index, label in enumerate(unique_domain_labels):
-            domain_label_dict[label] = index
-        pd.DataFrame(domain_label_dict.items(), columns=["domainID","label"]).to_csv("{}/processed/domain_class_labels.csv".format(savedir))  
+    return train, test
         
 def read_config(config_path):
     """Read config yaml file"""
@@ -222,11 +199,18 @@ class TreeData(LightningDataModule):
     The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
     Use regenerate=True to override this behavior in setup()
     """
-    def __init__(self):
+    def __init__(self, config=None, data_dir=None):
         super().__init__()
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
-        self.data_dir = "{}/data/".format(self.ROOT)
-        self.config = read_config("{}/config.yml".format(self.ROOT))        
+        if data_dir is None:
+            self.data_dir = "{}/data/".format(self.ROOT)
+        else:
+            self.data_dir = data_dir            
+            
+        if config is None:
+            self.config = read_config("{}/config.yml".format(self.ROOT))   
+        else:
+            self.config = config
     
     def setup(self, csv_file, regenerate = False, client = None):
         #Clean data from raw csv, regenerate from scratch or check for progress and complete
@@ -247,30 +231,36 @@ class TreeData(LightningDataModule):
             #Filter points based on LiDAR height
             df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
             df = df.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_samples"])
-            train, test = train_test_split(df,savedir="{}/processed".format(self.data_dir),config=self.config)   
+            train, test = train_test_split(df,savedir="{}/processed".format(self.data_dir),config=self.config, regenerate=regenerate)   
             
             test.to_file("{}/processed/test_points.shp".format(self.data_dir))
             train.to_file("{}/processed/train_points.shp".format(self.data_dir))
-                
-        if regenerate == False and not os.path.exists("{}/processed/train_points.shp".format(self.data_dir)):
-            return ValueError("regenerate is {}, but {}/processed/train_points.shp does not exist".format(regenerate, self.data_dir))
-        if not os.path.exists("{}/processed/train_crowns.shp".format(self.data_dir)):
+            
+            #Store class labels
+            unique_species_labels = np.concatenate([train.taxonID.unique(), test.taxonID.unique()])
+            unique_species_labels = np.unique(unique_species_labels)
+            
+            self.species_label_dict = {}
+            for index, label in enumerate(unique_species_labels):
+                self.species_label_dict[label] = index
+        
             #test data 
             generate.points_to_crowns(
-                field_data="{}/processed/train_points.csv".format(self.data_dir),
+                field_data="{}/processed/train_points.shp".format(self.data_dir),
                 rgb_dir=self.config["rgb_sensor_pool"],
-                savedir=self.config["crown_dir"],
-                raw_box_savedir=self.config["crown_dir"],        
+                savedir=self.config["crop_dir"],
+                raw_box_savedir=self.config["crop_dir"], 
+                client=client
             )
                         
             generate.points_to_crowns(
                 field_data="{}/processed/test_points.shp".format(self.data_dir),
                 rgb_dir=self.config["rgb_sensor_pool"],
-                savedir=self.config["crown_dir"],
-                raw_box_savedir=self.config["crown_dir"],        
+                savedir=self.config["crop_dir"],
+                raw_box_savedir=self.config["crop_dir"], 
+                client=client
             )
             
-        if len(glob.glob(self.config["crop_dir"])) == 0:
             generate.generate_crops(savedir=self.config["crop_dir"])            
 
     def train_dataloader(self):
