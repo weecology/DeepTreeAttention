@@ -23,7 +23,7 @@ def test_spatial_attention(conv_dimension):
     m = Hang2020.spatial_attention(filters=conv_dimension[1], classes=10)
     image = torch.randn(conv_dimension)
     attention, scores = m(image)
-    assert scores.shape[0] == (20,10)
+    assert scores.shape == (20,10)
     
 @pytest.mark.parametrize("conv_dimension",[(20,32,11,11),(20,64,5,5),(20,128,2,2)])
 def test_spectral_attention(conv_dimension):
@@ -31,23 +31,23 @@ def test_spectral_attention(conv_dimension):
     m = Hang2020.spectral_attention(filters=conv_dimension[1], classes=10)
     image = torch.randn(conv_dimension)
     attention, scores = m(image)
-    assert scores.shape[0] == (20,10)
+    assert scores.shape == (20,10)
     
 def test_spectral_network():
     m = Hang2020.spectral_network(bands=369, classes=10)
     image = torch.randn(20, 369, 11, 11)
     output = m(image)
     assert len(output) == 3
-    assert output[0].shape[0] == (20,10)
+    assert output[0].shape == (20,10)
     
 def test_spatial_network():
     m = Hang2020.spatial_network(bands=369, classes=10)
     image = torch.randn(20, 369, 11, 11)
     output = m(image)
     assert len(output) == 3
-    assert output[0].shape[0] == (20,10)
+    assert output[0].shape == (20,10)
     
-def test_vanilleCNN():
+def test_vanillaCNN():
     m = Hang2020.vanilla_CNN(bands=369, classes=10)
     image = torch.randn(20, 369, 11, 11)
     output = m(image)

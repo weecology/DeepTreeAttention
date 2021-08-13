@@ -41,15 +41,14 @@ class vanilla_CNN(Module):
         self.conv3 = conv_module(in_channels=64, filters=128, maxpool_kernel=(2,2)) 
         # The size of the fully connected layer Assumes a certain band convo, TODO make this flexible by band number.
         self.class_pool = nn.MaxPool2d((1,1))        
-        self.fc1 = nn.Linear(in_features=10240,out_features=classes)
+        self.fc1 = nn.Linear(in_features=512,out_features=classes)
     
     def forward(self, x):
         """Take an input image and run the conv blocks, flatten the output and return softmax features"""
         x = self.conv1(x)
         x = self.conv2(x, pool = True)
         x = self.conv3(x, pool = True)
-        x = self.class_pool(x)
-        x = torch.flatten(x)        
+        x = torch.flatten(x, start_dim=1)        
         x = self.fc1(x)
         class_scores = F.softmax(x)
         
@@ -80,12 +79,12 @@ class spatial_attention(Module):
         #Add a classfication branch with max pool based on size of the layer
         if filters == 32:
             pool_size = (4, 4)
-            in_features = 2560
+            in_features = 128
         elif filters == 64:
-            in_features = 5120
+            in_features = 256
             pool_size = (2, 2)
         elif filters == 128:
-            in_features = 10240
+            in_features = 512
             pool_size = (1, 1)
         else:
             raise ValueError("Unknown filter size for max pooling")
@@ -110,7 +109,7 @@ class spatial_attention(Module):
         
         # Classification Head
         pooled_attention_features = self.class_pool(attention)
-        pooled_attention_features = torch.flatten(pooled_attention_features)
+        pooled_attention_features = torch.flatten(pooled_attention_features, start_dim=1)
         class_features = self.fc1(pooled_attention_features)
         class_scores = F.softmax(class_features)
         
@@ -128,12 +127,9 @@ class spectral_attention(Module):
         # Weak Attention with adaptive kernel size based on size of incoming feature map
         if filters == 32:
             kernel_size = 3
-            in_features = 640
         elif filters == 64:
             kernel_size = 5
-            in_features = 1280
         elif filters == 128:
-            in_features = 2560
             kernel_size = 7
         else:
             raise ValueError(
@@ -142,8 +138,8 @@ class spectral_attention(Module):
         self.attention_conv1 = nn.Conv1d(in_channels=filters, out_channels=filters, kernel_size=kernel_size, padding="same")
         self.attention_conv2 = nn.Conv1d(in_channels=filters, out_channels=filters, kernel_size=kernel_size, padding="same")
         
-        #Does this pool size change base on in_features?
-        self.fc1 = nn.Linear(in_features=in_features, out_features=classes)
+        #TODO Does this pool size change base on in_features?
+        self.fc1 = nn.Linear(in_features=filters, out_features=classes)
         
     def forward(self, x):
         """Calculate attention and class scores for batch"""
@@ -161,7 +157,7 @@ class spectral_attention(Module):
         
         # Classification Head
         pooled_attention_features = global_spectral_pool(attention)
-        pooled_attention_features = torch.flatten(pooled_attention_features)
+        pooled_attention_features = torch.flatten(pooled_attention_features, start_dim=1)
         class_features = self.fc1(pooled_attention_features)
         class_scores = F.softmax(class_features)
         
