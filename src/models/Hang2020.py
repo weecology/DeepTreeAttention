@@ -30,6 +30,31 @@ class conv_module(Module):
         
         return x
 
+class vanilla_CNN(Module):
+    """
+    A baseline model without spectral convolutions or spatial/spectral attention 
+    """
+    def __init__(self, bands, classes):
+        super(vanilla_CNN, self).__init__()
+        self.conv1 = conv_module(in_channels=bands, filters=32)
+        self.conv2 = conv_module(in_channels=32, filters=64, maxpool_kernel=(2,2))
+        self.conv3 = conv_module(in_channels=64, filters=128, maxpool_kernel=(2,2)) 
+        # The size of the fully connected layer Assumes a certain band convo, TODO make this flexible by band number.
+        self.class_pool = nn.MaxPool2d((1,1))        
+        self.fc1 = nn.Linear(in_features=10240,out_features=classes)
+    
+    def forward(self, x):
+        """Take an input image and run the conv blocks, flatten the output and return softmax features"""
+        x = self.conv1(x)
+        x = self.conv2(x, pool = True)
+        x = self.conv3(x, pool = True)
+        x = self.class_pool(x)
+        x = torch.flatten(x)        
+        x = self.fc1(x)
+        class_scores = F.softmax(x)
+        
+        return class_scores
+    
 class spatial_attention(Module):
     """
     Learn cross band spatial features with a set of convolutions and spectral pooling attention layers
