@@ -40,7 +40,6 @@ class vanilla_CNN(Module):
         self.conv2 = conv_module(in_channels=32, filters=64, maxpool_kernel=(2,2))
         self.conv3 = conv_module(in_channels=64, filters=128, maxpool_kernel=(2,2)) 
         # The size of the fully connected layer Assumes a certain band convo, TODO make this flexible by band number.
-        self.class_pool = nn.MaxPool2d((1,1))        
         self.fc1 = nn.Linear(in_features=512,out_features=classes)
     
     def forward(self, x):

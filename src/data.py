@@ -1,18 +1,22 @@
 #Ligthning data module
+from . import __file__
+from distributed import as_completed
 import glob
 import geopandas as gpd
-from distributed import as_completed
 import numpy as np
 import os
 import pandas as pd
 from pytorch_lightning import LightningDataModule
 from src import generate
-from . import __file__
-from src import dataset 
-from src import start_cluster
 from src import CHM
 from shapely.geometry import Point
 import torch
+from torch.utils.data import Dataset
+
+class TreeDataset(Dataset):
+    def __init__(self, csv_file):
+        pass
+
 import yaml
         
 def filter_data(path, config):
@@ -193,6 +197,11 @@ def read_config(config_path):
 
     return config
 
+#Dataset class
+class TreeDataset(Dataset):
+    def __init__(self, csv_file):
+        pass
+
 class TreeData(LightningDataModule):
     """
     Lightning data module to convert raw NEON data into HSI pixel crops based on the config.yml file. 
@@ -245,26 +254,30 @@ class TreeData(LightningDataModule):
                 self.species_label_dict[label] = index
         
             #test data 
-            generate.points_to_crowns(
+            train_crowns = generate.points_to_crowns(
                 field_data="{}/processed/train_points.shp".format(self.data_dir),
                 rgb_dir=self.config["rgb_sensor_pool"],
                 savedir=self.config["crop_dir"],
                 raw_box_savedir=self.config["crop_dir"], 
                 client=client
             )
-                        
-            generate.points_to_crowns(
+            
+            train_annotations = generate.generate_crops(train_crowns, savedir=self.config["crop_dir"])            
+            train_annotations.to_csv("{}/processed/test.csv".format(self.data_dir))
+            
+            test_crowns = generate.points_to_crowns(
                 field_data="{}/processed/test_points.shp".format(self.data_dir),
                 rgb_dir=self.config["rgb_sensor_pool"],
                 savedir=self.config["crop_dir"],
                 raw_box_savedir=self.config["crop_dir"], 
                 client=client
             )
-            
-            generate.generate_crops(savedir=self.config["crop_dir"])            
+        
+            test_annotations = generate.generate_crops(test_crowns, savedir=self.config["crop_dir"])            
+            test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir))
 
     def train_dataloader(self):
-        ds = dataset.TreeDataset(csv_file = "{}/processed/train.csv".format(self.ROOT))
+        ds = TreeDataset(csv_file = "{}/processed/train.csv".format(self.ROOT))
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],
@@ -275,7 +288,7 @@ class TreeData(LightningDataModule):
         return data_loader
     
     def val_dataloader(self):
-        ds = dataset.TreeDataset(csv_file = "{}/processed/test.csv".format(self.ROOT))
+        ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.ROOT))
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],

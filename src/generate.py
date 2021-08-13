@@ -159,6 +159,8 @@ def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, dee
     #Write merged boxes to file as an interim piece of data to inspect.
     predicted_trees.to_file("{}/{}_boxes.shp".format(savedir, plot))
     raw_boxes.to_file("{}/{}_boxes.shp".format(raw_box_savedir, plot))
+    
+    return predicted_trees
 
 def points_to_crowns(
     field_data,
@@ -198,10 +200,12 @@ def points_to_crowns(
     results = []
     for x in futures:
         results.append(x.result())
-        
-    return futures
     
-def generate_crops(shapefile, rgb_pool, crop_save_dir):
+    results = pd.concat(results)
+    
+    return results
+    
+def generate_crops(gdf, rgb_pool, crop_save_dir):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:
@@ -212,7 +216,6 @@ def generate_crops(shapefile, rgb_pool, crop_save_dir):
        annotations: pandas dataframe of filenames and individual IDs to link with data
     """
     
-    gdf = gpd.read_file(shapefile)
     rgb_path = find_sensor_path(lookup_pool = rgb_pool, bounds = gdf.total_bounds)            
     annotations = []
     for index, row in gdf.iterrows():
@@ -230,5 +233,6 @@ def generate_crops(shapefile, rgb_pool, crop_save_dir):
         annotation = pd.DataFrame({"image_path":filenames, "individual":ids})
         annotations.append(annotation)
     annotations = pd.concat(annotations)
+    
     return annotations
     
