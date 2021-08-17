@@ -288,13 +288,14 @@ class TreeData(LightningDataModule):
                 client=client
             )
             
+            img_pool = glob.glob(self.config["HSI_sensor_pool"])
             train_annotations = generate.generate_crops(
                 train_crowns,
                 savedir=self.config["crop_dir"],
                 label_dict=self.species_label_dict,
-                img_pool=self.config["HSI_sensor_pool"]
+                img_pool=img_pool
             )            
-            train_annotations.to_csv("{}/processed/test.csv".format(self.data_dir))
+            train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir))
             
             test_crowns = generate.points_to_crowns(
                 field_data="{}/processed/test_points.shp".format(self.data_dir),
@@ -308,7 +309,7 @@ class TreeData(LightningDataModule):
                 test_crowns,
                 savedir=self.config["crop_dir"],
                 label_dict=self.species_label_dict,
-                img_pool=self.config["HSI_sensor_pool"]
+                img_pool=img_pool
             )            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir))
 

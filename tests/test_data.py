@@ -4,6 +4,7 @@ from src import generate
 import glob
 import geopandas as gpd
 import pytest
+import pandas as pd
 
 import os
 from distributed import Client
@@ -17,6 +18,7 @@ def config(tmpdir):
     config["min_CHM_height"] = None
     config["iterations"] = 1
     config["rgb_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
+    config["HSI_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
     config["min_samples"] = 1
     config["crop_dir"] = tmpdir
     
@@ -27,6 +29,12 @@ def test_TreeData_setup(config):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)
     data_module = data.TreeData(config=config, data_dir="{}/tests/data".format(ROOT))
     data_module.setup(csv_file=csv_file, regenerate=True, client=None)
+    test = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
+    train = pd.read_csv("{}/tests/data/processed/train.csv".format(ROOT))
+    
+    assert not test.empty
+    assert not train.empty
+    assert not any(test.image_path.unique() == train.image_path.unique())
     
 def test_TreeDataset(tmpdir):
     data_path = "{}/tests/data/crown.shp".format(ROOT)
