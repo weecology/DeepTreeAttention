@@ -11,9 +11,9 @@ Implementation of Hang et al. 2020 [Hyperspectral Image Classification with Atte
 
 ## Road map
 
-- [] Data Generation: Convert NEON field data into crowns -> pixels for mapping
-- [] Baseline Model: A vanilla 2D CNN score for computing comet environment, metrics and figures
-- [] 3D CNN with Attention
+- [ ] Data Generation: Convert NEON field data into crowns -> pixels for mapping
+- [ ] Baseline Model: A vanilla 2D CNN score for computing comet environment, metrics and figures
+- [ ] 3D CNN with Attention
 
 After this there are many different routes including weak label learning, self-supervised contrastive learning and other psuedo-labeling approaches
 
@@ -44,3 +44,5 @@ Project Organization
 --------
 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+
+# Citation
