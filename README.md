@@ -43,6 +43,17 @@ Project Organization
 
 --------
 
+# Data Module
+
+This repo contains a pytorch lightning data module for reproducibility. The goal of the project is to make it easy to share with others within our research group, but we welcome contributions from outside the community. While all data is public, it is VERY large (>20TB) and cannot be easily shared. If you want to reproduce this work, you will need to download the majority of NEON's camera, HSI and CHM data and change the paths in the config file. For the 'raw' NEON tree stem data see data/raw/neon_vst_2021.csv. The data module starts from this state, which are x,y locations for each tree. It then performs the following actions.
+
+1. Filters the data to represent trees over 3m with sufficient number of training samples
+2. Extract the LiDAR derived canopy height and compares it to the field measured height. Trees that are below the canopy are excluded based on the min_CHM_diff parameter in the config.
+3. Splits the training and test x,y data such that field plots are either in training or test.
+4. For each x,y location the crown is predicted by our tree detection algorithm (DeepForest - https://deepforest.readthedocs.io/).
+5. Crops of each tree are created and divided into pixel windows for pixel-level prediction.
+
+ 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
 
 # Citation
