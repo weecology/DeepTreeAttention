@@ -7,9 +7,7 @@ import pytest
 import pandas as pd
 
 import os
-from distributed import Client
 ROOT = os.path.dirname(os.path.dirname(data.__file__))
-
 
 @pytest.fixture()
 def config(tmpdir):
@@ -44,9 +42,12 @@ def test_TreeDataset(config,tmpdir):
     #Train loader
     data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/train.csv".format(ROOT))
     image, label = data_loader[0]
+    assert image.shape == (config["window_size"], config["window_size"],3)
     
     #Test loader
-    data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/test.csv".format(ROOT))
+    data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/test.csv".format(ROOT), train=False)
     image = data_loader[0]
+    assert image.shape == (config["window_size"], config["window_size"],3)
+    
     annotations = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
     assert len(data_loader) == annotations.shape[0]    

@@ -55,7 +55,6 @@ This repo contains a pytorch lightning data module for reproducibility. The goal
 4. For each x,y location the crown is predicted by our tree detection algorithm (DeepForest - https://deepforest.readthedocs.io/).
 5. Crops of each tree are created and divided into pixel windows for pixel-level prediction.
 
- 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
 
 # Pytorch Lightning Training Module (data.TreeModel)

@@ -27,6 +27,8 @@ window_size: 11
 gpus:
 workers: 0
 batch_size: 64
+bands:
+classes:
 train:
     crown_dir:
     fast_dev_run: False

@@ -1,18 +1,23 @@
-#Lightning Module
-from src import utils
+#Lightning Data Module
+import os
 from pytorch_lightning import LightningModule
-from pytorch_lightning import Trainer
+from src import data
+from . import __file__
 
 class TreeModel(LightningModule):
-    def __init__(self,*args, **kwargs):
+    """A pytorch lightning data module
+    Args:
+        model (str): Model to use. See the models/ directory. The name is the filename, each model should take in the same data loader
+    """
+    def __init__(self,model,config=None, *args, **kwargs):
         super().__init__()
     
-        #read config
-        self.config = utils.read_config()
+        self.ROOT = os.path.dirname(os.path.dirname(__file__))    
+        if config is None:
+            self.config = data.read_config("{}/config.yml".format(self.ROOT))   
+        else:
+            self.config = config
         
-        #create model
-    def create_trainer(self, comet_logger=None):
-        """Create a trainer from the config file parameters"""
-        self.trainer = Trainer(logger=comet_logger, gpus=self.config["gpus"], fast_dev_run=self.config["train"]["fast_dev_run"], accelerator=self.config["train"]["accelerator"])
+        #Create model 
+        self.model = model(bands = config["bands"], classes=config["classes"])
         
-        return self.trainer

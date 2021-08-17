@@ -7,7 +7,7 @@ import geopandas as gpd
 import numpy as np
 import os
 import pandas as pd
-from pytorch_lightning import LightningDataModule, LightningModule
+from pytorch_lightning import LightningDataModule
 from src import generate
 from src import CHM
 from shapely.geometry import Point
@@ -215,11 +215,13 @@ class TreeDataset(Dataset):
         image = cv2.imread(image_path)
         image = torch.from_numpy(image)
         
-        #TODO albumentations 
         if self.train:
             label = self.annotations.label.loc[index]
-        
-        return image, label
+            label = torch.tensor(label)
+            
+            return image, label
+        else:
+            return image
 
 class TreeData(LightningDataModule):
     """
@@ -336,7 +338,3 @@ class TreeData(LightningDataModule):
         )
         
         return data_loader
-    
-class TreeModel(LightningModule):
-    def __init__(self, *args, **kwargs):
-        pass
