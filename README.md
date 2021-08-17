@@ -3,6 +3,12 @@ DeepTreeAttention
 
 Tree Species Prediction for the National Ecological Observatory Network (NEON)
 
+Implementation of Hang et al. 2020 [Hyperspectral Image Classification with Attention Aided CNNs](https://arxiv.org/abs/2005.11977) for tree species prediction.
+
+# Model Architecture
+
+![](www/model.png)
+
 ## Road map
 
 - [] Data Generation: Convert NEON field data into crowns -> pixels for mapping
