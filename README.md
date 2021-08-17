@@ -43,7 +43,7 @@ Project Organization
 
 --------
 
-# Data Module
+# Pytorch Lightning Data Module (data.TreeData)
 
 This repo contains a pytorch lightning data module for reproducibility. The goal of the project is to make it easy to share with others within our research group, but we welcome contributions from outside the community. While all data is public, it is VERY large (>20TB) and cannot be easily shared. If you want to reproduce this work, you will need to download the majority of NEON's camera, HSI and CHM data and change the paths in the config file. For the 'raw' NEON tree stem data see data/raw/neon_vst_2021.csv. The data module starts from this state, which are x,y locations for each tree. It then performs the following actions.
 
@@ -55,5 +55,7 @@ This repo contains a pytorch lightning data module for reproducibility. The goal
 
  
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+
+# Pytorch Lightning Training Module (data.TreeModel)
 
 # Citation
