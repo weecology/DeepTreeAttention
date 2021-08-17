@@ -167,7 +167,7 @@ def points_to_crowns(
     rgb_dir, 
     savedir,
     raw_box_savedir,
-    client):
+    client=None):
     """Prepare NEON field data int
     Args:
         field_data: shp file with location and class of each field collected point
@@ -182,55 +182,60 @@ def points_to_crowns(
     plot_names = df.plotID.unique()
     
     rgb_pool = glob.glob(rgb_dir, recursive=True)
-    
-    futures = []
-    for plot in plot_names:
-        future = client.submit(
-            run,
-            plot=plot,
-            df=df,
-            rgb_pool=rgb_pool,
-            savedir=savedir,
-            raw_box_savedir=raw_box_savedir
-        )
-        futures.append(future)
+    results = []    
+    if client:
+        futures = []
+        for plot in plot_names:
+            future = client.submit(
+                run,
+                plot=plot,
+                df=df,
+                rgb_pool=rgb_pool,
+                savedir=savedir,
+                raw_box_savedir=raw_box_savedir
+            )
+            futures.append(future)
+            
+        wait(futures)
         
-    wait(futures)
-    
-    results = []
-    for x in futures:
-        results.append(x.result())
-    
+        for x in futures:
+            results.append(x.result())
+    else:
+        for plot in plot_names:
+            result = run(plot=plot, df=df, savedir=savedir, raw_box_savedir=raw_box_savedir, rgb_pool=rgb_pool)
+            results.append(result)
     results = pd.concat(results)
     
     return results
     
-def generate_crops(gdf, rgb_pool, crop_save_dir):
+def generate_crops(gdf, img_pool, savedir, label_dict):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:
-        shapefile: a .shp with geometry objects and an individual column
-        crop_save_dir: path to save image crops
-        rgb_glob: glob to search rgb files.
+        shapefile: a .shp with geometry objects and an taxonID column
+        savedir: path to save image crops
+        img_pool: glob to search remote sensing files. This can be either RGB of .tif hyperspectral data, as long as it can be read by rasterio
+        label_dict (dict): taxonID -> numeric order
     Returns:
        annotations: pandas dataframe of filenames and individual IDs to link with data
     """
     
-    rgb_path = find_sensor_path(lookup_pool = rgb_pool, bounds = gdf.total_bounds)            
+    img_path = find_sensor_path(lookup_pool = img_pool, bounds = gdf.total_bounds)            
     annotations = []
     for index, row in gdf.iterrows():
         counter = 0
-        crops = patches.crown_to_pixel(crown=row["geometry"], rgb_path=rgb_path)
+        crops = patches.crown_to_pixel(crown=row["geometry"], img_path=img_path)
         filenames = []
-        ids = []
+        labels = []
         for x in crops:
-            filename = "{}/{}_{}.png".format(crop_save_dir, row["individual"], counter)
+            label = label_dict[row["taxonID"]]
+            labels.append(label)
+            filename = "{}/{}_{}.png".format(savedir,row["individual"], counter)
             channnels_last = np.rollaxis(x,0,3)
             cv2.imwrite(filename, channnels_last)
             filenames.append(filename)
-            ids.append(row["individual"])
             counter =+1
-        annotation = pd.DataFrame({"image_path":filenames, "individual":ids})
+        annotation = pd.DataFrame({"image_path":filenames, "label":labels})
         annotations.append(annotation)
     annotations = pd.concat(annotations)
     

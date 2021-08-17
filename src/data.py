@@ -1,22 +1,18 @@
 #Ligthning data module
 from . import __file__
 from distributed import as_completed
+import cv2
 import glob
 import geopandas as gpd
 import numpy as np
 import os
 import pandas as pd
-from pytorch_lightning import LightningDataModule
+from pytorch_lightning import LightningDataModule, LightningModule
 from src import generate
 from src import CHM
 from shapely.geometry import Point
 import torch
 from torch.utils.data import Dataset
-
-class TreeDataset(Dataset):
-    def __init__(self, csv_file):
-        pass
-
 import yaml
         
 def filter_data(path, config):
@@ -93,6 +89,10 @@ def sample_plots(shp, test_fraction=0.1, min_samples=5):
     #split by plot level
     test_plots = shp.plotID.drop_duplicates().sample(frac=test_fraction)
     
+    #in case of debug, there may be not enough plots to sample, grab the first for testing
+    if test_plots.empty:
+        test_plots = [shp.plotID.drop_duplicates().values[0]]
+    
     test = shp[shp.plotID.isin(test_plots)]
     train = shp[~shp.plotID.isin(test_plots)]
     
@@ -133,7 +133,7 @@ def train_test_split(shp, savedir, config, client = None, regenerate=False):
                     most_species = len(train.taxonID.unique())            
         else:
             for x in np.arange(config["iterations"]):
-                train, test = sample_plots(shp)
+                train, test = sample_plots(shp, min_samples=config["min_samples"], test_fraction=config["test_fraction"])
                 if len(train.taxonID.unique()) > most_species:
                     print(len(train.taxonID.unique()))
                     saved_train = train
@@ -199,8 +199,27 @@ def read_config(config_path):
 
 #Dataset class
 class TreeDataset(Dataset):
-    def __init__(self, csv_file):
-        pass
+    """A csv file with a path to image crop and label
+    Args:
+       csv_file: path to csv file with image_path and label
+    """
+    def __init__(self, csv_file, train=True):
+        self.annotations = pd.read_csv(csv_file)
+        self.train = train
+        
+    def __len__(self):
+        return self.annotations.shape[0]
+        
+    def __getitem__(self, index):
+        image_path = self.annotations.image_path.loc[index]
+        image = cv2.imread(image_path)
+        image = torch.from_numpy(image)
+        
+        #TODO albumentations 
+        if self.train:
+            label = self.annotations.label.loc[index]
+        
+        return image, label
 
 class TreeData(LightningDataModule):
     """
@@ -209,6 +228,11 @@ class TreeData(LightningDataModule):
     Use regenerate=True to override this behavior in setup()
     """
     def __init__(self, config=None, data_dir=None):
+        """
+        Args:
+            config: optional config file to override
+            data_dir: override data location, defaults to ROOT            
+        """
         super().__init__()
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
         if data_dir is None:
@@ -220,6 +244,8 @@ class TreeData(LightningDataModule):
             self.config = read_config("{}/config.yml".format(self.ROOT))   
         else:
             self.config = config
+            
+        #To do choose
     
     def setup(self, csv_file, regenerate = False, client = None):
         #Clean data from raw csv, regenerate from scratch or check for progress and complete
@@ -262,7 +288,12 @@ class TreeData(LightningDataModule):
                 client=client
             )
             
-            train_annotations = generate.generate_crops(train_crowns, savedir=self.config["crop_dir"])            
+            train_annotations = generate.generate_crops(
+                train_crowns,
+                savedir=self.config["crop_dir"],
+                label_dict=self.species_label_dict,
+                img_pool=self.config["HSI_sensor_pool"]
+            )            
             train_annotations.to_csv("{}/processed/test.csv".format(self.data_dir))
             
             test_crowns = generate.points_to_crowns(
@@ -273,7 +304,12 @@ class TreeData(LightningDataModule):
                 client=client
             )
         
-            test_annotations = generate.generate_crops(test_crowns, savedir=self.config["crop_dir"])            
+            test_annotations = generate.generate_crops(
+                test_crowns,
+                savedir=self.config["crop_dir"],
+                label_dict=self.species_label_dict,
+                img_pool=self.config["HSI_sensor_pool"]
+            )            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir))
 
     def train_dataloader(self):
@@ -297,3 +333,7 @@ class TreeData(LightningDataModule):
         )
         
         return data_loader
+    
+class TreeModel(LightningModule):
+    def __init__(self, *args, **kwargs):
+        pass

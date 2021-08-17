@@ -21,10 +21,10 @@ def row_col_from_crown(crown, src):
     
     return img_centroids
                     
-def crown_to_pixel(crown, rgb_path, width=11, height=11):
+def crown_to_pixel(crown, img_path, width=11, height=11):
     """Given a crown box, create the pixel crops"""
     crown_patches = []    
-    src = rasterio.open(rgb_path)    
+    src = rasterio.open(img_path)    
     img_centroids = row_col_from_crown(crown, src)
     for indices in img_centroids:
         row, col = indices

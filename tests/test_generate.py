@@ -15,14 +15,14 @@ plot_data = gpd.read_file(data_path)
 
 def test_predict_trees():
     m = main.deepforest()
-    m.use_release()
+    m.use_release(check_release=False)
     boxes = generate.predict_trees(deepforest_model=m, rgb_path=rgb_path, bounds=plot_data.total_bounds)
     assert not boxes.empty 
 
 def test_empty_plot():
     #DeepForest prediction
     deepforest_model = main.deepforest()
-    deepforest_model.use_release()
+    deepforest_model.use_release(check_release=False)
     boxes = generate.predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_path, bounds=plot_data.total_bounds)
 
     #fake offset boxes by adding a scalar to the geometry
@@ -52,7 +52,7 @@ def test_empty_plot():
 def test_process_plot():
     df = gpd.read_file(data_path)
     deepforest_model = main.deepforest()
-    deepforest_model.use_release()
+    deepforest_model.use_release(check_release=False)
     
     merged_boxes, boxes = generate.process_plot(plot_data=df, rgb_pool=rgb_pool, deepforest_model=deepforest_model)
     assert df.shape[0] >= merged_boxes.shape[0]
@@ -74,5 +74,5 @@ def test_generate_crops(tmpdir):
     data_path = "{}/tests/data/crown.shp".format(ROOT)
     rgb_pool = glob.glob("{}/tests/data/*.tif".format(ROOT))
     gdf = gpd.read_file(data_path)
-    annotations = generate.generate_crops(gdf=gdf, rgb_pool=rgb_pool, crop_save_dir=tmpdir)
+    annotations = generate.generate_crops(gdf=gdf, rgb_pool=rgb_pool, crop_save_dir=tmpdir, label_dict={"ACRU":0,"BELE":1})
     assert not annotations.empty

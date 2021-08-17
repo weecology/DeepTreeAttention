@@ -1,13 +1,17 @@
 #Config
 
 ### Data Generation
-#path to sensor data regex, recursive wildcards allowed
+#glob path to sensor data, recursive wildcards allowed
 rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif 
+HSI_sensor_pool: /orange/ewhite/NeonData/**/Reflectance/*.h5 
 CHM_pool: /orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif
+
 #NEON data filtering
 min_stem_diameter: 10
 #Minimum number of samples per class to be included
 min_samples: 1
+#The proportion of plotIDs to use test
+test_fraction: 0.1
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
 iterations: 50
 # minimum CHM height, leave blank to skip CHM filtering
