@@ -213,7 +213,10 @@ class TreeDataset(Dataset):
     def __getitem__(self, index):
         image_path = self.annotations.image_path.loc[index]
         image = cv2.imread(image_path)
-        image = torch.from_numpy(image)
+        #Pytorch is channels first
+        image = np.rollaxis(image, 2, 0)
+        #TODO normalize between 0-1? Right now just forcing to float
+        image = torch.from_numpy(image.astype(np.float32))
         
         if self.train:
             label = self.annotations.label.loc[index]
@@ -229,7 +232,7 @@ class TreeData(LightningDataModule):
     The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
     Use regenerate=True to override this behavior in setup()
     """
-    def __init__(self, config=None, data_dir=None):
+    def __init__(self, csv_file, regenerate = False, client = None, config=None, data_dir=None):
         """
         Args:
             config: optional config file to override
@@ -237,6 +240,9 @@ class TreeData(LightningDataModule):
         """
         super().__init__()
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
+        self.regenerate=regenerate
+        self.csv_file = csv_file
+        self.client = client
         if data_dir is None:
             self.data_dir = "{}/data/".format(self.ROOT)
         else:
@@ -246,12 +252,10 @@ class TreeData(LightningDataModule):
             self.config = read_config("{}/config.yml".format(self.ROOT))   
         else:
             self.config = config
-            
-        #To do choose
-    
-    def setup(self, csv_file, regenerate = False, client = None):
+                
+    def setup(self,stage=None):
         #Clean data from raw csv, regenerate from scratch or check for progress and complete
-        if regenerate:
+        if self.regenerate:
             #remove any previous runs
             try:
                 os.remove("{}/processed/test_points.shp".format(self.data_dir))
@@ -264,11 +268,11 @@ class TreeData(LightningDataModule):
                 pass
                 
             #Convert raw neon data to x,y tree locatins
-            df = filter_data(csv_file, config=self.config)
+            df = filter_data(self.csv_file, config=self.config)
             #Filter points based on LiDAR height
             df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
             df = df.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_samples"])
-            train, test = train_test_split(df,savedir="{}/processed".format(self.data_dir),config=self.config, regenerate=regenerate)   
+            train, test = train_test_split(df,savedir="{}/processed".format(self.data_dir),config=self.config, regenerate=self.regenerate)   
             
             test.to_file("{}/processed/test_points.shp".format(self.data_dir))
             train.to_file("{}/processed/train_points.shp".format(self.data_dir))
@@ -287,7 +291,7 @@ class TreeData(LightningDataModule):
                 rgb_dir=self.config["rgb_sensor_pool"],
                 savedir=self.config["crop_dir"],
                 raw_box_savedir=self.config["crop_dir"], 
-                client=client
+                client=self.client
             )
             
             img_pool = glob.glob(self.config["HSI_sensor_pool"])
@@ -305,7 +309,7 @@ class TreeData(LightningDataModule):
                 rgb_dir=self.config["rgb_sensor_pool"],
                 savedir=self.config["crop_dir"],
                 raw_box_savedir=self.config["crop_dir"], 
-                client=client
+                client=self.client
             )
         
             test_annotations = generate.generate_crops(
@@ -318,7 +322,7 @@ class TreeData(LightningDataModule):
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir))
 
     def train_dataloader(self):
-        ds = TreeDataset(csv_file = "{}/processed/train.csv".format(self.ROOT))
+        ds = TreeDataset(csv_file = "{}/processed/train.csv".format(self.data_dir))
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],
@@ -329,7 +333,7 @@ class TreeData(LightningDataModule):
         return data_loader
     
     def val_dataloader(self):
-        ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.ROOT))
+        ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir))
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],

@@ -47,8 +47,14 @@ def test_spatial_network():
     assert len(output) == 3
     assert output[0].shape == (20,10)
     
-def test_vanillaCNN():
+def test_vanillaCNN_HSI():
     m = Hang2020.vanilla_CNN(bands=369, classes=10)
     image = torch.randn(20, 369, 11, 11)
     output = m(image)
     assert output.shape == (20,10)
+    
+def test_vanillaCNN_RGB():
+    m = Hang2020.vanilla_CNN(bands=3, classes=10)
+    image = torch.randn(20, 3, 11, 11)
+    output = m(image)
+    assert output.shape == (20,10)    

@@ -30,6 +30,7 @@ batch_size: 64
 bands:
 classes:
 train:
+    lr: 0.001
     crown_dir:
     fast_dev_run: False
     accelerator: ddp
