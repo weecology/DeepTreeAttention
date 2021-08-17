@@ -208,7 +208,7 @@ def points_to_crowns(
     
     return results
     
-def generate_crops(gdf, img_pool, savedir, label_dict):
+def generate_crops(gdf, img_pool, savedir, label_dict, size):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:
@@ -216,6 +216,7 @@ def generate_crops(gdf, img_pool, savedir, label_dict):
         savedir: path to save image crops
         img_pool: glob to search remote sensing files. This can be either RGB of .tif hyperspectral data, as long as it can be read by rasterio
         label_dict (dict): taxonID -> numeric order
+        size: number of pixel width and height for the windows
     Returns:
        annotations: pandas dataframe of filenames and individual IDs to link with data
     """
@@ -224,7 +225,7 @@ def generate_crops(gdf, img_pool, savedir, label_dict):
     annotations = []
     for index, row in gdf.iterrows():
         counter = 0
-        crops = patches.crown_to_pixel(crown=row["geometry"], img_path=img_path)
+        crops = patches.crown_to_pixel(crown=row["geometry"], img_path=img_path, width=size, height=size)
         filenames = []
         labels = []
         for x in crops:

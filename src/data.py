@@ -293,7 +293,8 @@ class TreeData(LightningDataModule):
                 train_crowns,
                 savedir=self.config["crop_dir"],
                 label_dict=self.species_label_dict,
-                img_pool=img_pool
+                img_pool=img_pool,
+                size=self.config["window_size"]                
             )            
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir))
             
@@ -309,7 +310,8 @@ class TreeData(LightningDataModule):
                 test_crowns,
                 savedir=self.config["crop_dir"],
                 label_dict=self.species_label_dict,
-                img_pool=img_pool
+                img_pool=img_pool,
+                size=self.config["window_size"]
             )            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir))
 

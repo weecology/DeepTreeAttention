@@ -36,24 +36,17 @@ def test_TreeData_setup(config):
     assert not train.empty
     assert not any(test.image_path.unique() == train.image_path.unique())
     
-def test_TreeDataset(tmpdir):
-    data_path = "{}/tests/data/crown.shp".format(ROOT)
-    rgb_pool = glob.glob("{}/tests/data/*.tif".format(ROOT))
-    gdf = gpd.read_file(data_path)
-    annotations = generate.generate_crops(gdf=gdf, rgb_pool=rgb_pool, crop_save_dir=tmpdir, label_dict={"ACRU":0,"BELE":1})   
-    annotations.to_csv("{}/train.csv".format(tmpdir))
-    
+def test_TreeDataset(config,tmpdir):
+    csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)
+    data_module = data.TreeData(config=config, data_dir="{}/tests/data".format(ROOT))
+    data_module.setup(csv_file=csv_file, regenerate=True, client=None)
+
     #Train loader
-    data_loader = data.TreeDataset(csv_file="{}/train.csv".format(tmpdir))
+    data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/train.csv".format(ROOT))
     image, label = data_loader[0]
-    assert len(data_loader) == annotations.shape[0]
     
     #Test loader
-    data_loader = data.TreeDataset(csv_file="{}/test.csv".format(tmpdir))
+    data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/test.csv".format(ROOT))
     image = data_loader[0]
+    annotations = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
     assert len(data_loader) == annotations.shape[0]    
-    
-    
-def test_TreeData_evaluate(tmpdir):
-    #dask client to test
-    data_module = data.TreeData(config=config, data_dir="{}/tests/data".format(ROOT))

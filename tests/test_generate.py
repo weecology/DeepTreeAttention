@@ -74,5 +74,5 @@ def test_generate_crops(tmpdir):
     data_path = "{}/tests/data/crown.shp".format(ROOT)
     rgb_pool = glob.glob("{}/tests/data/*.tif".format(ROOT))
     gdf = gpd.read_file(data_path)
-    annotations = generate.generate_crops(gdf=gdf, rgb_pool=rgb_pool, crop_save_dir=tmpdir, label_dict={"ACRU":0,"BELE":1})
+    annotations = generate.generate_crops(gdf=gdf, img_pool=rgb_pool, savedir=tmpdir, label_dict={"ACRU":0,"BELE":1}, size =11)
     assert not annotations.empty

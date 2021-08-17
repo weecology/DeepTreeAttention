@@ -20,6 +20,8 @@ min_CHM_height: 1
 min_CHM_diff: 4
 #Directoy to store cropped images from crowns
 crop_dir: 
+#Pixel size of the crowns. Square crops around each pixel of size x are used
+window_size: 11
 
 #Network Parameters
 gpus:
