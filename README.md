@@ -1,7 +1,7 @@
 DeepTreeAttention
 ==============================
 
-[![Github Actions](https://github.com/Weecology/DeepTreeAttention/actions/workflows/pytest.yml/badge.svg)][https://github.com/weecology/DeepTreeAttention/actions]
+![Github Actions](https://github.com/Weecology/DeepTreeAttention/actions/workflows/pytest.yml/badge.svg)
 
 Tree Species Prediction for the National Ecological Observatory Network (NEON)
 
