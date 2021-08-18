@@ -1,7 +1,7 @@
 DeepTreeAttention
 ==============================
 
-![Github Actions](https://github.com/Weecology/DeepTreeAttention/actions/workflows/pytest.yml/badge.svg)
+[![Github Actions](https://github.com/Weecology/DeepTreeAttention/actions/workflows/pytest.yml/badge.svg)](https://github.com/Weecology/DeepTreeAttention/actions/)
 
 Tree Species Prediction for the National Ecological Observatory Network (NEON)
 
@@ -11,9 +11,9 @@ Implementation of Hang et al. 2020 [Hyperspectral Image Classification with Atte
 
 ![](www/model.png)
 
-## Road map
+## Road map ([see V1.0 milestone](https://github.com/weecology/DeepTreeAttention/milestone/1))
 
-- [ ] Data Generation: Convert NEON field data into crowns -> pixels for mapping
+- [X] Data Generation: Convert NEON field data into crowns -> pixels for mapping
 - [ ] Baseline Model: A vanilla 2D CNN score for computing comet environment, metrics and figures
 - [ ] 3D CNN with Attention
 
@@ -60,6 +60,10 @@ This repo contains a pytorch lightning data module for reproducibility. The goal
 
 Training is handled by the TreeModel class which loads a model from the models/ folder, reads the config file and runs the training. The evaluation metrics and images are computed and put of the comet dashboard
 
+## Evaluation metrics
+
+The training metrics are computed at the pixel level during training. At the end of training, predictions are made for each crown using majority rule among pixels. The crown-level accuracy is rhen computed across classes.
+
 # Dev Guide
 
 In general, major changes or improvements should be made on a new git branch. Only core improvements should be made on the main branch. If a change leads to higher scores, please create a pull request.
@@ -75,10 +79,9 @@ m = main.TreeModel(model=Hang2020.vanilla_CNN)
 Any model can be specified provided it follows the following input and output arguments
 
 ```
-
 class myModel(Module):
     """
-    A baseline model without spectral convolutions or spatial/spectral attention 
+    Model description
     """
     def __init__(self, bands, classes):
         super(myModel, self).__init__()
