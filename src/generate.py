@@ -156,6 +156,9 @@ def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, dee
     plot_data = df[df.plotID == plot]
     predicted_trees, raw_boxes = process_plot(plot_data, rgb_pool, deepforest_model)
     
+    if predicted_trees.empty:
+        return None
+    
     #Write merged boxes to file as an interim piece of data to inspect.
     predicted_trees.to_file("{}/{}_boxes.shp".format(savedir, plot))
     raw_boxes.to_file("{}/{}_boxes.shp".format(raw_box_savedir, plot))
@@ -220,7 +223,6 @@ def generate_crops(gdf, img_pool, savedir, label_dict, size):
     Returns:
        annotations: pandas dataframe of filenames and individual IDs to link with data
     """
-    
     img_path = find_sensor_path(lookup_pool = img_pool, bounds = gdf.total_bounds)            
     annotations = []
     for index, row in gdf.iterrows():
