@@ -235,7 +235,7 @@ def generate_crops(gdf, img_pool, savedir, label_dict, size):
             channnels_last = np.rollaxis(x,0,3)
             cv2.imwrite(filename, channnels_last)
             filenames.append(filename)
-            counter =+1
+            counter = counter + 1
         annotation = pd.DataFrame({"image_path":filenames, "label":labels})
         annotations.append(annotation)
     annotations = pd.concat(annotations)

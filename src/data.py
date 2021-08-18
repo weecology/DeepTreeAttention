@@ -197,6 +197,15 @@ def read_config(config_path):
 
     return config
 
+def load_image(img_path):
+    image = cv2.imread(img_path)
+    #Pytorch is channels first
+    image = np.rollaxis(image, 2, 0)
+    #TODO normalize between 0-1? Right now just forcing to float
+    image = torch.from_numpy(image.astype(np.float32))
+    
+    return image
+
 #Dataset class
 class TreeDataset(Dataset):
     """A csv file with a path to image crop and label
@@ -212,11 +221,7 @@ class TreeDataset(Dataset):
         
     def __getitem__(self, index):
         image_path = self.annotations.image_path.loc[index]
-        image = cv2.imread(image_path)
-        #Pytorch is channels first
-        image = np.rollaxis(image, 2, 0)
-        #TODO normalize between 0-1? Right now just forcing to float
-        image = torch.from_numpy(image.astype(np.float32))
+        image = load_image(image_path)
         
         if self.train:
             label = self.annotations.label.loc[index]
@@ -302,7 +307,7 @@ class TreeData(LightningDataModule):
                 img_pool=img_pool,
                 size=self.config["window_size"]                
             )            
-            train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir))
+            train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)
             
             test_crowns = generate.points_to_crowns(
                 field_data="{}/processed/test_points.shp".format(self.data_dir),
@@ -319,7 +324,19 @@ class TreeData(LightningDataModule):
                 img_pool=img_pool,
                 size=self.config["window_size"]
             )            
-            test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir))
+            test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
+        else:
+            test = pd.read_csv("{}/processed/test_points.shp".format(self.data_dir))
+            train = pd.read_csv("{}/processed/train_points.shp".format(self.data_dir))
+            
+            #Store class labels
+            unique_species_labels = np.concatenate([train.taxonID.unique(), test.taxonID.unique()])
+            unique_species_labels = np.unique(unique_species_labels)
+            
+            self.species_label_dict = {}
+            for index, label in enumerate(unique_species_labels):
+                self.species_label_dict[label] = index
+                    
 
     def train_dataloader(self):
         ds = TreeDataset(csv_file = "{}/processed/train.csv".format(self.data_dir))

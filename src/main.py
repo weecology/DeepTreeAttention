@@ -1,8 +1,12 @@
 #Lightning Data Module
 import os
+import numpy as np
 from pytorch_lightning import LightningModule
+import pandas as pd
 from torch.nn import functional as F
 from torch import optim
+import torch
+import torchmetrics
 
 from src import data
 from . import __file__
@@ -12,7 +16,7 @@ class TreeModel(LightningModule):
     Args:
         model (str): Model to use. See the models/ directory. The name is the filename, each model should take in the same data loader
     """
-    def __init__(self,model,config=None, *args, **kwargs):
+    def __init__(self,model, label_dict, config=None, *args, **kwargs):
         super().__init__()
     
         self.ROOT = os.path.dirname(os.path.dirname(__file__))    
@@ -21,16 +25,26 @@ class TreeModel(LightningModule):
         else:
             self.config = config
         
+        self.index_to_label = {}
+        for x in label_dict:
+            self.index_to_label[label_dict[x]] = x 
+        
         #Create model 
         self.model = model(bands = config["bands"], classes=config["classes"])
         
+        #Metrics
+        micro_recall = torchmetrics.Accuracy(average="micro")
+        macro_recall = torchmetrics.Accuracy(average="macro", num_classes=config["classes"])
+        top_k_recall = torchmetrics.Accuracy(average="micro",top_k=config["top_k"])
+        self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall,"Macro Accuracy":macro_recall,"Top {} Accuracy".format(config["top_k"]): top_k_recall})
+    
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
         """
         #allow for empty data if data augmentation is generated
         images, y = batch
         y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat, y)        
+        loss = F.cross_entropy(y_hat, y)    
         
         return loss
     
@@ -42,9 +56,12 @@ class TreeModel(LightningModule):
         y_hat = self.model.forward(images)
         loss = F.cross_entropy(y_hat, y)        
         
-        # Log loss
+        # Log loss and metrics
         self.log("val_loss", loss, on_epoch=True)
-            
+        
+        output = self.metrics(y_hat, y) 
+        self.log_dict(output)
+        
         return loss
     
     def configure_optimizers(self):
@@ -63,5 +80,54 @@ class TreeModel(LightningModule):
                                                          eps=1e-08)
         
         return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
+    
+    def predict_image(self, img_path):
+        """Given an image path, load image and predict"""
+        self.model.eval()        
+        image = data.load_image(img_path)
+        batch = torch.unsqueeze(image, dim=0)
+        y = self.model(batch).detach()
+        index = np.argmax(y, 1).detach().numpy()[0]
+        label = self.index_to_label[index]
+        
+        return label
+        
+    def predict_xy(self, coordinates):
+        """Given an x,y location, find sensor data and predict tree crown class
+        Args:
+            coordinates (tuple): x,y tuple in utm coordinates
+        Returns:
+            label: species taxa label
+        """
+        pass
+    
+    def predict_crown(self, img):
+        """Given an image, traverse the pixels and create crown prediction
+        Args:
+            img (np.array): a numpy array of image data
+        Returns:
+            label: species taxa label
+        """
+        pass
+    
+    def predict_file(self, csv_file):
+        """Given a file with paths to image crops, create crown predictions 
+        The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
+        unique identifier for each crown and counter is 0..n pixel crops that belong to that crown.
+        
+        Args: 
+            csv_file: path to csv file
+        Returns:
+            results: pandas dataframe with columns crown and species label
+        """
+        df = pd.read_csv(csv_file)
+        df["crown"] = df.image_path.apply(lambda x: os.path.basename(x).split("_")[0])
+        df["label"] = df.image_path.apply(lambda x: self.predict_image(x))
+        
+        #Majority vote per crown
+        results = df.groupby(["crown"]).agg(lambda x: x.mode()[0]).reset_index()
+        results = results[["crown","label"]]
+        
+        return results
 
     

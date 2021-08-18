@@ -36,3 +36,7 @@ train:
     accelerator: ddp
 validation:
     crown_dir:
+
+#Evaluation config
+#Top k class recall score
+top_k: 5
