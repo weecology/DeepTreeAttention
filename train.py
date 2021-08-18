@@ -14,7 +14,7 @@ comet_logger = CometLogger(api_key=COMET_KEY,
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 
 #Create datamodule
-data_module = data.TreeData(csv_file="data/raw/neon_vst_2021.csv", regenerate=True)
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True)
 
 #Create model
 data_module.setup()
