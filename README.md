@@ -75,10 +75,9 @@ m = main.TreeModel(model=Hang2020.vanilla_CNN)
 Any model can be specified provided it follows the following input and output arguments
 
 ```
-
 class myModel(Module):
     """
-    A baseline model without spectral convolutions or spatial/spectral attention 
+    Model description
     """
     def __init__(self, bands, classes):
         super(myModel, self).__init__()
