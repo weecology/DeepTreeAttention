@@ -2,6 +2,7 @@
 import comet_ml
 from src import main
 from src import data
+from src.models import Hang2020
 from pytorch_lightning import Trainer
 import os
 import subprocess
@@ -16,7 +17,8 @@ comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['gi
 data_module = data.TreeData(csv_file="data/raw/neon_vst_2021.csv", regenerate=True)
 
 #Create model
-m = main.TreeModel()
+data_module.setup()
+m = main.TreeModel(model=Hang2020.vanilla_CNN(bands=data_module.config["bands"], classes=data_module.num_classes))
 comet_logger.experiment.log_parameters(m.config)
 
 #Create trainer
@@ -27,5 +29,11 @@ trainer = Trainer(
     logger=comet_logger)
 
 trainer.fit(m, datamodule=data_module)
-crown_metrics = m.evaluate_crowns()
+results, crown_metrics = m.evaluate_crowns("data/processed/test.csv")
 comet_logger.experiment.log_metrics(crown_metrics)
+
+#Confusion matrix
+comet_logger.experiment.log_confusion_matrix(
+    results.true_label,
+    results.label,
+    labels=list(data_module.species_label_dict.keys()))  

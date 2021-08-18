@@ -285,6 +285,7 @@ class TreeData(LightningDataModule):
             #Store class labels
             unique_species_labels = np.concatenate([train.taxonID.unique(), test.taxonID.unique()])
             unique_species_labels = np.unique(unique_species_labels)
+            self.num_classes = len(unique_species_labels)
             
             self.species_label_dict = {}
             for index, label in enumerate(unique_species_labels):
@@ -336,7 +337,7 @@ class TreeData(LightningDataModule):
             self.species_label_dict = {}
             for index, label in enumerate(unique_species_labels):
                 self.species_label_dict[label] = index
-                    
+            self.num_classes = len(self.species_label_dict)
 
     def train_dataloader(self):
         ds = TreeDataset(csv_file = "{}/processed/train.csv".format(self.data_dir))

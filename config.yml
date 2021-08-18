@@ -19,23 +19,20 @@ min_CHM_height: 1
 #Minimum difference between measured height and CHM height
 min_CHM_diff: 4
 #Directoy to store cropped images from crowns
-crop_dir: 
+crop_dir: /orange/ewhite/b.weinstein/DeepTreeAttention/crops
 #Pixel size of the crowns. Square crops around each pixel of size x are used
 window_size: 11
 
 #Network Parameters
-gpus:
-workers: 0
+gpus: 1
+workers: 1
 batch_size: 64
-bands:
+bands: 369
 classes:
 train:
     lr: 0.001
-    crown_dir:
     fast_dev_run: False
     accelerator: ddp
-validation:
-    crown_dir:
 
 #Evaluation config
 #Top k class recall score

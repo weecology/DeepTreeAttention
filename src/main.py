@@ -135,7 +135,9 @@ class TreeModel(LightningModule):
         """Crown level measure of accuracy
         Args:
             csv_file: ground truth csv with image_path and label columns
-        Retur
+        Returns:
+            df: results dataframe
+            metric_dict: metric -> value
         """
         ground_truth = pd.read_csv(csv_file)
         #convert to taxon label
@@ -148,7 +150,7 @@ class TreeModel(LightningModule):
         crown_micro = torchmetrics.functional.accuracy(preds=torch.tensor(df.label.values),target=torch.tensor(df.true_label.values), average="micro")
         crown_macro = torchmetrics.functional.accuracy(preds=torch.tensor(df.label.values),target=torch.tensor(df.true_label.values), average="macro", num_classes=self.config["classes"])
         
-        return {"crown_micro":crown_micro,"crown_macro":crown_macro}
+        return df, {"crown_micro":crown_micro,"crown_macro":crown_macro}
     
         
         

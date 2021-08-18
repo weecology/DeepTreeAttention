@@ -20,8 +20,8 @@ ulimit -c 0
 
 source activate DeepTreeAttention
 
-cd ~/BirdDetector/
-module load git
+cd ~/DeepTreeAttention/
+module load git gcc
 git checkout $1
 python train.py
 EOT
