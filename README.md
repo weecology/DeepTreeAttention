@@ -1,7 +1,7 @@
 DeepTreeAttention
 ==============================
 
-![Github Actions](https://github.com/Weecology/DeepTreeAttention/actions/workflows/pytest.yml/badge.svg)
+[![Github Actions](https://github.com/Weecology/DeepTreeAttention/actions/workflows/pytest.yml/badge.svg)](https://github.com/Weecology/DeepTreeAttention/actions/)
 
 Tree Species Prediction for the National Ecological Observatory Network (NEON)
 
@@ -11,9 +11,9 @@ Implementation of Hang et al. 2020 [Hyperspectral Image Classification with Atte
 
 ![](www/model.png)
 
-## Road map
+## Road map ([see V1.0 milestone](https://github.com/weecology/DeepTreeAttention/milestone/1))
 
-- [ ] Data Generation: Convert NEON field data into crowns -> pixels for mapping
+- [X] Data Generation: Convert NEON field data into crowns -> pixels for mapping
 - [ ] Baseline Model: A vanilla 2D CNN score for computing comet environment, metrics and figures
 - [ ] 3D CNN with Attention
 
