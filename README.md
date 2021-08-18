@@ -25,7 +25,6 @@ Project Organization
     ├── LICENSE
     ├── README.md          <- The top-level README for developers using this project.
     ├── data
-    │   ├── interim        <- Intermediate data that has been transformed.
     │   ├── processed      <- The final, canonical data sets for modeling.
     │   └── raw            <- The original, immutable data dump.
     │
@@ -59,4 +58,35 @@ This repo contains a pytorch lightning data module for reproducibility. The goal
 
 # Pytorch Lightning Training Module (data.TreeModel)
 
-# Citation
+Training is handled by the TreeModel class which loads a model from the models/ folder, reads the config file and runs the training. The evaluation metrics and images are computed and put of the comet dashboard
+
+# Dev Guide
+
+In general, major changes or improvements should be made on a new git branch. Only core improvements should be made on the main branch. If a change leads to higher scores, please create a pull request.
+
+## Model Architectures
+
+The TreeModel class takes in a create model function
+
+```
+m = main.TreeModel(model=Hang2020.vanilla_CNN)
+```
+
+Any model can be specified provided it follows the following input and output arguments
+
+```
+
+class myModel(Module):
+    """
+    A baseline model without spectral convolutions or spatial/spectral attention 
+    """
+    def __init__(self, bands, classes):
+        super(myModel, self).__init__()
+        <define model architecture here>
+
+    def forward(self, x):
+        <forward method for computing loss goes here>
+        class_scores = F.softmax(x)
+        
+        return class_scores
+```

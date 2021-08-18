@@ -27,7 +27,8 @@ def config(tmpdir):
     
 def test_fit(config):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)    
-    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=True, data_dir="{}/tests/data".format(ROOT))    
+    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=True, data_dir="{}/tests/data".format(ROOT))  
+    dm.setup()
     m = main.TreeModel(model=Hang2020.vanilla_CNN, config=config, label_dict=dm.species_label_dict)
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m,datamodule=dm)

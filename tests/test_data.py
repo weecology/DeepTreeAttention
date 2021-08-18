@@ -32,7 +32,7 @@ def test_TreeData_setup(config):
     
     assert not test.empty
     assert not train.empty
-    assert not any(test.image_path.unique() == train.image_path.unique())
+    assert not any([x in train.image_path.unique() for x in test.image_path.unique()])
     
 def test_TreeDataset(config,tmpdir):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)
