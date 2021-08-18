@@ -2,6 +2,7 @@
 import comet_ml
 from src import main
 from src import data
+from src import start_cluster
 from src.models import Hang2020
 from pytorch_lightning import Trainer
 import os
@@ -14,7 +15,9 @@ comet_logger = CometLogger(api_key=COMET_KEY,
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 
 #Create datamodule
-data_module = data.TreeData(csv_file="data/raw/neon_vst_2021.csv", regenerate=True)
+client = start_cluster.start(cpus=30)
+data_module = data.TreeData(csv_file="data/raw/neon_vst_2021.csv", regenerate=True, client=client)
+client.close()
 
 #Create model
 data_module.setup()
