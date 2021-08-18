@@ -42,4 +42,11 @@ def test_predict_file(config):
     input_data = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))    
     assert set(df.columns) == set(["crown","label"])
     assert df.shape[0] == len(input_data.image_path.apply(lambda x: os.path.basename(x).split("_")[0]).unique())
-    
+
+def test_evaluate_crowns(config):
+    csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)     
+    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=True, data_dir="{}/tests/data".format(ROOT)) 
+    dm.setup()
+    m = main.TreeModel(model=Hang2020.vanilla_CNN, config=config, label_dict=dm.species_label_dict)
+    df = m.evaluate_crowns("{}/tests/data/processed/test.csv".format(ROOT))
+    assert len(df) == 2

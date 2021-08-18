@@ -25,6 +25,7 @@ class TreeModel(LightningModule):
         else:
             self.config = config
         
+        self.label_to_index = label_dict
         self.index_to_label = {}
         for x in label_dict:
             self.index_to_label[label_dict[x]] = x 
@@ -129,5 +130,30 @@ class TreeModel(LightningModule):
         results = results[["crown","label"]]
         
         return results
+    
+    def evaluate_crowns(self, csv_file):
+        """Crown level measure of accuracy
+        Args:
+            csv_file: ground truth csv with image_path and label columns
+        Retur
+        """
+        ground_truth = pd.read_csv(csv_file)
+        #convert to taxon label
+        ground_truth["true_label"] = ground_truth.label
+        ground_truth["crown"] = ground_truth.image_path.apply(lambda x: os.path.basename(x).split("_")[0])
+        ground_truth = ground_truth.groupby(["crown"]).agg(lambda x: x.mode()[0]).reset_index()[["crown","true_label"]]
+        results = self.predict_file(csv_file)
+        results["label"] = results["label"].apply(lambda x: self.label_to_index[x])
+        df = results.merge(ground_truth)
+        crown_micro = torchmetrics.functional.accuracy(preds=torch.tensor(df.label.values),target=torch.tensor(df.true_label.values), average="micro")
+        crown_macro = torchmetrics.functional.accuracy(preds=torch.tensor(df.label.values),target=torch.tensor(df.true_label.values), average="macro", num_classes=self.config["classes"])
+        
+        return {"crown_micro":crown_micro,"crown_macro":crown_macro}
+    
+        
+        
+        
+        
+        
 
     

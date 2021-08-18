@@ -27,4 +27,5 @@ trainer = Trainer(
     logger=comet_logger)
 
 trainer.fit(m, datamodule=data_module)
-trainer.test(test_dataloaders=data_module.val_dataloader())
+crown_metrics = m.evaluate_crowns()
+comet_logger.experiment.log_metrics(crown_metrics)
