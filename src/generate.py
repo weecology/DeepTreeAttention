@@ -102,7 +102,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
     
     boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
 
-    if boxes.empty:
+    if boxes is None:
         raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
     
     #Merge results with field data, buffer on edge 
