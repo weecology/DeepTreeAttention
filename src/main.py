@@ -1,5 +1,6 @@
 #Lightning Data Module
 import geopandas as gpd
+import glob as glob
 import os
 import numpy as np
 from pytorch_lightning import LightningModule
@@ -114,9 +115,18 @@ class TreeModel(LightningModule):
             savedir=None,
             raw_box_savedir=None
         )        
+        img_pool = glob.glob(self.config["HSI_sensor_pool"], recursive=True)
+        df = generate.generate_crops(crowns,
+                                     img_pool,
+                                     savedir=self.tmpdir,
+                                     label_dict=self.label_to_index, size=self.config["window_size"])
+        df["label"] = df.image_path.apply(lambda x: self.predict_image(x))
+        index = df["label"].mode()[0]
+        label = self.index_to_label[index]
         
-        #generate.generate_crops(gdf, img_pool, savedir, label_dict, size)
-    
+        return label
+
+        
     def predict_crown(self, img):
         """Given an image, traverse the pixels and create crown prediction
         Args:
