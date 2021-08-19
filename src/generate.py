@@ -160,6 +160,9 @@ def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, dee
         print(e)
         return None
     
+    if predicted_trees.empty:
+        return None
+    
     #Write merged boxes to file as an interim piece of data to inspect.
     predicted_trees.to_file("{}/{}_boxes.shp".format(savedir, plot))
     raw_boxes.to_file("{}/{}_boxes.shp".format(raw_box_savedir, plot))
