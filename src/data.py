@@ -295,12 +295,12 @@ class TreeData(LightningDataModule):
             train_crowns = generate.points_to_crowns(
                 field_data="{}/processed/train_points.shp".format(self.data_dir),
                 rgb_dir=self.config["rgb_sensor_pool"],
-                savedir=self.config["crop_dir"],
-                raw_box_savedir=self.config["crop_dir"], 
+                savedir=None,
+                raw_box_savedir=None, 
                 client=self.client
             )
             
-            img_pool = glob.glob(self.config["HSI_sensor_pool"])
+            img_pool = glob.glob(self.config["HSI_sensor_pool"], recursive=True)
             train_annotations = generate.generate_crops(
                 train_crowns,
                 savedir=self.config["crop_dir"],
@@ -313,8 +313,8 @@ class TreeData(LightningDataModule):
             test_crowns = generate.points_to_crowns(
                 field_data="{}/processed/test_points.shp".format(self.data_dir),
                 rgb_dir=self.config["rgb_sensor_pool"],
-                savedir=self.config["crop_dir"],
-                raw_box_savedir=self.config["crop_dir"], 
+                savedir=None,
+                raw_box_savedir=None, 
                 client=self.client
             )
         

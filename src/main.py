@@ -1,4 +1,5 @@
 #Lightning Data Module
+import geopandas as gpd
 import os
 import numpy as np
 from pytorch_lightning import LightningModule
@@ -7,8 +8,10 @@ from torch.nn import functional as F
 from torch import optim
 import torch
 import torchmetrics
-
+import tempfile
 from src import data
+from src import generate
+from shapely.geometry import Point
 from . import __file__
 
 class TreeModel(LightningModule):
@@ -20,6 +23,7 @@ class TreeModel(LightningModule):
         super().__init__()
     
         self.ROOT = os.path.dirname(os.path.dirname(__file__))    
+        self.tmpdir = tempfile.gettempdir()
         if config is None:
             self.config = data.read_config("{}/config.yml".format(self.ROOT))   
         else:
@@ -38,7 +42,7 @@ class TreeModel(LightningModule):
         macro_recall = torchmetrics.Accuracy(average="macro", num_classes=config["classes"])
         top_k_recall = torchmetrics.Accuracy(average="micro",top_k=config["top_k"])
         self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall,"Macro Accuracy":macro_recall,"Top {} Accuracy".format(config["top_k"]): top_k_recall})
-    
+        
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
         """
@@ -100,7 +104,18 @@ class TreeModel(LightningModule):
         Returns:
             label: species taxa label
         """
-        pass
+        #Write as a temp shapefile
+        gdf = gpd.GeoDataFrame(geometry=[Point(coordinates[0],coordinates[1])])
+        gdf.to_file("{}/temp.shp".format(self.tmpdir))
+        
+        crowns = generate.points_to_crowns(
+            field_data="{}/temp.shp".format(self.tmpdir),
+            rgb_dir=self.config["rgb_sensor_pool"],
+            savedir=None,
+            raw_box_savedir=None
+        )        
+        
+        #generate.generate_crops(gdf, img_pool, savedir, label_dict, size)
     
     def predict_crown(self, img):
         """Given an image, traverse the pixels and create crown prediction

@@ -24,6 +24,7 @@ data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenera
 
 #Create model
 data_module.setup()
+
 #Hash train and test
 train = pd.read_csv("data/processed/train.csv")
 test = pd.read_csv("data/processed/test.csv")
