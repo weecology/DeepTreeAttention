@@ -38,7 +38,7 @@ def predict_trees(deepforest_model, rgb_path, bounds):
     img = np.rollaxis(img, 0,3)
     boxes = deepforest_model.predict_image(image = img, return_plot=False)
     
-    if boxes.empty:
+    if boxes is None:
         return boxes
 
     #subtract origin. Recall that numpy origin is top left! Not bottom left.
@@ -154,9 +154,10 @@ def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, dee
 
     #Filter data and process
     plot_data = df[df.plotID == plot]
-    predicted_trees, raw_boxes = process_plot(plot_data, rgb_pool, deepforest_model)
-    
-    if predicted_trees.empty:
+    try:
+        predicted_trees, raw_boxes = process_plot(plot_data, rgb_pool, deepforest_model)
+    except ValueError as e:
+        print(e)
         return None
     
     #Write merged boxes to file as an interim piece of data to inspect.
