@@ -209,8 +209,11 @@ def points_to_crowns(
             results.append(x.result())
     else:
         for plot in plot_names:
-            result = run(plot=plot, df=df, savedir=savedir, raw_box_savedir=raw_box_savedir, rgb_pool=rgb_pool)
-            results.append(result)
+            try:
+                result = run(plot=plot, df=df, savedir=savedir, raw_box_savedir=raw_box_savedir, rgb_pool=rgb_pool)
+                results.append(result)
+            except Exception as e:
+                print("{} failed with {}".format(plot, e))
     results = pd.concat(results)
     
     return results
