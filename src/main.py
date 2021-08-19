@@ -1,4 +1,5 @@
 #Lightning Data Module
+from . import __file__
 import geopandas as gpd
 import glob as glob
 import os
@@ -13,7 +14,6 @@ import tempfile
 from src import data
 from src import generate
 from shapely.geometry import Point
-from . import __file__
 
 class TreeModel(LightningModule):
     """A pytorch lightning data module

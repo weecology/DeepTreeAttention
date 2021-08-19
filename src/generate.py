@@ -233,7 +233,12 @@ def generate_crops(gdf, img_pool, savedir, label_dict, size):
     Returns:
        annotations: pandas dataframe of filenames and individual IDs to link with data
     """
-    img_path = find_sensor_path(lookup_pool = img_pool, bounds = gdf.total_bounds)            
+    #DeepForest prediction
+    try:
+        img_path = find_sensor_path(lookup_pool = img_pool, bounds = gdf.total_bounds)            
+    except Exception as e:
+        raise ValueError("cannot find matching file in image pool for {}".format(gdf.head()))
+    
     annotations = []
     for index, row in gdf.iterrows():
         counter = 0

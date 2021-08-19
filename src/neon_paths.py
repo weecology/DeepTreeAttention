@@ -52,7 +52,6 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None):
 
     return year_match
 
-
 #def convert_h5(hyperspectral_h5_path, rgb_path, savedir):
     #tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"
     #tif_path = "{}/{}".format(savedir, tif_basename)
