@@ -2,6 +2,7 @@
 from . import __file__
 import geopandas as gpd
 import glob as glob
+from deepforest.main import deepforest
 import os
 import numpy as np
 from pytorch_lightning import LightningModule
@@ -100,42 +101,64 @@ class TreeModel(LightningModule):
         
         return label
         
-    def predict_xy(self, coordinates):
-        """Given an x,y location, find sensor data and predict tree crown class
+    def predict_xy(self, coordinates, fixed_box=True):
+        """Given an x,y location, find sensor data and predict tree crown class. If no predicted crown within 5m an error will be raised (fixed_box=False) or a 1m fixed box will created (fixed_box=True)
         Args:
             coordinates (tuple): x,y tuple in utm coordinates
+            fixed_box (False): If no DeepForest tree is predicted within 5m of centroid, create a 1m fixed box. If false, raise ValueError
         Returns:
             label: species taxa label
         """
         #Predict crown
-        self.model.eval()        
-        gdf = gpd.GeoDataFrame(geometry=[Point(coordinates[0],coordinates[1])])
-        img_pool = glob.glob(self.config["RGB_sensor_pool"], recursive=True)
-        rgb_path = neon_paths.find_sensor_path(lookup_pool=img_pool, bounds=gdf.total_bounds)
-        boxes = generate.predict_trees(rgb_path=rgb_path, bounds=gdf.total_bounds)
-        boxes['geometry'] = boxes.apply(lambda x: box(x.xmin,x.ymin,x.xmax,x.ymax), axis=1)
         
+        gdf = gpd.GeoDataFrame(geometry=[Point(coordinates[0],coordinates[1])])
+        img_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
+        rgb_path = neon_paths.find_sensor_path(lookup_pool=img_pool, bounds=gdf.total_bounds)
+        
+        #DeepForest model to predict crowns
+        deepforest_model = deepforest()
+        deepforest_model.use_release(check_release=False)
+        boxes = generate.predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_path, bounds=gdf.total_bounds, expand=40)
+        boxes['geometry'] = boxes.apply(lambda x: box(x.xmin,x.ymin,x.xmax,x.ymax), axis=1)
+        if boxes.shape[0] > 1:
+            centroid_distances = boxes.centroid.distance(Point(coordinates[0],coordinates[1])).sort_values()
+            centroid_distances = centroid_distances[centroid_distances<5]
+            boxes = boxes[boxes.index == centroid_distances.index[0]]
+        if boxes.empty:
+            if fixed_box:
+                boxes = generate.create_boxes(boxes)
+            else:
+                raise ValueError("No predicted tree centroid within 5 m of point {}, to ignore this error and specify fixed_box=True".format(coordinates))
+            
         #Create pixel crops
+        img_pool = glob.glob(self.config["HSI_sensor_pool"], recursive=True)        
+        sensor_path = neon_paths.find_sensor_path(lookup_pool=img_pool, bounds=gdf.total_bounds)        
         crops = patches.crown_to_pixel(
-            crown=boxes["geometry"],
-            img_path=img_path,
+            crown=boxes["geometry"].values[0],
+            img_path=sensor_path,
             width=self.config["window_size"],
             height=self.config["window_size"])
        
         #Classify pixel crops
+        self.model.eval()                
         predictions = []
         for x in crops:
-            image = data.preprocess_image(x)
-            class_probs = self.model(image)
-            predictions.append(class_probs)
+            #Preprocess starts from channels last
+            image = np.rollaxis(x, 0, 3)
+            image = data.preprocess_image(image)
+            #batch
+            batch = torch.unsqueeze(image, dim=0)            
+            class_probs = self.model(batch)
+            predictions.append(class_probs.detach().numpy())
         
+        predictions = np.vstack(predictions)
+        majority_index = pd.Series(np.argmax(predictions, 1)).mode()[0]
+        label = self.index_to_label[majority_index]
         
-
-        df["label"] = df.image_path.apply(lambda x: self.predict_image(x))
-        index = df["label"].mode()[0]
-        label = self.index_to_label[index]
+        #Average score for selected label
+        average_score = np.mean(predictions[:,majority_index])
         
-        return label
+        return label, average_score
 
         
     def predict_crown(self, img):

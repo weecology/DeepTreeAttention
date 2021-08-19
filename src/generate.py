@@ -11,7 +11,7 @@ from src import patches
 from distributed import wait   
 import cv2
 
-def predict_trees(deepforest_model, rgb_path, bounds):
+def predict_trees(deepforest_model, rgb_path, bounds, expand=40):
     """Predict an rgb path at specific utm bounds
     Args:
         deepforest_model: a deepforest model object used for prediction
@@ -21,11 +21,11 @@ def predict_trees(deepforest_model, rgb_path, bounds):
         """
     #DeepForest is trained on 400m crops, easiest to mantain this approximate size centered on points
     left, bottom, right, top = bounds
-    expand_width = (40 - (right - left))/2
+    expand_width = (expand - (right - left))/2
     left = left - expand_width
     right = right + expand_width
     
-    expand_height = (40 - (top - bottom))/2 
+    expand_height = (expand - (top - bottom))/2 
     bottom = bottom - expand_height
     top = top + expand_height 
     

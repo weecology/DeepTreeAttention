@@ -57,5 +57,6 @@ def test_predict_xy(config):
     dm = data.TreeData(config=config, csv_file=csv_file, regenerate=True, data_dir="{}/tests/data".format(ROOT)) 
     dm.setup()
     m = main.TreeModel(model=Hang2020.vanilla_CNN, config=config, label_dict=dm.species_label_dict)
-    label = m.predict_xy(coordinates=(df.itcEasting[0],df.itcNorthing[0]))
-    assert label in dm.species_label_dict.keys
+    label, score = m.predict_xy(coordinates=(df.itcEasting[0],df.itcNorthing[0]))
+    assert label in dm.species_label_dict.keys()
+    assert score > 0 
