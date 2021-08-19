@@ -62,7 +62,7 @@ Training is handled by the TreeModel class which loads a model from the models/ 
 
 ## Evaluation metrics
 
-The training metrics are computed at the pixel level during training. At the end of training, predictions are made for each crown using majority rule among pixels. The crown-level accuracy is rhen computed across classes.
+The training metrics are computed at the pixel level during training. At the end of training, predictions are made for each crown using majority rule among pixels. The crown-level accuracy is then computed across classes.
 
 # Dev Guide
 

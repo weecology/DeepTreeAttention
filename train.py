@@ -8,6 +8,8 @@ from pytorch_lightning import Trainer
 import os
 import subprocess
 from pytorch_lightning.loggers import CometLogger
+import pandas as pd
+from pandas.util import hash_pandas_object
 
 COMET_KEY = os.getenv("COMET_KEY")
 comet_logger = CometLogger(api_key=COMET_KEY,
@@ -20,6 +22,12 @@ client = None
 data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client)
 #client.close()
 
+
+#Hash train and test
+train = pd.read_csv("data/processed/train.csv")
+test = pd.read_csv("data/processed/test.csv")
+comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(train))
+comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(test))
 
 #Create model
 data_module.setup()
