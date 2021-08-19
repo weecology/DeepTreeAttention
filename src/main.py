@@ -13,7 +13,9 @@ import torchmetrics
 import tempfile
 from src import data
 from src import generate
-from shapely.geometry import Point
+from src import neon_paths
+from src import patches
+from shapely.geometry import Point, box
 
 class TreeModel(LightningModule):
     """A pytorch lightning data module
@@ -105,21 +107,30 @@ class TreeModel(LightningModule):
         Returns:
             label: species taxa label
         """
-        #Write as a temp shapefile
+        #Predict crown
+        self.model.eval()        
         gdf = gpd.GeoDataFrame(geometry=[Point(coordinates[0],coordinates[1])])
-        gdf.to_file("{}/temp.shp".format(self.tmpdir))
+        img_pool = glob.glob(self.config["RGB_sensor_pool"], recursive=True)
+        rgb_path = neon_paths.find_sensor_path(lookup_pool=img_pool, bounds=gdf.total_bounds)
+        boxes = generate.predict_trees(rgb_path=rgb_path, bounds=gdf.total_bounds)
+        boxes['geometry'] = boxes.apply(lambda x: box(x.xmin,x.ymin,x.xmax,x.ymax), axis=1)
         
-        crowns = generate.points_to_crowns(
-            field_data="{}/temp.shp".format(self.tmpdir),
-            rgb_dir=self.config["rgb_sensor_pool"],
-            savedir=None,
-            raw_box_savedir=None
-        )        
-        img_pool = glob.glob(self.config["HSI_sensor_pool"], recursive=True)
-        df = generate.generate_crops(crowns,
-                                     img_pool,
-                                     savedir=self.tmpdir,
-                                     label_dict=self.label_to_index, size=self.config["window_size"])
+        #Create pixel crops
+        crops = patches.crown_to_pixel(
+            crown=boxes["geometry"],
+            img_path=img_path,
+            width=self.config["window_size"],
+            height=self.config["window_size"])
+       
+        #Classify pixel crops
+        predictions = []
+        for x in crops:
+            image = data.preprocess_image(x)
+            class_probs = self.model(image)
+            predictions.append(class_probs)
+        
+        
+
         df["label"] = df.image_path.apply(lambda x: self.predict_image(x))
         index = df["label"].mode()[0]
         label = self.index_to_label[index]

@@ -86,7 +86,7 @@ def create_boxes(plot_data, size=1):
     
     return fixed_boxes
     
-def process_plot(plot_data, rgb_pool, deepforest_model):
+def process_plot(plot_data, rgb_pool, deepforest_model=None):
     """For a given NEON plot, find the correct sensor data, predict trees and associate bounding boxes with field data
     Args:
         plot_data: geopandas dataframe in a utm projection
@@ -99,6 +99,12 @@ def process_plot(plot_data, rgb_pool, deepforest_model):
         rgb_sensor_path = find_sensor_path(bounds=plot_data.total_bounds, lookup_pool=rgb_pool)
     except Exception as e:
         raise ValueError("cannot find RGB sensor for {}".format(plot_data.plotID.unique()))
+    
+    if deepforest_model is None:
+        #IMPORTS at runtime due to dask pickling, kinda ugly.
+        from deepforest import main    
+        deepforest_model = main.deepforest()  
+        deepforest_model.use_release(check_release=False)
     
     boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
 
@@ -233,15 +239,14 @@ def generate_crops(gdf, img_pool, savedir, label_dict, size):
     Returns:
        annotations: pandas dataframe of filenames and individual IDs to link with data
     """
-    #DeepForest prediction
-    try:
-        img_path = find_sensor_path(lookup_pool = img_pool, bounds = gdf.total_bounds)            
-    except Exception as e:
-        raise ValueError("cannot find matching file in image pool for {}".format(gdf.head()))
-    
     annotations = []
     for index, row in gdf.iterrows():
         counter = 0
+        try:
+            img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)            
+        except:
+            print("Cannot find matching file in image pool for {}".format(row.head()))      
+            continue
         crops = patches.crown_to_pixel(crown=row["geometry"], img_path=img_path, width=size, height=size)
         filenames = []
         labels = []

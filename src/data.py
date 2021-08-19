@@ -197,12 +197,18 @@ def read_config(config_path):
 
     return config
 
-def load_image(img_path):
-    image = cv2.imread(img_path)
-    #Pytorch is channels first
+def preprocess_image(image):
+    """Preprocess a loaded image, assumed to be BGR from cv2.imread, channels last"""
     image = np.rollaxis(image, 2, 0)
     #TODO normalize between 0-1? Right now just forcing to float
     image = torch.from_numpy(image.astype(np.float32))
+
+    return image
+
+def load_image(img_path):
+    """Load and preprocess an image for training/prediction"""
+    image = cv2.imread(img_path)
+    image = preprocess_image(image)
     
     return image
 

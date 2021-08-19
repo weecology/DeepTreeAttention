@@ -50,3 +50,12 @@ def test_evaluate_crowns(config):
     m = main.TreeModel(model=Hang2020.vanilla_CNN, config=config, label_dict=dm.species_label_dict)
     df = m.evaluate_crowns("{}/tests/data/processed/test.csv".format(ROOT))
     assert len(df) == 2
+
+def test_predict_xy(config):
+    csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)  
+    df = pd.read_csv(csv_file)
+    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=True, data_dir="{}/tests/data".format(ROOT)) 
+    dm.setup()
+    m = main.TreeModel(model=Hang2020.vanilla_CNN, config=config, label_dict=dm.species_label_dict)
+    label = m.predict_xy(coordinates=(df.itcEasting[0],df.itcNorthing[0]))
+    assert label in dm.species_label_dict.keys
