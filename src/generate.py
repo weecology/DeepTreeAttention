@@ -228,14 +228,9 @@ def points_to_crowns(
     
     return results
 
-def write_crop(row, img_pool, savedir, label_dict, size):
+def write_crop(row, img_path, savedir, label_dict, size):
+    """Wrapper to write a crop"""
     counter = 0
-    try:
-        img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)            
-    except:
-        print("Cannot find matching file in image pool for {}".format(row.head()))      
-        return None
-    
     crops = patches.crown_to_pixel(crown=row["geometry"], img_path=img_path, width=size, height=size)
     filenames = []
     labels = []
@@ -267,10 +262,16 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None):
     annotations = []
     
     img_pool = glob.glob(sensor_glob, recursive=True)
-
+    
     if client:
         for index, row in gdf.iterrows():
-            futures = client.submit(write_crop,row=row,img_pool=img_pool, label_dict=label_dict, size=size, savedir=savedir)
+            try:
+                img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)            
+            except:
+                print("Cannot find matching file in image pool for {}".format(row.head()))      
+                continue
+            
+            futures = client.submit(write_crop,row=row,img_path=img_path, label_dict=label_dict, size=size, savedir=savedir)
         
         wait(futures)
         for x in futures:
@@ -278,7 +279,12 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None):
             annotations.append(annotation)
     else:
         for index, row in gdf.iterrows():
-            annotation = write_crop(row=row, img_pool=img_pool, savedir=savedir, label_dict=label_dict, size=size)
+            try:
+                img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)            
+            except:
+                print("Cannot find matching file in image pool for {}".format(row.head()))      
+                continue      
+            annotation = write_crop(row=row, img_path=img_path, savedir=savedir, label_dict=label_dict, size=size)
             annotations.append(annotation)
     
     annotations = pd.concat(annotations)
