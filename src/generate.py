@@ -305,8 +305,8 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
                 else:
                     img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
                     
-            except:
-                print("Cannot find matching file in image pool for {}".format(row.head()))      
+            except Exception as e:
+                print("Cannot find matching file in image pool for {}".format(e))      
                 continue   
             annotation = write_crop(row=row, img_path=img_path, savedir=savedir, label_dict=label_dict, size=size)
             annotations.append(annotation)
