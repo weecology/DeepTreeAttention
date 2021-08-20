@@ -9,6 +9,7 @@ from src.neon_paths import find_sensor_path
 from src import start_cluster
 from src import patches
 from distributed import wait   
+from deepforest import main    
 import cv2
 
 def predict_trees(deepforest_model, rgb_path, bounds, expand=40):
@@ -100,12 +101,6 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     except Exception as e:
         raise ValueError("cannot find RGB sensor for {}".format(plot_data.plotID.unique()))
     
-    if deepforest_model is None:
-        #IMPORTS at runtime due to dask pickling, kinda ugly.
-        from deepforest import main    
-        deepforest_model = main.deepforest()  
-        deepforest_model.use_release(check_release=False)
-    
     boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
 
     if boxes is None:
@@ -147,16 +142,14 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
 
 def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, deepforest_model=None):
     """wrapper function for dask, see main.py"""
-    from deepforest import main
-
-    #create deepforest model
-    deepforest_model = main.deepforest()
     
-    #check local release if there is no internet
-    try:
-        deepforest_model.use_release()
-    except:
-        deepforest_model.use_release(check_release=False)
+    if deepforest_model is None:
+        from deepforest import main
+        deepforest_model = main.deepforest()
+        try:
+            deepforest_model.use_release()
+        except:
+            deepforest_model.use_release(check_release=False)        
 
     #Filter data and process
     plot_data = df[df.plotID == plot]
@@ -221,9 +214,13 @@ def points_to_crowns(
             except:
                 continue
     else:
+        #IMPORTS at runtime due to dask pickling, kinda ugly.
+        deepforest_model = main.deepforest()  
+        deepforest_model.use_release(check_release=False)
+        
         for plot in plot_names:
             try:
-                result = run(plot=plot, df=df, savedir=savedir, raw_box_savedir=raw_box_savedir, rgb_pool=rgb_pool)
+                result = run(plot=plot, df=df, savedir=savedir, raw_box_savedir=raw_box_savedir, rgb_pool=rgb_pool, deepforest_model=deepforest_model)
                 results.append(result)
             except Exception as e:
                 print("{} failed with {}".format(plot, e))
@@ -254,7 +251,7 @@ def write_crop(row, img_pool, savedir, label_dict, size):
     
     return annotation
 
-def generate_crops(gdf, img_pool, savedir, label_dict, size, client=None):
+def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:
@@ -269,6 +266,8 @@ def generate_crops(gdf, img_pool, savedir, label_dict, size, client=None):
     """
     annotations = []
     
+    img_pool = glob.glob(sensor_glob, recursive=True)
+
     if client:
         for index, row in gdf.iterrows():
             futures = client.submit(write_crop,row=row,img_pool=img_pool, label_dict=label_dict, size=size, savedir=savedir)
@@ -279,7 +278,7 @@ def generate_crops(gdf, img_pool, savedir, label_dict, size, client=None):
             annotations.append(annotation)
     else:
         for index, row in gdf.iterrows():
-            annotation = write_crop(row, img_pool, savedir, label_dict, size)
+            annotation = write_crop(row=row, img_pool=img_pool, savedir=savedir, label_dict=label_dict, size=size)
             annotations.append(annotation)
     
     annotations = pd.concat(annotations)
