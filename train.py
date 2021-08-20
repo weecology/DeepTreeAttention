@@ -29,7 +29,7 @@ test = pd.read_csv("data/processed/test.csv")
 comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(train))
 comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(test))
 
-m = main.TreeModel(model=Hang2020.vanilla_CNN(bands=data_module.config["bands"], classes=data_module.num_classes))
+m = main.TreeModel(model=Hang2020.vanilla_CNN(bands=data_module.config["bands"], classes=data_module.num_classes),label_dict=data_module.label_dict)
 comet_logger.experiment.log_parameters(m.config)
 
 #Create trainer
