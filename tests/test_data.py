@@ -19,6 +19,7 @@ def config(tmpdir):
     config["HSI_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
     config["min_samples"] = 1
     config["crop_dir"] = tmpdir
+    config["convert_h5"] = False
     
     return config
 
