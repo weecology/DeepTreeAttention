@@ -283,7 +283,7 @@ class TreeData(LightningDataModule):
             #Filter points based on LiDAR height
             df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
             df = df.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_samples"])
-            train, test = train_test_split(df,savedir="{}/processed".format(self.data_dir),config=self.config, regenerate=self.regenerate, client=self.client)   
+            train, test = train_test_split(df,savedir="{}/processed".format(self.data_dir),config=self.config, regenerate=self.regenerate, client=None)   
             
             test.to_file("{}/processed/test_points.shp".format(self.data_dir))
             train.to_file("{}/processed/train_points.shp".format(self.data_dir))
