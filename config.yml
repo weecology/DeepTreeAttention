@@ -28,7 +28,6 @@ gpus: 2
 workers: 8
 batch_size: 64
 bands: 3
-classes:
 train:
     lr: 0.001
     fast_dev_run: False

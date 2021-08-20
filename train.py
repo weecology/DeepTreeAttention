@@ -17,10 +17,8 @@ comet_logger = CometLogger(api_key=COMET_KEY,
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 
 #Create datamodule
-client = start_cluster.start(cpus=80)
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client)
-
-#Create model
+#client = start_cluster.start(cpus=80)
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=None)
 data_module.setup()
 
 #Hash train and test
@@ -29,7 +27,7 @@ test = pd.read_csv("data/processed/test.csv")
 comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(train))
 comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(test))
 
-m = main.TreeModel(model=Hang2020.vanilla_CNN(bands=data_module.config["bands"], classes=data_module.num_classes),label_dict=data_module.species_label_dict)
+m = main.TreeModel(model=Hang2020.vanilla_CNN, bands=data_module.config["bands"], classes=data_module.num_classes,label_dict=data_module.species_label_dict)
 comet_logger.experiment.log_parameters(m.config)
 
 #Create trainer
