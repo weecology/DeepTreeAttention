@@ -33,6 +33,8 @@ class TreeModel(LightningModule):
         else:
             self.config = config
         
+        self.classes = classes
+        self.bands = bands
         self.label_to_index = label_dict
         self.index_to_label = {}
         for x in label_dict:
@@ -207,7 +209,7 @@ class TreeModel(LightningModule):
         results["label"] = results["label"].apply(lambda x: self.label_to_index[x])
         df = results.merge(ground_truth)
         crown_micro = torchmetrics.functional.accuracy(preds=torch.tensor(df.label.values),target=torch.tensor(df.true_label.values), average="micro")
-        crown_macro = torchmetrics.functional.accuracy(preds=torch.tensor(df.label.values),target=torch.tensor(df.true_label.values), average="macro", num_classes=self.config["classes"])
+        crown_macro = torchmetrics.functional.accuracy(preds=torch.tensor(df.label.values),target=torch.tensor(df.true_label.values), average="macro", num_classes=self.classes)
         
         return df, {"crown_micro":crown_micro,"crown_macro":crown_macro}
     
