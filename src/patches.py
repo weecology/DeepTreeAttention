@@ -1,6 +1,4 @@
 #Patches
-import geopandas as gpd
-from src import neon_paths
 import rasterio
 
 def row_col_from_crown(crown, src):

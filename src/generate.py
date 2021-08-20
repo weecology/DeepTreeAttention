@@ -215,7 +215,11 @@ def points_to_crowns(
         wait(futures)
         
         for x in futures:
-            results.append(x.result())
+            try:
+                x.result()
+                results.append()
+            except:
+                continue
     else:
         for plot in plot_names:
             try:
@@ -226,8 +230,31 @@ def points_to_crowns(
     results = pd.concat(results)
     
     return results
+
+def write_crop(row, img_pool, savedir, label_dict, size):
+    counter = 0
+    try:
+        img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)            
+    except:
+        print("Cannot find matching file in image pool for {}".format(row.head()))      
+        return None
     
-def generate_crops(gdf, img_pool, savedir, label_dict, size):
+    crops = patches.crown_to_pixel(crown=row["geometry"], img_path=img_path, width=size, height=size)
+    filenames = []
+    labels = []
+    for x in crops:
+        label = label_dict[row["taxonID"]]
+        labels.append(label)
+        filename = "{}/{}_{}.png".format(savedir,row["individual"], counter)
+        channnels_last = np.rollaxis(x,0,3)
+        cv2.imwrite(filename, channnels_last)
+        filenames.append(filename)
+        counter = counter + 1
+    annotation = pd.DataFrame({"image_path":filenames, "label":labels})
+    
+    return annotation
+
+def generate_crops(gdf, img_pool, savedir, label_dict, size, client=None):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:
@@ -236,31 +263,26 @@ def generate_crops(gdf, img_pool, savedir, label_dict, size):
         img_pool: glob to search remote sensing files. This can be either RGB of .tif hyperspectral data, as long as it can be read by rasterio
         label_dict (dict): taxonID -> numeric order
         size: number of pixel width and height for the windows
+        client: optional dask client
     Returns:
        annotations: pandas dataframe of filenames and individual IDs to link with data
     """
     annotations = []
-    for index, row in gdf.iterrows():
-        counter = 0
-        try:
-            img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)            
-        except:
-            print("Cannot find matching file in image pool for {}".format(row.head()))      
-            continue
-        crops = patches.crown_to_pixel(crown=row["geometry"], img_path=img_path, width=size, height=size)
-        filenames = []
-        labels = []
-        for x in crops:
-            label = label_dict[row["taxonID"]]
-            labels.append(label)
-            filename = "{}/{}_{}.png".format(savedir,row["individual"], counter)
-            channnels_last = np.rollaxis(x,0,3)
-            cv2.imwrite(filename, channnels_last)
-            filenames.append(filename)
-            counter = counter + 1
-        annotation = pd.DataFrame({"image_path":filenames, "label":labels})
-        annotations.append(annotation)
+    
+    if client:
+        for index, row in gdf.iterrows():
+            futures = client.submit(write_crop,row=row,img_pool=img_pool, label_dict=label_dict, size=size, savedir=savedir)
+        
+        wait(futures)
+        for x in futures:
+            annotation = x.result()
+            annotations.append(annotation)
+    else:
+        for index, row in gdf.iterrows():
+            annotation = write_crop(row, img_pool, savedir, label_dict, size)
+            annotations.append(annotation)
+    
     annotations = pd.concat(annotations)
-    
+        
     return annotations
-    
+        

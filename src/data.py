@@ -280,6 +280,10 @@ class TreeData(LightningDataModule):
                 
             #Convert raw neon data to x,y tree locatins
             df = filter_data(self.csv_file, config=self.config)
+            
+            #DEBUG, just one site
+            df = df[df.plotID=="HARV"]
+            
             #Filter points based on LiDAR height
             df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
             df = df.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_samples"])
@@ -312,7 +316,8 @@ class TreeData(LightningDataModule):
                 savedir=self.config["crop_dir"],
                 label_dict=self.species_label_dict,
                 img_pool=img_pool,
-                size=self.config["window_size"]                
+                size=self.config["window_size"],
+                client=self.client
             )            
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)
             
@@ -329,7 +334,8 @@ class TreeData(LightningDataModule):
                 savedir=self.config["crop_dir"],
                 label_dict=self.species_label_dict,
                 img_pool=img_pool,
-                size=self.config["window_size"]
+                size=self.config["window_size"],
+                client=self.client
             )            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
         else:
