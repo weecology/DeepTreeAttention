@@ -307,7 +307,7 @@ class TreeData(LightningDataModule):
                 rgb_dir=self.config["rgb_sensor_pool"],
                 savedir=None,
                 raw_box_savedir=None, 
-                client=self.client
+                client=None
             )
             
             img_pool = glob.glob(self.config["HSI_sensor_pool"], recursive=True)
@@ -326,7 +326,7 @@ class TreeData(LightningDataModule):
                 rgb_dir=self.config["rgb_sensor_pool"],
                 savedir=None,
                 raw_box_savedir=None, 
-                client=self.client
+                client=None
             )
         
             test_annotations = generate.generate_crops(
