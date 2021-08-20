@@ -43,9 +43,9 @@ class TreeModel(LightningModule):
         
         #Metrics
         micro_recall = torchmetrics.Accuracy(average="micro")
-        macro_recall = torchmetrics.Accuracy(average="macro", num_classes=config["classes"])
-        top_k_recall = torchmetrics.Accuracy(average="micro",top_k=config["top_k"])
-        self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall,"Macro Accuracy":macro_recall,"Top {} Accuracy".format(config["top_k"]): top_k_recall})
+        macro_recall = torchmetrics.Accuracy(average="macro", num_classes=classes)
+        top_k_recall = torchmetrics.Accuracy(average="micro",top_k=self.config["top_k"])
+        self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall,"Macro Accuracy":macro_recall,"Top {} Accuracy".format(self.config["top_k"]): top_k_recall})
         
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
