@@ -310,12 +310,11 @@ class TreeData(LightningDataModule):
                 client=None
             )
             
-            img_pool = glob.glob(self.config["HSI_sensor_pool"], recursive=True)
             train_annotations = generate.generate_crops(
                 train_crowns,
                 savedir=self.config["crop_dir"],
                 label_dict=self.species_label_dict,
-                img_pool=img_pool,
+                sensor_glob=self.config["HSI_sensor_pool"],
                 size=self.config["window_size"],
                 client=self.client
             )            
@@ -333,7 +332,7 @@ class TreeData(LightningDataModule):
                 test_crowns,
                 savedir=self.config["crop_dir"],
                 label_dict=self.species_label_dict,
-                img_pool=img_pool,
+                sensor_glob=self.config["HSI_sensor_pool"],
                 size=self.config["window_size"],
                 client=self.client
             )            
