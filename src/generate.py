@@ -280,10 +280,9 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
                         img_path = lookup_and_convert(rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir, bounds=row.geometry.bounds)
                 else:
                     img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
-                    
             except Exception as e:
-                print("Cannot find matching file in image pool for {}".format(e))      
-                continue
+                print("Cannot find image for supplied path")
+                continue    
             
             future = client.submit(write_crop,row=row,img_path=img_path, label_dict=label_dict, size=size, savedir=savedir)
             futures.append(future)
@@ -304,8 +303,9 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
                         img_path = lookup_and_convert(rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir, bounds=row.geometry.bounds)
                 else:
                     img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
-            except:
-                raise    
+            except Exception as e:
+                print("Cannot find image for supplied path")
+                continue    
             annotation = write_crop(row=row, img_path=img_path, savedir=savedir, label_dict=label_dict, size=size)
             annotations.append(annotation)
     
