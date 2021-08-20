@@ -24,10 +24,10 @@ crop_dir: /orange/ewhite/b.weinstein/DeepTreeAttention/crops
 window_size: 11
 
 #Network Parameters
-gpus: 1
-workers: 1
+gpus: 2
+workers: 8
 batch_size: 64
-bands: 369
+bands: 3
 classes:
 train:
     lr: 0.001
