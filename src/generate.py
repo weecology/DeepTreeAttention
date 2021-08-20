@@ -204,7 +204,9 @@ def points_to_crowns(
                 raw_box_savedir=raw_box_savedir
             )
             futures.append(future)
-                    
+            
+        wait(futures)
+        
         for x in futures:
             try:
                 x.result()
