@@ -3,6 +3,7 @@ import os
 import math
 import re
 import h5py
+from src import Hyperspectral
 
 def bounds_to_geoindex(bounds):
     """Convert an extent into NEONs naming schema
@@ -52,31 +53,30 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None):
 
     return year_match
 
-#def convert_h5(hyperspectral_h5_path, rgb_path, savedir):
-    #tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"
-    #tif_path = "{}/{}".format(savedir, tif_basename)
+def convert_h5(hyperspectral_h5_path, rgb_path, savedir):
+    tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"
+    tif_path = "{}/{}".format(savedir, tif_basename)
 
-    #if not os.path.exists(tif_path):
-        #Hyperspectral.generate_raster(h5_path=hyperspectral_h5_path,
-                                      #rgb_filename=rgb_path,
-                                      #bands="All",
-                                      #save_dir=savedir)
+    Hyperspectral.generate_raster(h5_path=hyperspectral_h5_path,
+                                  rgb_filename=rgb_path,
+                                  bands="All",
+                                  save_dir=savedir)
 
-    #return tif_path
+    return tif_path
 
 
-#def lookup_and_convert(rgb_pool, hyperspectral_pool, savedir, bounds = None, shapefile=None):
-    #hyperspectral_h5_path = find_sensor_path(shapefile=shapefile,lookup_pool=hyperspectral_pool, bounds=bounds)
-    #rgb_path = find_sensor_path(shapefile=shapefile, lookup_pool=rgb_pool, bounds=bounds)
+def lookup_and_convert(rgb_pool, hyperspectral_pool, savedir, bounds = None, shapefile=None):
+    hyperspectral_h5_path = find_sensor_path(shapefile=shapefile,lookup_pool=hyperspectral_pool, bounds=bounds)
+    rgb_path = find_sensor_path(shapefile=shapefile, lookup_pool=rgb_pool, bounds=bounds)
 
-    ##convert .h5 hyperspec tile if needed
-    #tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"
-    #tif_path = "{}/{}".format(savedir, tif_basename)
+    #convert .h5 hyperspec tile if needed
+    tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"
+    tif_path = "{}/{}".format(savedir, tif_basename)
 
-    #if not os.path.exists(tif_path):
-        #tif_path = convert_h5(hyperspectral_h5_path, rgb_path, savedir)
+    if not os.path.exists(tif_path):
+        tif_path = convert_h5(hyperspectral_h5_path, rgb_path, savedir)
 
-    #return tif_path
+    return tif_path
 
 def site_from_path(path):
     basename = os.path.splitext(os.path.basename(path))[0]

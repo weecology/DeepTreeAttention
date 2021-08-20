@@ -5,9 +5,10 @@ import rasterio
 import numpy as np
 import shapely
 import pandas as pd
-from src.neon_paths import find_sensor_path
+from src.neon_paths import find_sensor_path, lookup_and_convert
 from src import start_cluster
 from src import patches
+from src import Hyperspectral
 from distributed import wait   
 from deepforest import main    
 import cv2
@@ -246,7 +247,7 @@ def write_crop(row, img_path, savedir, label_dict, size):
     
     return annotation
 
-def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None):
+def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, convert_h5=False, rgb_glob=None, HSI_tif_dir=None):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:
@@ -256,6 +257,9 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None):
         label_dict (dict): taxonID -> numeric order
         size: number of pixel width and height for the windows
         client: optional dask client
+        convert_h5: If HSI data is passed, make sure .tif conversion is complete
+        rgb_glob: glob to search images to match when converting h5s -> tif.
+        HSI_tif_dir: if converting H5 -> tif, where to save .tif files. Only needed if convert_h5 is True
     Returns:
        annotations: pandas dataframe of filenames and individual IDs to link with data
     """
@@ -267,7 +271,14 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None):
         futures = []
         for index, row in gdf.iterrows():
             try:
-                img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)            
+                img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
+                #Check if h5 -> tif conversion is complete
+                if convert_h5:
+                    if rgb_glob is None:
+                        raise ValueError("rgb_glob is None, but convert_h5 is True, please supply glob to search for rgb images")
+                    else:
+                        rgb_pool = glob.glob(rgb_glob)
+                        lookup_and_convert(rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir)
             except:
                 print("Cannot find matching file in image pool for {}".format(row.head()))      
                 continue

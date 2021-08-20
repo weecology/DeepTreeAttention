@@ -3,8 +3,9 @@
 ### Data Generation
 #glob path to sensor data, recursive wildcards allowed
 rgb_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif 
-HSI_sensor_pool: /orange/ewhite/NeonData/**/Camera/**/*.tif
+HSI_sensor_pool: /orange/ewhite/NeonData/**/Reflectance/*.h5
 CHM_pool: /orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif
+HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/
 
 #NEON data filtering
 min_stem_diameter: 10
@@ -18,6 +19,9 @@ iterations: 10
 min_CHM_height: 1
 #Minimum difference between measured height and CHM height
 min_CHM_diff: 4
+
+#Crop generation
+convert_h5: True
 #Directoy to store cropped images from crowns
 crop_dir: /orange/ewhite/b.weinstein/DeepTreeAttention/crops
 #Pixel size of the crowns. Square crops around each pixel of size x are used

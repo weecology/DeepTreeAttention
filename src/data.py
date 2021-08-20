@@ -316,6 +316,7 @@ class TreeData(LightningDataModule):
                 label_dict=self.species_label_dict,
                 sensor_glob=self.config["HSI_sensor_pool"],
                 size=self.config["window_size"],
+                convert_h5=self.config["convert_h5"],                
                 client=self.client
             )            
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)
@@ -334,7 +335,8 @@ class TreeData(LightningDataModule):
                 label_dict=self.species_label_dict,
                 sensor_glob=self.config["HSI_sensor_pool"],
                 size=self.config["window_size"],
-                client=self.client
+                client=self.client,
+                convert_h5=self.config["convert_h5"]
             )            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
         else:
