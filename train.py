@@ -35,6 +35,7 @@ trainer = Trainer(
     gpus=data_module.config["gpus"],
     fast_dev_run=data_module.config["fast_dev_run"],
     max_epochs=data_module.config["epochs"],
+    accelerator=data_module.config["accelerator"],
     logger=comet_logger)
 
 trainer.fit(m, datamodule=data_module)

@@ -28,10 +28,9 @@ gpus: 2
 workers: 8
 batch_size: 64
 bands: 3
-train:
-    lr: 0.001
-    fast_dev_run: False
-    accelerator: ddp
+lr: 0.001
+fast_dev_run: False
+accelerator: ddp
 
 #Evaluation config
 #Top k class recall score

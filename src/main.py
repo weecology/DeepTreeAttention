@@ -75,7 +75,7 @@ class TreeModel(LightningModule):
     
     def configure_optimizers(self):
         optimizer = optim.SGD(self.model.parameters(),
-                                   lr=self.config["train"]["lr"],
+                                   lr=self.config["lr"],
                                    momentum=0.9)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                          mode='min',
