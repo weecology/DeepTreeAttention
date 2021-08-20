@@ -271,14 +271,16 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
         futures = []
         for index, row in gdf.iterrows():
             try:
-                img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
                 #Check if h5 -> tif conversion is complete
                 if convert_h5:
                     if rgb_glob is None:
                         raise ValueError("rgb_glob is None, but convert_h5 is True, please supply glob to search for rgb images")
                     else:
                         rgb_pool = glob.glob(rgb_glob)
-                        lookup_and_convert(rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir)
+                        img_path = lookup_and_convert(rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir)
+                else:
+                    img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
+                    
             except:
                 print("Cannot find matching file in image pool for {}".format(row.head()))      
                 continue
@@ -293,10 +295,19 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
     else:
         for index, row in gdf.iterrows():
             try:
-                img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)            
+                #Check if h5 -> tif conversion is complete
+                if convert_h5:
+                    if rgb_glob is None:
+                        raise ValueError("rgb_glob is None, but convert_h5 is True, please supply glob to search for rgb images")
+                    else:
+                        rgb_pool = glob.glob(rgb_glob)
+                        img_path = lookup_and_convert(rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir)
+                else:
+                    img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
+                    
             except:
                 print("Cannot find matching file in image pool for {}".format(row.head()))      
-                continue      
+                continue   
             annotation = write_crop(row=row, img_path=img_path, savedir=savedir, label_dict=label_dict, size=size)
             annotations.append(annotation)
     
