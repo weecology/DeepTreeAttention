@@ -264,6 +264,7 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None):
     img_pool = glob.glob(sensor_glob, recursive=True)
     
     if client:
+        futures = []
         for index, row in gdf.iterrows():
             try:
                 img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)            
@@ -271,8 +272,9 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None):
                 print("Cannot find matching file in image pool for {}".format(row.head()))      
                 continue
             
-            futures = client.submit(write_crop,row=row,img_path=img_path, label_dict=label_dict, size=size, savedir=savedir)
-        
+            future = client.submit(write_crop,row=row,img_path=img_path, label_dict=label_dict, size=size, savedir=savedir)
+            futures.append(future)
+            
         wait(futures)
         for x in futures:
             annotation = x.result()
