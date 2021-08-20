@@ -338,8 +338,8 @@ class TreeData(LightningDataModule):
             )            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
         else:
-            test = pd.read_csv("{}/processed/test_points.shp".format(self.data_dir))
-            train = pd.read_csv("{}/processed/train_points.shp".format(self.data_dir))
+            test = gpd.read_file("{}/processed/test_points.shp".format(self.data_dir))
+            train = gpd.read_file("{}/processed/train_points.shp".format(self.data_dir))
             
             #Store class labels
             unique_species_labels = np.concatenate([train.taxonID.unique(), test.taxonID.unique()])
