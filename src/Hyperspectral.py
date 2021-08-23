@@ -1,10 +1,7 @@
 import numpy as np
 import h5py
-import matplotlib.pyplot as plt
-import sys
 import os
 import rasterio
-
 
 def h5refl2array(refl_filename):
     """
