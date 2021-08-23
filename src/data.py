@@ -1,7 +1,7 @@
 #Ligthning data module
 from . import __file__
 from distributed import as_completed
-import cv2
+from PIL import Image
 import glob
 import geopandas as gpd
 import numpy as np
@@ -199,15 +199,15 @@ def read_config(config_path):
 
 def preprocess_image(image):
     """Preprocess a loaded image, assumed to be BGR from cv2.imread, channels last"""
-    image = np.rollaxis(image, 2, 0)
     #TODO normalize between 0-1? Right now just forcing to float
+    image = np.rollaxis(image, 2, 0)
     image = torch.from_numpy(image.astype(np.float32))
 
     return image
 
 def load_image(img_path):
     """Load and preprocess an image for training/prediction"""
-    image = cv2.imread(img_path)
+    image = np.array(Image.open(img_path))
     image = preprocess_image(image)
     
     return image
