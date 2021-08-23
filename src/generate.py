@@ -234,7 +234,6 @@ def write_crop(row, img_path, label_dict, size, savedir):
     counter = 0
     print(counter)
     filenames = patches.crown_to_pixel(crown=row["geometry"], img_path=img_path, width=size, height=size, savedir=savedir, basename=row["individual"])
-    filenames = []
     labels = []
     for x in filenames:
         label = label_dict[row["taxonID"]]
