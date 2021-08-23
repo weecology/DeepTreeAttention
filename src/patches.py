@@ -19,14 +19,19 @@ def row_col_from_crown(crown, src):
     
     return img_centroids
                     
-def crown_to_pixel(crown, img_path, width=11, height=11):
+def crown_to_pixel(crown, img_path, savedir, basename,width=11, height=11):
     """Given a crown box, create the pixel crops"""
+    counter = 0
     crown_patches = []    
     src = rasterio.open(img_path)    
     img_centroids = row_col_from_crown(crown, src)
     for indices in img_centroids:
         row, col = indices
         img = src.read(window = rasterio.windows.Window(col_off=col, row_off=row, width = width, height=height), boundless=True)
-        crown_patches.append(img)
+        filename = "{}/{}_{}.tif".format(savedir, basename, counter)
+        with rasterio.open(filename, "w", driver="GTiff",height=height, width=width, count = img.shape[0], dtype=img.dtype) as dst:
+            dst.write(img)
+        counter = counter + 1
+        crown_patches.append(filename)
 
     return crown_patches

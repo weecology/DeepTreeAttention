@@ -139,7 +139,6 @@ def array2raster(newRaster, reflBandArray, reflArray_metadata, extent, ras_dir):
 
 def calc_clip_index(clipExtent, h5Extent, xscale=1, yscale=1):
     """Extract numpy index for the utm coordinates"""
-
     h5rows = h5Extent['yMax'] - h5Extent['yMin']
     h5cols = h5Extent['xMax'] - h5Extent['xMin']
 
