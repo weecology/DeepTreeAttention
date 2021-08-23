@@ -281,6 +281,7 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
                 else:
                     img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
             except:
+                print(row.geometry.bounds)
                 raise
             future = client.submit(write_crop,row=row,img_path=img_path, label_dict=label_dict, size=size, savedir=savedir)
             futures.append(future)
