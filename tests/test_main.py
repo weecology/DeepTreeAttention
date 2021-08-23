@@ -22,6 +22,7 @@ def config(tmpdir):
     config["bands"] = 3
     config["classes"] = 2
     config["top_k"] = 1
+    config["convert_h5"] = False
     
     return config
     

@@ -304,7 +304,12 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
             except:
                 print(row.geometry.bounds)
                 raise 
-            annotation = write_crop(row=row, img_path=img_path, savedir=savedir, label_dict=label_dict, size=size)
+            try:
+                annotation = write_crop(row=row, img_path=img_path, savedir=savedir, label_dict=label_dict, size=size)
+            except Exception as e:
+                print("{} failed with {}".format(row,e))
+                continue
+            
             annotations.append(annotation)
     
     annotations = pd.concat(annotations)
