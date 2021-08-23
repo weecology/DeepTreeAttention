@@ -232,13 +232,14 @@ def points_to_crowns(
 def write_crop(row, img_path, savedir, label_dict, size):
     """Wrapper to write a crop"""
     counter = 0
+    print(counter)
     crops = patches.crown_to_pixel(crown=row["geometry"], img_path=img_path, width=size, height=size)
     filenames = []
     labels = []
     for x in crops:
         label = label_dict[row["taxonID"]]
         labels.append(label)
-        filename = "{}/{}_{}.png".format(savedir,row["individual"], counter)
+        filename = "{}/{}_{}.tif".format(savedir,row["individual"], counter)
         channnels_last = np.rollaxis(x,0,3)
         cv2.imwrite(filename, channnels_last)
         filenames.append(filename)
