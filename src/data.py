@@ -318,6 +318,7 @@ class TreeData(LightningDataModule):
                 size=self.config["window_size"],
                 convert_h5=self.config["convert_h5"],   
                 rgb_glob=self.config["rgb_sensor_pool"],
+                HSI_tif_dir=self.config["HSI_tif_dir"],
                 client=self.client
             )            
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)
@@ -338,6 +339,7 @@ class TreeData(LightningDataModule):
                 size=self.config["window_size"],
                 rgb_glob=self.config["rgb_sensor_pool"],                
                 client=self.client,
+                HSI_tif_dir=self.config["HSI_tif_dir"],                
                 convert_h5=self.config["convert_h5"]
             )            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
