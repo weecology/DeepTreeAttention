@@ -266,6 +266,7 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
     annotations = []
     
     img_pool = glob.glob(sensor_glob, recursive=True)
+    rgb_pool = glob.glob(rgb_glob, recursive=True)
     
     if client:
         futures = []
@@ -276,7 +277,6 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
                     if rgb_glob is None:
                         raise ValueError("rgb_glob is None, but convert_h5 is True, please supply glob to search for rgb images")
                     else:
-                        rgb_pool = glob.glob(rgb_glob, recursive=True)
                         img_path = lookup_and_convert(rgb_pool=rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir, bounds=row.geometry.bounds)
                 else:
                     img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
@@ -298,7 +298,6 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
                     if rgb_glob is None:
                         raise ValueError("rgb_glob is None, but convert_h5 is True, please supply glob to search for rgb images")
                     else:
-                        rgb_pool = glob.glob(rgb_glob, recursive=True)
                         img_path = lookup_and_convert(rgb_pool=rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir, bounds=row.geometry.bounds)
                 else:
                     img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
