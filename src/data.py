@@ -1,5 +1,6 @@
 #Ligthning data module
 from . import __file__
+from skimage import io
 from distributed import as_completed
 from PIL import Image
 import glob
@@ -207,7 +208,7 @@ def preprocess_image(image):
 
 def load_image(img_path):
     """Load and preprocess an image for training/prediction"""
-    image = np.array(Image.open(img_path))
+    image = np.array(io.imread(img_path))
     image = preprocess_image(image)
     
     return image
