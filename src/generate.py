@@ -230,7 +230,6 @@ def points_to_crowns(
 
 def write_crop(row, img_path, label_dict, size, savedir):
     """Wrapper to write a crop"""
-    counter = 0
     filenames = patches.crown_to_pixel(crown=row["geometry"], img_path=img_path, width=size, height=size, savedir=savedir, basename=row["individual"])
     labels = []
     for x in filenames:
