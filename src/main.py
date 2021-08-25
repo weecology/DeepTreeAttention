@@ -112,7 +112,6 @@ class TreeModel(LightningModule):
             label: species taxa label
         """
         #Predict crown
-        
         gdf = gpd.GeoDataFrame(geometry=[Point(coordinates[0],coordinates[1])])
         img_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
         rgb_path = neon_paths.find_sensor_path(lookup_pool=img_pool, bounds=gdf.total_bounds)
@@ -135,19 +134,21 @@ class TreeModel(LightningModule):
         #Create pixel crops
         img_pool = glob.glob(self.config["HSI_sensor_pool"], recursive=True)        
         sensor_path = neon_paths.find_sensor_path(lookup_pool=img_pool, bounds=gdf.total_bounds)        
-        crops = patches.crown_to_pixel(
+        filenames = patches.crown_to_pixel(
             crown=boxes["geometry"].values[0],
             img_path=sensor_path,
             width=self.config["window_size"],
-            height=self.config["window_size"])
+            height=self.config["window_size"],
+            savedir=self.tmpdir,
+            basename="prediction"
+        )
        
         #Classify pixel crops
         self.model.eval()                
         predictions = []
-        for x in crops:
+        for x in filenames:
             #Preprocess starts from channels last
-            image = np.rollaxis(x, 0, 3)
-            image = data.preprocess_image(image)
+            image = data.load_image(x)
             #batch
             batch = torch.unsqueeze(image, dim=0)            
             class_probs = self.model(batch)

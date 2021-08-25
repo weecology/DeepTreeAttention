@@ -198,18 +198,20 @@ def read_config(config_path):
 
     return config
 
-def preprocess_image(image):
-    """Preprocess a loaded image, assumed to be BGR from cv2.imread, channels last"""
-    #TODO normalize between 0-1? Right now just forcing to float
-    image = np.rollaxis(image, 2, 0)
-    image = torch.from_numpy(image.astype(np.float32))
-
+def preprocess_image(image, channel_first=False):
+    """Preprocess a loaded image"""
+    #TOOD normalization
+    if not channel_first:
+        image = np.rollaxis(image, 2,0)
+    image = image.astype(np.float32)
+    image = torch.from_numpy(image)
+    
     return image
 
-def load_image(img_path):
+def load_image(img_path, channel_first=False):
     """Load and preprocess an image for training/prediction"""
     image = np.array(io.imread(img_path))
-    image = preprocess_image(image)
+    image = preprocess_image(image, channel_first=channel_first)
     
     return image
 

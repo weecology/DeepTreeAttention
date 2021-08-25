@@ -20,7 +20,17 @@ def row_col_from_crown(crown, src):
     return img_centroids
                     
 def crown_to_pixel(crown, img_path, savedir, basename,width=11, height=11):
-    """Given a crown box, create the pixel crops"""
+    """Given a crown box, create the pixel crops
+    Args:
+         crown: a geometry object
+         img_path: sensor data to crop
+         savedir: location to save crops
+         basename: output file is {basename}_{counter}.tif for each pixel crop
+         width: pixel size crop in x
+         height: pixel size in y
+    Returns:
+         crown_patches: filenames of written patches
+    """
     counter = 0
     crown_patches = []    
     src = rasterio.open(img_path)    
