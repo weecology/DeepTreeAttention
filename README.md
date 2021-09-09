@@ -46,7 +46,7 @@ Project Organization
 
 # Pytorch Lightning Data Module (data.TreeData)
 
-This repo contains a pytorch lightning data module for reproducibility. The goal of the project is to make it easy to share with others within our research group, but we welcome contributions from outside the community. While all data is public, it is VERY large (>20TB) and cannot be easily shared. If you want to reproduce this work, you will need to download the majority of NEON's camera, HSI and CHM data and change the paths in the config file. For the 'raw' NEON tree stem data see data/raw/neon_vst_2021.csv. The data module starts from this state, which are x,y locations for each tree. It then performs the following actions.
+This repo contains a pytorch lightning data module for reproducibility. The goal of the project is to make it easy to share with others within our research group, but we welcome contributions from outside the community. While all data is public, it is VERY large (>20TB) and cannot be easily shared. If you want to reproduce this work, you will need to download the majority of NEON's camera, HSI and CHM data and change the paths in the config file. For the 'raw' NEON tree stem data see data/raw/neon_vst_2021.csv. The data module starts from this state, which are x,y locations for each tree. It then performs the following actions as an end-to-end workflow.
 
 1. Filters the data to represent trees over 3m with sufficient number of training samples
 2. Extract the LiDAR derived canopy height and compares it to the field measured height. Trees that are below the canopy are excluded based on the min_CHM_diff parameter in the config.
@@ -54,17 +54,35 @@ This repo contains a pytorch lightning data module for reproducibility. The goal
 4. For each x,y location the crown is predicted by our tree detection algorithm (DeepForest - https://deepforest.readthedocs.io/).
 5. Crops of each tree are created and divided into pixel windows for pixel-level prediction.
 
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+This workflow does not need to be run on every experiment. If you are satisifed with the current train/test split and data generation process, set regenerate=False
+
+```
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False)
+data_module.setup()
+```
 
 # Pytorch Lightning Training Module (data.TreeModel)
 
 Training is handled by the TreeModel class which loads a model from the models/ folder, reads the config file and runs the training. The evaluation metrics and images are computed and put of the comet dashboard
 
+```
+m = main.TreeModel(model=Hang2020.vanilla_CNN, bands=data_module.config["bands"], classes=data_module.num_classes,label_dict=data_module.species_label_dict)
+
+trainer = Trainer(
+    gpus=data_module.config["gpus"],
+    fast_dev_run=data_module.config["fast_dev_run"],
+    max_epochs=data_module.config["epochs"],
+    accelerator=data_module.config["accelerator"],
+    logger=comet_logger)
+   
+trainer.fit(m, datamodule=data_module)
+```
+
 ## Evaluation metrics
 
 The training metrics are computed at the pixel level during training. At the end of training, predictions are made for each crown using majority rule among pixels. The crown-level accuracy is then computed across classes.
 
-# Dev Guide
+### Dev Guide
 
 In general, major changes or improvements should be made on a new git branch. Only core improvements should be made on the main branch. If a change leads to higher scores, please create a pull request.
 
