@@ -273,8 +273,8 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
                 else:
                     img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
             except:
-                print(row.geometry.bounds)
-                raise
+                print("{} failed to find sensor path").format(geometry.bounds)
+                continue
             future = client.submit(write_crop,row=row,img_path=img_path, label_dict=label_dict, size=size, savedir=savedir)
             futures.append(future)
             
@@ -294,8 +294,8 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
                 else:
                     img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
             except:
-                print(row.geometry.bounds)
-                raise 
+                print("{} failed to find sensor path").format(geometry.bounds)
+                continue
             try:
                 annotation = write_crop(row=row, img_path=img_path, savedir=savedir, label_dict=label_dict, size=size)
             except Exception as e:
