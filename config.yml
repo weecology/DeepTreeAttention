@@ -28,7 +28,7 @@ crop_dir: /orange/ewhite/b.weinstein/DeepTreeAttention/crops
 window_size: 11
 
 #Network Parameters
-gpus: 2
+gpus: 1
 workers: 8
 batch_size: 128
 bands: 3

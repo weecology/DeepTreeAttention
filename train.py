@@ -18,7 +18,7 @@ comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['gi
 
 #Create datamodule
 #client = start_cluster.start(cpus=80)
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=None)
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=None)
 data_module.setup()
 
 #Hash train and test
