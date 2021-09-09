@@ -285,7 +285,7 @@ class TreeData(LightningDataModule):
             df = filter_data(self.csv_file, config=self.config)
             
             #DEBUG, just one site
-            df = df[df.siteID=="HARV"]
+            #df = df[df.siteID=="HARV"]
             
             #Filter points based on LiDAR height
             df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
