@@ -234,7 +234,7 @@ class TreeDataset(Dataset):
         
         if self.train:
             label = self.annotations.label.loc[index]
-            label = torch.tensor(label)
+            label = torch.tensor(label, dtype=torch.long)
             
             return image, label
         else:
