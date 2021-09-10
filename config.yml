@@ -31,7 +31,7 @@ window_size: 11
 gpus: 1
 workers: 8
 batch_size: 128
-bands: 3
+bands: 369
 lr: 0.001
 fast_dev_run: False
 accelerator: ddp
