@@ -234,7 +234,7 @@ class TreeDataset(Dataset):
         
         if self.train:
             label = self.annotations.label.loc[index]
-            label = torch.tensor(label)
+            label = torch.tensor(label, dtype=torch.long)
             
             return image, label
         else:
@@ -310,7 +310,7 @@ class TreeData(LightningDataModule):
                 rgb_dir=self.config["rgb_sensor_pool"],
                 savedir=None,
                 raw_box_savedir=None, 
-                client=None
+                client=self.client
             )
             
             train_annotations = generate.generate_crops(
