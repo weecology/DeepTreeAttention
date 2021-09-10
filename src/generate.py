@@ -210,8 +210,8 @@ def points_to_crowns(
         
         for x in futures:
             try:
-                x.result()
-                results.append()
+                result = x.result()
+                results.append(result)
             except:
                 continue
     else:
