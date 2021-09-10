@@ -331,7 +331,7 @@ class TreeData(LightningDataModule):
                 rgb_dir=self.config["rgb_sensor_pool"],
                 savedir=None,
                 raw_box_savedir=None, 
-                client=None
+                client=self.client
             )
         
             test_annotations = generate.generate_crops(
