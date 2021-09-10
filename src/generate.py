@@ -281,8 +281,11 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
             
         wait(futures)
         for x in futures:
-            annotation = x.result()
-            annotations.append(annotation)
+            try:
+                annotation = x.result()
+                annotations.append(annotation)                
+            except:
+                print("Future failed with {}".format(traceback.print_exc()))
     else:
         for index, row in gdf.iterrows():
             try:
