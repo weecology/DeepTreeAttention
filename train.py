@@ -48,4 +48,6 @@ comet_logger.experiment.log_metrics(crown_metrics)
 comet_logger.experiment.log_confusion_matrix(
     results.true_label.astype(np.int),
     results.label.astype(np.int),
-    labels=list(data_module.species_label_dict.keys()))  
+    labels=list(data_module.species_label_dict.keys()),
+    max_categories=len(data_module.species_label_dict.keys())
+)  
