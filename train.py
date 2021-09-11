@@ -6,6 +6,7 @@ from src import start_cluster
 from src.models import Hang2020
 from pytorch_lightning import Trainer
 import os
+import numpy as np
 import subprocess
 from pytorch_lightning.loggers import CometLogger
 import pandas as pd
