@@ -209,8 +209,8 @@ class TreeModel(LightningModule):
         results = self.predict_file(csv_file)
         results["label"] = results["label"].apply(lambda x: self.label_to_index[x])
         df = results.merge(ground_truth)
-        crown_micro = torchmetrics.functional.accuracy(preds=torch.tensor(df.label.values),target=torch.tensor(df.true_label.values), average="micro")
-        crown_macro = torchmetrics.functional.accuracy(preds=torch.tensor(df.label.values),target=torch.tensor(df.true_label.values), average="macro", num_classes=self.classes)
+        crown_micro = torchmetrics.functional.accuracy(preds=torch.tensor(df.label.values, dtype=torch.long),target=torch.tensor(df.true_label.values, dtype=torch.long), average="micro")
+        crown_macro = torchmetrics.functional.accuracy(preds=torch.tensor(df.label.values, dtype=torch.long),target=torch.tensor(df.true_label.values, dtype=torch.long), average="macro", num_classes=self.classes)
         
         return df, {"crown_micro":crown_micro,"crown_macro":crown_macro}
     
