@@ -14,7 +14,7 @@ from pandas.util import hash_pandas_object
 
 COMET_KEY = os.getenv("COMET_KEY")
 comet_logger = CometLogger(api_key=COMET_KEY,
-                            project_name="DeepTreeAttention", workspace="bw4sz",auto_output_logging = "simple")
+                            project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 
 #Create datamodule

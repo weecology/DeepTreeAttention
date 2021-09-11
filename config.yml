@@ -40,3 +40,6 @@ epochs: 10
 #Evaluation config
 #Top k class recall score
 top_k: 5
+
+#Comet dashboard
+comet_workspace: bw4sz
