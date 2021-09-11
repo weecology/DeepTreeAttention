@@ -51,8 +51,8 @@ This repo contains a pytorch lightning data module for reproducibility. The goal
 1. Filters the data to represent trees over 3m with sufficient number of training samples
 2. Extract the LiDAR derived canopy height and compares it to the field measured height. Trees that are below the canopy are excluded based on the min_CHM_diff parameter in the config.
 3. Splits the training and test x,y data such that field plots are either in training or test.
-4. For each x,y location the crown is predicted by our tree detection algorithm (DeepForest - https://deepforest.readthedocs.io/).
-5. Crops of each tree are created and divided into pixel windows for pixel-level prediction.
+4. For each x,y stem location the crown is predicted by the tree detection algorithm (DeepForest - https://deepforest.readthedocs.io/).
+5. Crops of each tree crown are created and divided into pixel windows for pixel-level prediction.
 
 This workflow does not need to be run on every experiment. If you are satisifed with the current train/test split and data generation process, set regenerate=False
 
@@ -63,7 +63,7 @@ data_module.setup()
 
 # Pytorch Lightning Training Module (data.TreeModel)
 
-Training is handled by the TreeModel class which loads a model from the models/ folder, reads the config file and runs the training. The evaluation metrics and images are computed and put of the comet dashboard
+Training is handled by the TreeModel class which loads a model from the models folder, reads the config file and runs the training. The evaluation metrics and images are computed and put of the comet dashboard
 
 ```
 m = main.TreeModel(model=Hang2020.vanilla_CNN, bands=data_module.config["bands"], classes=data_module.num_classes,label_dict=data_module.species_label_dict)
@@ -81,6 +81,8 @@ trainer.fit(m, datamodule=data_module)
 ## Evaluation metrics
 
 The training metrics are computed at the pixel level during training. At the end of training, predictions are made for each crown using majority rule among pixels. The crown-level accuracy is then computed across classes.
+
+Current metrics include micro/macro pixel accuracy and micro/macro crown accuracy. Pixel accuracy is the proportion of pixel crops correctly predicted, crown accuracy is aggregate predicted label, for example using majority rule for the entire crown's worth of pixels.
 
 ### Dev Guide
 
