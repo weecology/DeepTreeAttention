@@ -22,9 +22,8 @@ comet_logger = CometLogger(api_key=COMET_KEY,
                             project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 
-
 data_module.setup()
-data_module.resample()
+data_module.resample(oversample=False)
 
 #Hash train and test
 train = pd.read_csv("data/processed/train.csv")
