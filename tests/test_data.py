@@ -37,7 +37,7 @@ def test_TreeData_setup(config):
     
 def test_TreeDataset(config,tmpdir):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)
-    data_module = data.TreeData(config=config, data_dir="{}/tests/data".format(ROOT), csv_file=csv_file, regenerate=True, client=None)
+    data_module = data.TreeData(config=config, data_dir="{}/tests/data".format(ROOT), csv_file=csv_file, regenerate=False, client=None)
     data_module.setup()
 
     #Train loader
@@ -53,8 +53,14 @@ def test_TreeDataset(config,tmpdir):
     annotations = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
     assert len(data_loader) == annotations.shape[0]    
     
-def test_resample():
+def test_resample(config):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)
-    data_module = data.TreeData(config=config, data_dir="{}/tests/data".format(ROOT), csv_file=csv_file, regenerate=True, client=None)
+    data_module = data.TreeData(config=config, data_dir="{}/tests/data".format(ROOT), csv_file=csv_file, regenerate=False, client=None)
     data_module.setup()
+    #Set to a smaller number to ensure easy calculation
+    data_module.config["resample_max"] = 50
     data_module.resample()
+    
+    annotations = pd.read_csv("{}/tests/data/processed/resampled_train.csv".format(ROOT))
+    #There are two classes, 50 samples per class
+    assert annotations.shape[0] == 50 * 2

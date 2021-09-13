@@ -362,10 +362,37 @@ class TreeData(LightningDataModule):
             self.num_classes = len(self.species_label_dict)
             
     def resample(self):
-        """Given the processed train/test split, resample to reduce class imbalance"""
-        train = "{}/processed/train.csv".format(self.data_dir)
-        test = "{}/processed/test.csv".format(self.data_dir)
-        
+        """Given the processed train/test split, resample to reduce class imbalance. This function honors the min and max sampling size from the .config
+        In order to prioritize a diverse training site, individual crops are first chosen by site and then individual"""
+        train = pd.read_csv("{}/processed/train.csv".format(self.data_dir))
+        train["individual"] = train.image_path.apply(lambda x: os.path.basename(x).split("_")[0]) 
+        train["site"] = train.individual.apply(lambda x: x.split(".")[-2])
+        labels = train.label.unique()
+        resampled_species = []
+        selected_indices = []
+        for x in labels:
+            species_samples = train[train.label == x]
+            if species_samples.shape[0] < self.config["resample_max"]:
+                resampled_species.append(species_samples)
+            else:       
+                counter = 0
+                sites = species_samples["site"].unique()
+                while counter < self.config["resample_max"]:
+                    for x in sites:
+                        site_samples = species_samples[species_samples.site == x]
+                        print(counter)
+                        i = site_samples.individual.sample(1)
+                        selected_individual = species_samples[species_samples.individual.isin(i)]
+                        for index, row in selected_individual.iterrows():
+                            print(index)
+                            if not index in selected_indices:
+                                resampled_species.append(row)
+                                selected_indices.append(index)
+                                counter = counter + 1
+                                break
+                                    
+        resampled_species = pd.DataFrame(resampled_species)
+        resampled_species.to_csv("{}/processed/resampled_train.csv".format(self.data_dir), index=False)       
 
     def train_dataloader(self):
         ds = TreeDataset(csv_file = "{}/processed/train.csv".format(self.data_dir))
