@@ -22,6 +22,7 @@ comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['gi
 client = None
 data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, resample = False, client=client)
 data_module.setup()
+data_module.resample()
 
 #Hash train and test
 train = pd.read_csv("data/processed/train.csv")
