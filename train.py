@@ -16,7 +16,7 @@ from pandas.util import hash_pandas_object
 #client = start_cluster.start(cpus=80)
 COMET_KEY = os.getenv("COMET_KEY")
 client = None
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, resample = False, client=client)
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client)
 
 comet_logger = CometLogger(api_key=COMET_KEY,
                             project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
