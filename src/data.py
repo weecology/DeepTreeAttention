@@ -250,7 +250,8 @@ class TreeData(LightningDataModule):
         """
         Args:
             config: optional config file to override
-            data_dir: override data location, defaults to ROOT            
+            data_dir: override data location, defaults to ROOT   
+            regenerate: Whether to recreate raw data
         """
         super().__init__()
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -324,6 +325,7 @@ class TreeData(LightningDataModule):
                 HSI_tif_dir=self.config["HSI_tif_dir"],
                 client=self.client
             )            
+            
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)
             
             test_crowns = generate.points_to_crowns(
@@ -358,6 +360,12 @@ class TreeData(LightningDataModule):
             for index, label in enumerate(unique_species_labels):
                 self.species_label_dict[label] = index
             self.num_classes = len(self.species_label_dict)
+            
+    def resample(self):
+        """Given the processed train/test split, resample to reduce class imbalance"""
+        train = "{}/processed/train.csv".format(self.data_dir)
+        test = "{}/processed/test.csv".format(self.data_dir)
+        
 
     def train_dataloader(self):
         ds = TreeDataset(csv_file = "{}/processed/train.csv".format(self.data_dir))

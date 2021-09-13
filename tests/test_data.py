@@ -52,3 +52,9 @@ def test_TreeDataset(config,tmpdir):
     
     annotations = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
     assert len(data_loader) == annotations.shape[0]    
+    
+def test_resample():
+    csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)
+    data_module = data.TreeData(config=config, data_dir="{}/tests/data".format(ROOT), csv_file=csv_file, regenerate=True, client=None)
+    data_module.setup()
+    data_module.resample()

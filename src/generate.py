@@ -4,6 +4,7 @@ import geopandas as gpd
 import rasterio
 import numpy as np
 import shapely
+import os
 import pandas as pd
 from src.neon_paths import find_sensor_path, lookup_and_convert
 from src import start_cluster
@@ -233,7 +234,20 @@ def write_crop(row, img_path, label_dict, size, savedir):
     """Wrapper to write a crop"""
     filenames = patches.crown_to_pixel(crown=row["geometry"], img_path=img_path, width=size, height=size, savedir=savedir, basename=row["individual"])
     labels = []
-    for x in filenames:
+    
+    #Check for duplicates
+    crops = [rasterio.open(x).read() for x in filenames]
+    unique_crops = []
+    unique_filenames = []
+    for index, x in enumerate(crops):
+        print(index)
+        if not any(np.array_equal(x, arr) for arr in unique_crops):
+            unique_crops.append(x)
+            unique_filenames.append(filenames[index])
+        else:
+            print("{} is duplicated, removing".format(filenames[index]))
+            os.remove(filenames[index])
+    for x in unique_filenames:
         label = label_dict[row["taxonID"]]
         labels.append(label)
     annotation = pd.DataFrame({"image_path":filenames, "label":labels})
