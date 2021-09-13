@@ -27,6 +27,12 @@ crop_dir: /orange/ewhite/b.weinstein/DeepTreeAttention/crops
 #Pixel size of the crowns. Square crops around each pixel of size x are used
 window_size: 11
 
+#Resampling
+#Minimum number of samples per species, all samples under this floor will be duplicated
+resample_min: 100
+#maximum resample per species, all species above this threshold will be randomly selected balanced by site. 
+resample_max: 1000
+
 #Network Parameters
 gpus: 1
 workers: 8
@@ -40,3 +46,6 @@ epochs: 50
 #Evaluation config
 #Top k class recall score
 top_k: 5
+
+#Comet dashboard
+comet_workspace: bw4sz

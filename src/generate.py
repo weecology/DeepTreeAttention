@@ -4,6 +4,7 @@ import geopandas as gpd
 import rasterio
 import numpy as np
 import shapely
+import os
 import pandas as pd
 from src.neon_paths import find_sensor_path, lookup_and_convert
 from src import start_cluster
@@ -230,13 +231,44 @@ def points_to_crowns(
     return results
 
 def write_crop(row, img_path, label_dict, size, savedir):
-    """Wrapper to write a crop"""
+    """Wrapper to write a crop based on size and savedir"""
     filenames = patches.crown_to_pixel(crown=row["geometry"], img_path=img_path, width=size, height=size, savedir=savedir, basename=row["individual"])
     labels = []
-    for x in filenames:
+    
+    #Check for duplicates
+    crops = [rasterio.open(x).read() for x in filenames]
+    unique_crops = []
+    
+    #Gross check, are there any dataframes with the same sum? Avoids expensive comparison
+    sums = np.array([np.sum(x) for x in crops])
+    unique_sums = pd.Series(sums).drop_duplicates().index
+    unique_filenames = [filenames[x] for x in unique_sums]
+    
+    #Look for duplicates based on sum
+    bin_sums = pd.Series(sums).value_counts()
+    duplicated_sums = bin_sums[bin_sums > 1].index
+    
+    if not len(duplicated_sums) == 0:
+        selected_indices = []
+        for x in duplicated_sums:
+            selected_indices.append(np.where(x == sums)[0])
+        selected_indices = np.concatenate(selected_indices)
+        possible_duplicates = [crops[x] for x in selected_indices]
+        possible_duplicates_filenames = [filenames[x] for x in selected_indices]
+        
+        #If so, check arrays serially
+        for index, x in enumerate(possible_duplicates):
+            if not any(np.array_equal(x, arr) for arr in unique_crops):
+                unique_crops.append(x)
+                unique_filenames.append(possible_duplicates_filenames[index])
+            else:
+                print("{} is duplicated, removing".format(possible_duplicates_filenames[index]))
+                os.remove(possible_duplicates_filenames[index])        
+        
+    for x in unique_filenames:
         label = label_dict[row["taxonID"]]
         labels.append(label)
-    annotation = pd.DataFrame({"image_path":filenames, "label":labels})
+    annotation = pd.DataFrame({"image_path":unique_filenames, "label":labels})
     
     return annotation
 

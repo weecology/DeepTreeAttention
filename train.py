@@ -14,14 +14,15 @@ from pandas.util import hash_pandas_object
 
 COMET_KEY = os.getenv("COMET_KEY")
 comet_logger = CometLogger(api_key=COMET_KEY,
-                            project_name="DeepTreeAttention", workspace="bw4sz",auto_output_logging = "simple")
+                            project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 
 #Create datamodule
 #client = start_cluster.start(cpus=80)
 client = None
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client)
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, resample = False, client=client)
 data_module.setup()
+data_module.resample()
 
 #Hash train and test
 train = pd.read_csv("data/processed/train.csv")
@@ -43,6 +44,9 @@ trainer = Trainer(
 trainer.fit(m, datamodule=data_module)
 results, crown_metrics = m.evaluate_crowns("data/processed/test.csv")
 comet_logger.experiment.log_metrics(crown_metrics)
+
+#Log prediction
+comet_logger.experiment.log_table(results)
 
 #Confusion matrix
 comet_logger.experiment.log_confusion_matrix(

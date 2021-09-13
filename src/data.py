@@ -250,7 +250,8 @@ class TreeData(LightningDataModule):
         """
         Args:
             config: optional config file to override
-            data_dir: override data location, defaults to ROOT            
+            data_dir: override data location, defaults to ROOT   
+            regenerate: Whether to recreate raw data
         """
         super().__init__()
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -324,6 +325,7 @@ class TreeData(LightningDataModule):
                 HSI_tif_dir=self.config["HSI_tif_dir"],
                 client=self.client
             )            
+            
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)
             
             test_crowns = generate.points_to_crowns(
@@ -358,6 +360,56 @@ class TreeData(LightningDataModule):
             for index, label in enumerate(unique_species_labels):
                 self.species_label_dict[label] = index
             self.num_classes = len(self.species_label_dict)
+            
+    def resample(self, oversample=True):
+        """Given the processed train/test split, resample to reduce class imbalance. This function honors the min and max sampling size from the .config
+        In order to prioritize a diverse training site, individual crops are first chosen by site and then individual
+        
+        Args:
+            oversample (True): Whether to duplicate rare classes to to the mininum threshold specified in the .config
+        Returns:
+            resampled_species: pandas dataframe with image_path and label to each pixel crop
+        """
+        train = pd.read_csv("{}/processed/train.csv".format(self.data_dir))
+        train["individual"] = train.image_path.apply(lambda x: os.path.basename(x).split("_")[0]) 
+        train["site"] = train.individual.apply(lambda x: x.split(".")[-2])
+        labels = train.label.unique()
+        resampled_species = []
+        selected_indices = []
+        for x in labels:
+            species_samples = train[train.label == x]
+            if species_samples.shape[0] < self.config["resample_max"]:
+                resampled_species.append(species_samples)
+            else:       
+                counter = 0
+                sites = species_samples["site"].unique()
+                while counter < self.config["resample_max"]:
+                    for x in sites:
+                        site_samples = species_samples[species_samples.site == x]
+                        print(counter)
+                        i = site_samples.individual.sample(1)
+                        selected_individual = species_samples[species_samples.individual.isin(i)]
+                        for index, row in selected_individual.iterrows():
+                            print(index)
+                            if not index in selected_indices:
+                                resampled_species.append(row)
+                                selected_indices.append(index)
+                                counter = counter + 1
+                                break
+            
+        resampled_species = pd.DataFrame(resampled_species)
+        
+        #Oversampling of rare classes
+        if oversample:
+            label_counts = resampled_species.label.value_counts() 
+            rare_index = label_counts[label_counts < self.config["resample_min"]].index
+            to_be_oversampled = resampled_species[resampled_species.label.isin(rare_index)]
+            not_to_be_oversampled = resampled_species[~resampled_species.label.isin(rare_index)]
+            
+            oversampled = to_be_oversampled.groupby("label").sample(n=self.config["resample_min"], replace=True)
+            resampled_species = pd.concat([oversampled,not_to_be_oversampled])
+            
+        resampled_species.to_csv("{}/processed/resampled_train.csv".format(self.data_dir), index=False)       
 
     def train_dataloader(self):
         ds = TreeDataset(csv_file = "{}/processed/train.csv".format(self.data_dir))
