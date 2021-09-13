@@ -361,9 +361,15 @@ class TreeData(LightningDataModule):
                 self.species_label_dict[label] = index
             self.num_classes = len(self.species_label_dict)
             
-    def resample(self):
+    def resample(self, oversample=True):
         """Given the processed train/test split, resample to reduce class imbalance. This function honors the min and max sampling size from the .config
-        In order to prioritize a diverse training site, individual crops are first chosen by site and then individual"""
+        In order to prioritize a diverse training site, individual crops are first chosen by site and then individual
+        
+        Args:
+            oversample (True): Whether to duplicate rare classes to to the mininum threshold specified in the .config
+        Returns:
+            resampled_species: pandas dataframe with image_path and label to each pixel crop
+        """
         train = pd.read_csv("{}/processed/train.csv".format(self.data_dir))
         train["individual"] = train.image_path.apply(lambda x: os.path.basename(x).split("_")[0]) 
         train["site"] = train.individual.apply(lambda x: x.split(".")[-2])
@@ -390,8 +396,19 @@ class TreeData(LightningDataModule):
                                 selected_indices.append(index)
                                 counter = counter + 1
                                 break
-                                    
+            
         resampled_species = pd.DataFrame(resampled_species)
+        
+        #Oversampling of rare classes
+        if oversample:
+            label_counts = resampled_species.label.value_counts() 
+            rare_index = label_counts[label_counts < self.config["resample_min"]].index
+            to_be_oversampled = resampled_species[resampled_species.label.isin(rare_index)]
+            not_to_be_oversampled = resampled_species[~resampled_species.label.isin(rare_index)]
+            
+            oversampled = to_be_oversampled.groupby("label").sample(n=self.config["resample_min"], replace=True)
+            resampled_species = pd.concat([oversampled,not_to_be_oversampled])
+            
         resampled_species.to_csv("{}/processed/resampled_train.csv".format(self.data_dir), index=False)       
 
     def train_dataloader(self):

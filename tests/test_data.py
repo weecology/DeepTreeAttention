@@ -59,8 +59,13 @@ def test_resample(config):
     data_module.setup()
     #Set to a smaller number to ensure easy calculation
     data_module.config["resample_max"] = 50
-    data_module.resample()
     
+    data_module.resample(oversample=False)
     annotations = pd.read_csv("{}/tests/data/processed/resampled_train.csv".format(ROOT))
-    #There are two classes, 50 samples per class
+    #There are two classes, 100 samples per class after oversampling
     assert annotations.shape[0] == 50 * 2
+    
+    data_module.resample(oversample=True)
+    annotations = pd.read_csv("{}/tests/data/processed/resampled_train.csv".format(ROOT))
+    #There are two classes, 100 samples per class after oversampling
+    assert annotations.shape[0] == 100 * 2

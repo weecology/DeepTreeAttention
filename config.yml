@@ -29,7 +29,7 @@ window_size: 11
 
 #Resampling
 #Minimum number of samples per species, all samples under this floor will be duplicated
-resample_min: 50
+resample_min: 100
 #maximum resample per species, all species above this threshold will be randomly selected balanced by site. 
 resample_max: 1000
 
