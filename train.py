@@ -12,15 +12,17 @@ from pytorch_lightning.loggers import CometLogger
 import pandas as pd
 from pandas.util import hash_pandas_object
 
+#Create datamodule
+#client = start_cluster.start(cpus=80)
 COMET_KEY = os.getenv("COMET_KEY")
+client = None
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, resample = False, client=client)
+
 comet_logger = CometLogger(api_key=COMET_KEY,
                             project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 
-#Create datamodule
-#client = start_cluster.start(cpus=80)
-client = None
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, resample = False, client=client)
+
 data_module.setup()
 data_module.resample()
 
