@@ -46,9 +46,6 @@ trainer.fit(m, datamodule=data_module)
 results, crown_metrics = m.evaluate_crowns("data/processed/test.csv")
 comet_logger.experiment.log_metrics(crown_metrics)
 
-#Log prediction
-comet_logger.experiment.log_table(results)
-
 #Confusion matrix
 comet_logger.experiment.log_confusion_matrix(
     results.true_label.astype(np.int),
@@ -56,3 +53,6 @@ comet_logger.experiment.log_confusion_matrix(
     labels=list(data_module.species_label_dict.keys()),
     max_categories=len(data_module.species_label_dict.keys())
 )  
+
+#Log prediction
+comet_logger.experiment.log_table("test_predictions.csv", results)
