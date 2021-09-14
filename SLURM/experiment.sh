@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Command line args for commit has and number of gpus
+# Command line args for dict
 sbatch <<EOT
 #!/bin/bash
 #SBATCH --job-name=DeepTreeAttention   # Job name
@@ -22,7 +22,6 @@ source activate DeepTreeAttention
 
 cd ~/DeepTreeAttention/
 module load git gcc
-git checkout $1
-python train.py
+python train.py $1
 EOT
 
