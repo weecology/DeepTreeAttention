@@ -378,7 +378,7 @@ class TreeData(LightningDataModule):
         selected_indices = []
         for x in labels:
             species_samples = train[train.label == x]
-            if species_samples.shape[0] < self.config["resample_max"]:
+            if species_samples.shape[0] <= self.config["resample_max"]:
                 for index, row in species_samples.iterrows():
                     resampled_species.append(row)
             else:       
@@ -402,12 +402,13 @@ class TreeData(LightningDataModule):
         if oversample:
             label_counts = resampled_species.label.value_counts() 
             rare_index = label_counts[label_counts < self.config["resample_min"]].index
-            to_be_oversampled = resampled_species[resampled_species.label.isin(rare_index)]
-            not_to_be_oversampled = resampled_species[~resampled_species.label.isin(rare_index)]
-            
-            oversampled = to_be_oversampled.groupby("label").sample(n=self.config["resample_min"], replace=True)
-            resampled_species = pd.concat([oversampled,not_to_be_oversampled])
-            
+            if not rare_index.shape[0] == 0:   
+                to_be_oversampled = resampled_species[resampled_species.label.isin(rare_index)]
+                not_to_be_oversampled = resampled_species[~resampled_species.label.isin(rare_index)]
+                
+                oversampled = to_be_oversampled.groupby("label").sample(n=self.config["resample_min"], replace=True)
+                resampled_species = pd.concat([oversampled,not_to_be_oversampled])
+                
         resampled_species.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)       
 
     def train_dataloader(self):
