@@ -16,17 +16,21 @@ from pandas.util import hash_pandas_object
 client = start_cluster.start(cpus=80)
 COMET_KEY = os.getenv("COMET_KEY")
 #client = None
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client)
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client)
 
 comet_logger = CometLogger(api_key=COMET_KEY,
                             project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 
 data_module.setup()
-#data_module.resample(oversample=True)
+resampled_data = data_module.resample(csv_file="data/processed/train.csv", oversample=True)
+resampled_data.to_csv("data/processed/resampled_train.csv", index=False)
+
+#Override train file with resampling
+data_module.train_file = "data/processed/resampled_train.csv"
 
 #Hash train and test
-train = pd.read_csv("data/processed/train.csv")
+train = pd.read_csv("data/processed/resampled_train.csv")
 test = pd.read_csv("data/processed/test.csv")
 comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(train))
 comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(test))

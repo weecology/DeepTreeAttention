@@ -1,13 +1,13 @@
 #Patches
 import rasterio
 
-def row_col_from_crown(crown, src):
+def row_col_from_bounds(bounds, src):
     """Given a geometry object and rasterio src, get the row col indices of all overlapping pixels
     Args:
-        crown: shapely geometry box
+        bounds: bounds of geometry object or raster tile
         img_centroids: a list of (row, col) indices for the rasterio src object
     """
-    left, bottom, right, top = crown.bounds 
+    left, bottom, right, top = bounds 
     img_centroids = []
     img = src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform))
     win_transform = src.window_transform(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform))
@@ -19,29 +19,38 @@ def row_col_from_crown(crown, src):
     
     return img_centroids
                     
-def crown_to_pixel(crown, img_path, savedir, basename,width=11, height=11):
+def bounds_to_pixel(bounds, img_path, savedir=None, basename=None,width=11, height=11):
     """Given a crown box, create the pixel crops
     Args:
          crown: a geometry object
          img_path: sensor data to crop
-         savedir: location to save crops
+         savedir: location to save crops, if none, crops are returned
          basename: output file is {basename}_{counter}.tif for each pixel crop
          width: pixel size crop in x
          height: pixel size in y
     Returns:
-         crown_patches: filenames of written patches
+         crops: [(row, col), image crop]
+         filenames: filenames of written patches
     """
     counter = 0
-    crown_patches = []    
+    filenames = []   
+    crops = []
     src = rasterio.open(img_path)    
-    img_centroids = row_col_from_crown(crown, src)
+    img_centroids = row_col_from_bounds(bounds, src)
     for indices in img_centroids:
         row, col = indices
         img = src.read(window = rasterio.windows.Window(col_off=col, row_off=row, width = width, height=height), boundless=False)
-        filename = "{}/{}_{}.tif".format(savedir, basename, counter)
-        with rasterio.open(filename, "w", driver="GTiff",height=height, width=width, count = img.shape[0], dtype=img.dtype) as dst:
-            dst.write(img)
-        counter = counter + 1
-        crown_patches.append(filename)
+        if savedir:
+            filename = "{}/{}_{}.tif".format(savedir, basename, counter)
+            with rasterio.open(filename, "w", driver="GTiff",height=height, width=width, count = img.shape[0], dtype=img.dtype) as dst:
+                dst.write(img)
+            counter = counter + 1
+            filenames.append(filename)
 
-    return crown_patches
+        else:
+            crops.append([(row,col),img])
+    if savedir:
+        return filenames
+    else:
+        return crops
+        
