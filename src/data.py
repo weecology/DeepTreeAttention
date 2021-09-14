@@ -408,7 +408,7 @@ class TreeData(LightningDataModule):
             oversampled = to_be_oversampled.groupby("label").sample(n=self.config["resample_min"], replace=True)
             resampled_species = pd.concat([oversampled,not_to_be_oversampled])
             
-        resampled_species.to_csv("{}/processed/resampled_train.csv".format(self.data_dir), index=False)       
+        resampled_species.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)       
 
     def train_dataloader(self):
         ds = TreeDataset(csv_file = "{}/processed/train.csv".format(self.data_dir))
