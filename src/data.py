@@ -193,8 +193,8 @@ def read_config(config_path):
     
     #Allow command line to override 
     parser = argparse.ArgumentParser("DeepTreeAttention config")
-    parser.add_argument('-d', '--my-dict', type=json.loads)
-    args = parser.parse_args()
+    parser.add_argument('-d', '--my-dict', type=json.loads, default=None)
+    args = parser.parse_known_args()
     try:
         with open(config_path, 'r') as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
@@ -204,8 +204,8 @@ def read_config(config_path):
             config_path, e))
     
     #Update anything in argparse to have higher priority
-    if args:
-        for key, value in args.my_dict:
+    if args[0].my_dict:
+        for key, value in args[0].my_dict:
             config[key] = value
         
     return config
@@ -373,16 +373,17 @@ class TreeData(LightningDataModule):
                 self.species_label_dict[label] = index
             self.num_classes = len(self.species_label_dict)
             
-    def resample(self, oversample=True):
+    def resample(self, csv_file, oversample=True):
         """Given the processed train/test split, resample to reduce class imbalance. This function honors the min and max sampling size from the .config
         In order to prioritize a diverse training site, individual crops are first chosen by site and then individual
         
         Args:
+            csv: path to .csv file containing training annotations
             oversample (True): Whether to duplicate rare classes to to the mininum threshold specified in the .config
         Returns:
             resampled_species: pandas dataframe with image_path and label to each pixel crop
         """
-        train = pd.read_csv("{}/processed/train.csv".format(self.data_dir))
+        train = pd.read_csv(csv_file)
         train["individual"] = train.image_path.apply(lambda x: os.path.basename(x).split("_")[0]) 
         train["site"] = train.individual.apply(lambda x: x.split(".")[-2])
         labels = train.label.unique()
@@ -421,7 +422,7 @@ class TreeData(LightningDataModule):
                 oversampled = to_be_oversampled.groupby("label").sample(n=self.config["resample_min"], replace=True)
                 resampled_species = pd.concat([oversampled,not_to_be_oversampled])
                 
-        resampled_species.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)       
+        return resampled_species  
 
     def train_dataloader(self):
         ds = TreeDataset(csv_file = "{}/processed/train.csv".format(self.data_dir))

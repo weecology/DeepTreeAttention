@@ -53,19 +53,23 @@ def test_TreeDataset(config,tmpdir):
     annotations = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
     assert len(data_loader) == annotations.shape[0]    
     
-def test_resample(config):
+def test_resample(config, tmpdir):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)
     data_module = data.TreeData(config=config, data_dir="{}/tests/data".format(ROOT), csv_file=csv_file, regenerate=False, client=None)
     data_module.setup()
     #Set to a smaller number to ensure easy calculation
     data_module.config["resample_max"] = 50
+    data_module.config["resample_min"] = 10
     
-    data_module.resample(oversample=False)
-    annotations = pd.read_csv("{}/tests/data/processed/resampled_train.csv".format(ROOT))
-    #There are two classes, 100 samples per class after oversampling
-    assert annotations.shape[0] == 50 * 2
+    annotations = data_module.resample(csv_file = "{}/tests/data/processed/train.csv".format(ROOT), oversample=False)
     
-    data_module.resample(oversample=True)
-    annotations = pd.read_csv("{}/tests/data/processed/resampled_train.csv".format(ROOT))
-    #There are two classes, 100 samples per class after oversampling
-    assert annotations.shape[0] == 100 * 2
+    #There are two classes
+    assert annotations.shape[0] == data_module.config["resample_max"] * 2
+    
+    undersampling = pd.read_csv("{}/tests/data/processed/train.csv".format(ROOT))
+    undersampling = undersampling.groupby("label").sample(n=5)
+    undersampling.to_csv("{}/undersampling.csv".format(tmpdir))
+    annotations = data_module.resample(csv_file="{}/undersampling.csv".format(tmpdir), oversample=True)
+    
+    #There are two classes
+    assert annotations.shape[0] == 2 * data_module.config["resample_min"]
