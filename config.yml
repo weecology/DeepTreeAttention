@@ -31,7 +31,7 @@ window_size: 11
 #Minimum number of samples per species, all samples under this floor will be duplicated
 resample_min: 50
 #maximum resample per species, all species above this threshold will be randomly selected balanced by site. 
-resample_max: 500
+resample_max: 1000
 
 #Network Parameters
 gpus: 1
