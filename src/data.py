@@ -204,8 +204,9 @@ def read_config(config_path):
             config_path, e))
     
     #Update anything in argparse to have higher priority
-    for key, value in args.my_dict:
-        config[key] = value
+    if args:
+        for key, value in args.my_dict:
+            config[key] = value
         
     return config
 
