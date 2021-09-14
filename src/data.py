@@ -13,6 +13,7 @@ import pandas as pd
 from pytorch_lightning import LightningDataModule
 from src import generate
 from src import CHM
+from src import augmentation
 from shapely.geometry import Point
 import torch
 from torch.utils.data import Dataset
@@ -155,18 +156,7 @@ def train_test_split(shp, savedir, config, client = None, regenerate=False):
                 
         train = train[train.taxonID.isin(test.taxonID)]
         test = test[test.taxonID.isin(train.taxonID)]
-    
-        ### This criteria was in the original repo, but I don't see the need Aug/9/2021
-        #remove any test species that don't have site distributions in train
-        ##to_remove = []
-        ##for index,row in test.iterrows():
-            ##if train[(train.taxonID==row["taxonID"]) & (train.siteID==row["siteID"])].empty:
-                ##to_remove.append(index)
-            
-        #add_to_train = test[test.index.isin(to_remove)]
-        #train = pd.concat([train, add_to_train])
-        #test = test[~test.index.isin(to_remove)]    
-        
+
         train = train[train.taxonID.isin(test.taxonID)]
         test = test[test.taxonID.isin(train.taxonID)]        
     
@@ -236,7 +226,8 @@ class TreeDataset(Dataset):
     def __init__(self, csv_file, train=True):
         self.annotations = pd.read_csv(csv_file)
         self.train = train
-        
+        self.transformer = augmentation.train_augmentation()
+            
     def __len__(self):
         return self.annotations.shape[0]
         
@@ -247,6 +238,7 @@ class TreeDataset(Dataset):
         if self.train:
             label = self.annotations.label.loc[index]
             label = torch.tensor(label, dtype=torch.long)
+            image = self.transformer(image)
             
             return image, label
         else:
@@ -269,6 +261,8 @@ class TreeData(LightningDataModule):
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
         self.regenerate=regenerate
         self.csv_file = csv_file
+        #default training location
+        self.train_file = "{}/processed/train.csv".format(self.data_dir)
         self.client = client
         if data_dir is None:
             self.data_dir = "{}/data/".format(self.ROOT)
@@ -425,7 +419,8 @@ class TreeData(LightningDataModule):
         return resampled_species  
 
     def train_dataloader(self):
-        ds = TreeDataset(csv_file = "{}/processed/train.csv".format(self.data_dir))
+        """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""
+        ds = TreeDataset(csv_file = self.train_file)
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],
