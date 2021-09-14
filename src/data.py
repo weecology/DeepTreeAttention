@@ -379,18 +379,17 @@ class TreeData(LightningDataModule):
         for x in labels:
             species_samples = train[train.label == x]
             if species_samples.shape[0] < self.config["resample_max"]:
-                resampled_species.append(species_samples)
+                for index, row in species_samples.iterrows():
+                    resampled_species.append(row)
             else:       
                 counter = 0
                 sites = species_samples["site"].unique()
                 while counter < self.config["resample_max"]:
                     for x in sites:
                         site_samples = species_samples[species_samples.site == x]
-                        print(counter)
                         i = site_samples.individual.sample(1)
                         selected_individual = species_samples[species_samples.individual.isin(i)]
                         for index, row in selected_individual.iterrows():
-                            print(index)
                             if not index in selected_indices:
                                 resampled_species.append(row)
                                 selected_indices.append(index)
