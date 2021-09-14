@@ -12,6 +12,7 @@ from torch import optim
 import torch
 import torchmetrics
 import tempfile
+import rasterio
 from src import data
 from src import generate
 from src import neon_paths
@@ -134,8 +135,8 @@ class TreeModel(LightningModule):
         #Create pixel crops
         img_pool = glob.glob(self.config["HSI_sensor_pool"], recursive=True)        
         sensor_path = neon_paths.find_sensor_path(lookup_pool=img_pool, bounds=gdf.total_bounds)        
-        filenames = patches.crown_to_pixel(
-            crown=boxes["geometry"].values[0],
+        filenames = patches.bounds_to_pixel(
+            bounds=boxes["geometry"].values[0].bounds,
             img_path=sensor_path,
             width=self.config["window_size"],
             height=self.config["window_size"],
@@ -163,15 +164,35 @@ class TreeModel(LightningModule):
         
         return label, average_score
 
-        
-    def predict_crown(self, img):
-        """Given an image, traverse the pixels and create crown prediction
+    def predict_raster(self, raster_path):
+        """Given an raster array, traverse the pixels and create prediction map
         Args:
             img (np.array): a numpy array of image data
         Returns:
             label: species taxa label
         """
-        pass
+        r = rasterio.open(raster_path)
+        prediction_raster = np.zeros(shape = (r.shape[0], r.shape[1])) 
+        
+        crops = patches.bounds_to_pixel(
+            bounds=r.bounds,
+            img_path=raster_path,
+            width=self.config["window_size"],
+            height=self.config["window_size"],
+            savedir=self.tmpdir,
+            basename="raster"
+        )
+       
+        #Classify pixel crops
+        self.model.eval()                
+        for coords, img in crops:
+            image = data.preprocess_image(image)
+            batch = torch.unsqueeze(image, dim=0)            
+            class_probs = self.model(batch)
+            predicted_class = np.argmax(class_probs,1)
+            prediction_raster[coords] = predicted_class
+        
+        return prediction_raster
     
     def predict_file(self, csv_file):
         """Given a file with paths to image crops, create crown predictions 

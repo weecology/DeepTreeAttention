@@ -262,13 +262,14 @@ class TreeData(LightningDataModule):
         self.regenerate=regenerate
         self.csv_file = csv_file
         #default training location
-        self.train_file = "{}/processed/train.csv".format(self.data_dir)
         self.client = client
         if data_dir is None:
             self.data_dir = "{}/data/".format(self.ROOT)
         else:
             self.data_dir = data_dir            
-            
+        
+        self.train_file = "{}/processed/train.csv".format(self.data_dir)
+        
         if config is None:
             self.config = read_config("{}/config.yml".format(self.ROOT))   
         else:
