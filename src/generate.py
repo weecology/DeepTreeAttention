@@ -7,9 +7,7 @@ import shapely
 import os
 import pandas as pd
 from src.neon_paths import find_sensor_path, lookup_and_convert
-from src import start_cluster
 from src import patches
-from src import Hyperspectral
 from distributed import wait   
 from deepforest import main    
 import traceback

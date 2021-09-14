@@ -1,10 +1,12 @@
 #Ligthning data module
+import argparse
 from . import __file__
 from skimage import io
 from distributed import as_completed
 from PIL import Image
 import glob
 import geopandas as gpd
+import json
 import numpy as np
 import os
 import pandas as pd
@@ -188,6 +190,11 @@ def train_test_split(shp, savedir, config, client = None, regenerate=False):
         
 def read_config(config_path):
     """Read config yaml file"""
+    
+    #Allow command line to override 
+    parser = argparse.ArgumentParser("DeepTreeAttention config")
+    parser.add_argument('-d', '--my-dict', type=json.loads)
+    args = parser.parse_args()
     try:
         with open(config_path, 'r') as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
@@ -195,7 +202,11 @@ def read_config(config_path):
     except Exception as e:
         raise FileNotFoundError("There is no config at {}, yields {}".format(
             config_path, e))
-
+    
+    #Update anything in argparse to have higher priority
+    for key, value in args.my_dict:
+        config[key] = value
+        
     return config
 
 def preprocess_image(image, channel_first=False):

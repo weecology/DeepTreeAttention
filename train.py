@@ -13,17 +13,17 @@ import pandas as pd
 from pandas.util import hash_pandas_object
 
 #Create datamodule
-#client = start_cluster.start(cpus=80)
+client = start_cluster.start(cpus=80)
 COMET_KEY = os.getenv("COMET_KEY")
-client = None
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client)
+#client = None
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client)
 
 comet_logger = CometLogger(api_key=COMET_KEY,
                             project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 
 data_module.setup()
-data_module.resample(oversample=True)
+#data_module.resample(oversample=True)
 
 #Hash train and test
 train = pd.read_csv("data/processed/train.csv")
