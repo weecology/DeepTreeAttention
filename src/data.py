@@ -1,9 +1,7 @@
 #Ligthning data module
 import argparse
 from . import __file__
-from skimage import io
 from distributed import as_completed
-from PIL import Image
 import glob
 import geopandas as gpd
 import json
@@ -11,6 +9,8 @@ import numpy as np
 import os
 import pandas as pd
 from pytorch_lightning import LightningDataModule
+from skimage import io
+from sklearn import preprocessing
 from src import generate
 from src import CHM
 from src import augmentation
@@ -201,14 +201,18 @@ def read_config(config_path):
     return config
 
 def preprocess_image(image, channel_first=False):
-    """Preprocess a loaded image"""
-    #TOOD normalization
-    if not channel_first:
-        image = np.rollaxis(image, 2,0)
-    image = image.astype(np.float32)
-    image = torch.from_numpy(image)
+    """Preprocess a loaded image, if already C*H*W set channel_first=True"""
+    img = np.asarray(image, dtype='float32')
+    data = img.reshape(np.prod(img.shape[:2]), np.prod(img.shape[2:]))
+    data  = preprocessing.minmax_scale(data)
+    img = data.reshape(img.shape)
     
-    return image
+    if not channel_first:
+        img = np.rollaxis(img, 2,0)
+
+    normalized = torch.from_numpy(img)
+    
+    return normalized
 
 def load_image(img_path, channel_first=False):
     """Load and preprocess an image for training/prediction"""
