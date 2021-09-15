@@ -34,6 +34,7 @@ train = pd.read_csv("data/processed/resampled_train.csv")
 test = pd.read_csv("data/processed/test.csv")
 comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(train))
 comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(test))
+comet_logger.experiment.log_table("resampled_train.csv", train)
 
 m = main.TreeModel(model=Hang2020.vanilla_CNN, bands=data_module.config["bands"], classes=data_module.num_classes,label_dict=data_module.species_label_dict)
 comet_logger.experiment.log_parameters(m.config)

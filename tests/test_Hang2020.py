@@ -58,3 +58,9 @@ def test_vanillaCNN_RGB():
     image = torch.randn(20, 3, 11, 11)
     output = m(image)
     assert output.shape == (20,10)    
+    
+def test_Hang2020():
+    m = Hang2020.Hang2020(bands=3, classes=10)
+    image = torch.randn(20, 3, 11, 11)
+    output = m(image)
+    assert output.shape == (20,10)    
