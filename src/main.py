@@ -135,27 +135,25 @@ class TreeModel(LightningModule):
         #Create pixel crops
         img_pool = glob.glob(self.config["HSI_sensor_pool"], recursive=True)        
         sensor_path = neon_paths.find_sensor_path(lookup_pool=img_pool, bounds=gdf.total_bounds)        
-        filenames = patches.bounds_to_pixel(
+        crops = patches.bounds_to_pixel(
             bounds=boxes["geometry"].values[0].bounds,
             img_path=sensor_path,
             width=self.config["window_size"],
             height=self.config["window_size"],
-            savedir=self.tmpdir,
-            basename="prediction"
         )
-       
+     
+        #preprocess and batch
+        images = [data.preprocess_image(img, channel_first=True) for coords, img in crops]
+        batches = data.batch(images, n=self.config["batch_size"])
+        
         #Classify pixel crops
-        self.model.eval()                
+        self.model.eval() 
         predictions = []
-        for x in filenames:
-            #Preprocess starts from channels last
-            image = data.load_image(x)
-            #batch
-            batch = torch.unsqueeze(image, dim=0)            
-            class_probs = self.model(batch)
+        for x in batches:
+            class_probs = self.model(x)
             predictions.append(class_probs.detach().numpy())
         
-        predictions = np.vstack(predictions)
+        predictions = np.concatenate(predictions)
         majority_index = pd.Series(np.argmax(predictions, 1)).mode()[0]
         label = self.index_to_label[majority_index]
         
@@ -163,7 +161,43 @@ class TreeModel(LightningModule):
         average_score = np.mean(predictions[:,majority_index])
         
         return label, average_score
-
+    
+    def predict_crown(self, geom, sensor_path):
+        """Given a geometry object of a tree crown, predict label
+        Args:
+            geom: a shapely geometry object, for example from a geodataframe (gdf) -> gdf.geometry[0]
+            sensor_path: path to sensor data to predict
+        Returns:
+            label: taxonID
+            average_score: average pixel confidence for of the prediction class
+        """
+        crops = patches.bounds_to_pixel(
+            bounds=geom.bounds,
+            img_path=sensor_path,
+            width=self.config["window_size"],
+            height=self.config["window_size"],
+        )
+     
+        #preprocess and batch
+        images = [data.preprocess_image(img, channel_first=True) for coords, img in crops]
+        batches = data.batch(images, n=self.config["batch_size"])
+        
+        #Classify pixel crops
+        self.model.eval() 
+        predictions = []
+        for x in batches:
+            class_probs = self.model(x)
+            predictions.append(class_probs.detach().numpy())
+        
+        predictions = np.concatenate(predictions)
+        majority_index = pd.Series(np.argmax(predictions, 1)).mode()[0]
+        label = self.index_to_label[majority_index]
+        
+        #Average score for selected label
+        average_score = np.mean(predictions[:,majority_index])
+        
+        return label, average_score
+    
     def predict_raster(self, raster_path):
         """Given an raster array, traverse the pixels and create prediction map
         Args:
@@ -179,18 +213,23 @@ class TreeModel(LightningModule):
             img_path=raster_path,
             width=self.config["window_size"],
             height=self.config["window_size"],
-            savedir=self.tmpdir,
-            basename="raster"
         )
        
+        #preprocess and batch
+        images = [data.preprocess_image(img, channel_first=True) for coords, img in crops]
+        batches = data.batch(images, n=self.config["batch_size"])
+        
         #Classify pixel crops
-        self.model.eval()                
-        for coords, img in crops:
-            image = data.preprocess_image(image)
-            batch = torch.unsqueeze(image, dim=0)            
-            class_probs = self.model(batch)
-            predicted_class = np.argmax(class_probs,1)
-            prediction_raster[coords] = predicted_class
+        self.model.eval() 
+        predicted_classes = []
+        for x in batches:
+            class_probs = self.model(x)
+            pred = torch.argmax(class_probs,1).detach().numpy()
+            predicted_classes.append(pred)
+        
+        predicted_classes = np.concatenate(predicted_classes)
+        for (coords, img), pred in zip(crops, predicted_classes):
+            prediction_raster[coords] = pred
         
         return prediction_raster
     

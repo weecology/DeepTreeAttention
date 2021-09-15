@@ -39,7 +39,7 @@ def bounds_to_pixel(bounds, img_path, savedir=None, basename=None,width=11, heig
     img_centroids = row_col_from_bounds(bounds, src)
     for indices in img_centroids:
         row, col = indices
-        img = src.read(window = rasterio.windows.Window(col_off=col, row_off=row, width = width, height=height), boundless=False)
+        img = src.read(window = rasterio.windows.Window(col_off=col, row_off=row, width = width, height=height), boundless=True)
         if savedir:
             filename = "{}/{}_{}.tif".format(savedir, basename, counter)
             with rasterio.open(filename, "w", driver="GTiff",height=height, width=width, count = img.shape[0], dtype=img.dtype) as dst:

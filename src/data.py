@@ -441,3 +441,13 @@ class TreeData(LightningDataModule):
         )
         
         return data_loader
+
+#helper batch function
+def batch(iterable, n=1):
+    """Given a list of image arrays, cut and batch and turn into torch tensor"""
+    l = len(iterable)
+    for ndx in range(0, l, n):
+        img_list = (iterable[ndx:min(ndx + n, l)])
+        image_batch = torch.stack(img_list)
+        
+        yield torch.tensor(image_batch)
