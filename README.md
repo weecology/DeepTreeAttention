@@ -14,7 +14,7 @@ Implementation of Hang et al. 2020 [Hyperspectral Image Classification with Atte
 ## Road map ([see V1.0 milestone](https://github.com/weecology/DeepTreeAttention/milestone/1))
 
 - [X] Data Generation: Convert NEON field data into crowns -> pixels for mapping
-- [X] Baseline Model: A vanilla 2D CNN score for computing comet environment, metrics and figures
+- [X] [Baseline Model](https://www.comet.ml/bw4sz/deeptreeattention/5a1ad2d55095413d9fcfb67875fed1b2?experiment-tab=chart&showOutliers=true&smoothing=0&transformY=smoothing&xAxis=wall): A vanilla 2D CNN score for computing comet environment, metrics and figures
 - [ ] Spectral/Spatial CNN with Attention
 
 After this there are many different routes including weak label learning, self-supervised contrastive learning and other psuedo-labeling approaches
