@@ -59,5 +59,9 @@ comet_logger.experiment.log_confusion_matrix(
     max_categories=len(data_module.species_label_dict.keys())
 )  
 
+#Log spectral spatial weight
+alpha_weight = m.model.alpha.detach().numpy()
+comet_logger.experiment.log_parameter("spectral_spatial weight", alpha_weight)
+
 #Log prediction
 comet_logger.experiment.log_table("test_predictions.csv", results)
