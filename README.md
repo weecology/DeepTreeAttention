@@ -14,8 +14,8 @@ Implementation of Hang et al. 2020 [Hyperspectral Image Classification with Atte
 ## Road map ([see V1.0 milestone](https://github.com/weecology/DeepTreeAttention/milestone/1))
 
 - [X] Data Generation: Convert NEON field data into crowns -> pixels for mapping
-- [ ] Baseline Model: A vanilla 2D CNN score for computing comet environment, metrics and figures
-- [ ] 3D CNN with Attention
+- [X] Baseline Model: A vanilla 2D CNN score for computing comet environment, metrics and figures
+- [ ] Spectral/Spatial CNN with Attention
 
 After this there are many different routes including weak label learning, self-supervised contrastive learning and other psuedo-labeling approaches
 
@@ -32,15 +32,16 @@ Project Organization
     │
     ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
     ├── src                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes src a Python module
-    │   ├── data           <- Pytorch Lighting data module for creating dataloaders for model training
-    │   ├── dataset        <- Pytorch dataset for generating batches of data
-    │   ├── generate       <- Convert csv of point files to tree crowns
-    │   ├── main           <- Pytorch Lightning Module for model training
-    │   ├── neon_paths     <- Utilities for getting paths and metadata from NEON HSI data
-    │   ├── patches        <- Convert tree crowns into a set of pixels with overlapping windows
-    │   ├── start_cluster  <- dask utilities for SLURM parallel processingt
-
+    │   ├── __init__.py       <- Makes src a Python module
+    │   ├── data.py           <- Pytorch Lighting data module for creating dataloaders for model training
+    │   ├── generate.py       <- Convert csv of point files to tree crowns
+    │   ├── main.py           <- Pytorch Lightning Module for model training
+    │   ├── neon_paths.py     <- Utilities for getting paths and metadata from NEON HSI data
+    │   ├── patches.py        <- Convert tree crowns into a set of pixels with overlapping windows
+    │   ├── start_cluster.py  <- dask utilities for SLURM parallel processing
+    │   ├── CHM.py            <- Canopy Height Model Lidar Processing
+    │   ├── Hyperspectral.py  <- Hyperspectral conversion from .h5 to .tif
+    │   ├── Models         <- Model Architectures
 
 --------
 
