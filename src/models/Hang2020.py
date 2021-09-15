@@ -150,6 +150,7 @@ class spectral_attention(Module):
         attention = F.relu(attention)
         attention = self.attention_conv2(attention)
         attention = F.sigmoid(attention)
+        
         #Add dummy dimension to make the shapes the same
         attention = attention.unsqueeze(-1)
         attention = torch.mul(x, attention)
