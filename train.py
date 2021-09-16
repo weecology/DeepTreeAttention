@@ -15,7 +15,7 @@ from pandas.util import hash_pandas_object
 #Create datamodule
 COMET_KEY = os.getenv("COMET_KEY")
 client = start_cluster.start(cpus=300, mem_size="5GB")
-#client = None
+client = None
 data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client)
 data_module.setup()
 comet_logger = CometLogger(api_key=COMET_KEY,
