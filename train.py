@@ -17,15 +17,16 @@ COMET_KEY = os.getenv("COMET_KEY")
 client = start_cluster.start(cpus=300, mem_size="5GB")
 #client = None
 data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client)
+data_module.setup()
+comet_logger = CometLogger(api_key=COMET_KEY,
+                           project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
 if client:
     client.close()
-comet_logger = CometLogger(api_key=COMET_KEY,
-                            project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
-comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 
-data_module.setup()
 resampled_data = data_module.resample(csv_file="data/processed/train.csv", oversample=True)
 resampled_data.to_csv("data/processed/resampled_train.csv", index=False)
+
+comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 
 #Override train file with resampling
 data_module.train_file = "data/processed/resampled_train.csv"
