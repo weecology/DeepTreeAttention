@@ -50,7 +50,7 @@ trainer = Trainer(
     logger=comet_logger)
 
 trainer.fit(m, datamodule=data_module)
-results, crown_metrics = m.evaluate_crowns("data/processed/test.csv")
+results, crown_metrics = m.evaluate_crowns("data/processed/test.csv", experiment=comet_logger.experiment)
 comet_logger.experiment.log_metrics(crown_metrics)
 
 #Confusion matrix
