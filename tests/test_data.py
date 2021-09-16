@@ -26,10 +26,10 @@ def config(tmpdir):
 
 
 #Data module
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def dm(config):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)            
-    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=False, data_dir="{}/tests/data".format(ROOT)) 
+    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=True, data_dir="{}/tests/data".format(ROOT)) 
     dm.setup()    
     
     return dm
