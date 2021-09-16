@@ -5,13 +5,14 @@ import glob
 import geopandas as gpd
 import pytest
 import pandas as pd
+import tempfile
 
 import os
 ROOT = os.path.dirname(os.path.dirname(data.__file__))
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-@pytest.fixture()
-def config(tmpdir):
+@pytest.fixture(scope="session")
+def config():
     #Turn off CHM filtering for the moment
     config = data.read_config(config_path="{}/config.yml".format(ROOT))
     config["min_CHM_height"] = None
@@ -19,7 +20,7 @@ def config(tmpdir):
     config["rgb_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
     config["HSI_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
     config["min_samples"] = 1
-    config["crop_dir"] = tmpdir
+    config["crop_dir"] = tempfile.gettempdir()
     config["convert_h5"] = False
     
     return config

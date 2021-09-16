@@ -93,17 +93,19 @@ class TreeModel(LightningModule):
         
         return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
     
-    def predict_image(self, img_path):
+    def predict_image(self, img_path, return_numeric = False):
         """Given an image path, load image and predict"""
         self.model.eval()        
         image = data.load_image(img_path)
         batch = torch.unsqueeze(image, dim=0)
         y = self.model(batch).detach()
         index = np.argmax(y, 1).detach().numpy()[0]
-        label = self.index_to_label[index]
         
-        return label
-        
+        if return_numeric:
+            return index
+        else:
+            return self.index_to_label[index]
+                
     def predict_xy(self, coordinates, fixed_box=True):
         """Given an x,y location, find sensor data and predict tree crown class. If no predicted crown within 5m an error will be raised (fixed_box=False) or a 1m fixed box will created (fixed_box=True)
         Args:
@@ -245,11 +247,12 @@ class TreeModel(LightningModule):
         """
         df = pd.read_csv(csv_file)
         df["crown"] = df.image_path.apply(lambda x: os.path.basename(x).split("_")[0])
-        df["pred_label"] = df.image_path.apply(lambda x: self.predict_image(x))
-        df["true_label"] = results["label"].apply(lambda x: self.label_to_index[x])
+        df["pred_label"] = df.image_path.apply(lambda x: self.predict_image(x, return_numeric=True))
+        df["pred_taxa"] = df["pred_label"].apply(lambda x: self.index_to_label[x])        
+        df["true_taxa"] = df["label"].apply(lambda x: self.index_to_label[x])
+        
         #Majority vote per crown
         results = df.groupby(["crown"]).agg(lambda x: x.mode()[0]).reset_index()
-        results = results[["crown","pred_label"]]
         
         if experiment:
             grouped = df.groupby("crown")
@@ -263,7 +266,7 @@ class TreeModel(LightningModule):
                     except:
                         plot_image = image
                     plot_image = np.rollaxis(plot_image, 0, 3)
-                    experiment.log_image(plot_image, name = "crown: {}, True: {}, Predicted {}".format(x.crown.iloc[index], x.true_label.iloc[index],x.pred_label.iloc[index]))
+                    experiment.log_image(plot_image, name = "crown: {}, True: {}, Predicted {}".format(x.crown.iloc[index], x.true_taxa.iloc[index],x.pred_taxa.iloc[index]))
                 
         return results
     
@@ -277,16 +280,13 @@ class TreeModel(LightningModule):
         """
         ground_truth = pd.read_csv(csv_file)
         #convert to taxon label
-        ground_truth["true_label"] = ground_truth.label
         ground_truth["crown"] = ground_truth.image_path.apply(lambda x: os.path.basename(x).split("_")[0])
-        ground_truth = ground_truth.groupby(["crown"]).agg(lambda x: x.mode()[0]).reset_index()[["crown","true_label"]]
+        ground_truth = ground_truth.groupby(["crown"]).agg(lambda x: x.mode()[0]).reset_index()
         results = self.predict_file(csv_file, experiment=experiment)
-        results["pred_label"] = results["pred_label"].apply(lambda x: self.label_to_index[x])
-        df = results.merge(ground_truth)
-        crown_micro = torchmetrics.functional.accuracy(preds=torch.tensor(df.pred_label.values, dtype=torch.long),target=torch.tensor(df.true_label.values, dtype=torch.long), average="micro")
-        crown_macro = torchmetrics.functional.accuracy(preds=torch.tensor(df.pred_label.values, dtype=torch.long),target=torch.tensor(df.true_label.values, dtype=torch.long), average="macro", num_classes=self.classes)
+        crown_micro = torchmetrics.functional.accuracy(preds=torch.tensor(results.pred_label.values, dtype=torch.long),target=torch.tensor(results.label.values, dtype=torch.long), average="micro")
+        crown_macro = torchmetrics.functional.accuracy(preds=torch.tensor(results.pred_label.values, dtype=torch.long),target=torch.tensor(results.label.values, dtype=torch.long), average="macro", num_classes=self.classes)
         
-        return df, {"crown_micro":crown_micro,"crown_macro":crown_macro}
+        return results, {"crown_micro":crown_micro,"crown_macro":crown_macro}
         
 
     
