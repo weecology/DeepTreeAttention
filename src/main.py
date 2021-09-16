@@ -233,7 +233,7 @@ class TreeModel(LightningModule):
         
         return prediction_raster
     
-    def predict_file(self, csv_file):
+    def predict_file(self, csv_file, plot_n_individuals=10, experiment=None):
         """Given a file with paths to image crops, create crown predictions 
         The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
         unique identifier for each crown and counter is 0..n pixel crops that belong to that crown.
@@ -245,15 +245,29 @@ class TreeModel(LightningModule):
         """
         df = pd.read_csv(csv_file)
         df["crown"] = df.image_path.apply(lambda x: os.path.basename(x).split("_")[0])
-        df["label"] = df.image_path.apply(lambda x: self.predict_image(x))
-        
+        df["pred_label"] = df.image_path.apply(lambda x: self.predict_image(x))
+        df["true_label"] = results["label"].apply(lambda x: self.label_to_index[x])
         #Majority vote per crown
         results = df.groupby(["crown"]).agg(lambda x: x.mode()[0]).reset_index()
-        results = results[["crown","label"]]
+        results = results[["crown","pred_label"]]
         
+        if experiment:
+            grouped = df.groupby("crown")
+            crown_groups = [g[1] for g in list(grouped)[:plot_n_individuals]]
+            for x in crown_groups:
+                for index, path in enumerate(x.image_path):
+                    image = rasterio.open(path).read()
+                    #Only HSI data have more than 3 bands.
+                    try:
+                        plot_image = image[[11, 55, 113], :, :,]
+                    except:
+                        plot_image = image
+                    plot_image = np.rollaxis(plot_image, 0, 3)
+                    experiment.log_image(plot_image, name = "crown: {}, True: {}, Predicted {}".format(x.crown.iloc[index], x.true_label.iloc[index],x.pred_label.iloc[index]))
+                
         return results
     
-    def evaluate_crowns(self, csv_file):
+    def evaluate_crowns(self, csv_file, experiment=None):
         """Crown level measure of accuracy
         Args:
             csv_file: ground truth csv with image_path and label columns
@@ -266,18 +280,13 @@ class TreeModel(LightningModule):
         ground_truth["true_label"] = ground_truth.label
         ground_truth["crown"] = ground_truth.image_path.apply(lambda x: os.path.basename(x).split("_")[0])
         ground_truth = ground_truth.groupby(["crown"]).agg(lambda x: x.mode()[0]).reset_index()[["crown","true_label"]]
-        results = self.predict_file(csv_file)
-        results["label"] = results["label"].apply(lambda x: self.label_to_index[x])
+        results = self.predict_file(csv_file, experiment=experiment)
+        results["pred_label"] = results["pred_label"].apply(lambda x: self.label_to_index[x])
         df = results.merge(ground_truth)
-        crown_micro = torchmetrics.functional.accuracy(preds=torch.tensor(df.label.values, dtype=torch.long),target=torch.tensor(df.true_label.values, dtype=torch.long), average="micro")
-        crown_macro = torchmetrics.functional.accuracy(preds=torch.tensor(df.label.values, dtype=torch.long),target=torch.tensor(df.true_label.values, dtype=torch.long), average="macro", num_classes=self.classes)
+        crown_micro = torchmetrics.functional.accuracy(preds=torch.tensor(df.pred_label.values, dtype=torch.long),target=torch.tensor(df.true_label.values, dtype=torch.long), average="micro")
+        crown_macro = torchmetrics.functional.accuracy(preds=torch.tensor(df.pred_label.values, dtype=torch.long),target=torch.tensor(df.true_label.values, dtype=torch.long), average="macro", num_classes=self.classes)
         
         return df, {"crown_micro":crown_micro,"crown_macro":crown_macro}
-    
-        
-        
-        
-        
         
 
     

@@ -1,3 +1,4 @@
+import comet_ml
 import geopandas as gpd
 from src import main
 from src.models import Hang2020
@@ -8,12 +9,13 @@ import rasterio
 import pytest
 import pandas as pd
 from pytorch_lightning import Trainer
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(data.__file__))
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-@pytest.fixture()
-def config(tmpdir):
+@pytest.fixture(scope="session")
+def config():
     #Turn of CHM filtering for the moment
     config = data.read_config(config_path="{}/config.yml".format(ROOT))
     config["min_CHM_height"] = None
@@ -21,22 +23,39 @@ def config(tmpdir):
     config["rgb_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
     config["HSI_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
     config["min_samples"] = 1
-    config["crop_dir"] = tmpdir
+    config["crop_dir"] = tempfile.gettempdir()
     config["bands"] = 3
     config["classes"] = 2
     config["top_k"] = 1
     config["convert_h5"] = False
     
     return config
-
 #Data module
 @pytest.fixture(scope="session")
 def dm(config):
-    csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)            
-    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=True, data_dir="{}/tests/data".format(ROOT)) 
+    csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)           
+    if not "GITHUB_ACTIONS" in os.environ:
+        regen = False
+    else:
+        regen = True
+    
+    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=regen, data_dir="{}/tests/data".format(ROOT)) 
     dm.setup()    
     
     return dm
+
+
+@pytest.fixture()
+def comet_experiment():
+    if not "GITHUB_ACTIONS" in os.environ:
+        from pytorch_lightning.loggers import CometLogger        
+        COMET_KEY = os.getenv("COMET_KEY")
+        comet_logger = CometLogger(api_key=COMET_KEY,
+                                   project_name="DeepTreeAttention", workspace="bw4sz",auto_output_logging = "simple")
+        return comet_logger
+    else:
+        return None
+
 
 #Training module
 @pytest.fixture(scope="session")
@@ -49,14 +68,14 @@ def test_fit(config, m, dm):
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m,datamodule=dm)
     
-def test_predict_file(config, m):
-    df = m.predict_file("{}/tests/data/processed/test.csv".format(ROOT))
+def test_predict_file(config, m, comet_experiment):
+    df = m.predict_file("{}/tests/data/processed/test.csv".format(ROOT), experiment = comet_experiment.experiment)
     input_data = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))    
     
     assert set(df.columns) == set(["crown","label"])
     assert df.shape[0] == len(input_data.image_path.apply(lambda x: os.path.basename(x).split("_")[0]).unique())
 
-def test_evaluate_crowns(config, m):
+def test_evaluate_crowns(config, m, comet_experiment):
     df = m.evaluate_crowns("{}/tests/data/processed/test.csv".format(ROOT))
     
     assert len(df) == 2
