@@ -25,27 +25,27 @@ convert_h5: True
 #Directoy to store cropped images from crowns
 crop_dir: /orange/ewhite/b.weinstein/DeepTreeAttention/crops
 #Pixel size of the crowns. Square crops around each pixel of size x are used
-window_size: 11
+window_size: 2
 
 #Resampling
 #Minimum number of samples per species, all samples under this floor will be duplicated
 resample_min: 50
 #maximum resample per species, all species above this threshold will be randomly selected balanced by site. 
-resample_max: 1000
+resample_max: 500
 
 #Network Parameters
 gpus: 1
-workers: 8
+workers: 20
 batch_size: 256
 bands: 369
-lr: 0.001
+lr: 0.01
 fast_dev_run: False
 accelerator: ddp
-epochs: 50
+epochs: 70
 
 #Evaluation config
 #Top k class recall score
-top_k: 5
+top_k: 4
 
 #Comet dashboard
 comet_workspace: bw4sz
