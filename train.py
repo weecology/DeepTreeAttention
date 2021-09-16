@@ -14,7 +14,7 @@ from pandas.util import hash_pandas_object
 
 #Create datamodule
 COMET_KEY = os.getenv("COMET_KEY")
-client = start_cluster.start(cpus=80)
+client = start_cluster.start(cpus=200)
 #client = None
 data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client)
 
