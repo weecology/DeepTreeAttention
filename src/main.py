@@ -18,6 +18,8 @@ from src import generate
 from src import neon_paths
 from src import patches
 from shapely.geometry import Point, box
+from sklearn import preprocessing
+
 
 class TreeModel(LightningModule):
     """A pytorch lightning data module
@@ -266,6 +268,9 @@ class TreeModel(LightningModule):
                     except:
                         plot_image = image
                     plot_image = np.rollaxis(plot_image, 0, 3)
+                    data = plot_image.reshape(np.prod(plot_image.shape[:2]), np.prod(plot_image.shape[2:]))
+                    data  = preprocessing.scale(data)
+                    plot_image = data.reshape(plot_image.shape)                    
                     experiment.log_image(plot_image, name = "crown: {}, True: {}, Predicted {}".format(x.crown.iloc[index], x.true_taxa.iloc[index],x.pred_taxa.iloc[index]))
                 
         return results
