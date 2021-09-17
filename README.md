@@ -85,7 +85,7 @@ Current metrics include micro/macro pixel accuracy and micro/macro crown accurac
 
 ### Dev Guide
 
-In general, major changes or improvements should be made on a new git branch. Only core improvements should be made on the main branch. If a change leads to higher scores, please create a pull request.
+In general, major changes or improvements should be made on a new git branch. Only core improvements should be made on the main branch. If a change leads to higher scores, please create a pull request. Any pull requests are expected to have pytest unit tests (see tests/) that cover major use cases.
 
 ## Model Architectures
 
