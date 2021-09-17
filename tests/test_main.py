@@ -3,9 +3,7 @@ import geopandas as gpd
 from src import main
 from src.models import Hang2020
 from src import data
-import numpy as np
 import os
-import rasterio
 import pytest
 import pandas as pd
 from pytorch_lightning import Trainer
