@@ -10,6 +10,7 @@ import pandas as pd
 from torch.nn import functional as F
 from torch import optim
 import torch
+from torchvision import transforms
 import torchmetrics
 import tempfile
 import rasterio
@@ -98,7 +99,7 @@ class TreeModel(LightningModule):
     def predict_image(self, img_path, return_numeric = False):
         """Given an image path, load image and predict"""
         self.model.eval()        
-        image = data.load_image(img_path)
+        image = data.load_image(img_path, image_size=self.config["image_size"])
         batch = torch.unsqueeze(image, dim=0)
         y = self.model(batch).detach()
         index = np.argmax(y, 1).detach().numpy()[0]
@@ -126,6 +127,7 @@ class TreeModel(LightningModule):
         deepforest_model.use_release(check_release=False)
         boxes = generate.predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_path, bounds=gdf.total_bounds, expand=40)
         boxes['geometry'] = boxes.apply(lambda x: box(x.xmin,x.ymin,x.xmax,x.ymax), axis=1)
+        
         if boxes.shape[0] > 1:
             centroid_distances = boxes.centroid.distance(Point(coordinates[0],coordinates[1])).sort_values()
             centroid_distances = centroid_distances[centroid_distances<5]
@@ -139,32 +141,27 @@ class TreeModel(LightningModule):
         #Create pixel crops
         img_pool = glob.glob(self.config["HSI_sensor_pool"], recursive=True)        
         sensor_path = neon_paths.find_sensor_path(lookup_pool=img_pool, bounds=gdf.total_bounds)        
-        crops = patches.bounds_to_pixel(
+        crop = patches.crop(
             bounds=boxes["geometry"].values[0].bounds,
-            img_path=sensor_path,
-            width=self.config["window_size"],
-            height=self.config["window_size"],
+            sensor_path=sensor_path,
         )
      
         #preprocess and batch
-        images = [data.preprocess_image(img, channel_first=True) for coords, img in crops]
-        batches = data.batch(images, n=self.config["batch_size"])
+        image = data.preprocess_image(crop, channel_first=True)
+        image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
+        image = torch.unsqueeze(image, dim = 0)
         
         #Classify pixel crops
         self.model.eval() 
-        predictions = []
-        for x in batches:
-            class_probs = self.model(x)
-            predictions.append(class_probs.detach().numpy())
-        
-        predictions = np.concatenate(predictions)
-        majority_index = pd.Series(np.argmax(predictions, 1)).mode()[0]
-        label = self.index_to_label[majority_index]
+        class_probs = self.model(image)
+        class_probs = class_probs.detach().numpy()
+        index = np.argmax(class_probs)
+        label = self.index_to_label[index]
         
         #Average score for selected label
-        average_score = np.mean(predictions[:,majority_index])
+        score = class_probs[:,index]
         
-        return label, average_score
+        return label, score
     
     def predict_crown(self, geom, sensor_path):
         """Given a geometry object of a tree crown, predict label
@@ -175,67 +172,27 @@ class TreeModel(LightningModule):
             label: taxonID
             average_score: average pixel confidence for of the prediction class
         """
-        crops = patches.bounds_to_pixel(
+        crop = patches.crop(
             bounds=geom.bounds,
-            img_path=sensor_path,
-            width=self.config["window_size"],
-            height=self.config["window_size"],
+            sensor_path=sensor_path
         )
      
         #preprocess and batch
-        images = [data.preprocess_image(img, channel_first=True) for coords, img in crops]
-        batches = data.batch(images, n=self.config["batch_size"])
+        image = data.preprocess_image(crop, channel_first=True)
+        image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
+        image = torch.unsqueeze(image, dim = 0)
         
         #Classify pixel crops
         self.model.eval() 
-        predictions = []
-        for x in batches:
-            class_probs = self.model(x)
-            predictions.append(class_probs.detach().numpy())
-        
-        predictions = np.concatenate(predictions)
-        majority_index = pd.Series(np.argmax(predictions, 1)).mode()[0]
-        label = self.index_to_label[majority_index]
+        class_probs = self.model(image)
+        class_probs = class_probs.detach().numpy()
+        index = np.argmax(class_probs)
+        label = self.index_to_label[index]
         
         #Average score for selected label
-        average_score = np.mean(predictions[:,majority_index])
+        score = class_probs[:,index]
         
-        return label, average_score
-    
-    def predict_raster(self, raster_path):
-        """Given an raster array, traverse the pixels and create prediction map
-        Args:
-            img (np.array): a numpy array of image data
-        Returns:
-            label: species taxa label
-        """
-        r = rasterio.open(raster_path)
-        prediction_raster = np.zeros(shape = (r.shape[0], r.shape[1])) 
-        
-        crops = patches.bounds_to_pixel(
-            bounds=r.bounds,
-            img_path=raster_path,
-            width=self.config["window_size"],
-            height=self.config["window_size"],
-        )
-       
-        #preprocess and batch
-        images = [data.preprocess_image(img, channel_first=True) for coords, img in crops]
-        batches = data.batch(images, n=self.config["batch_size"])
-        
-        #Classify pixel crops
-        self.model.eval() 
-        predicted_classes = []
-        for x in batches:
-            class_probs = self.model(x)
-            pred = torch.argmax(class_probs,1).detach().numpy()
-            predicted_classes.append(pred)
-        
-        predicted_classes = np.concatenate(predicted_classes)
-        for (coords, img), pred in zip(crops, predicted_classes):
-            prediction_raster[coords] = pred
-        
-        return prediction_raster
+        return label, score
     
     def predict_file(self, csv_file, plot_n_individuals=10, experiment=None):
         """Given a file with paths to image crops, create crown predictions 

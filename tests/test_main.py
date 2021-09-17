@@ -93,20 +93,3 @@ def test_predict_crown(config, m, dm):
     
     assert label in dm.species_label_dict.keys()
     assert score > 0 
-    
-    
-def test_predict_raster(dm, m, config, tmpdir):
-    rgb_path = "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop.tif".format(ROOT)
-    src = rasterio.open(rgb_path)
-    
-    #Make smaller crop
-    img = src.read(window = rasterio.windows.Window(col_off=0, row_off=0, width = 100, height=100), boundless=False)
-    with rasterio.open("{}/test_prediction.tif".format(tmpdir), "w", driver="GTiff",height=100, width=100, count = 3, dtype=img.dtype) as dst:
-        dst.write(img)
-        
-    prediction_raster = m.predict_raster(raster_path="{}/test_prediction.tif".format(tmpdir))
-    
-    assert prediction_raster.shape == (100,100)
-    
-    #Pixels should be either 0, 1 for the 2 class labels
-    assert all(np.unique(prediction_raster) == [0,1])

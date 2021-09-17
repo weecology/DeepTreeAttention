@@ -228,49 +228,14 @@ def points_to_crowns(
     
     return results
 
-def write_crop(row, img_path, label_dict, size, savedir):
+def write_crop(row, img_path, label_dict, savedir):
     """Wrapper to write a crop based on size and savedir"""
-    filenames = patches.bounds_to_pixel(bounds=row["geometry"].bounds, img_path=img_path, width=size, height=size, savedir=savedir, basename=row["individual"])
-    labels = []
-    
-    #Check for duplicates
-    crops = [rasterio.open(x).read() for x in filenames]
-    unique_crops = []
-    
-    #Gross check, are there any dataframes with the same sum? Avoids expensive comparison
-    sums = np.array([np.sum(x) for x in crops])
-    unique_sums = pd.Series(sums).drop_duplicates().index
-    unique_filenames = [filenames[x] for x in unique_sums]
-    
-    #Look for duplicates based on sum
-    bin_sums = pd.Series(sums).value_counts()
-    duplicated_sums = bin_sums[bin_sums > 1].index
-    
-    if not len(duplicated_sums) == 0:
-        selected_indices = []
-        for x in duplicated_sums:
-            selected_indices.append(np.where(x == sums)[0])
-        selected_indices = np.concatenate(selected_indices)
-        possible_duplicates = [crops[x] for x in selected_indices]
-        possible_duplicates_filenames = [filenames[x] for x in selected_indices]
-        
-        #If so, check arrays serially
-        for index, x in enumerate(possible_duplicates):
-            if not any(np.array_equal(x, arr) for arr in unique_crops):
-                unique_crops.append(x)
-                unique_filenames.append(possible_duplicates_filenames[index])
-            else:
-                print("{} is duplicated, removing".format(possible_duplicates_filenames[index]))
-                os.remove(possible_duplicates_filenames[index])        
-        
-    for x in unique_filenames:
-        label = label_dict[row["taxonID"]]
-        labels.append(label)
-    annotation = pd.DataFrame({"image_path":unique_filenames, "label":labels})
+    filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])
+    annotation = pd.DataFrame({"image_path":[filename], "label":[label_dict[row["taxonID"]]]})
     
     return annotation
 
-def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, convert_h5=False, rgb_glob=None, HSI_tif_dir=None):
+def generate_crops(gdf, sensor_glob, savedir, label_dict, client=None, convert_h5=False, rgb_glob=None, HSI_tif_dir=None):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:
@@ -278,7 +243,6 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
         savedir: path to save image crops
         img_pool: glob to search remote sensing files. This can be either RGB of .tif hyperspectral data, as long as it can be read by rasterio
         label_dict (dict): taxonID -> numeric order
-        size: number of pixel width and height for the windows
         client: optional dask client
         convert_h5: If HSI data is passed, make sure .tif conversion is complete
         rgb_glob: glob to search images to match when converting h5s -> tif.
@@ -306,7 +270,7 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
             except:
                 print("{} failed to find sensor path with traceback {}".format(row.geometry.bounds, traceback.print_exc()))
                 continue
-            future = client.submit(write_crop,row=row,img_path=img_path, label_dict=label_dict, size=size, savedir=savedir)
+            future = client.submit(write_crop,row=row,img_path=img_path, label_dict=label_dict, savedir=savedir)
             futures.append(future)
             
         wait(futures)
@@ -331,11 +295,11 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, size, client=None, con
                 print("{} failed to find sensor path with traceback".format(row.geometry.bounds, traceback.print_exc()))
                 continue
             try:
-                annotation = write_crop(row=row, img_path=img_path, savedir=savedir, label_dict=label_dict, size=size)
+                annotation = write_crop(row=row, img_path=img_path, savedir=savedir, label_dict=label_dict)
             except Exception as e:
                 print("{} failed with {}".format(row,e))
                 continue
-            
+    
             annotations.append(annotation)
     
     annotations = pd.concat(annotations)

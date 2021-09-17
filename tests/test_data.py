@@ -1,8 +1,5 @@
 #Test data module
 from src import data
-from src import generate
-import glob
-import geopandas as gpd
 import pytest
 import pandas as pd
 import tempfile
@@ -47,32 +44,29 @@ def test_TreeData_setup(dm, config):
     
 def test_TreeDataset(dm, config,tmpdir):
     #Train loader
-    data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/train.csv".format(ROOT))
+    data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/train.csv".format(ROOT), config=config)
     image, label = data_loader[0]
-    assert image.shape == (3, config["window_size"], config["window_size"])
+    assert image.shape == (3, config["image_size"], config["image_size"])
     
     #Test loader
-    data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/test.csv".format(ROOT), train=False)
-    image = data_loader[0]
-    assert image.shape == (3, config["window_size"], config["window_size"])
-    
+    data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/test.csv".format(ROOT), train=False)    
     annotations = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
     assert len(data_loader) == annotations.shape[0]    
     
-def test_resample(config, dm, tmpdir):
-    #Set to a smaller number to ensure easy calculation
-    dm.config["resample_max"] = 50
-    dm.config["resample_min"] = 10
+#def test_resample(config, dm, tmpdir):
+    ##Set to a smaller number to ensure easy calculation
+    #dm.config["resample_max"] = 50
+    #dm.config["resample_min"] = 10
     
-    annotations = dm.resample(csv_file = "{}/tests/data/processed/train.csv".format(ROOT), oversample=False)
+    #annotations = dm.resample(csv_file = "{}/tests/data/processed/train.csv".format(ROOT), oversample=False)
     
-    #There are two classes
-    assert annotations.shape[0] == dm.config["resample_max"] * 2
+    ##There are two classes
+    #assert annotations.shape[0] == dm.config["resample_max"] * 2
     
-    undersampling = pd.read_csv("{}/tests/data/processed/train.csv".format(ROOT))
-    undersampling = undersampling.groupby("label").sample(n=5)
-    undersampling.to_csv("{}/undersampling.csv".format(tmpdir))
-    annotations = dm.resample(csv_file="{}/undersampling.csv".format(tmpdir), oversample=True)
+    #undersampling = pd.read_csv("{}/tests/data/processed/train.csv".format(ROOT))
+    #undersampling = undersampling.groupby("label").sample(n=5)
+    #undersampling.to_csv("{}/undersampling.csv".format(tmpdir))
+    #annotations = dm.resample(csv_file="{}/undersampling.csv".format(tmpdir), oversample=True)
     
-    #There are two classes
-    assert annotations.shape[0] == 2 * dm.config["resample_min"]
+    ##There are two classes
+    #assert annotations.shape[0] == 2 * dm.config["resample_min"]

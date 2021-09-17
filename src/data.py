@@ -17,6 +17,7 @@ from src import augmentation
 from shapely.geometry import Point
 import torch
 from torch.utils.data import Dataset
+from torchvision import transforms
 import yaml
         
 def filter_data(path, config):
@@ -209,15 +210,18 @@ def preprocess_image(image, channel_first=False):
     
     if not channel_first:
         img = np.rollaxis(img, 2,0)
-
+        
     normalized = torch.from_numpy(img)
     
     return normalized
 
-def load_image(img_path, channel_first=False):
+def load_image(img_path, image_size, channel_first=False):
     """Load and preprocess an image for training/prediction"""
     image = np.array(io.imread(img_path))
     image = preprocess_image(image, channel_first=channel_first)
+    
+    #resize image
+    image = transforms.functional.resize(image, size=(image_size,image_size), interpolation=transforms.InterpolationMode.NEAREST)
     
     return image
 
@@ -227,17 +231,23 @@ class TreeDataset(Dataset):
     Args:
        csv_file: path to csv file with image_path and label
     """
-    def __init__(self, csv_file, train=True):
+    def __init__(self, csv_file, image_size=10, config=None, train=True):
         self.annotations = pd.read_csv(csv_file)
         self.train = train
-        self.transformer = augmentation.train_augmentation()
+        if config:
+            self.image_size = config["image_size"]
+        else:
+            self.image_size = image_size
+        
+        #Create augmentor
+        self.transformer = augmentation.train_augmentation(image_size=image_size)
             
     def __len__(self):
         return self.annotations.shape[0]
         
     def __getitem__(self, index):
         image_path = self.annotations.image_path.loc[index]
-        image = load_image(image_path)
+        image = load_image(image_path, image_size=self.image_size)
         
         if self.train:
             label = self.annotations.label.loc[index]
@@ -330,7 +340,6 @@ class TreeData(LightningDataModule):
                 savedir=self.config["crop_dir"],
                 label_dict=self.species_label_dict,
                 sensor_glob=self.config["HSI_sensor_pool"],
-                size=self.config["window_size"],
                 convert_h5=self.config["convert_h5"],   
                 rgb_glob=self.config["rgb_sensor_pool"],
                 HSI_tif_dir=self.config["HSI_tif_dir"],
@@ -352,7 +361,6 @@ class TreeData(LightningDataModule):
                 savedir=self.config["crop_dir"],
                 label_dict=self.species_label_dict,
                 sensor_glob=self.config["HSI_sensor_pool"],
-                size=self.config["window_size"],
                 rgb_glob=self.config["rgb_sensor_pool"],                
                 client=self.client,
                 HSI_tif_dir=self.config["HSI_tif_dir"],                
@@ -425,7 +433,7 @@ class TreeData(LightningDataModule):
 
     def train_dataloader(self):
         """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""
-        ds = TreeDataset(csv_file = self.train_file)
+        ds = TreeDataset(csv_file = self.train_file, config=self.config)
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],
@@ -436,7 +444,7 @@ class TreeData(LightningDataModule):
         return data_loader
     
     def val_dataloader(self):
-        ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir))
+        ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config)
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],

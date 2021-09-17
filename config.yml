@@ -24,8 +24,8 @@ min_CHM_diff: 4
 convert_h5: True
 #Directoy to store cropped images from crowns
 crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/crops
-#Pixel size of the crowns. Square crops around each pixel of size x are used
-window_size: 11
+#resized Pixel size of the crowns. Square crops around each pixel of size x are used
+image_size: 11
 
 #Resampling
 #Minimum number of samples per species, all samples under this floor will be duplicated

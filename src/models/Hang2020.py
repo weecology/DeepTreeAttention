@@ -234,11 +234,11 @@ class Hang2020(Module):
         
         #Take the final attention scores
         spectral_classes = spectral_scores[-1]
-        #spatial_classes = spatial_scores[-1]
+        spatial_classes = spatial_scores[-1]
         
         #Weighted average
-        #joint_score = spectral_classes * self.alpha + (1-self.alpha) * spatial_classes
+        joint_score = spectral_classes * self.alpha + (1-self.alpha) * spatial_classes
         
-        return spectral_classes
+        return joint_score
         
     

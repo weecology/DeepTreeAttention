@@ -20,3 +20,9 @@ def test_patches_hsi(tmpdir):
     assert len(patch_list) > 0 
     img = rasterio.open(patch_list[0]).read()
     assert img.shape == (369,11,11)    
+    
+def test_crop_hsi(tmpdir):
+    gdf = gpd.read_file("{}/tests/data/crown.shp".format(ROOT))
+    patch = patches.crop(bounds=gdf.geometry[0].bounds,sensor_path="{}/tests/data/hsi/2019_HARV_6_726000_4699000_image_crop_hyperspectral.tif".format(ROOT), savedir=tmpdir, basename="test")
+    img = rasterio.open(patch).read()
+    assert img.shape[0] == 369    
