@@ -147,7 +147,7 @@ class TreeModel(LightningModule):
         )
      
         #preprocess and batch
-        image = data.preprocess_image(crop, channel_first=True)
+        image = data.preprocess_image(crop, channel_is_first=True)
         image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
         image = torch.unsqueeze(image, dim = 0)
         
@@ -178,7 +178,7 @@ class TreeModel(LightningModule):
         )
      
         #preprocess and batch
-        image = data.preprocess_image(crop, channel_first=True)
+        image = data.preprocess_image(crop, channel_is_first=True)
         image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
         image = torch.unsqueeze(image, dim = 0)
         

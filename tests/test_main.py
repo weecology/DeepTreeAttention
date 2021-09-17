@@ -44,13 +44,13 @@ def dm(config):
 
 
 @pytest.fixture()
-def comet_experiment():
+def experiment():
     if not "GITHUB_ACTIONS" in os.environ:
         from pytorch_lightning.loggers import CometLogger        
         COMET_KEY = os.getenv("COMET_KEY")
         comet_logger = CometLogger(api_key=COMET_KEY,
                                    project_name="DeepTreeAttention", workspace="bw4sz",auto_output_logging = "simple")
-        return comet_logger
+        return comet_logger.experiment
     else:
         return None
 
@@ -66,13 +66,13 @@ def test_fit(config, m, dm):
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m,datamodule=dm)
     
-def test_predict_file(config, m, comet_experiment):
-    df = m.predict_file("{}/tests/data/processed/test.csv".format(ROOT), experiment = comet_experiment.experiment)
+def test_predict_file(config, m, experiment):
+    df = m.predict_file("{}/tests/data/processed/test.csv".format(ROOT), experiment = experiment)
     input_data = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))    
     
     assert df.shape[0] == len(input_data.image_path.apply(lambda x: os.path.basename(x).split("_")[0]).unique())
 
-def test_evaluate_crowns(config, m, comet_experiment):
+def test_evaluate_crowns(config, m):
     df = m.evaluate_crowns("{}/tests/data/processed/test.csv".format(ROOT))
     
     assert len(df) == 2

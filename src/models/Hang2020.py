@@ -226,7 +226,7 @@ class Hang2020(Module):
         self.spatial_network = spatial_network(bands, classes)
         
         #Learnable weight
-        self.alpha = nn.Parameter(torch.clamp(torch.tensor(0.5), min=0., max=1.))
+        self.alpha = nn.Parameter(torch.sigmoid(torch.tensor(0.5)))
         
     def forward(self, x):
         spectral_scores = self.spectral_network(x)
