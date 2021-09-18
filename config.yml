@@ -36,12 +36,12 @@ resample_max: 500
 #Network Parameters
 gpus: 1
 workers: 20
-batch_size: 1024
+batch_size: 256
 bands: 369
-lr: 0.01
+lr: 0.1
 fast_dev_run: False
 accelerator: ddp
-epochs: 70
+epochs: 120
 
 #Evaluation config
 #Top k class recall score
