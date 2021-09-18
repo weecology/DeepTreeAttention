@@ -147,7 +147,7 @@ class TreeModel(LightningModule):
         )
      
         #preprocess and batch
-        image = data.preprocess_image(crop, channel_first=True)
+        image = data.preprocess_image(crop, channel_is_first=True)
         image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
         image = torch.unsqueeze(image, dim = 0)
         
@@ -178,7 +178,7 @@ class TreeModel(LightningModule):
         )
      
         #preprocess and batch
-        image = data.preprocess_image(crop, channel_first=True)
+        image = data.preprocess_image(crop, channel_is_first=True)
         image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
         image = torch.unsqueeze(image, dim = 0)
         
@@ -242,8 +242,7 @@ class TreeModel(LightningModule):
         """
         ground_truth = pd.read_csv(csv_file)
         #convert to taxon label
-        ground_truth["crown"] = ground_truth.image_path.apply(lambda x: os.path.basename(x).split("_")[0])
-        ground_truth = ground_truth.groupby(["crown"]).agg(lambda x: x.mode()[0]).reset_index()
+        ground_truth["crown"] = ground_truth.image_path.apply(lambda x: os.path.splitext(os.path.basename(x)))
         results = self.predict_file(csv_file, experiment=experiment)
         crown_micro = torchmetrics.functional.accuracy(preds=torch.tensor(results.pred_label.values, dtype=torch.long),target=torch.tensor(results.label.values, dtype=torch.long), average="micro")
         crown_macro = torchmetrics.functional.accuracy(preds=torch.tensor(results.pred_label.values, dtype=torch.long),target=torch.tensor(results.label.values, dtype=torch.long), average="macro", num_classes=self.classes)

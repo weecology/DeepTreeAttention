@@ -48,6 +48,7 @@ trainer = Trainer(
     fast_dev_run=data_module.config["fast_dev_run"],
     max_epochs=data_module.config["epochs"],
     accelerator=data_module.config["accelerator"],
+    val_check_interval=5,
     logger=comet_logger)
 
 trainer.fit(m, datamodule=data_module)

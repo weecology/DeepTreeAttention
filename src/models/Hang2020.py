@@ -226,7 +226,7 @@ class Hang2020(Module):
         self.spatial_network = spatial_network(bands, classes)
         
         #Learnable weight
-        self.alpha = nn.Parameter(torch.clamp(torch.tensor(0.5), min=0., max=1.))
+        self.alpha = nn.Parameter(torch.tensor(0.5, dtype=float), requires_grad=True)
         
     def forward(self, x):
         spectral_scores = self.spectral_network(x)
@@ -237,7 +237,8 @@ class Hang2020(Module):
         spatial_classes = spatial_scores[-1]
         
         #Weighted average
-        joint_score = spectral_classes * self.alpha + (1-self.alpha) * spatial_classes
+        self.weighed_average = torch.sigmoid(self.alpha)
+        joint_score = spectral_classes * self.alpha + (1-self.weighed_average) * spatial_classes
         
         return joint_score
         
