@@ -48,7 +48,6 @@ trainer = Trainer(
     fast_dev_run=data_module.config["fast_dev_run"],
     max_epochs=data_module.config["epochs"],
     accelerator=data_module.config["accelerator"],
-    check_val_every_n_epoch=5,
     logger=comet_logger)
 
 trainer.fit(m, datamodule=data_module)
@@ -57,8 +56,8 @@ comet_logger.experiment.log_metrics(crown_metrics)
 
 #Confusion matrix
 comet_logger.experiment.log_confusion_matrix(
-    results.label.astype(int),
-    results.pred_label.astype(int),
+    results.label,
+    results.pred_label,
     labels=list(data_module.species_label_dict.keys()),
     max_categories=len(data_module.species_label_dict.keys())
 )  
