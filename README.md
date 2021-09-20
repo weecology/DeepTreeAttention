@@ -43,7 +43,23 @@ Project Organization
 
 --------
 
-# Pytorch Lightning Data Module (data.TreeData)
+# Workflow
+There are three main parts to this project, a 1) data module, a 2) model module, and 3) a trainer module. Usually the data_module is created to hold the train and test split and keep track of data generation reproducibility. Then a model architecture is created and pass to the model module along with the data module. Finally the model module is passed to the trainer.
+
+```
+#1) 
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client)
+
+#2)
+model = <create a pytorch NN.module>
+m = main.TreeModel(model=model, bands=data_module.config["bands"], classes=data_module.num_classes,label_dict=data_module.species_label_dict)
+
+#3
+trainer = Trainer()
+trainer.fit(m, datamodule=data_module)
+```
+
+## Pytorch Lightning Data Module (data.TreeData)
 
 This repo contains a pytorch lightning data module for reproducibility. The goal of the project is to make it easy to share with others within our research group, but we welcome contributions from outside the community. While all data is public, it is VERY large (>20TB) and cannot be easily shared. If you want to reproduce this work, you will need to download the majority of NEON's camera, HSI and CHM data and change the paths in the config file. For the 'raw' NEON tree stem data see data/raw/neon_vst_2021.csv. The data module starts from this state, which are x,y locations for each tree. It then performs the following actions as an end-to-end workflow.
 
@@ -60,7 +76,7 @@ data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenera
 data_module.setup()
 ```
 
-# Pytorch Lightning Training Module (data.TreeModel)
+## Pytorch Lightning Training Module (data.TreeModel)
 
 Training is handled by the TreeModel class which loads a model from the models folder, reads the config file and runs the training. The evaluation metrics and images are computed and put of the comet dashboard
 
@@ -112,3 +128,6 @@ class myModel(Module):
         
         return class_scores
 ```
+
+to create a model that takes in new inputs, I strongly recommend sub-classing the existing TreeData and TreeModel classes and extending them. For an example, see the MetadataModel in models/metadata.py
+
