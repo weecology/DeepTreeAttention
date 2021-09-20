@@ -1,5 +1,5 @@
 #Metadata model
-from src import models
+from src.models.Hang2020 import Hang2020
 from src import main
 from torch.nn import Module
 from torch.nn import functional as F
@@ -20,13 +20,13 @@ class metadata(Module):
         
         return x
     
-class metadata_sensor_fusion(models.Hang2020):
+class metadata_sensor_fusion(Module):
     """A joint fusion model of HSI sensor data and metadata"""
-    def __init__(self, sites, bands,classes):
+    def __init__(self, sites, bands, classes):
         super(metadata_sensor_fusion,self).__init__()   
         
         self.metadata_model = metadata(sites, classes)
-        self.sensor_model = models.Hang2020.Hang2020(bands, classes)
+        self.sensor_model = Hang2020(bands, classes)
         
         #Fully connected concat learner
         self.fc1 = nn.Linear(in_features = classes * 2 , out_features = classes)
@@ -34,7 +34,7 @@ class metadata_sensor_fusion(models.Hang2020):
     def forward(self, images, metadata):
         metadata_softmax = self.metadata_model(metadata)
         sensor_softmax = self.sensor_model(images)
-        concat_features = torch.cat([metadata_softmax, sensor_softmax])
+        concat_features = torch.cat([metadata_softmax, sensor_softmax], dim=1)
         concat_features = self.fc1(concat_features)
         class_scores = F.softmax(concat_features, dim  = -1)
         

@@ -228,14 +228,14 @@ def points_to_crowns(
     
     return results
 
-def write_crop(row, img_path, label_dict, savedir):
+def write_crop(row, img_path, label_dict, site_dict, savedir):
     """Wrapper to write a crop based on size and savedir"""
     filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])
-    annotation = pd.DataFrame({"image_path":[filename], "label":[label_dict[row["taxonID"]]], "siteID": row["siteID"]})
+    annotation = pd.DataFrame({"image_path":[filename], "label":[label_dict[row["taxonID"]]], "site":[site_dict[row["siteID"]]]})
     
     return annotation
 
-def generate_crops(gdf, sensor_glob, savedir, label_dict, client=None, convert_h5=False, rgb_glob=None, HSI_tif_dir=None):
+def generate_crops(gdf, sensor_glob, savedir, label_dict, site_dict, client=None, convert_h5=False, rgb_glob=None, HSI_tif_dir=None):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:
@@ -243,6 +243,7 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, client=None, convert_h
         savedir: path to save image crops
         img_pool: glob to search remote sensing files. This can be either RGB of .tif hyperspectral data, as long as it can be read by rasterio
         label_dict (dict): taxonID -> numeric order
+        site_dict (dict): siteID -> numeric order
         client: optional dask client
         convert_h5: If HSI data is passed, make sure .tif conversion is complete
         rgb_glob: glob to search images to match when converting h5s -> tif.

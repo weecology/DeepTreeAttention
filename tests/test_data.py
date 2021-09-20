@@ -41,6 +41,7 @@ def test_TreeData_setup(dm, config):
     assert not test.empty
     assert not train.empty
     assert not any([x in train.image_path.unique() for x in test.image_path.unique()])
+    assert all([x in ["image_path","label","siteID"] for x in train.columns])
     
 def test_TreeDataset(dm, config,tmpdir):
     #Train loader

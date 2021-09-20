@@ -328,6 +328,15 @@ class TreeData(LightningDataModule):
             for index, label in enumerate(unique_species_labels):
                 self.species_label_dict[label] = index
         
+            #Store site labels
+            unique_site_labels = np.concatenate([train.siteID.unique(), test.siteID.unique()])
+            unique_site_labels = np.unique(unique_site_labels)
+            
+            self.site_label_dict = {}
+            for index, label in enumerate(unique_site_labels):
+                self.site_label_dict[label] = index
+            self.num_sites = len(self.site_label_dict)        
+            
             #test data 
             train_crowns = generate.points_to_crowns(
                 field_data="{}/processed/train_points.shp".format(self.data_dir),
@@ -341,6 +350,7 @@ class TreeData(LightningDataModule):
                 train_crowns,
                 savedir=self.config["crop_dir"],
                 label_dict=self.species_label_dict,
+                site_dict=self.site_label_dict,                
                 sensor_glob=self.config["HSI_sensor_pool"],
                 convert_h5=self.config["convert_h5"],   
                 rgb_glob=self.config["rgb_sensor_pool"],
@@ -360,6 +370,7 @@ class TreeData(LightningDataModule):
                 test_crowns,
                 savedir=self.config["crop_dir"],
                 label_dict=self.species_label_dict,
+                site_dict=self.site_label_dict,
                 sensor_glob=self.config["HSI_sensor_pool"],
                 rgb_glob=self.config["rgb_sensor_pool"],                
                 client=self.client,
@@ -384,6 +395,15 @@ class TreeData(LightningDataModule):
             for index, label in enumerate(unique_species_labels):
                 self.species_label_dict[label] = index
             self.num_classes = len(self.species_label_dict)
+            
+            #Store site labels
+            unique_site_labels = np.concatenate([train.siteID.unique(), test.siteID.unique()])
+            unique_site_labels = np.unique(unique_site_labels)
+            
+            self.site_label_dict = {}
+            for index, label in enumerate(unique_site_labels):
+                self.site_label_dict[label] = index
+            self.num_sites = len(self.site_label_dict)
             
     def resample(self, csv_file, oversample=True):
         """Given the processed train/test split, resample to reduce class imbalance. This function honors the min and max sampling size from the .config
@@ -458,13 +478,3 @@ class TreeData(LightningDataModule):
         )
         
         return data_loader
-
-#helper batch function
-def batch(iterable, n=1):
-    """Given a list of image arrays, cut and batch and turn into torch tensor"""
-    l = len(iterable)
-    for ndx in range(0, l, n):
-        img_list = (iterable[ndx:min(ndx + n, l)])
-        image_batch = torch.stack(img_list)
-        
-        yield torch.tensor(image_batch)
