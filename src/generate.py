@@ -270,7 +270,6 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, site_dict, client=None
                     img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
             except:
                 print("{} failed to find sensor path with traceback {}".format(row.geometry.bounds, traceback.print_exc()))
-                continue
             future = client.submit(write_crop,row=row,img_path=img_path, label_dict=label_dict, savedir=savedir)
             futures.append(future)
             
@@ -296,10 +295,10 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, site_dict, client=None
                 print("{} failed to find sensor path with traceback".format(row.geometry.bounds, traceback.print_exc()))
                 continue
             try:
-                annotation = write_crop(row=row, img_path=img_path, savedir=savedir, label_dict=label_dict)
+                annotation = write_crop(row=row, img_path=img_path, savedir=savedir, label_dict=label_dict, site_dict=site_dict)
             except Exception as e:
                 print("{} failed with {}".format(row,e))
-                continue
+                raise
     
             annotations.append(annotation)
     

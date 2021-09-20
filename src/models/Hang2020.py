@@ -238,7 +238,7 @@ class Hang2020(Module):
         
         #Weighted average
         self.weighted_average = torch.sigmoid(self.alpha)
-        joint_score = spectral_classes * self.alpha + (1-self.weighted_average) * spatial_classes
+        joint_score = spectral_classes * self.weighted_average + (1-self.weighted_average) * spatial_classes
         
         return joint_score
         
