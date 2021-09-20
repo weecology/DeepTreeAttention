@@ -189,9 +189,9 @@ def read_config(config_path):
 def preprocess_image(image, channel_is_first=False):
     """Preprocess a loaded image, if already C*H*W set channel_is_first=True"""
     img = np.asarray(image, dtype='float32')
-    data = img.reshape(np.prod(img.shape[:2]), np.prod(img.shape[2:]))
-    data  = preprocessing.scale(data)
-    img = data.reshape(img.shape)
+    #data = img.reshape(np.prod(img.shape[:2]), np.prod(img.shape[2:]))
+    #data  = preprocessing.scale(data)
+    #img = data.reshape(img.shape)
     
     if not channel_is_first:
         img = np.rollaxis(img, 2,0)
