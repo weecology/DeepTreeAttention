@@ -42,8 +42,10 @@ class metadata_sensor_fusion(Module):
         
 #Subclass of the training model, metadata only
 class MetadataModel(main.TreeModel):
-    def __init__(self, model, sites, bands,classes, label_dict):
-        super(MetadataModel,self).__init__(model=model,bands=bands,classes=classes,label_dict=label_dict)  
+    """Subclass the core model and update the training and val loop to take two inputs"""
+    def __init__(self, model, sites,classes, label_dict):
+        super(MetadataModel,self).__init__(model=model,classes=classes,label_dict=label_dict)  
+    
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
         """

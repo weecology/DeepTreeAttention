@@ -39,7 +39,8 @@ comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(test))
 comet_logger.experiment.log_table("resampled_train.csv", train)
 comet_logger.experiment.log_table("test.csv", test)
 
-m = main.TreeModel(model=Hang2020.Hang2020, bands=data_module.config["bands"], classes=data_module.num_classes,label_dict=data_module.species_label_dict)
+model = Hang2020.Hang2020(bands=data_module.config["bands"], classes=data_module.num_classes)
+m = main.TreeModel(model=model, bands=data_module.config["bands"], classes=data_module.num_classes,label_dict=data_module.species_label_dict)
 comet_logger.experiment.log_parameters(m.config)
 
 #Create trainer

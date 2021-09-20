@@ -27,7 +27,7 @@ class TreeModel(LightningModule):
     Args:
         model (str): Model to use. See the models/ directory. The name is the filename, each model should take in the same data loader
     """
-    def __init__(self,model, bands, classes, label_dict, config=None, *args, **kwargs):
+    def __init__(self,model, classes, label_dict, config=None, *args, **kwargs):
         super().__init__()
     
         self.ROOT = os.path.dirname(os.path.dirname(__file__))    
@@ -38,14 +38,13 @@ class TreeModel(LightningModule):
             self.config = config
         
         self.classes = classes
-        self.bands = bands
         self.label_to_index = label_dict
         self.index_to_label = {}
         for x in label_dict:
             self.index_to_label[label_dict[x]] = x 
         
         #Create model 
-        self.model = model(bands, classes)
+        self.model = model
         
         #Metrics
         micro_recall = torchmetrics.Accuracy(average="micro")
