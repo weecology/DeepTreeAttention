@@ -45,7 +45,8 @@ def test_TreeData_setup(dm, config):
 def test_TreeDataset(dm, config,tmpdir):
     #Train loader
     data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/train.csv".format(ROOT), config=config)
-    image, label = data_loader[0]
+    inputs, label = data_loader[0]
+    image = inputs["HSI"]
     assert image.shape == (3, config["image_size"], config["image_size"])
     
     #Test loader

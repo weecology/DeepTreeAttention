@@ -57,7 +57,8 @@ class TreeModel(LightningModule):
         """Train on a loaded dataset
         """
         #allow for empty data if data augmentation is generated
-        images, y = batch
+        inputs, y = batch
+        images = inputs["HSI"]
         y_hat = self.model.forward(images)
         loss = F.cross_entropy(y_hat, y)    
         
@@ -67,7 +68,8 @@ class TreeModel(LightningModule):
         """Train on a loaded dataset
         """
         #allow for empty data if data augmentation is generated
-        images, y = batch
+        inputs, y = batch
+        images = inputs["HSI"]        
         y_hat = self.model.forward(images)
         loss = F.cross_entropy(y_hat, y)        
         

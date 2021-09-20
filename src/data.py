@@ -19,6 +19,7 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 import yaml
+import warnings
         
 def filter_data(path, config):
     """Transform raw NEON data into clean shapefile   
@@ -201,7 +202,9 @@ def preprocess_image(image, channel_is_first=False):
 
 def load_image(img_path, image_size):
     """Load and preprocess an image for training/prediction"""
-    image = rio.open(img_path).read()
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', rio.errors.NotGeoreferencedWarning)
+        image = rio.open(img_path).read()       
     image = preprocess_image(image, channel_is_first=True)
     
     #resize image
@@ -215,9 +218,12 @@ class TreeDataset(Dataset):
     Args:
        csv_file: path to csv file with image_path and label
     """
-    def __init__(self, csv_file, image_size=10, config=None, train=True):
+    def __init__(self, csv_file, image_size=10, config=None, train=True, HSI=True, metadata=False):
         self.annotations = pd.read_csv(csv_file)
         self.train = train
+        self.HSI = HSI
+        self.metadata = metadata
+        
         if config:
             self.image_size = config["image_size"]
         else:
@@ -230,17 +236,28 @@ class TreeDataset(Dataset):
         return self.annotations.shape[0]
         
     def __getitem__(self, index):
-        image_path = self.annotations.image_path.loc[index]
-        image = load_image(image_path, image_size=self.image_size)
+        inputs = {}
+        if self.HSI:
+            image_path = self.annotations.image_path.loc[index]            
+            image = load_image(image_path, image_size=self.image_size)
+            inputs["HSI"] = image
+            
+        if self.metadata:
+            site = self.annotations.site.loc[index]  
+            site = torch.tensor(site, dtype=torch.long)            
+            inputs["site"] = site
         
         if self.train:
             label = self.annotations.label.loc[index]
             label = torch.tensor(label, dtype=torch.long)
-            image = self.transformer(image)
             
-            return image, label
+            if self.HSI:
+                image = self.transformer(image)
+                inputs["HSI"] = image
+
+            return inputs, label
         else:
-            return image
+            return inputs
 
 class TreeData(LightningDataModule):
     """
@@ -259,6 +276,7 @@ class TreeData(LightningDataModule):
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
         self.regenerate=regenerate
         self.csv_file = csv_file
+        
         #default training location
         self.client = client
         if data_dir is None:
@@ -329,9 +347,7 @@ class TreeData(LightningDataModule):
                 HSI_tif_dir=self.config["HSI_tif_dir"],
                 client=self.client
             )            
-            
-            train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)
-            
+                        
             test_crowns = generate.points_to_crowns(
                 field_data="{}/processed/test_points.shp".format(self.data_dir),
                 rgb_dir=self.config["rgb_sensor_pool"],
@@ -349,7 +365,12 @@ class TreeData(LightningDataModule):
                 client=self.client,
                 HSI_tif_dir=self.config["HSI_tif_dir"],                
                 convert_h5=self.config["convert_h5"]
-            )            
+            )  
+            
+            #Make sure no species were lost during generate
+            train_annotations = train_annotations[train_annotations.label.isin(test_annotations.label.unique())]
+            
+            train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
         else:
             test = gpd.read_file("{}/processed/test_points.shp".format(self.data_dir))
