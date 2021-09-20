@@ -5,6 +5,7 @@ import torch
 import tempfile
 import os
 import pytest
+from pytorch_lightning import Trainer
 
 ROOT = os.path.dirname(os.path.dirname(data.__file__))
 
@@ -34,7 +35,7 @@ def dm(config):
     else:
         regen = True
     
-    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=regen, data_dir="{}/tests/data".format(ROOT)) 
+    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=regen, data_dir="{}/tests/data".format(ROOT), metadata=True) 
     dm.setup()    
     
     return dm
@@ -58,4 +59,6 @@ def test_metadata_sensor_fusion():
 def test_MetadataModel(dm):
     model = metadata.metadata_sensor_fusion(sites=1, bands=3, classes=2)
     m = metadata.MetadataModel(model=model, sites=1, classes=2, label_dict=dm.species_label_dict)
+    trainer = Trainer(fast_dev_run=True)
+    trainer.fit(m,datamodule=dm)    
     m.fit(data_module = m)

@@ -298,7 +298,7 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, site_dict, client=None
                 annotation = write_crop(row=row, img_path=img_path, savedir=savedir, label_dict=label_dict, site_dict=site_dict)
             except Exception as e:
                 print("{} failed with {}".format(row,e))
-                raise
+                continue
     
             annotations.append(annotation)
     

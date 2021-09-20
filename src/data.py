@@ -265,7 +265,7 @@ class TreeData(LightningDataModule):
     The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
     Use regenerate=True to override this behavior in setup()
     """
-    def __init__(self, csv_file, regenerate = False, client = None, config=None, data_dir=None):
+    def __init__(self, csv_file, HSI=True, metadata=False, regenerate = False, client = None, config=None, data_dir=None):
         """
         Args:
             config: optional config file to override
@@ -276,6 +276,8 @@ class TreeData(LightningDataModule):
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
         self.regenerate=regenerate
         self.csv_file = csv_file
+        self.HSI = HSI
+        self.metadata = metadata
         
         #default training location
         self.client = client
@@ -458,7 +460,7 @@ class TreeData(LightningDataModule):
 
     def train_dataloader(self):
         """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""
-        ds = TreeDataset(csv_file = self.train_file, config=self.config)
+        ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata)
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],
@@ -469,7 +471,7 @@ class TreeData(LightningDataModule):
         return data_loader
     
     def val_dataloader(self):
-        ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config)
+        ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=self.HSI, metadata=self.metadata)
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],

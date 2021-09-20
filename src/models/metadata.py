@@ -52,7 +52,7 @@ class MetadataModel(main.TreeModel):
         #allow for empty data if data augmentation is generated
         inputs, y = batch
         images = inputs["HSI"]
-        metadata = inputs["metadata"]
+        metadata = inputs["site"]
         y_hat = self.model.forward(images, metadata)
         loss = F.cross_entropy(y_hat, y)    
         
@@ -64,7 +64,7 @@ class MetadataModel(main.TreeModel):
         #allow for empty data if data augmentation is generated
         inputs, y = batch
         images = inputs["HSI"]   
-        metadata = inputs["metadata"]
+        metadata = inputs["site"]
         y_hat = self.model.forward(images, metadata)
         loss = F.cross_entropy(y_hat, y)        
         
