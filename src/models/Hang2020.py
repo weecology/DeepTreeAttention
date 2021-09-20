@@ -49,7 +49,7 @@ class vanilla_CNN(Module):
         x = self.conv3(x, pool = True)
         x = torch.flatten(x, start_dim=1)        
         x = self.fc1(x)
-        class_scores = F.softmax(x)
+        class_scores = F.softmax(x, dim = -1)
         
         return class_scores
     
@@ -110,7 +110,7 @@ class spatial_attention(Module):
         pooled_attention_features = self.class_pool(attention)
         pooled_attention_features = torch.flatten(pooled_attention_features, start_dim=1)
         class_features = self.fc1(pooled_attention_features)
-        class_scores = F.softmax(class_features)
+        class_scores = F.softmax(class_features, dim=-1)
         
         return attention, class_scores
 
@@ -159,7 +159,7 @@ class spectral_attention(Module):
         pooled_attention_features = global_spectral_pool(attention)
         pooled_attention_features = torch.flatten(pooled_attention_features, start_dim=1)
         class_features = self.fc1(pooled_attention_features)
-        class_scores = F.softmax(class_features)
+        class_scores = F.softmax(class_features, dim=-1)
         
         return attention, class_scores
     

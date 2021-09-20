@@ -16,9 +16,6 @@ sbatch <<EOT
 #SBATCH --partition=gpu
 #SBATCH --gpus=1
 
-COMET_LOGGING_FILE=/home/b.weinstein/logs/DeepTreeAttention_comet.log
-COMET_LOGGING_FILE_LEVEL=debug
-
 ulimit -c 0
 
 source activate DeepTreeAttention

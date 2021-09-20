@@ -16,7 +16,7 @@ class metadata(Module):
         x = self.mlp(x)
         x = F.relu(x)
         x = self.bn(x)
-        x = F.softmax(x)
+        x = F.softmax(x, dim = -1)
         
         return x
     
@@ -36,7 +36,7 @@ class metadata_sensor_fusion(models.Hang2020):
         sensor_softmax = self.sensor_model(images)
         concat_features = torch.cat([metadata_softmax, sensor_softmax])
         concat_features = self.fc1(concat_features)
-        class_scores = F.softmax(concat_features)
+        class_scores = F.softmax(concat_features, dim  = -1)
         
         return class_scores
         
