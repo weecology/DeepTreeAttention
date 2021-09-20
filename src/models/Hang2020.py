@@ -222,7 +222,7 @@ class spectral_network(Module):
 class Hang2020(Module):
     def __init__(self, bands, classes):
         super(Hang2020, self).__init__()    
-        #self.spectral_network = spectral_network(bands, classes)
+        self.spectral_network = spectral_network(bands, classes)
         self.spatial_network = spatial_network(bands, classes)
         
         #Learnable weight
