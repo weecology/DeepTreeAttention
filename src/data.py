@@ -108,58 +108,42 @@ def sample_plots(shp, test_fraction=0.1, min_samples=5):
     
     return train, test
     
-def train_test_split(shp, savedir, config, client = None, regenerate=False):
+def train_test_split(shp, savedir, config, client = None):
     """Create the train test split
     Args:
         shp: a filter pandas dataframe (or geodataframe)  
         savedir: directly to save train/test and metadata csv files
         client: optional dask client
-        regenerate: recreate the train_test split
     Returns:
         None: train.shp and test.shp are written as side effect
         """    
     #set seed.
     np.random.seed(1)
-    
-    if regenerate:     
-        most_species = 0
-        if client:
-            futures = [ ]
-            for x in np.arange(config["iterations"]):
-                future = client.submit(sample_plots, shp=shp, min_samples=config["min_samples"], test_fraction=config["test_fraction"])
-                futures.append(future)
-            
-            for x in as_completed(futures):
-                train, test = x.result()
-                if len(train.taxonID.unique()) > most_species:
-                    print(len(train.taxonID.unique()))
-                    saved_train = train
-                    saved_test = test
-                    most_species = len(train.taxonID.unique())            
-        else:
-            for x in np.arange(config["iterations"]):
-                train, test = sample_plots(shp, min_samples=config["min_samples"], test_fraction=config["test_fraction"])
-                if len(train.taxonID.unique()) > most_species:
-                    print(len(train.taxonID.unique()))
-                    saved_train = train
-                    saved_test = test
-                    most_species = len(train.taxonID.unique())
+    most_species = 0
+    if client:
+        futures = [ ]
+        for x in np.arange(config["iterations"]):
+            future = client.submit(sample_plots, shp=shp, min_samples=config["min_samples"], test_fraction=config["test_fraction"])
+            futures.append(future)
         
-        train = saved_train
-        test = saved_test
+        for x in as_completed(futures):
+            train, test = x.result()
+            if len(train.taxonID.unique()) > most_species:
+                print(len(train.taxonID.unique()))
+                saved_train = train
+                saved_test = test
+                most_species = len(train.taxonID.unique())            
     else:
-        try:
-            test_plots = gpd.read_file("{}/test.shp".format(savedir)).plotID.unique()
-        except:
-            raise FileNotFoundError("regenerate is {}, but {} is not found".format(regenerate, "{}/test.shp".format(savedir)))
-        test = shp[shp.plotID.isin(test_plots)]
-        train = shp[~shp.plotID.isin(test_plots)]
-                
-        train = train[train.taxonID.isin(test.taxonID)]
-        test = test[test.taxonID.isin(train.taxonID)]
-
-        train = train[train.taxonID.isin(test.taxonID)]
-        test = test[test.taxonID.isin(train.taxonID)]        
+        for x in np.arange(config["iterations"]):
+            train, test = sample_plots(shp, min_samples=config["min_samples"], test_fraction=config["test_fraction"])
+            if len(train.taxonID.unique()) > most_species:
+                print(len(train.taxonID.unique()))
+                saved_train = train
+                saved_test = test
+                most_species = len(train.taxonID.unique())
+    
+    train = saved_train
+    test = saved_test    
     
     print("There are {} records for {} species for {} sites in filtered train".format(
         train.shape[0],
@@ -312,7 +296,7 @@ class TreeData(LightningDataModule):
             #Filter points based on LiDAR height
             df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
             df = df.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_samples"])
-            train, test = train_test_split(df,savedir="{}/processed".format(self.data_dir),config=self.config, regenerate=self.regenerate, client=None)   
+            train, test = train_test_split(df,savedir="{}/processed".format(self.data_dir),config=self.config, client=None)   
             
             test.to_file("{}/processed/test_points.shp".format(self.data_dir))
             train.to_file("{}/processed/train_points.shp".format(self.data_dir))
