@@ -81,9 +81,8 @@ class TreeModel(LightningModule):
         return loss
     
     def configure_optimizers(self):
-        optimizer = optim.SGD(self.model.parameters(),
-                                   lr=self.config["lr"],
-                                   momentum=0.9)
+        optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
+        
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                          mode='min',
                                                          factor=0.5,
