@@ -95,7 +95,6 @@ class TreeModel(LightningModule):
                                                          eps=1e-08)
         
         return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
-        #return {'optimizer':optimizer,"monitor":'val_loss'}
     
     def predict_image(self, img_path, return_numeric = False):
         """Given an image path, load image and predict"""
