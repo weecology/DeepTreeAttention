@@ -84,16 +84,17 @@ class TreeModel(LightningModule):
         optimizer = optim.SGD(self.model.parameters(),
                                    lr=self.config["lr"],
                                    momentum=0.9)
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                                         mode='min',
-                                                         factor=0.5,
-                                                         patience=10,
-                                                         verbose=True,
-                                                         threshold=0.0001,
-                                                         threshold_mode='rel',
-                                                         cooldown=0,
-                                                         min_lr=0.0001,
-                                                         eps=1e-08)
+        #scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                         #mode='min',
+                                                         #factor=0.5,
+                                                         #patience=10,
+                                                         #verbose=True,
+                                                         #threshold=0.0001,
+                                                         #threshold_mode='rel',
+                                                         #cooldown=0,
+                                                         #min_lr=0.0001,
+                                                         #eps=1e-08)
+        scheduler = None
         
         return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
     
