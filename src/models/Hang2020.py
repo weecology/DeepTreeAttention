@@ -43,15 +43,14 @@ class vanilla_CNN(Module):
         self.fc1 = nn.Linear(in_features=512,out_features=classes)
     
     def forward(self, x):
-        """Take an input image and run the conv blocks, flatten the output and return softmax features"""
+        """Take an input image and run the conv blocks, flatten the output and return  features"""
         x = self.conv1(x)
         x = self.conv2(x, pool = True)
         x = self.conv3(x, pool = True)
         x = torch.flatten(x, start_dim=1)        
         x = self.fc1(x)
-        class_scores = F.softmax(x, dim = -1)
         
-        return class_scores
+        return x
     
 class spatial_attention(Module):
     """
@@ -110,9 +109,8 @@ class spatial_attention(Module):
         pooled_attention_features = self.class_pool(attention)
         pooled_attention_features = torch.flatten(pooled_attention_features, start_dim=1)
         class_features = self.fc1(pooled_attention_features)
-        class_scores = F.softmax(class_features, dim=-1)
         
-        return attention, class_scores
+        return attention, class_features
 
 class spectral_attention(Module):
     """
@@ -159,9 +157,8 @@ class spectral_attention(Module):
         pooled_attention_features = global_spectral_pool(attention)
         pooled_attention_features = torch.flatten(pooled_attention_features, start_dim=1)
         class_features = self.fc1(pooled_attention_features)
-        class_scores = F.softmax(class_features, dim=-1)
         
-        return attention, class_scores
+        return attention, class_features
     
 class spatial_network(Module):
     """

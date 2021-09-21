@@ -16,7 +16,6 @@ class metadata(Module):
         x = self.mlp(x)
         x = F.relu(x)
         x = self.bn(x)
-        x = F.softmax(x, dim = -1)
         
         return x
     
@@ -36,9 +35,8 @@ class metadata_sensor_fusion(Module):
         sensor_softmax = self.sensor_model(images)
         concat_features = torch.cat([metadata_softmax, sensor_softmax], dim=1)
         concat_features = self.fc1(concat_features)
-        class_scores = F.softmax(concat_features, dim  = -1)
         
-        return class_scores
+        return concat_features
         
 #Subclass of the training model, metadata only
 class MetadataModel(main.TreeModel):
