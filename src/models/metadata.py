@@ -35,14 +35,15 @@ class metadata_sensor_fusion(Module):
         sensor_softmax = self.sensor_model(images)
         concat_features = torch.cat([metadata_softmax, sensor_softmax], dim=1)
         concat_features = self.fc1(concat_features)
+        concat_features = F.relu(concat_features)
         
         return concat_features
         
 #Subclass of the training model, metadata only
 class MetadataModel(main.TreeModel):
     """Subclass the core model and update the training and val loop to take two inputs"""
-    def __init__(self, model, sites,classes, label_dict):
-        super(MetadataModel,self).__init__(model=model,classes=classes,label_dict=label_dict)  
+    def __init__(self, model, sites,classes, label_dict, config):
+        super(MetadataModel,self).__init__(model=model,classes=classes,label_dict=label_dict, config=config)  
     
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
@@ -63,6 +64,7 @@ class MetadataModel(main.TreeModel):
         inputs, y = batch
         images = inputs["HSI"]   
         metadata = inputs["site"]
+        
         y_hat = self.model.forward(images, metadata)
         loss = F.cross_entropy(y_hat, y)        
         

@@ -227,15 +227,15 @@ class Hang2020(Module):
         
     def forward(self, x):
         spectral_scores = self.spectral_network(x)
-        #spatial_scores = self.spatial_network(x)
+        spatial_scores = self.spatial_network(x)
         
         #Take the final attention scores
         spectral_classes = spectral_scores[-1]
-        #spatial_classes = spatial_scores[-1]
+        spatial_classes = spatial_scores[-1]
         
         #Weighted average
         self.weighted_average = torch.sigmoid(self.alpha)
-        joint_score = spectral_classes
+        joint_score = spectral_classes * self.weighted_average + spatial_classes * (1-self.weighted_average)
         
         return joint_score
         

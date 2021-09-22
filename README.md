@@ -15,7 +15,8 @@ Implementation of Hang et al. 2020 [Hyperspectral Image Classification with Atte
 
 | Model | Crown Micro | Crown Macro | Experiment    |
 | ----- | ----------- | ----------- | --- |
-| Vanilla CNN  | 33.2        | 26.2        |   [click here](https://www.comet.ml/bw4sz/deeptreeattention/5a1ad2d55095413d9fcfb67875fed1b2?experiment-tab=metrics)  |
+| Vanilla CNN  | 33.2        | 26.2        |   [click here](https://www.comet.ml/bw4sz/deeptreeattention/5a1ad2d55095413d9fcfb67875fed1b2?experiment-tab=metrics)|  
+| Spectral Attention CNN | 68.0 | 56.4| [click_here](https://www.comet.ml/bw4sz/deeptreeattention/54565fa371c144869bad645e24bce44a?experiment-tab=chart&showOutliers=true&smoothing=0&transformY=smoothing&xAxis=wall)
 
 Project Organization
 ------------
@@ -93,12 +94,6 @@ trainer = Trainer(
 trainer.fit(m, datamodule=data_module)
 ```
 
-## Evaluation metrics
-
-The training metrics are computed at the pixel level during training. At the end of training, predictions are made for each crown using majority rule among pixels. The crown-level accuracy is then computed across classes.
-
-Current metrics include micro/macro pixel accuracy and micro/macro crown accuracy. Pixel accuracy is the proportion of pixel crops correctly predicted, crown accuracy is aggregate predicted label, for example using majority rule for the entire crown's worth of pixels.
-
 ### Dev Guide
 
 In general, major changes or improvements should be made on a new git branch. Only core improvements should be made on the main branch. If a change leads to higher scores, please create a pull request. Any pull requests are expected to have pytest unit tests (see tests/) that cover major use cases.
@@ -129,5 +124,28 @@ class myModel(Module):
         return class_scores
 ```
 
-to create a model that takes in new inputs, I strongly recommend sub-classing the existing TreeData and TreeModel classes and extending them. For an example, see the MetadataModel in models/metadata.py
+### Extending the model
+
+To create a model that takes in new inputs, I strongly recommend sub-classing the existing TreeData and TreeModel classes. For an example, see the MetadataModel in models/metadata.py
+
+```
+#Subclass of the training model
+class MetadataModel(main.TreeModel):
+    """Subclass the core model and update the training loop to take two inputs"""
+    def __init__(self, model, sites,classes, label_dict, config):
+        super(MetadataModel,self).__init__(model=model,classes=classes,label_dict=label_dict, config=config)  
+    
+    def training_step(self, batch, batch_idx):
+        """Train on a loaded dataset
+        """
+        #allow for empty data if data augmentation is generated
+        inputs, y = batch
+        images = inputs["HSI"]
+        metadata = inputs["site"]
+        y_hat = self.model.forward(images, metadata)
+        loss = F.cross_entropy(y_hat, y)    
+        
+        return loss
+
+```
 
