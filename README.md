@@ -124,5 +124,28 @@ class myModel(Module):
         return class_scores
 ```
 
-to create a model that takes in new inputs, I strongly recommend sub-classing the existing TreeData and TreeModel classes and extending them. For an example, see the MetadataModel in models/metadata.py
+### Extending the model
+
+To create a model that takes in new inputs, I strongly recommend sub-classing the existing TreeData and TreeModel classes. For an example, see the MetadataModel in models/metadata.py
+
+```
+#Subclass of the training model
+class MetadataModel(main.TreeModel):
+    """Subclass the core model and update the training loop to take two inputs"""
+    def __init__(self, model, sites,classes, label_dict, config):
+        super(MetadataModel,self).__init__(model=model,classes=classes,label_dict=label_dict, config=config)  
+    
+    def training_step(self, batch, batch_idx):
+        """Train on a loaded dataset
+        """
+        #allow for empty data if data augmentation is generated
+        inputs, y = batch
+        images = inputs["HSI"]
+        metadata = inputs["site"]
+        y_hat = self.model.forward(images, metadata)
+        loss = F.cross_entropy(y_hat, y)    
+        
+        return loss
+
+```
 
