@@ -15,7 +15,7 @@ Implementation of Hang et al. 2020 [Hyperspectral Image Classification with Atte
 
 | Model | Crown Micro | Crown Macro | Experiment    |
 | ----- | ----------- | ----------- | --- |
-| Vanilla CNN  | 33.2        | 26.2        |   [click here](https://www.comet.ml/bw4sz/deeptreeattention/5a1ad2d55095413d9fcfb67875fed1b2?experiment-tab=metrics)  |
+| Vanilla CNN  | 33.2        | 26.2        |   [click here](https://www.comet.ml/bw4sz/deeptreeattention/5a1ad2d55095413d9fcfb67875fed1b2?experiment-tab=metrics)  | Spectral Attention CNN | 68.0 | 56.4| [click_here](https://www.comet.ml/bw4sz/deeptreeattention/54565fa371c144869bad645e24bce44a?experiment-tab=chart&showOutliers=true&smoothing=0&transformY=smoothing&xAxis=wall)
 
 Project Organization
 ------------
