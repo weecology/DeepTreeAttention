@@ -26,7 +26,7 @@ class metadata_sensor_fusion(Module):
         
         self.metadata_model = metadata(classes)
         self.sensor_model = Hang2020(bands, classes)
-        
+                
         #Fully connected concat learner
         self.fc1 = nn.Linear(in_features = classes * 2 , out_features = classes)
     
@@ -71,6 +71,9 @@ class MetadataModel(main.TreeModel):
         # Log loss and metrics
         self.log("val_loss", loss, on_epoch=True)
         
+        if not self.training:
+            y_hat = F.softmax(y_hat, dim = 1)
+            
         output = self.metrics(y_hat, y) 
         self.log_dict(output)
         
