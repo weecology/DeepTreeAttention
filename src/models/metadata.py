@@ -7,9 +7,9 @@ from torch import nn
 import torch
 
 class metadata(Module):
-    def __init__(self, sites, classes):
+    def __init__(self, classes):
         super(metadata,self).__init__()    
-        self.mlp = nn.Linear(in_features=sites, out_features=classes)
+        self.mlp = nn.Linear(in_features=1, out_features=classes)
         self.bn = nn.BatchNorm1d(num_features=classes)
     
     def forward(self, x):
@@ -21,10 +21,10 @@ class metadata(Module):
     
 class metadata_sensor_fusion(Module):
     """A joint fusion model of HSI sensor data and metadata"""
-    def __init__(self, sites, bands, classes):
+    def __init__(self, bands, classes):
         super(metadata_sensor_fusion,self).__init__()   
         
-        self.metadata_model = metadata(sites, classes)
+        self.metadata_model = metadata(classes)
         self.sensor_model = Hang2020(bands, classes)
         
         #Fully connected concat learner
@@ -42,7 +42,7 @@ class metadata_sensor_fusion(Module):
 #Subclass of the training model, metadata only
 class MetadataModel(main.TreeModel):
     """Subclass the core model and update the training and val loop to take two inputs"""
-    def __init__(self, model, sites,classes, label_dict, config):
+    def __init__(self, model,classes, label_dict, config):
         super(MetadataModel,self).__init__(model=model,classes=classes,label_dict=label_dict, config=config)  
     
     def training_step(self, batch, batch_idx):
