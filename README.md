@@ -94,12 +94,6 @@ trainer = Trainer(
 trainer.fit(m, datamodule=data_module)
 ```
 
-## Evaluation metrics
-
-The training metrics are computed at the pixel level during training. At the end of training, predictions are made for each crown using majority rule among pixels. The crown-level accuracy is then computed across classes.
-
-Current metrics include micro/macro pixel accuracy and micro/macro crown accuracy. Pixel accuracy is the proportion of pixel crops correctly predicted, crown accuracy is aggregate predicted label, for example using majority rule for the entire crown's worth of pixels.
-
 ### Dev Guide
 
 In general, major changes or improvements should be made on a new git branch. Only core improvements should be made on the main branch. If a change leads to higher scores, please create a pull request. Any pull requests are expected to have pytest unit tests (see tests/) that cover major use cases.
