@@ -52,7 +52,9 @@ class MetadataModel(main.TreeModel):
         inputs, y = batch
         images = inputs["HSI"]
         metadata = inputs["site"]
-        y_hat = self.model.forward(images, metadata)
+        #y_hat = self.model.forward(images, metadata)
+        y_hat = self.model.forward(metadata)
+        
         loss = F.cross_entropy(y_hat, y)    
         
         return loss
