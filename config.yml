@@ -23,7 +23,7 @@ min_CHM_diff: 4
 #Crop generation
 convert_h5: True
 #Directoy to store cropped images from crowns
-crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/crops
+crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/metadata_crops/
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
 

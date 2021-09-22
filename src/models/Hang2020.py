@@ -157,6 +157,7 @@ class spectral_attention(Module):
         pooled_attention_features = global_spectral_pool(attention)
         pooled_attention_features = torch.flatten(pooled_attention_features, start_dim=1)
         class_features = self.fc1(pooled_attention_features)
+        class_features
         
         return attention, class_features
     

@@ -3,10 +3,9 @@ import comet_ml
 from src import main
 from src import data
 from src import start_cluster
-from src.models import Hang2020
+from src.models import metadata
 from pytorch_lightning import Trainer
 import os
-import numpy as np
 import subprocess
 from pytorch_lightning.loggers import CometLogger
 import pandas as pd
@@ -14,9 +13,8 @@ from pandas.util import hash_pandas_object
 
 #Create datamodule
 COMET_KEY = os.getenv("COMET_KEY")
-#client = start_cluster.start(cpus=250, mem_size="5GB")
-client = None
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client)
+client = start_cluster.start(cpus=250, mem_size="5GB")
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client)
 data_module.setup()
 comet_logger = CometLogger(api_key=COMET_KEY,
                            project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
@@ -39,8 +37,14 @@ comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(test))
 comet_logger.experiment.log_table("resampled_train.csv", train)
 comet_logger.experiment.log_table("test.csv", test)
 
-model = Hang2020.Hang2020(bands=data_module.config["bands"], classes=data_module.num_classes)
-m = main.TreeModel(model=model, bands=data_module.config["bands"], classes=data_module.num_classes,label_dict=data_module.species_label_dict)
+model = metadata.metadata_sensor_fusion(sites=data_module.num_sites, bands=data_module.config["bands"], classes=data_module.num_classes)
+m = metadata.MetadataModel(
+    model=model, 
+    sites=data_module.num_sites, 
+    classes=data_module.num_classes, 
+    label_dict=data_module.species_label_dict, 
+    config=data_module.config)
+
 comet_logger.experiment.log_parameters(m.config)
 
 #Create trainer
