@@ -101,8 +101,9 @@ class TreeModel(LightningModule):
         self.model.eval()        
         image = data.load_image(img_path, image_size=self.config["image_size"])
         batch = torch.unsqueeze(image, dim=0)
-        y = self.model(batch).detach()
-        index = np.argmax(y, 1).detach().numpy()[0]
+        with torch.no_grad():
+            y = self.model(batch)  
+        index = np.argmax(y, 1).numpy()[0]
         
         if return_numeric:
             return index
@@ -153,8 +154,9 @@ class TreeModel(LightningModule):
         
         #Classify pixel crops
         self.model.eval() 
-        class_probs = self.model(image)
-        class_probs = class_probs.detach().numpy()
+        with torch.no_grad():
+            class_probs = self.model(image)
+        class_probs = class_probs.numpy()
         index = np.argmax(class_probs)
         label = self.index_to_label[index]
         
@@ -184,7 +186,8 @@ class TreeModel(LightningModule):
         
         #Classify pixel crops
         self.model.eval() 
-        class_probs = self.model(image)
+        with torch.no_grad():
+            class_probs = self.model(image)        
         class_probs = class_probs.detach().numpy()
         index = np.argmax(class_probs)
         label = self.index_to_label[index]
