@@ -36,9 +36,9 @@ resample_max: 500
 #Network Parameters
 gpus: 1
 workers: 20
-batch_size: 256
+batch_size: 64
 bands: 369
-lr: 0.1
+lr: 0.001
 fast_dev_run: False
 accelerator: ddp
 epochs: 120
