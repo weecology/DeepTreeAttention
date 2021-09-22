@@ -237,6 +237,9 @@ class Hang2020(Module):
         self.weighted_average = torch.sigmoid(self.alpha)
         joint_score = spectral_classes * self.weighted_average + spatial_classes * (1-self.weighted_average)
         
-        return joint_score
+        if self.train:
+            return joint_score
+        else:
+            return F.softmax(joint_score, dim=1)
         
     
