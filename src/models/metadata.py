@@ -9,13 +9,16 @@ import torch
 class metadata(Module):
     def __init__(self, classes):
         super(metadata,self).__init__()    
-        self.mlp = nn.Linear(in_features=1, out_features=classes)
-        self.bn = nn.BatchNorm1d(num_features=classes)
+        self.hidden_layer = nn.Linear(in_features=1, out_features=128)        
+        self.mlp = nn.Linear(in_features=128, out_features=classes)
+        #self.bn = nn.BatchNorm1d(num_features=classes)
     
     def forward(self, x):
-        x = self.mlp(x)
+        x = self.hidden_layer(x)
         x = F.relu(x)
-        x = self.bn(x)
+        x = self.mlp
+        x = F.relu(x)
+        #x = self.bn(x)
         
         return x
     
