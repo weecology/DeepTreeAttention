@@ -7,29 +7,29 @@ from torch import nn
 import torch
 
 class metadata(Module):
-    def __init__(self, classes):
+    def __init__(self, sites, classes):
         super(metadata,self).__init__()    
-        self.hidden_layer = nn.Linear(in_features=1, out_features=64)        
+        self.embedding = nn.Embedding(sites, 64)
         self.dropout = nn.Dropout(p=0.7)
-        self.batch_norm = nn.BatchNorm1d(64)   
+        self.batch_norm = nn.BatchNorm1d(1)   
         self.mlp = nn.Linear(in_features=64, out_features=classes)
         
     def forward(self, x):
-        x = self.hidden_layer(x)
-        x = F.relu(x)
-        x = self.batch_norm(x)
-        x = self.dropout(x)
+        x = self.embedding(x)
+        x = self.batch_norm(x)        
+        x = self.dropout(x)           
         x = self.mlp(x)
+        x = torch.squeeze(x, 1)
         x = F.relu(x)
         
         return x
     
 class metadata_sensor_fusion(Module):
     """A joint fusion model of HSI sensor data and metadata"""
-    def __init__(self, bands, classes):
+    def __init__(self, bands, sites, classes):
         super(metadata_sensor_fusion,self).__init__()   
         
-        self.metadata_model = metadata(classes)
+        self.metadata_model = metadata(sites, classes)
         self.sensor_model = Hang2020(bands, classes)
                 
         #Fully connected concat learner
