@@ -422,7 +422,6 @@ class TreeData(LightningDataModule):
         """
         train = pd.read_csv(csv_file)
         train["individual"] = train.image_path.apply(lambda x: os.path.basename(x).split("_")[0]) 
-        train["site"] = train.individual.apply(lambda x: x.split(".")[-2])
         labels = train.label.unique()
         resampled_species = []
         selected_indices = []
