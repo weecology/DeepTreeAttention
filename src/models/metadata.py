@@ -16,7 +16,7 @@ class metadata(Module):
     def forward(self, x):
         x = self.hidden_layer(x)
         x = F.relu(x)
-        x = self.mlp
+        x = self.mlp(x)
         x = F.relu(x)
         #x = self.bn(x)
         
