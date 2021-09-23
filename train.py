@@ -11,6 +11,7 @@ import subprocess
 from pytorch_lightning.loggers import CometLogger
 import pandas as pd
 from pandas.util import hash_pandas_object
+import numpy as np
 
 #Create datamodule
 COMET_KEY = os.getenv("COMET_KEY")
@@ -61,16 +62,21 @@ trainer.fit(m, datamodule=data_module)
 #results, crown_metrics = m.evaluate_crowns("data/processed/test.csv", experiment=comet_logger.experiment)
 #comet_logger.experiment.log_metrics(crown_metrics)
 
+m.eval()
 predictions = []
-for x in test.site:
-    x = torch.tensor(x, dtype=torch.double, requires_grad=False)
-    x = torch.unsqueeze(x, 0)
-    pred = m.model(x)
-    predictions.append(pred.detach().numpy())
+for batch in data_module.val_dataloader():
+    inputs, targets = batch
+    site = inputs["site"]
+    with torch.no_grad():
+        pred = m.model(site)
+    predictions.append(pred)
+
+predictions = np.concatenate(predictions)
+predictions = np.argmax(predictions, 1)
 
 #Confusion matrix
 comet_logger.experiment.log_confusion_matrix(
-    test.site,
+    test.site.values,
     predictions,
     labels=list(data_module.site_label_dict.keys()),
     max_categories=len(data_module.site_label_dict.keys())
