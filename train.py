@@ -4,6 +4,7 @@ from src import main
 from src import data
 from src import start_cluster
 from src.models import metadata
+import torch
 from pytorch_lightning import Trainer
 import os
 import subprocess
@@ -62,6 +63,7 @@ trainer.fit(m, datamodule=data_module)
 
 predictions = []
 for x in test.site:
+    x = torch.tensor(x, dtype=float, requires_grad=False)
     pred = m.model(x)
     predictions.append(pred.detach().numpy())
 

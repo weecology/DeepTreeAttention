@@ -190,7 +190,10 @@ def preprocess_image(image, channel_is_first=False):
     """Preprocess a loaded image, if already C*H*W set channel_is_first=True"""
     img = np.asarray(image, dtype='float32')
     data = img.reshape(img.shape[0], np.prod(img.shape[1:]))
-    data  = preprocessing.scale(data)
+    
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', UserWarning)    
+        data  = preprocessing.scale(data)
     img = data.reshape(img.shape)
     
     if not channel_is_first:
