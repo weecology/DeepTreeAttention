@@ -63,7 +63,7 @@ trainer.fit(m, datamodule=data_module)
 
 predictions = []
 for x in test.site:
-    x = torch.tensor(x, dtype=float, requires_grad=False)
+    x = torch.tensor(x, dtype=torch.double, requires_grad=False)
     x = torch.unsqueeze(x, 0)
     pred = m.model(x)
     predictions.append(pred.detach().numpy())
