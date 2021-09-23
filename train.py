@@ -58,7 +58,7 @@ trainer = Trainer(
     checkpoint_callback=False,
     logger=comet_logger)
 
-trainer.fit(m, datamodule=data_module)
+#trainer.fit(m, datamodule=data_module)
 #results, crown_metrics = m.evaluate_crowns("data/processed/test.csv", experiment=comet_logger.experiment)
 #comet_logger.experiment.log_metrics(crown_metrics)
 
@@ -76,10 +76,10 @@ predictions = np.argmax(predictions, 1)
 
 #Confusion matrix
 comet_logger.experiment.log_confusion_matrix(
-    test.site.values,
+    test.label.values,
     predictions,
-    labels=list(data_module.site_label_dict.keys()),
-    max_categories=len(data_module.site_label_dict.keys())
+    labels=list(data_module.species_label_dict.keys()),
+    max_categories=len(data_module.species_label_dict.keys())
 )  
 
 #Log spectral spatial weight
