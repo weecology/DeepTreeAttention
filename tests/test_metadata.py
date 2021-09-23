@@ -42,12 +42,12 @@ def dm(config):
 
 def test_metadata():
     m = metadata.metadata(sites = 1, classes=10)
-    sites = torch.zeros(20, 1)     
+    sites = torch.zeros(20)     
     output = m(sites.int())
     assert output.shape == (20,10)
     
 def test_metadata_sensor_fusion():
-    sites = torch.zeros(20, 1)
+    sites = torch.zeros(20)
     image = torch.randn(20, 3, 11, 11)    
     
     m = metadata.metadata_sensor_fusion(bands=3, sites=1, classes=10)

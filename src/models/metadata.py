@@ -19,7 +19,7 @@ class metadata(Module):
         #x = self.batch_norm(x)        
         #x = self.dropout(x)           
         x = self.mlp(x)
-        x = torch.squeeze(x, 1)
+        #x = torch.squeeze(x, 1)
         #x = F.relu(x)
         
         return x

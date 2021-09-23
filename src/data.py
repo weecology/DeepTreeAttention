@@ -248,7 +248,6 @@ class TreeDataset(Dataset):
         if self.metadata:
             site = self.annotations.site.loc[index]  
             site = torch.tensor(site, dtype=torch.int)
-            site = torch.unsqueeze(site, dim=0)
             inputs["site"] = site
         
         if self.train:
