@@ -67,8 +67,9 @@ predictions = []
 for batch in data_module.val_dataloader():
     inputs, targets = batch
     site = inputs["site"]
+    images = inputs["images"]
     with torch.no_grad():
-        pred = m.model(site)
+        pred = m.model(images, site)
     predictions.append(pred)
 
 predictions = np.concatenate(predictions)

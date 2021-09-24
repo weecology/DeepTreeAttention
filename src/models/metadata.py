@@ -33,12 +33,14 @@ class metadata_sensor_fusion(Module):
                 
         #Fully connected concat learner
         self.fc1 = nn.Linear(in_features = classes * 2 , out_features = classes)
+        self.drop = nn.Dropout()
     
     def forward(self, images, metadata):
         metadata_softmax = self.metadata_model(metadata)
         sensor_softmax = self.sensor_model(images)
         concat_features = torch.cat([metadata_softmax, sensor_softmax], dim=1)
         concat_features = self.fc1(concat_features)
+        concat_features = self.drop(concat_features)
         concat_features = F.relu(concat_features)
         
         return concat_features
