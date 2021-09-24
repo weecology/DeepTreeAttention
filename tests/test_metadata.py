@@ -55,7 +55,7 @@ def test_metadata_sensor_fusion():
     assert prediction.shape == (20,10)
 
 def test_MetadataModel(config, dm):
-    model = metadata.metadata(sites =1, classes=2)
+    model = metadata.metadata_sensor_fusion(sites=1, classes=2, bands=3)
     m = metadata.MetadataModel(model=model, classes=2, label_dict=dm.species_label_dict, config=config)
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m,datamodule=dm)    

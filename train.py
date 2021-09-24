@@ -40,7 +40,7 @@ comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(test))
 comet_logger.experiment.log_table("resampled_train.csv", train)
 comet_logger.experiment.log_table("test.csv", test)
 
-model = metadata.metadata(sites=data_module.num_sites, classes=data_module.num_classes)
+model = metadata.metadata_sensor_fusion(sites=data_module.num_sites, classes=data_module.num_classes, bands=data_module.config["bands"])
 m = metadata.MetadataModel(
     model=model, 
     classes=data_module.num_classes, 
