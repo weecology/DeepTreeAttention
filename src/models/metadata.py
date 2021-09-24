@@ -11,12 +11,12 @@ class metadata(Module):
         super(metadata,self).__init__()    
         self.embedding = nn.Embedding(sites, 64)
         self.dropout = nn.Dropout(p=0.7)
-        #self.batch_norm = nn.BatchNorm1d(1)   
+        self.batch_norm = nn.BatchNorm1d(64)   
         self.mlp = nn.Linear(in_features=64, out_features=classes)
         
     def forward(self, x):
         x = self.embedding(x)
-        #x = self.batch_norm(x)        
+        x = self.batch_norm(x)        
         x = self.dropout(x)           
         x = self.mlp(x)
         #x = F.relu(x)
