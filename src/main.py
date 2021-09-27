@@ -3,8 +3,10 @@ from . import __file__
 import geopandas as gpd
 import glob as glob
 from deepforest.main import deepforest
+import cv2
 import os
 import numpy as np
+from matplotlib import pyplot as plt
 from pytorch_lightning import LightningModule
 import pandas as pd
 from torch.nn import functional as F
@@ -222,8 +224,8 @@ class TreeModel(LightningModule):
                 geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
                 img_path = neon_paths.find_sensor_path(lookup_pool = rgb_pool, bounds=geom.bounds)
                 crop = patches.crop(bounds=geom.bounds, sensor_path=img_path)
-                crop = np.rollaxis(crop, 0,3)
-                experiment.log_image(crop, name = "crown: {}, True: {}, Predicted {}".format(row["crown"], row.true_taxa,row.pred_taxa))
+                img = np.rollaxis(crop, 0,3)
+                experiment.log_image(img, name = "crown: {}, True: {}, Predicted {}".format(row["crown"], row.true_taxa,row.pred_taxa))
                 
         return df
     

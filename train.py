@@ -59,15 +59,15 @@ trainer = Trainer(
     logger=comet_logger)
 
 trainer.fit(m, datamodule=data_module)
-#results, crown_metrics = m.evaluate_crowns("data/processed/test.csv", experiment=comet_logger.experiment)
-#comet_logger.experiment.log_metrics(crown_metrics)
+results, crown_metrics = m.evaluate_crowns("data/processed/test.csv", experiment=comet_logger.experiment)
+comet_logger.experiment.log_metrics(crown_metrics)
 
 m.eval()
 predictions = []
 for batch in data_module.val_dataloader():
     inputs, targets = batch
     site = inputs["site"]
-    images = inputs["images"]
+    images = inputs["HSI"]
     with torch.no_grad():
         pred = m.model(images, site)
     predictions.append(pred)
