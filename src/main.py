@@ -212,28 +212,20 @@ class TreeModel(LightningModule):
         df["pred_label"] = df.image_path.apply(lambda x: self.predict_image(x, return_numeric=True))
         df["pred_taxa"] = df["pred_label"].apply(lambda x: self.index_to_label[x])        
         df["true_taxa"] = df["label"].apply(lambda x: self.index_to_label[x])
-        
-        #Majority vote per crown
-        results = df.groupby(["crown"]).agg(lambda x: x.mode()[0]).reset_index()
-        
-        if experiment:
-            grouped = df.groupby("crown")
-            crown_groups = [g[1] for g in list(grouped)[:plot_n_individuals]]
-            for x in crown_groups:
-                for index, path in enumerate(x.image_path):
-                    image = rasterio.open(path).read()
-                    #Only HSI data have more than 3 bands.
-                    try:
-                        plot_image = image[[11, 55, 113], :, :,]
-                    except:
-                        plot_image = image
-                    plot_image = np.rollaxis(plot_image, 0, 3)
-                    data = plot_image.reshape(np.prod(plot_image.shape[:2]), np.prod(plot_image.shape[2:]))
-                    data  = preprocessing.scale(data)
-                    plot_image = data.reshape(plot_image.shape)                    
-                    experiment.log_image(plot_image, name = "crown: {}, True: {}, Predicted {}".format(x.crown.iloc[index], x.true_taxa.iloc[index],x.pred_taxa.iloc[index]))
                 
-        return results
+        if experiment:
+            #load image pool and crown predicrions
+            rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
+            test_crowns = gpd.read_file("{}/data/processed/test_crowns.shp".format(self.ROOT))            
+            for index, row in df.head(plot_n_individuals).iterrows():
+                individual = row["crown"].split(".tif")[0]
+                geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
+                img_path = neon_paths.find_sensor_path(lookup_pool = rgb_pool, bounds=geom.bounds)
+                crop = patches.crop(bounds=geom.bounds, sensor_path=img_path)
+                crop = np.rollaxis(crop, 0,3)
+                experiment.log_image(crop, name = "crown: {}, True: {}, Predicted {}".format(row["crown"], row.true_taxa,row.pred_taxa))
+                
+        return df
     
     def evaluate_crowns(self, csv_file, experiment=None):
         """Crown level measure of accuracy

@@ -351,6 +351,8 @@ class TreeData(LightningDataModule):
                 client=self.client
             )
             
+            train_crowns.to_file("{}/processed/train_crowns.shp".format(self.data_dir))
+            
             train_annotations = generate.generate_crops(
                 train_crowns,
                 savedir=self.config["crop_dir"],
@@ -370,7 +372,8 @@ class TreeData(LightningDataModule):
                 raw_box_savedir=None, 
                 client=self.client
             )
-        
+            test_crowns.to_file("{}/processed/test_crowns.shp".format(self.data_dir))
+            
             test_annotations = generate.generate_crops(
                 test_crowns,
                 savedir=self.config["crop_dir"],
