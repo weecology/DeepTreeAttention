@@ -3,10 +3,11 @@ from . import __file__
 import geopandas as gpd
 import glob as glob
 from deepforest.main import deepforest
-import cv2
+from descartes import PolygonPatch
 import os
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.collections import PatchCollection
 from pytorch_lightning import LightningModule
 import pandas as pd
 from torch.nn import functional as F
@@ -16,6 +17,7 @@ from torchvision import transforms
 import torchmetrics
 import tempfile
 import rasterio
+from rasterio.plot import show
 from src import data
 from src import generate
 from src import neon_paths
@@ -218,15 +220,25 @@ class TreeModel(LightningModule):
         if experiment:
             #load image pool and crown predicrions
             rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
-            test_crowns = gpd.read_file("{}/data/processed/test_crowns.shp".format(self.ROOT))            
+            test_crowns = gpd.read_file("{}/data/processed/test_crowns.shp".format(self.ROOT))   
+            plt.ion()
             for index, row in df.head(plot_n_individuals).iterrows():
+                fig = plt.figure(0)
+                ax = fig.add_subplot(1, 1, 1)                
                 individual = row["crown"].split(".tif")[0]
                 geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
-                img_path = neon_paths.find_sensor_path(lookup_pool = rgb_pool, bounds=geom.bounds)
-                crop = patches.crop(bounds=geom.bounds, sensor_path=img_path)
-                img = np.rollaxis(crop, 0,3)
-                experiment.log_image(img, name = "crown: {}, True: {}, Predicted {}".format(row["crown"], row.true_taxa,row.pred_taxa))
-                
+                left, bottom, right, top = geom.bounds
+                img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
+                src = rasterio.open(img_path)
+                img = src.read(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
+                img_transform = src.window_transform(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
+                patches = [PolygonPatch(geom, edgecolor='red', facecolor='none')]
+                show(img, ax=ax, transform=img_transform)                
+                ax.add_collection(PatchCollection(patches, match_original=True))
+                plt.savefig("{}/{}.png".format(self.tmpdir, row["crown"]))
+                experiment.log_image("{}/{}.png".format(self.tmpdir, row["crown"]), name = "crown: {}, True: {}, Predicted {}".format(row["crown"], row.true_taxa,row.pred_taxa))
+                src.close()
+            plt.ioff()
         return df
     
     def evaluate_crowns(self, csv_file, experiment=None):
