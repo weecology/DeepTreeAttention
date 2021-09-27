@@ -201,7 +201,7 @@ class TreeModel(LightningModule):
         
         return label, score
     
-    def predict_file(self, csv_file, plot_n_individuals=10, experiment=None):
+    def predict_file(self, csv_file, plot_n_individuals=30, experiment=None):
         """Given a file with paths to image crops, create crown predictions 
         The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
         unique identifier for each crown and counter is 0..n pixel crops that belong to that crown.
@@ -220,7 +220,9 @@ class TreeModel(LightningModule):
         if experiment:
             #load image pool and crown predicrions
             rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
-            test_crowns = gpd.read_file("{}/data/processed/test_crowns.shp".format(self.ROOT))   
+            test_crowns = gpd.read_file("{}/data/processed/test_crowns.shp".format(self.ROOT))  
+            test_points = gpd.read_file("{}/data/processed/test_points.shp".format(self.ROOT))   
+            
             plt.ion()
             for index, row in df.head(plot_n_individuals).iterrows():
                 fig = plt.figure(0)
@@ -228,13 +230,22 @@ class TreeModel(LightningModule):
                 individual = row["crown"].split(".tif")[0]
                 geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
                 left, bottom, right, top = geom.bounds
+                
+                #Find image
                 img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
                 src = rasterio.open(img_path)
                 img = src.read(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
                 img_transform = src.window_transform(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
+                
+                #Plot crown
                 patches = [PolygonPatch(geom, edgecolor='red', facecolor='none')]
                 show(img, ax=ax, transform=img_transform)                
                 ax.add_collection(PatchCollection(patches, match_original=True))
+                
+                #Plot field coordinate
+                stem = test_points[test_points.individual == individual]
+                stem.plot(ax=ax)
+                
                 plt.savefig("{}/{}.png".format(self.tmpdir, row["crown"]))
                 experiment.log_image("{}/{}.png".format(self.tmpdir, row["crown"]), name = "crown: {}, True: {}, Predicted {}".format(row["crown"], row.true_taxa,row.pred_taxa))
                 src.close()
