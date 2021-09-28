@@ -285,7 +285,5 @@ class TreeModel(LightningModule):
             metric_dict: metric -> value
         """
         results = self.predict_dataloader(data_loader=data_loader, experiment=experiment)
-        crown_micro = torchmetrics.functional.accuracy(preds=torch.tensor(results.pred_label.values, dtype=torch.long),target=torch.tensor(results.label.values, dtype=torch.long), average="micro")
-        crown_macro = torchmetrics.functional.accuracy(preds=torch.tensor(results.pred_label.values, dtype=torch.long),target=torch.tensor(results.label.values, dtype=torch.long), average="macro", num_classes=self.classes)
-        
-        return results, {"crown_micro":crown_micro,"crown_macro":crown_macro}
+
+        return results

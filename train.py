@@ -51,8 +51,7 @@ trainer = Trainer(
     logger=comet_logger)
 
 trainer.fit(m, datamodule=data_module)
-results, crown_metrics = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
-comet_logger.experiment.log_metrics(crown_metrics)
+results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
 
 predictions = np.concatenate(predictions)
 predictions = np.argmax(predictions, 1)

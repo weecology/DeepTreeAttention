@@ -482,6 +482,16 @@ class TreeData(LightningDataModule):
         for x in class_weights:
             class_weights[x] = class_weights[x]/sum(class_weights.values())
         
+        #Provide a floor to class weights
+        for x in class_weights:
+            if class_weights[x] < 50:
+                class_weights[x] = 50
+        
+        #Provide a floor to class weights
+        for x in class_weights:
+            if class_weights[x] > 500:
+                class_weights[x] = 500
+                
         data_weights = []
         #upsample rare classes more as a residual
         for idx in range(len(ds)):
