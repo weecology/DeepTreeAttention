@@ -60,7 +60,7 @@ class TreeModel(LightningModule):
         """Train on a loaded dataset
         """
         #allow for empty data if data augmentation is generated
-        inputs, y = batch
+        individual, inputs, y = batch
         images = inputs["HSI"]
         y_hat = self.model.forward(images)
         loss = F.cross_entropy(y_hat, y)    
@@ -71,7 +71,7 @@ class TreeModel(LightningModule):
         """Train on a loaded dataset
         """
         #allow for empty data if data augmentation is generated
-        inputs, y = batch
+        individual, inputs, y = batch
         images = inputs["HSI"]        
         y_hat = self.model.forward(images)
         loss = F.cross_entropy(y_hat, y)        
@@ -115,6 +115,7 @@ class TreeModel(LightningModule):
             return self.index_to_label[index]
                 
     def predict_xy(self, coordinates, fixed_box=True):
+        #TODO update for metadata model
         """Given an x,y location, find sensor data and predict tree crown class. If no predicted crown within 5m an error will be raised (fixed_box=False) or a 1m fixed box will created (fixed_box=True)
         Args:
             coordinates (tuple): x,y tuple in utm coordinates
@@ -170,6 +171,7 @@ class TreeModel(LightningModule):
         return label, score
     
     def predict_crown(self, geom, sensor_path):
+        #TODO UPDATE for metadata model
         """Given a geometry object of a tree crown, predict label
         Args:
             geom: a shapely geometry object, for example from a geodataframe (gdf) -> gdf.geometry[0]
@@ -201,7 +203,11 @@ class TreeModel(LightningModule):
         
         return label, score
     
-    def predict_file(self, csv_file, plot_n_individuals=30, experiment=None):
+    def predict(self,inputs):
+        """Given a input dictionary, construct args for prediction"""
+        return self.model(inputs["HSI"])
+    
+    def predict_dataloader(self, data_loader, plot_n_individuals=30, experiment=None):
         """Given a file with paths to image crops, create crown predictions 
         The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
         unique identifier for each crown and counter is 0..n pixel crops that belong to that crown.
@@ -211,12 +217,28 @@ class TreeModel(LightningModule):
         Returns:
             results: pandas dataframe with columns crown and species label
         """
-        df = pd.read_csv(csv_file)
-        df["crown"] = df.image_path.apply(lambda x: os.path.basename(x).split("_")[0])
-        df["pred_label"] = df.image_path.apply(lambda x: self.predict_image(x, return_numeric=True))
+        self.eval()
+        predictions = []
+        labels = []
+        individuals = []
+        for batch in data_loader:
+            individual, inputs, targets = batch
+            with torch.no_grad():
+                pred = self.predict(inputs)
+            predictions.append(pred)
+            labels.append(targets)
+            individuals.append(individual)
+        
+        individuals = np.concatenate(individuals)        
+        labels = np.concatenate(labels)
+        predictions = np.concatenate(predictions)        
+        predictions = np.argmax(predictions, 1)    
+        
+        #get just the basename
+        df = pd.DataFrame({"pred_label":predictions,"label":labels,"individual":individuals})
         df["pred_taxa"] = df["pred_label"].apply(lambda x: self.index_to_label[x])        
         df["true_taxa"] = df["label"].apply(lambda x: self.index_to_label[x])
-                
+ 
         if experiment:
             #load image pool and crown predicrions
             rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
@@ -227,7 +249,7 @@ class TreeModel(LightningModule):
             for index, row in df.head(plot_n_individuals).iterrows():
                 fig = plt.figure(0)
                 ax = fig.add_subplot(1, 1, 1)                
-                individual = row["crown"].split(".tif")[0]
+                individual = row["individual"]
                 geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
                 left, bottom, right, top = geom.bounds
                 
@@ -246,28 +268,24 @@ class TreeModel(LightningModule):
                 stem = test_points[test_points.individual == individual]
                 stem.plot(ax=ax)
                 
-                plt.savefig("{}/{}.png".format(self.tmpdir, row["crown"]))
-                experiment.log_image("{}/{}.png".format(self.tmpdir, row["crown"]), name = "crown: {}, True: {}, Predicted {}".format(row["crown"], row.true_taxa,row.pred_taxa))
+                plt.savefig("{}/{}.png".format(self.tmpdir, row["individual"]))
+                experiment.log_image("{}/{}.png".format(self.tmpdir, row["individual"]), name = "crown: {}, True: {}, Predicted {}".format(row["individual"], row.true_taxa,row.pred_taxa))
                 src.close()
             plt.ioff()
+            
         return df
     
-    def evaluate_crowns(self, csv_file, experiment=None):
+    def evaluate_crowns(self, data_loader, experiment=None):
         """Crown level measure of accuracy
         Args:
-            csv_file: ground truth csv with image_path and label columns
+            data_loader: TreeData dataset
+            experiment: optional comet experiment
         Returns:
             df: results dataframe
             metric_dict: metric -> value
         """
-        ground_truth = pd.read_csv(csv_file)
-        #convert to taxon label
-        ground_truth["crown"] = ground_truth.image_path.apply(lambda x: os.path.splitext(os.path.basename(x)))
-        results = self.predict_file(csv_file, experiment=experiment)
+        results = self.predict_dataloader(data_loader=data_loader, experiment=experiment)
         crown_micro = torchmetrics.functional.accuracy(preds=torch.tensor(results.pred_label.values, dtype=torch.long),target=torch.tensor(results.label.values, dtype=torch.long), average="micro")
         crown_macro = torchmetrics.functional.accuracy(preds=torch.tensor(results.pred_label.values, dtype=torch.long),target=torch.tensor(results.label.values, dtype=torch.long), average="macro", num_classes=self.classes)
         
         return results, {"crown_micro":crown_micro,"crown_macro":crown_macro}
-        
-
-    

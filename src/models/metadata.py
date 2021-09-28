@@ -10,16 +10,16 @@ class metadata(Module):
     def __init__(self, sites, classes):
         super(metadata,self).__init__()    
         self.embedding = nn.Embedding(sites, 64)
-        self.dropout = nn.Dropout(p=0.7)
+        #self.dropout = nn.Dropout(p=0.7)
         self.batch_norm = nn.BatchNorm1d(64)   
         self.mlp = nn.Linear(in_features=64, out_features=classes)
         
     def forward(self, x):
         x = self.embedding(x)
         x = self.batch_norm(x)        
-        x = self.dropout(x)           
+        #x = self.dropout(x)           
         x = self.mlp(x)
-        #x = F.relu(x)
+        x = F.relu(x)
         
         return x
     
@@ -55,7 +55,7 @@ class MetadataModel(main.TreeModel):
         """Train on a loaded dataset
         """
         #allow for empty data if data augmentation is generated
-        inputs, y = batch
+        individual, inputs, y = batch
         images = inputs["HSI"]
         metadata = inputs["site"]
         y_hat = self.model.forward(images, metadata)
@@ -68,7 +68,7 @@ class MetadataModel(main.TreeModel):
         """Train on a loaded dataset
         """
         #allow for empty data if data augmentation is generated
-        inputs, y = batch
+        individual, inputs, y = batch
         images = inputs["HSI"]   
         metadata = inputs["site"]
         
@@ -86,3 +86,6 @@ class MetadataModel(main.TreeModel):
         
         return loss
         
+    def predict(self):
+        self.model(inputs["HSI"], inputs["metadata"])
+    

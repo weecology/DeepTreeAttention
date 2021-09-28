@@ -240,6 +240,8 @@ class TreeDataset(Dataset):
         
     def __getitem__(self, index):
         inputs = {}
+        image_path = self.annotations.image_path.loc[index]      
+        individual = os.path.basename(image_path.split(".tif")[0])
         if self.HSI:
             image_path = self.annotations.image_path.loc[index]            
             image = load_image(image_path, image_size=self.image_size)
@@ -258,9 +260,9 @@ class TreeDataset(Dataset):
                 image = self.transformer(image)
                 inputs["HSI"] = image
 
-            return inputs, label
+            return individual, inputs, label
         else:
-            return inputs
+            return individual, inputs
 
 class TreeData(LightningDataModule):
     """

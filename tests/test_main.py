@@ -73,9 +73,9 @@ def test_predict_file(config, m, experiment):
     
     assert df.shape[0] == len(input_data.image_path.apply(lambda x: os.path.basename(x).split("_")[0]).unique())
 
-def test_evaluate_crowns(config, experiment, m):
+def test_evaluate_crowns(config, experiment, m, dm):
     m.ROOT = "{}/tests".format(ROOT)
-    df = m.evaluate_crowns("{}/tests/data/processed/test.csv".format(ROOT), experiment=experiment)
+    df = m.evaluate_crowns(data_loader = dm.val_dataloader(), experiment=experiment)
     
     assert len(df) == 2
 
