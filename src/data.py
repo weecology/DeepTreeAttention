@@ -237,7 +237,7 @@ class TreeDataset(Dataset):
             
     def __len__(self):
         #0th based index
-        return self.annotations.shape[0] -1 
+        return self.annotations.shape[0]-1
         
     def __getitem__(self, index):
         inputs = {}
@@ -475,25 +475,25 @@ class TreeData(LightningDataModule):
         for x in range(self.num_classes):
             class_weights[x] = 0 
         
-        for batch in ds:
-            individual, inputs, label = batch
-        
+        for index in range(len(ds)):
+            individual, inputs, label = ds[index]
+            class_weights[int(label)] = class_weights[int(label)] + 1
+                           
         for x in class_weights:
             class_weights[x] = class_weights[x]/sum(class_weights.values())
         
         data_weights = []
         #upsample rare classes more as a residual
-        for idx, batch in enumerate(ds):
-            path, image, targets = batch
-            labels = targets.numpy()
-            image_weight = sum([1-class_weights[x] for x in labels])/len(labels)
+        for idx in range(len(ds)):
+            path, image, targets = ds[idx]
+            label = int(targets.numpy())
+            image_weight = class_weights[label]
             data_weights.append(1/image_weight)
             
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights = data_weights, num_samples=len(ds))
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],
-            shuffle=True,
             num_workers=self.config["workers"],
             sampler=sampler
         )
