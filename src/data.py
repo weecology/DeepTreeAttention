@@ -236,7 +236,8 @@ class TreeDataset(Dataset):
         self.transformer = augmentation.train_augmentation(image_size=image_size)
             
     def __len__(self):
-        return self.annotations.shape[0]
+        #0th based index
+        return self.annotations.shape[0] -1 
         
     def __getitem__(self, index):
         inputs = {}
@@ -475,9 +476,7 @@ class TreeData(LightningDataModule):
             class_weights[x] = 0 
         
         for batch in ds:
-            path, image, targets = batch
-            for x in targets["labels"].numpy():
-                class_weights[x] = class_weights[x]+1
+            individual, inputs, label = batch
         
         for x in class_weights:
             class_weights[x] = class_weights[x]/sum(class_weights.values())
@@ -486,7 +485,7 @@ class TreeData(LightningDataModule):
         #upsample rare classes more as a residual
         for idx, batch in enumerate(ds):
             path, image, targets = batch
-            labels = targets["labels"].numpy()
+            labels = targets.numpy()
             image_weight = sum([1-class_weights[x] for x in labels])/len(labels)
             data_weights.append(1/image_weight)
             
