@@ -1,7 +1,10 @@
 name: DeepTreeAttention
 channels:
+  - pytorch
   - conda-forge
 dependencies:
+  - torchvision
+  - pytorch
   - scikit-learn
   - sphinx
   - recommonmark
