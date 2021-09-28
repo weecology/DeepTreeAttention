@@ -40,7 +40,7 @@ batch_size: 64
 bands: 369
 lr: 0.001
 fast_dev_run: False
-accelerator: ddp
+accelerator: dp
 epochs: 120
 
 #Evaluation config
