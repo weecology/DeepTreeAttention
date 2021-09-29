@@ -50,7 +50,10 @@ class vanilla_CNN(Module):
         x = torch.flatten(x, start_dim=1)        
         x = self.fc1(x)
         
-        return x
+        if self.train:
+            return x
+        else:
+            return F.softmax(x, dim=1)
     
 class spatial_attention(Module):
     """
@@ -109,7 +112,7 @@ class spatial_attention(Module):
         pooled_attention_features = self.class_pool(attention)
         pooled_attention_features = torch.flatten(pooled_attention_features, start_dim=1)
         class_features = self.fc1(pooled_attention_features)
-        
+
         return attention, class_features
 
 class spectral_attention(Module):
