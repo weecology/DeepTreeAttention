@@ -55,7 +55,7 @@ def test_TreeDataset(dm, config,tmpdir):
     data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/test.csv".format(ROOT), train=False)    
     annotations = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
     
-    assert len(data_loader) == annotations.shape[0]-1
+    assert len(data_loader) == annotations.shape[0]
     
 def test_resample(config, dm, tmpdir):
     #Set to a smaller number to ensure easy calculation
