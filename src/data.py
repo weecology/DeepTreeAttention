@@ -236,7 +236,8 @@ class TreeDataset(Dataset):
         self.transformer = augmentation.train_augmentation(image_size=image_size)
             
     def __len__(self):
-        return self.annotations.shape[0]
+        #0th based index
+        return self.annotations.shape[0]-1
         
     def __getitem__(self, index):
         inputs = {}
@@ -414,65 +415,47 @@ class TreeData(LightningDataModule):
             for index, label in enumerate(unique_site_labels):
                 self.site_label_dict[label] = index
             self.num_sites = len(self.site_label_dict)
-            
-    def resample(self, csv_file, oversample=True):
-        """Given the processed train/test split, resample to reduce class imbalance. This function honors the min and max sampling size from the .config
-        In order to prioritize a diverse training site, individual crops are first chosen by site and then individual
-        
-        Args:
-            csv: path to .csv file containing training annotations
-            oversample (True): Whether to duplicate rare classes to to the mininum threshold specified in the .config
-        Returns:
-            resampled_species: pandas dataframe with image_path and label to each pixel crop
-        """
-        train = pd.read_csv(csv_file)
-        train["individual"] = train.image_path.apply(lambda x: os.path.basename(x).split("_")[0]) 
-        labels = train.label.unique()
-        resampled_species = []
-        selected_indices = []
-        for x in labels:
-            species_samples = train[train.label == x]
-            if species_samples.shape[0] <= self.config["resample_max"]:
-                for index, row in species_samples.iterrows():
-                    resampled_species.append(row)
-            else:       
-                counter = 0
-                sites = species_samples["site"].unique()
-                while counter < self.config["resample_max"]:
-                    for x in sites:
-                        site_samples = species_samples[species_samples.site == x]
-                        i = site_samples.individual.sample(1)
-                        selected_individual = species_samples[species_samples.individual.isin(i)]
-                        for index, row in selected_individual.iterrows():
-                            if not index in selected_indices:
-                                resampled_species.append(row)
-                                selected_indices.append(index)
-                                counter = counter + 1
-                                break
-            
-        resampled_species = pd.DataFrame(resampled_species)
-        
-        #Oversampling of rare classes
-        if oversample:
-            label_counts = resampled_species.label.value_counts() 
-            rare_index = label_counts[label_counts < self.config["resample_min"]].index
-            if not rare_index.shape[0] == 0:   
-                to_be_oversampled = resampled_species[resampled_species.label.isin(rare_index)]
-                not_to_be_oversampled = resampled_species[~resampled_species.label.isin(rare_index)]
-                
-                oversampled = to_be_oversampled.groupby("label").sample(n=self.config["resample_min"], replace=True)
-                resampled_species = pd.concat([oversampled,not_to_be_oversampled])
-                
-        return resampled_species  
 
     def train_dataloader(self):
         """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""
         ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata)
+        
+        #get class weights
+        class_weights = {}
+        for x in range(self.num_classes):
+            class_weights[x] = 0 
+        
+        for index in range(len(ds)):
+            individual, inputs, label = ds[index]
+            class_weights[int(label)] = class_weights[int(label)] + 1
+                           
+        for x in class_weights:
+            class_weights[x] = class_weights[x]/sum(class_weights.values())
+        
+        #Provide a floor to class weights
+        for x in class_weights:
+            if class_weights[x] < 100:
+                class_weights[x] = 100
+        
+        #Provide a floor to class weights
+        for x in class_weights:
+            if class_weights[x] > 1000:
+                class_weights[x] = 1000
+                
+        data_weights = []
+        #upsample rare classes more as a residual
+        for idx in range(len(ds)):
+            path, image, targets = ds[idx]
+            label = int(targets.numpy())
+            image_weight = class_weights[label]
+            data_weights.append(1/image_weight)
+            
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights = data_weights, num_samples=len(ds))
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],
-            shuffle=True,
             num_workers=self.config["workers"],
+            sampler=sampler
         )
         
         return data_loader
