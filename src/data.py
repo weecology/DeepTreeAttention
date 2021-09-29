@@ -484,13 +484,13 @@ class TreeData(LightningDataModule):
         
         #Provide a floor to class weights
         for x in class_weights:
-            if class_weights[x] < 50:
-                class_weights[x] = 50
+            if class_weights[x] < 100:
+                class_weights[x] = 100
         
         #Provide a floor to class weights
         for x in class_weights:
-            if class_weights[x] > 5000:
-                class_weights[x] = 5000
+            if class_weights[x] > 1000:
+                class_weights[x] = 1000
                 
         data_weights = []
         #upsample rare classes more as a residual
