@@ -14,28 +14,22 @@ from pandas.util import hash_pandas_object
 import numpy as np
 
 #Create datamodule
-#client = start_cluster.start(cpus=250, mem_size="5GB")
-client = None
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client, metadata=True)
+client = start_cluster.start(cpus=250, mem_size="5GB")
+#client = None
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client, metadata=True)
 data_module.setup()
 comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
 if client:
     client.close()
 
-resampled_data = data_module.resample(csv_file="data/processed/train.csv", oversample=True)
-resampled_data.to_csv("data/processed/resampled_train.csv", index=False)
-
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 
-#Override train file with resampling
-data_module.train_file = "data/processed/resampled_train.csv"
-
 #Hash train and test
-train = pd.read_csv("data/processed/resampled_train.csv")
+train = pd.read_csv("data/processed/train.csv")
 test = pd.read_csv("data/processed/test.csv")
 comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(train))
 comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(test))
-comet_logger.experiment.log_table("resampled_train.csv", train)
+comet_logger.experiment.log_table("train.csv", train)
 comet_logger.experiment.log_table("test.csv", test)
 
 model = metadata.metadata_sensor_fusion(sites=data_module.num_sites, classes=data_module.num_classes, bands=data_module.config["bands"])
@@ -57,8 +51,7 @@ trainer = Trainer(
     logger=comet_logger)
 
 trainer.fit(m, datamodule=data_module)
-results, crown_metrics = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
-comet_logger.experiment.log_metrics(crown_metrics)
+results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
 
 predictions = np.concatenate(predictions)
 predictions = np.argmax(predictions, 1)

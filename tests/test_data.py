@@ -3,6 +3,7 @@ from src import data
 import pytest
 import pandas as pd
 import tempfile
+import numpy as np
 
 import os
 ROOT = os.path.dirname(os.path.dirname(data.__file__))
@@ -46,29 +47,19 @@ def test_TreeData_setup(dm, config):
 def test_TreeDataset(dm, config,tmpdir):
     #Train loader
     data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/train.csv".format(ROOT), config=config)
-    inputs, label = data_loader[0]
+    individuals, inputs, label = data_loader[0]
     image = inputs["HSI"]
     assert image.shape == (3, config["image_size"], config["image_size"])
     
     #Test loader
     data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/test.csv".format(ROOT), train=False)    
     annotations = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
-    assert len(data_loader) == annotations.shape[0]    
     
-#def test_resample(config, dm, tmpdir):
-    ##Set to a smaller number to ensure easy calculation
-    #dm.config["resample_max"] = 50
-    #dm.config["resample_min"] = 10
+    assert len(data_loader) == annotations.shape[0]-1
     
-    #annotations = dm.resample(csv_file = "{}/tests/data/processed/train.csv".format(ROOT), oversample=False)
-    
-    ##There are two classes
-    #assert annotations.shape[0] == dm.config["resample_max"] * 2
-    
-    #undersampling = pd.read_csv("{}/tests/data/processed/train.csv".format(ROOT))
-    #undersampling = undersampling.groupby("label").sample(n=5)
-    #undersampling.to_csv("{}/undersampling.csv".format(tmpdir))
-    #annotations = dm.resample(csv_file="{}/undersampling.csv".format(tmpdir), oversample=True)
-    
-    ##There are two classes
-    #assert annotations.shape[0] == 2 * dm.config["resample_min"]
+def test_resample(config, dm, tmpdir):
+    #Set to a smaller number to ensure easy calculation
+    data_loader = dm.train_dataloader()
+    labels = []
+    individual, image, label = iter(data_loader).next()
+
