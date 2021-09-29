@@ -67,8 +67,8 @@ def test_fit(config, m, dm):
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m,datamodule=dm)
     
-def test_predict_file(config, m, experiment):
-    df = m.predict_file("{}/tests/data/processed/test.csv".format(ROOT), experiment = experiment)
+def test_predict_dataloader(config, m, dm, experiment):
+    df = m.predict_dataloader(dm.val_dataloader(), experiment = experiment)
     input_data = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))    
     
     assert df.shape[0] == len(input_data.image_path.apply(lambda x: os.path.basename(x).split("_")[0]).unique())
@@ -77,7 +77,7 @@ def test_evaluate_crowns(config, experiment, m, dm):
     m.ROOT = "{}/tests".format(ROOT)
     df = m.evaluate_crowns(data_loader = dm.val_dataloader(), experiment=experiment)
     
-    assert len(df) == 2
+    assert len(df) == 3
 
 def test_predict_xy(config, m, dm):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)            

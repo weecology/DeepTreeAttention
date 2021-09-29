@@ -28,9 +28,9 @@ crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/metadata_crops/
 image_size: 11
 
 #Resampling
-#Minimum number of samples per species, all samples under this floor will be duplicated
+#Minimum number of samples per species, all samples under this floor will have same sampling probability
 resample_min: 50
-#maximum resample per species, all species above this threshold will be randomly selected balanced by site. 
+#maximum resample per species, all species above this threshold will have the same sampling probability
 resample_max: 500
 
 #Network Parameters
