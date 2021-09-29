@@ -436,7 +436,7 @@ class TreeData(LightningDataModule):
             if class_weights[x] < self.config["resample_min"]:
                 class_weights[x] = self.config["resample_min"]
         
-        #Provide a floor to class weights
+        #Provide a ceiling to class weights
         for x in class_weights:
             if class_weights[x] > self.config["resample_max"]:
                 class_weights[x] = self.config["resample_max"]
