@@ -428,9 +428,7 @@ class TreeData(LightningDataModule):
         for index in range(len(ds)):
             individual, inputs, label = ds[index]
             class_weights[int(label)] = class_weights[int(label)] + 1
-                           
-        total_counts = sum(class_weights.values())
-        
+                                   
         #Provide a floor to class weights
         for x in class_weights:
             if class_weights[x] < self.config["resample_min"]:
@@ -440,9 +438,6 @@ class TreeData(LightningDataModule):
         for x in class_weights:
             if class_weights[x] > self.config["resample_max"]:
                 class_weights[x] = self.config["resample_max"]
-        
-        for x in class_weights:
-            class_weights[x] = class_weights[x]/total_counts
                 
         data_weights = []
         #upsample rare classes more as a residual
