@@ -161,6 +161,7 @@ class TreeModel(LightningModule):
         self.model.eval() 
         with torch.no_grad():
             class_probs = self.model(image)
+            class_probs = F.softmax(class_probs)
         class_probs = class_probs.numpy()
         index = np.argmax(class_probs)
         label = self.index_to_label[index]
