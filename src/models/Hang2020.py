@@ -50,7 +50,7 @@ class vanilla_CNN(Module):
         x = torch.flatten(x, start_dim=1)        
         x = self.fc1(x)
         
-        if self.train:
+        if self.training:
             return x
         else:
             return F.softmax(x, dim=1)
@@ -241,7 +241,7 @@ class Hang2020(Module):
         self.weighted_average = torch.sigmoid(self.alpha)
         joint_score = spectral_classes * self.weighted_average + spatial_classes * (1-self.weighted_average)
         
-        if self.train:
+        if self.training:
             return joint_score
         else:
             return F.softmax(joint_score, dim=1)

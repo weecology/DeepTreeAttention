@@ -78,7 +78,7 @@ def test_evaluate_crowns(config, experiment, m, dm):
     m.ROOT = "{}/tests".format(ROOT)
     df = m.evaluate_crowns(data_loader = dm.val_dataloader(), experiment=experiment)
     
-    assert len(df) == 3
+    assert len(df) == 4
 
 def test_predict_xy(config, m, dm):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)            
