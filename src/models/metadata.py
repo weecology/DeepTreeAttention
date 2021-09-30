@@ -84,5 +84,6 @@ class MetadataModel(main.TreeModel):
         return loss
         
     def predict(self, inputs):
-        self.model(inputs["HSI"], inputs["site"])
+        feature = self.model(inputs["HSI"], inputs["site"])
+        return F.softmax(feature, dim=1)
     
