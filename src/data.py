@@ -440,9 +440,6 @@ class TreeData(LightningDataModule):
         for x in class_weights:
             if class_weights[x] > self.config["resample_max"]:
                 class_weights[x] = self.config["resample_max"]
-        
-        for x in class_weights:
-            class_weights[x] = class_weights[x]/total_counts
                 
         data_weights = []
         #upsample rare classes more as a residual
