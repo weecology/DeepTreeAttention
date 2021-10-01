@@ -208,7 +208,7 @@ class TreeModel(LightningModule):
         """Given a input dictionary, construct args for prediction"""
         return self.model(inputs["HSI"])
     
-    def predict_dataloader(self, data_loader, plot_n_individuals=100, experiment=None):
+    def predict_dataloader(self, data_loader, plot_n_individuals=200, experiment=None):
         """Given a file with paths to image crops, create crown predictions 
         The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
         unique identifier for each crown and counter is 0..n pixel crops that belong to that crown.
@@ -247,7 +247,7 @@ class TreeModel(LightningModule):
             test_points = gpd.read_file("{}/data/processed/test_points.shp".format(self.ROOT))   
             
             plt.ion()
-            for index, row in df.head(plot_n_individuals).iterrows():
+            for index, row in df.sample(n=plot_n_individuals).iterrows():
                 fig = plt.figure(0)
                 ax = fig.add_subplot(1, 1, 1)                
                 individual = row["individual"]
