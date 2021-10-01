@@ -56,7 +56,7 @@ results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logge
 #Confusion matrix
 comet_logger.experiment.log_confusion_matrix(
     test.label.values,
-    predictions,
+    test.pred_label.values,
     labels=list(data_module.species_label_dict.keys()),
     max_categories=len(data_module.species_label_dict.keys())
 )  
