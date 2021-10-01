@@ -272,6 +272,7 @@ class TreeModel(LightningModule):
                 plt.savefig("{}/{}.png".format(self.tmpdir, row["individual"]))
                 experiment.log_image("{}/{}.png".format(self.tmpdir, row["individual"]), name = "crown: {}, True: {}, Predicted {}".format(row["individual"], row.true_taxa,row.pred_taxa))
                 src.close()
+                plt.close("all")
             plt.ioff()
             
         return df

@@ -53,9 +53,6 @@ trainer = Trainer(
 trainer.fit(m, datamodule=data_module)
 results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
 
-predictions = np.concatenate(predictions)
-predictions = np.argmax(predictions, 1)
-
 #Confusion matrix
 comet_logger.experiment.log_confusion_matrix(
     test.label.values,
