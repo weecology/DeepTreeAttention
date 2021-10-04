@@ -71,5 +71,6 @@ def confusion_matrix(comet_experiment, results, species_label_dict, test_csv, te
         test_points=test_points,
         test_crowns=test_crowns,
         rgb_pool=rgb_pool,
-        comet_experiment=comet_experiment        
+        comet_experiment=comet_experiment,
+        max_example_per_cell=5
     )

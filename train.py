@@ -6,14 +6,11 @@ from src import data
 from src import start_cluster
 from src.models import metadata
 from src import visualize
-import torch
 from pytorch_lightning import Trainer
-import os
 import subprocess
 from pytorch_lightning.loggers import CometLogger
 import pandas as pd
 from pandas.util import hash_pandas_object
-import numpy as np
 
 #Create datamodule
 #client = start_cluster.start(cpus=40, mem_size="5GB")
@@ -55,7 +52,7 @@ trainer = Trainer(
 trainer.fit(m, datamodule=data_module)
 results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
 
-rgb_pool = glob.glob(data_module.config["rgb_pool"], recursive=True)
+rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 visualize.confusion_matrix(
     experiment=comet_logger.experiment,
     results=results,
