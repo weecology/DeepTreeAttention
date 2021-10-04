@@ -208,7 +208,7 @@ class TreeModel(LightningModule):
         """Given a input dictionary, construct args for prediction"""
         return self.model(inputs["HSI"])
     
-    def predict_dataloader(self, data_loader, plot_n_individuals=200, experiment=None):
+    def predict_dataloader(self, data_loader, plot_n_individuals=1, experiment=None):
         """Given a file with paths to image crops, create crown predictions 
         The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
         unique identifier for each crown and counter is 0..n pixel crops that belong to that crown.
@@ -288,4 +288,16 @@ class TreeModel(LightningModule):
         """
         results = self.predict_dataloader(data_loader=data_loader, experiment=experiment)
 
+        #Log result by site
+        if experiment:
+            results["site"] = results.individual.apply(lambda x: x.split(".")[-2])
+            site_data_frame =[]
+            for name, group in results.groupby("site"):
+                site_micro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label.values),target=torch.tensor(group.label.values), average="micro")
+                site_macro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label.values),target=torch.tensor(group.label.values), average="macro", num_classes=self.config["classes"])
+                row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro], "Macro Recall": [site_macro]})
+                site_data_frame.append(row)
+            site_data_frame = pd.concat(site_data_frame)
+            experiment.log_table("site_results.csv", site_data_frame)
+        
         return results

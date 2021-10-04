@@ -26,8 +26,10 @@ def config():
     config["classes"] = 2
     config["top_k"] = 1
     config["convert_h5"] = False
+    config["plot_n_individuals"] = 1
     
     return config
+
 #Data module
 @pytest.fixture(scope="session")
 def dm(config):
