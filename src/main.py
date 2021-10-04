@@ -295,7 +295,7 @@ class TreeModel(LightningModule):
             for name, group in results.groupby("site"):
                 site_micro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label.values),target=torch.tensor(group.label.values), average="micro")
                 site_macro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label.values),target=torch.tensor(group.label.values), average="macro", num_classes=self.config["classes"])
-                row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro], "Macro Recall": [site_macro]})
+                row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro.numpy()], "Macro Recall": [site_macro.numpy()]})
                 site_data_frame.append(row)
             site_data_frame = pd.concat(site_data_frame)
             experiment.log_table("site_results.csv", site_data_frame)
