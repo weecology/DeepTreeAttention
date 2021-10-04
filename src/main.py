@@ -286,6 +286,7 @@ class TreeModel(LightningModule):
             df: results dataframe
             metric_dict: metric -> value
         """
-        results = self.predict_dataloader(data_loader=data_loader, experiment=experiment)
+        
+        results = self.predict_dataloader(data_loader=data_loader, plot_n_individuals=self.config["plot_n_individuals"], experiment=experiment)
 
         return results
