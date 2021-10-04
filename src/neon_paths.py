@@ -34,6 +34,7 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None):
         geo_index = bounds_to_geoindex(bounds=bounds)
         match = [x for x in lookup_pool if geo_index in x]
         match.sort()
+        match = match[::-1]
         try:
             year_match = match[-1]
         except Exception as e:
