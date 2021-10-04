@@ -46,6 +46,8 @@ epochs: 60
 #Evaluation config
 #Top k class recall score
 top_k: 4
+#Number of individuals to plot in comet graphics tab
+plot_n_individuals: 10
 
 #Comet dashboard
 comet_workspace: bw4sz

@@ -1,17 +1,16 @@
 #Train
 import comet_ml
+import glob
 from src import main
 from src import data
 from src import start_cluster
 from src.models import metadata
-import torch
+from src import visualize
 from pytorch_lightning import Trainer
-import os
 import subprocess
 from pytorch_lightning.loggers import CometLogger
 import pandas as pd
 from pandas.util import hash_pandas_object
-import numpy as np
 
 #Create datamodule
 #client = start_cluster.start(cpus=40, mem_size="5GB")
@@ -53,13 +52,16 @@ trainer = Trainer(
 trainer.fit(m, datamodule=data_module)
 results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
 
-#Confusion matrix
-comet_logger.experiment.log_confusion_matrix(
-    results.label.values,
-    results.pred_label.values,
-    labels=list(data_module.species_label_dict.keys()),
-    max_categories=len(data_module.species_label_dict.keys())
-)  
+rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
+visualize.confusion_matrix(
+    comet_experiment=comet_logger.experiment,
+    results=results,
+    species_label_dict=data_module.species_label_dict,
+    test_crowns="data/processed/test_crowns.shp",
+    test_csv="data/processed/test.csv",
+    test_points="data/processed/test_points.shp",
+    rgb_pool=rgb_pool
+)
 
 #Log spectral spatial weight
 alpha_weight = m.model.sensor_model.weighted_average.detach().numpy()
