@@ -36,7 +36,7 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None):
         match.sort()
         match = match[::-1]
         try:
-            year_match = match[-1]
+            year_match = match[0]
         except Exception as e:
             raise ValueError("No matches for geoindex {} in sensor pool with bounds {}".format(geo_index, bounds))
     else:
@@ -46,8 +46,9 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None):
         geo_index = re.search("(\d+_\d+)_image", basename).group(1)
         match = [x for x in lookup_pool if geo_index in x]
         match.sort()
+        match = match[::-1]        
         try:
-            year_match = match[-1]
+            year_match = match[0]
         except Exception as e:
             raise ValueError("No matches for geoindex {} in sensor pool".format(geo_index))
 
