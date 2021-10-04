@@ -54,7 +54,7 @@ results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logge
 
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 visualize.confusion_matrix(
-    experiment=comet_logger.experiment,
+    comet_experiment=comet_logger.experiment,
     results=results,
     species_label_dict=data_module.species_label_dict,
     test_crowns="data/processed/test_crowns.shp",
