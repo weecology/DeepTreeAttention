@@ -66,7 +66,6 @@ def confusion_matrix(comet_experiment, results, species_label_dict, test_csv, te
         results.pred_label.values,
         labels=list(species_label_dict.keys()),
         max_categories=len(species_label_dict.keys()),
-        max_example_per_cell = 5,
         index_to_example_function=index_to_example,
         test_csv=test_csv,
         test_points=test_points,
