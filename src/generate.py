@@ -258,6 +258,10 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, site_dict, client=None
     img_pool = glob.glob(sensor_glob, recursive=True)
     rgb_pool = glob.glob(rgb_glob, recursive=True)
     
+    #There were erroneous point cloud .tif
+    img_pool = [x for x in img_pool if not "point_cloud" in x]
+    rgb_pool = [x for x in rgb_pool if not "point_cloud" in x]
+    
     if client:
         futures = []
         for index, row in gdf.iterrows():

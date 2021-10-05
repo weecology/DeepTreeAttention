@@ -103,8 +103,6 @@ def array2raster(newRaster, reflBandArray, reflArray_metadata, extent, ras_dir):
     cols = reflBandArray.shape[1]
     rows = reflBandArray.shape[0]
     bands = reflBandArray.shape[2]
-    pixelWidth = float(reflArray_metadata['res']['pixelWidth'])
-    pixelHeight = -float(reflArray_metadata['res']['pixelHeight'])
     originX = extent['xMin']
     originY = extent['yMax']
     res = reflArray_metadata['res']['pixelWidth']
@@ -151,10 +149,10 @@ def calc_clip_index(clipExtent, h5Extent, xscale=1, yscale=1):
     return ind_ext
 
 
-def generate_raster(h5_path, save_dir, rgb_filename=None, bands=None, bounds = False):
+def generate_raster(h5_path, save_dir, rgb_filename=None, bands="no_water", bounds = False):
     """
     h5_path: input path to h5 file on disk
-    bands: "All" bands or "false color" bands
+    bands: "all" bands or "false color", "no_water" bands
     save_dir: Directory to save raster object
     rgb_filename= Path to rgb image to draw extent and crs definition
     
@@ -165,18 +163,19 @@ def generate_raster(h5_path, save_dir, rgb_filename=None, bands=None, bounds = F
     metadata, refl = h5refl2array(h5_path)
     
     #Select nanometers RGB see NeonTreeEvaluation/utilities/neon_aop_bands.csv
-    if bands:
-        if bands == "All":
-            #Delete water absorption bands
-            rgb = np.r_[0:425]
-            rgb = np.delete(rgb, np.r_[419:425])
-            rgb = np.delete(rgb, np.r_[283:315])
-            rgb = np.delete(rgb, np.r_[192:210])
-        elif bands == "false_color":
-            rgb = [16, 54, 112]
-    else:
+    if bands == "no_water":
+        #Delete water absorption bands
+        rgb = np.r_[0:425]
+        rgb = np.delete(rgb, np.r_[419:425])
+        rgb = np.delete(rgb, np.r_[283:315])
+        rgb = np.delete(rgb, np.r_[192:210])
+    elif bands == "false_color":
+        rgb = [16, 54, 112]
+    elif bands == "all":
         rgb = np.r_[0:426]
-
+    else:
+        raise ValueError("no band combination specified")
+    
     refl = refl[:,:,rgb]
     xmin, xmax, ymin, ymax = metadata['extent']
 

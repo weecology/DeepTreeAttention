@@ -60,7 +60,7 @@ def convert_h5(hyperspectral_h5_path, rgb_path, savedir):
 
     Hyperspectral.generate_raster(h5_path=hyperspectral_h5_path,
                                   rgb_filename=rgb_path,
-                                  bands="All",
+                                  bands="no_water",
                                   save_dir=savedir)
 
     return tif_path
