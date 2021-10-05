@@ -13,9 +13,9 @@ import pandas as pd
 from pandas.util import hash_pandas_object
 
 #Create datamodule
-#client = start_cluster.start(cpus=40, mem_size="5GB")
-client = None
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client, metadata=True)
+client = start_cluster.start(cpus=40, mem_size="5GB")
+#client = None
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client, metadata=True)
 data_module.setup()
 comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
 if client:
@@ -53,6 +53,7 @@ trainer.fit(m, datamodule=data_module)
 results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
 
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
+
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
     results=results,
