@@ -108,7 +108,7 @@ def array2raster(newRaster, reflBandArray, reflArray_metadata, extent, ras_dir):
     originX = extent['xMin']
     originY = extent['yMax']
     res = reflArray_metadata['res']['pixelWidth']
-    transform = Affine.translation(originX - res / 2, originY - res / 2) * Affine.scale(res, res)
+    transform = Affine.translation(originX, originY) * Affine.scale(res, -res)
     reflBandArray = np.moveaxis(reflBandArray,2,0)  
     with rasterio.open(
         ras_dir+newRaster,
