@@ -286,7 +286,6 @@ class TreeModel(LightningModule):
             df: results dataframe
             metric_dict: metric -> value
         """
-        
         results = self.predict_dataloader(data_loader=data_loader, plot_n_individuals=self.config["plot_n_individuals"], experiment=experiment)
 
         #Log result by site
@@ -295,7 +294,7 @@ class TreeModel(LightningModule):
             site_data_frame =[]
             for name, group in results.groupby("site"):
                 site_micro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label.values),target=torch.tensor(group.label.values), average="micro")
-                site_macro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label.values),target=torch.tensor(group.label.values), average="macro", num_classes=self.config["classes"])
+                site_macro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label.values),target=torch.tensor(group.label.values), average="macro", num_classes=self.classes)
                 row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro.numpy()], "Macro Recall": [site_macro.numpy()]})
                 site_data_frame.append(row)
             site_data_frame = pd.concat(site_data_frame)
