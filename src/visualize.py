@@ -50,7 +50,7 @@ def index_to_example(index, test_csv, test_crowns, test_points, rgb_pool, comet_
     stem = test_points[test_points.individual == individual]
     stem.plot(ax=ax)
     
-    image_name = "{}/{}.png".format(tmpdir,individual)
+    image_name = "{}/{}_confusion.png".format(tmpdir,individual)
     plt.savefig(image_name)
     results = comet_experiment.log_image(image_name, name = "{}".format(individual))
     src.close()
