@@ -11,6 +11,8 @@ from src import patches
 from distributed import wait   
 from deepforest import main    
 import traceback
+import warnings
+warnings.filterwarnings('ignore')
 
 def predict_trees(deepforest_model, rgb_path, bounds, expand=40):
     """Predict an rgb path at specific utm bounds
@@ -297,7 +299,7 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, site_dict, client=None
             try:
                 annotation = write_crop(row=row, img_path=img_path, savedir=savedir, label_dict=label_dict, site_dict=site_dict)
             except Exception as e:
-                print("{} failed with {}".format(row,e))
+                print("index {} failed with {}".format(index,e))
                 continue
     
             annotations.append(annotation)
