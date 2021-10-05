@@ -6,6 +6,7 @@ from src import data
 from src import start_cluster
 from src.models import metadata
 from src import visualize
+from src import metrics
 from pytorch_lightning import Trainer
 import subprocess
 from pytorch_lightning.loggers import CometLogger
@@ -70,3 +71,14 @@ comet_logger.experiment.log_parameter("spectral_spatial weight", alpha_weight)
 
 #Log prediction
 comet_logger.experiment.log_table("test_predictions.csv", results)
+
+#Within site confusion
+site_lists = train.groupby("label").site.unique()
+within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label, site_lists)
+comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
+
+#Within genus confusion
+train["taxonID"] = train.label.apply(lambda x: data_module.species_label_dict[x])
+scientific_dict = train.groupby('taxonID')['scientific'].apply(lambda x: x.head(1).values.tolist()).to_dict()
+genus_confusion = metrics.genus_confusion(y_true = results.label, y_pred = results.pred_label, scientific_dict=scientific_dict)
+comet_logger.experiment.log_metric(name = "Within genus confusion", value = genus_confusion)
