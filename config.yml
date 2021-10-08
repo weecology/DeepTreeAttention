@@ -20,10 +20,14 @@ min_CHM_height: 1
 #Minimum difference between measured height and CHM height
 min_CHM_diff: 4
 
+#Megaplot XY Data
+megaplot_dir: /orange/idtrees-collab/megaplot/
+
 #Crop generation
 convert_h5: True
 #Directoy to store cropped images from crowns
-crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/metadata_crops/
+crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/year_crops/
+
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
 
