@@ -14,6 +14,7 @@ from sklearn import preprocessing
 from src import generate
 from src import CHM
 from src import augmentation
+from src import megaplot
 from shapely.geometry import Point
 import torch
 from torch.utils.data import Dataset
@@ -345,7 +346,7 @@ class TreeData(LightningDataModule):
                 self.site_label_dict[label] = index
             self.num_sites = len(self.site_label_dict)        
             
-            #test data 
+            #Create crown data
             train_crowns = generate.points_to_crowns(
                 field_data="{}/processed/train_points.shp".format(self.data_dir),
                 rgb_dir=self.config["rgb_sensor_pool"],
@@ -353,6 +354,12 @@ class TreeData(LightningDataModule):
                 raw_box_savedir=None, 
                 client=self.client
             )
+            
+            #load any megaplot data
+            if not self.config["megaplot_dir"] is None:
+                megaplot_crowns = megaplot.load(directory=self.config["megaplot_dir"], rgb_pool=self.config["rgb_sensor_pool"], client = self.client)
+            
+            train_crowns = pd.concat([megaplot_crowns, train_crowns])
             
             train_crowns.to_file("{}/processed/train_crowns.shp".format(self.data_dir))
             
@@ -377,6 +384,7 @@ class TreeData(LightningDataModule):
             )
             test_crowns.to_file("{}/processed/test_crowns.shp".format(self.data_dir))
             
+            
             test_annotations = generate.generate_crops(
                 test_crowns,
                 savedir=self.config["crop_dir"],
@@ -391,7 +399,7 @@ class TreeData(LightningDataModule):
             
             #Make sure no species were lost during generate
             train_annotations = train_annotations[train_annotations.label.isin(test_annotations.label.unique())]
-            
+                        
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
         else:
