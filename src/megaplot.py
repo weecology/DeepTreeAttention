@@ -33,7 +33,7 @@ def format(site, gdf, directory):
     gdf = gdf.merge(species_data[["sp","taxonID"]])
     
     #give each an individual ID
-    gdf["individualID"] = gdf.apply(lambda x: "{}_{}".format(site,x.index),axis=1) 
+    gdf["individualID"] = gdf.index.to_series().apply(lambda x: "{}_{}".format(site,x)) 
     gdf["siteID"] = site
     
     #PlotID variable to center on correct tile
