@@ -350,15 +350,6 @@ class TreeData(LightningDataModule):
             if not self.config["megaplot_dir"] is None:
                 megaplot_crowns = megaplot.load(directory=self.config["megaplot_dir"], rgb_pool=self.config["rgb_sensor_pool"], client = self.client)
                 train_crowns = pd.concat([megaplot_crowns, train_crowns])
-                
-            #Store class labels
-            unique_species_labels = np.concatenate([train.taxonID.unique(), test.taxonID.unique()])
-            unique_species_labels = np.unique(unique_species_labels)
-            self.num_classes = len(unique_species_labels)
-            
-            self.species_label_dict = {}
-            for index, label in enumerate(unique_species_labels):
-                self.species_label_dict[label] = index
             
             train_crowns.to_file("{}/processed/train_crowns.shp".format(self.data_dir))
             
@@ -401,6 +392,16 @@ class TreeData(LightningDataModule):
                         
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
+            
+            
+            #Store class labels
+            unique_species_labels = np.concatenate([train_crowns.taxonID.unique(), test_crowns.taxonID.unique()])
+            unique_species_labels = np.unique(unique_species_labels)
+            self.num_classes = len(unique_species_labels)
+            
+            self.species_label_dict = {}
+            for index, label in enumerate(unique_species_labels):
+                self.species_label_dict[label] = index            
         else:
             test = gpd.read_file("{}/processed/test_points.shp".format(self.data_dir))
             train = gpd.read_file("{}/processed/train_points.shp".format(self.data_dir))

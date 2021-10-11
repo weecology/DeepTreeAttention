@@ -16,6 +16,7 @@ def read_files(directory):
     
     site_dict = {}
     for index, x in enumerate(sites):
+        print(x)
         formatted_data = format(site=x, gdf=shps[index], directory=directory)
         site_dict[x] = formatted_data
 
