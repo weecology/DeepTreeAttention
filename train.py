@@ -24,6 +24,11 @@ if client:
 
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 
+#log branch
+git_branch = subprocess.check_output(["git","symbolic-ref", "--short", "HEAD"]).decode("utf8")[0:-1]
+comet_logger.experiment.log_parameter("git branch",git_branch)
+comet_logger.experiment.add_tag(git_branch)
+
 #Hash train and test
 train = pd.read_csv("data/processed/train.csv")
 test = pd.read_csv("data/processed/test.csv")

@@ -20,7 +20,7 @@ def config():
     config["min_samples"] = 1
     config["crop_dir"] = tempfile.gettempdir()
     config["convert_h5"] = False
-    
+    config["megaplot_dir"] = None
     return config
 
 
