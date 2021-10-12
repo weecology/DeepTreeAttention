@@ -352,18 +352,6 @@ class TreeData(LightningDataModule):
                 train_crowns = pd.concat([megaplot_crowns, train_crowns])
             
             train_crowns.to_file("{}/processed/train_crowns.shp".format(self.data_dir))
-            
-            train_annotations = generate.generate_crops(
-                train_crowns,
-                savedir=self.config["crop_dir"],
-                label_dict=self.species_label_dict,
-                site_dict=self.site_label_dict,                
-                sensor_glob=self.config["HSI_sensor_pool"],
-                convert_h5=self.config["convert_h5"],   
-                rgb_glob=self.config["rgb_sensor_pool"],
-                HSI_tif_dir=self.config["HSI_tif_dir"],
-                client=self.client
-            )            
                         
             test_crowns = generate.points_to_crowns(
                 field_data="{}/processed/test_points.shp".format(self.data_dir),
@@ -374,7 +362,27 @@ class TreeData(LightningDataModule):
             )
             test_crowns.to_file("{}/processed/test_crowns.shp".format(self.data_dir))
             
+            #Store class labels
+            unique_species_labels = np.concatenate([train_crowns.taxonID.unique(), test_crowns.taxonID.unique()])
+            unique_species_labels = np.unique(unique_species_labels)
+            self.num_classes = len(unique_species_labels)
             
+            self.species_label_dict = {}
+            for index, label in enumerate(unique_species_labels):
+                self.species_label_dict[label] = index
+                
+            train_annotations = generate.generate_crops(
+                train_crowns,
+                savedir=self.config["crop_dir"],
+                label_dict=self.species_label_dict,
+                site_dict=self.site_label_dict,                
+                sensor_glob=self.config["HSI_sensor_pool"],
+                convert_h5=self.config["convert_h5"],   
+                rgb_glob=self.config["rgb_sensor_pool"],
+                HSI_tif_dir=self.config["HSI_tif_dir"],
+                client=self.client
+            )    
+                
             test_annotations = generate.generate_crops(
                 test_crowns,
                 savedir=self.config["crop_dir"],
@@ -392,19 +400,10 @@ class TreeData(LightningDataModule):
                         
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
-            
-            
-            #Store class labels
-            unique_species_labels = np.concatenate([train_crowns.taxonID.unique(), test_crowns.taxonID.unique()])
-            unique_species_labels = np.unique(unique_species_labels)
-            self.num_classes = len(unique_species_labels)
-            
-            self.species_label_dict = {}
-            for index, label in enumerate(unique_species_labels):
-                self.species_label_dict[label] = index            
+                        
         else:
-            test = gpd.read_file("{}/processed/test_points.shp".format(self.data_dir))
-            train = gpd.read_file("{}/processed/train_points.shp".format(self.data_dir))
+            test = gpd.read_file("{}/processed/test_crowns.shp".format(self.data_dir))
+            train = gpd.read_file("{}/processed/train_crowns.shp".format(self.data_dir))
             
             #Store class labels
             unique_species_labels = np.concatenate([train.taxonID.unique(), test.taxonID.unique()])
