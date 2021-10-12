@@ -69,7 +69,7 @@ def create_grid(gdf):
     
     return grid
     
-def load(directory, rgb_pool,client):
+def load(directory, rgb_pool,client, config):
     """Load all the megaplot data and generate crown predictions
     Args:
         directory: location of .csv files of megaplot data
@@ -78,7 +78,7 @@ def load(directory, rgb_pool,client):
     Returns:
         crowndf: a geopandas dataframe of crowns for all sites
     """
-    formatted_data = read_files(directory=directory)
+    formatted_data = read_files(directory=directory, config=config)
     crown_list = []
     for x in formatted_data:
         formatted_data[x].to_file("{}/{}_points.shp".format(directory, x))        
