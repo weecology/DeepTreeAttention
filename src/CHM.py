@@ -29,7 +29,6 @@ def postprocess_CHM(df, lookup_pool):
     df.height.fillna(df["CHM_height"], inplace=True)
         
     return df
-
         
 def CHM_height(shp, CHM_pool):
         """For each plotID extract the heights from LiDAR derived CHM
@@ -63,7 +62,7 @@ def filter_CHM(shp, CHM_pool, min_CHM_height=1, min_CHM_diff=4):
     
     shp = shp[(shp.height.isnull()) | (shp.CHM_height > min_CHM_height)]
     
-    #remove CHM points under 4m diff  
+    #remove CHM points under height diff  
     shp = shp[(shp.height.isnull()) | (abs(shp.height - shp.CHM_height) < min_CHM_diff)]  
     
     return shp

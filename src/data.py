@@ -348,7 +348,7 @@ class TreeData(LightningDataModule):
             
             #load any megaplot data
             if not self.config["megaplot_dir"] is None:
-                megaplot_crowns = megaplot.load(directory=self.config["megaplot_dir"], rgb_pool=self.config["rgb_sensor_pool"], client = self.client)
+                megaplot_crowns = megaplot.load(directory=self.config["megaplot_dir"], rgb_pool=self.config["rgb_sensor_pool"], client = self.client, config=self.config)
                 train_crowns = pd.concat([megaplot_crowns, train_crowns])
             
             train_crowns.to_file("{}/processed/train_crowns.shp".format(self.data_dir))

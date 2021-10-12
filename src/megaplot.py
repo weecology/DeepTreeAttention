@@ -5,9 +5,10 @@ import os
 import numpy as np
 import pandas as pd
 from src import generate
+from src import CHM
 import shapely
 
-def read_files(directory):
+def read_files(directory, config=None):
     """Read shapefiles and return a dict based on site name"""
     shapefiles = glob.glob("{}/*.shp".format(directory))
     shapefiles = [x for x in shapefiles if not "points" in x]
@@ -17,12 +18,12 @@ def read_files(directory):
     site_dict = {}
     for index, x in enumerate(sites):
         print(x)
-        formatted_data = format(site=x, gdf=shps[index], directory=directory)
+        formatted_data = format(site=x, gdf=shps[index], directory=directory, config=config)
         site_dict[x] = formatted_data
 
     return site_dict
 
-def format(site, gdf, directory):
+def format(site, gdf, directory, config):
     """The goal of this function is to mimic for the format needed to input to generate.points_to_crowns. 
     This requires a plot ID, individual, taxonID and site column. The individual should encode siteID and year
     Args:
@@ -36,6 +37,10 @@ def format(site, gdf, directory):
     #give each an individual ID
     gdf["individualID"] = gdf.index.to_series().apply(lambda x: "{}_{}".format(site,x)) 
     gdf["siteID"] = site
+    
+    if "height" in gdf.columns: 
+        #Height filter 
+        gdf = CHM.filter_CHM(gdf, CHM_pool=config["CHM_pool"],min_CHM_diff=config["min_CHM_diff"], min_CHM_height=config["min_CHM_height"])      
     
     #PlotID variable to center on correct tile
     grid = create_grid(gdf)
@@ -76,7 +81,7 @@ def load(directory, rgb_pool,client):
     formatted_data = read_files(directory=directory)
     crown_list = []
     for x in formatted_data:
-        formatted_data[x].to_file("{}/{}_points.shp".format(directory, x))
+        formatted_data[x].to_file("{}/{}_points.shp".format(directory, x))        
         crowns = generate.points_to_crowns(
             field_data="{}/{}_points.shp".format(directory, x),
             rgb_dir=rgb_pool,
