@@ -38,14 +38,14 @@ def format(site, gdf, directory, config):
     gdf["individualID"] = gdf.index.to_series().apply(lambda x: "{}_{}".format(site,x)) 
     gdf["siteID"] = site
     
-    if "height" in gdf.columns: 
-        #Height filter 
-        gdf = CHM.filter_CHM(gdf, CHM_pool=config["CHM_pool"],min_CHM_diff=config["min_CHM_diff"], min_CHM_height=config["min_CHM_height"])      
-    
     #PlotID variable to center on correct tile
     grid = create_grid(gdf)
     gdf = gpd.sjoin(gdf, grid)
-       
+    
+    if "height" in gdf.columns: 
+        #Height filter 
+        gdf = CHM.filter_CHM(gdf, CHM_pool=config["CHM_pool"],min_CHM_diff=config["min_CHM_diff"], min_CHM_height=config["min_CHM_height"])      
+        
     return gdf
 
 def create_grid(gdf):
