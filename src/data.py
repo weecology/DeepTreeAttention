@@ -147,18 +147,6 @@ def train_test_split(shp, savedir, config, client = None):
     train = saved_train
     test = saved_test    
     
-    print("There are {} records for {} species for {} sites in filtered train".format(
-        train.shape[0],
-        len(train.taxonID.unique()),
-        len(train.siteID.unique())
-    ))
-    
-    print("There are {} records for {} species for {} sites in test".format(
-        test.shape[0],
-        len(test.taxonID.unique()),
-        len(test.siteID.unique())
-    ))
-    
     #Give tests a unique index to match against
     test["point_id"] = test.index.values
     train["point_id"] = train.index.values
@@ -400,6 +388,18 @@ class TreeData(LightningDataModule):
                         
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
+            
+            print("There are {} records for {} species for {} sites in filtered train".format(
+                train_annotations.shape[0],
+                len(train_annotations.taxonID.unique()),
+                len(train_annotations.siteID.unique())
+            ))
+            
+            print("There are {} records for {} species for {} sites in test".format(
+                test_annotations.shape[0],
+                len(test_annotations.taxonID.unique()),
+                len(test_annotations.siteID.unique())
+            )
                         
         else:
             test = gpd.read_file("{}/processed/test_crowns.shp".format(self.data_dir))
