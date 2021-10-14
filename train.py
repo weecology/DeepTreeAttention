@@ -87,3 +87,8 @@ train["taxonID"] = train.label.apply(lambda x: data_module.species_label_dict[x]
 scientific_dict = train.groupby('taxonID')['scientific'].apply(lambda x: x.head(1).values.tolist()).to_dict()
 genus_confusion = metrics.genus_confusion(y_true = results.label, y_pred = results.pred_label, scientific_dict=scientific_dict)
 comet_logger.experiment.log_metric(name = "Within genus confusion", value = genus_confusion)
+
+#get train features
+train_features = m.get_features(data_module.train_ds)
+train_features = pd.DataFrame(train_features)
+comet_logger.experiment.log_table("train_features.csv", test)

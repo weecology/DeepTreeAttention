@@ -287,7 +287,9 @@ class TreeData(LightningDataModule):
             self.config = read_config("{}/config.yml".format(self.ROOT))   
         else:
             self.config = config
-                
+        
+        self.train_ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata)
+        
     def setup(self,stage=None):
         #Clean data from raw csv, regenerate from scratch or check for progress and complete
         if self.regenerate:
@@ -391,14 +393,14 @@ class TreeData(LightningDataModule):
             
             print("There are {} records for {} species for {} sites in filtered train".format(
                 train_annotations.shape[0],
-                len(train_annotations.taxonID.unique()),
-                len(train_annotations.siteID.unique())
+                len(train_annotations.label.unique()),
+                len(train_annotations.site.unique())
             ))
             
             print("There are {} records for {} species for {} sites in test".format(
                 test_annotations.shape[0],
-                len(test_annotations.taxonID.unique()),
-                len(test_annotations.siteID.unique())
+                len(test_annotations.label.unique()),
+                len(test_annotations.site.unique()))
             )
                         
         else:
@@ -424,16 +426,14 @@ class TreeData(LightningDataModule):
             self.num_sites = len(self.site_label_dict)
 
     def train_dataloader(self):
-        """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""
-        ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata)
-        
+        """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""       
         #get class weights
         class_weights = {}
         for x in range(self.num_classes):
             class_weights[x] = 0 
         
-        for index in range(len(ds)):
-            individual, inputs, label = ds[index]
+        for index in range(len(self.train_ds)):
+            individual, inputs, label = self.train_ds[index]
             class_weights[int(label)] = class_weights[int(label)] + 1
                                    
         #Provide a floor to class weights
@@ -448,15 +448,15 @@ class TreeData(LightningDataModule):
                 
         data_weights = []
         #upsample rare classes more as a residual
-        for idx in range(len(ds)):
-            path, image, targets = ds[idx]
+        for idx in range(len(self.train_ds)):
+            path, image, targets = self.train_ds[idx]
             label = int(targets.numpy())
             image_weight = class_weights[label]
             data_weights.append(1/image_weight)
             
-        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights = data_weights, num_samples=len(ds))
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights = data_weights, num_samples=len(self.train_ds))
         data_loader = torch.utils.data.DataLoader(
-            ds,
+            self.train_ds,
             batch_size=self.config["batch_size"],
             num_workers=self.config["workers"],
             sampler=sampler
