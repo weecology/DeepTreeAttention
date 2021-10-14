@@ -182,7 +182,7 @@ def preprocess_image(image, channel_is_first=False):
     
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', UserWarning)    
-        data  = preprocessing.scale(data)
+        #data  = preprocessing.scale(data)
     img = data.reshape(img.shape)
     
     if not channel_is_first:

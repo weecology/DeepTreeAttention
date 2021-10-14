@@ -311,11 +311,17 @@ class TreeModel(LightningModule):
         
         self.eval()
         predictions = []
+        individuals = []
         for batch in data_loader:
             individual, inputs, targets = batch
             with torch.no_grad():
                 pred = self.predict(inputs)
             predictions.append(pred)
+            individuals.append(individual)
+        
+        individuals = np.concatenate(individuals)              
         features = np.concatenate(predictions)  
+        features = pd.DataFrame(features)
+        features["individual"] = individuals
         
         return features

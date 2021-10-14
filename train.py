@@ -84,5 +84,4 @@ comet_logger.experiment.log_metric("within_site_confusion", within_site_confusio
 
 #get train features
 train_features = m.get_features(data_module.train_ds)
-train_features = pd.DataFrame(train_features)
 comet_logger.experiment.log_table("train_features.csv", train_features)
