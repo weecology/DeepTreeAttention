@@ -357,10 +357,13 @@ class TreeData(LightningDataModule):
             unique_species_labels = np.unique(unique_species_labels)
             self.num_classes = len(unique_species_labels)
             
+            #Taxon to ID dict and the reverse            
             self.species_label_dict = {}
             for index, label in enumerate(unique_species_labels):
                 self.species_label_dict[label] = index
-                
+            
+            self.label_to_taxonID = {vi: k  for k, v in self.species_label_dict.items() for vi in v}
+            
             train_annotations = generate.generate_crops(
                 train_crowns,
                 savedir=self.config["crop_dir"],
@@ -414,6 +417,8 @@ class TreeData(LightningDataModule):
             self.species_label_dict = {}
             for index, label in enumerate(unique_species_labels):
                 self.species_label_dict[label] = index
+            self.label_to_taxonID = {vi: k  for k, v in self.species_label_dict.items() for vi in v}
+            
             self.num_classes = len(self.species_label_dict)
             
             #Store site labels
