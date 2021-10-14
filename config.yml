@@ -18,7 +18,7 @@ iterations: 50
 # minimum CHM height, leave blank to skip CHM filtering
 min_CHM_height: 1
 #Minimum difference between measured height and CHM height
-min_CHM_diff: 4
+min_CHM_diff: 3
 
 #Megaplot XY Data
 megaplot_dir: /orange/idtrees-collab/megaplot/
@@ -45,7 +45,7 @@ bands: 369
 lr: 0.001
 fast_dev_run: False
 accelerator: dp
-epochs: 60
+epochs: 10
 
 #Evaluation config
 #Top k class recall score
