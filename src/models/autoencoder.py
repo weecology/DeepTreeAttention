@@ -101,7 +101,7 @@ class autoencoder(LightningModule):
         return pd.DataFrame({"individual":individual, "loss":losses})
     
     def val_dataloader(self):
-        ds = data.TreeDataset(csv_file = "{}/data/processed/test.csv".format(self.data_dir), config=self.config, HSI=True, metadata=False)
+        ds = data.TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=True, metadata=False)
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],
@@ -112,7 +112,7 @@ class autoencoder(LightningModule):
         return data_loader
     
     def train_dataloader(self):
-        ds = data.TreeDataset(csv_file = "{}/data/processed/train.csv".format(self.data_dir), config=self.config, HSI=True, metadata=False)
+        ds = data.TreeDataset(csv_file = "{}/processed/train.csv".format(self.data_dir), config=self.config, HSI=True, metadata=False)
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],
@@ -123,7 +123,7 @@ class autoencoder(LightningModule):
         return data_loader
     
     def predict_dataloader(self):
-        ds = data.TreeDataset(csv_file = "{}/data/processed/train.csv".format(self.data_dir), config=self.config, HSI=True, metadata=False)
+        ds = data.TreeDataset(csv_file = "{}/processed/train.csv".format(self.data_dir), config=self.config, HSI=True, metadata=False)
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],

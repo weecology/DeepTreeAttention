@@ -42,7 +42,7 @@ def test_autoencoder(config):
     assert output.shape == image.shape
     
 def test_find_outliers(config):
-    prediction = autoencoder.find_outliers(data_dir="{}/tests/".format(ROOT), classes=2, config=config)
+    prediction = autoencoder.find_outliers(data_dir="{}/tests/data/".format(ROOT), classes=2, config=config)
     assert not prediction.empty
     assert all(prediction.columns == ["individual","loss"])
 
