@@ -1,10 +1,9 @@
 #Train
 import comet_ml
 import glob
-from src import main
 from src import data
 from src import start_cluster
-from src.models import metadata
+from src.models import metadata, autoencoder
 from src import visualize
 from src import metrics
 from pytorch_lightning import Trainer
@@ -18,9 +17,21 @@ from pandas.util import hash_pandas_object
 client = None
 data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client, metadata=True)
 data_module.setup()
+
 comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
 if client:
     client.close()
+
+#Filter outliers
+outliers = autoencoder.find_outliers(
+    classes=data_module.num_classes,
+    config=data_module.config,
+    data_dir=data_module.data_dir,
+    saved_model=None,
+    comet_logger=comet_logger)
+
+outliers.to_csv("data/processed/filtered_train.csv")
+data_module.train_ds = data.TreeDataset(csv_file="data/processed/filtered_train.csv", image_size=data_module.config["image_size"], config=data_module.config)
 
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 
@@ -30,7 +41,6 @@ comet_logger.experiment.log_parameter("git branch",git_branch)
 comet_logger.experiment.add_tag(git_branch)
 
 #Hash train and test
-train = pd.read_csv("data/processed/train.csv")
 test = pd.read_csv("data/processed/test.csv")
 comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(train))
 comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(test))

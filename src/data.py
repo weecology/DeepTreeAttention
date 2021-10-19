@@ -390,7 +390,6 @@ class TreeData(LightningDataModule):
             
             #Make sure no species were lost during generate
             train_annotations = train_annotations[train_annotations.label.isin(test_annotations.label.unique())]
-                        
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
             

@@ -23,6 +23,9 @@ min_CHM_diff: 3
 #Megaplot XY Data
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
+#Outlier detection
+outlier_threshold: 0.05
+
 #Crop generation
 convert_h5: True
 #Directoy to store cropped images from crowns

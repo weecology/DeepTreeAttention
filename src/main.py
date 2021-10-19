@@ -23,8 +23,6 @@ from src import generate
 from src import neon_paths
 from src import patches
 from shapely.geometry import Point, box
-from sklearn import preprocessing
-
 
 class TreeModel(LightningModule):
     """A pytorch lightning data module
@@ -325,3 +323,4 @@ class TreeModel(LightningModule):
         features["individual"] = individuals
         
         return features
+        
