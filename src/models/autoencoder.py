@@ -93,9 +93,10 @@ class autoencoder(LightningModule):
         images = inputs["HSI"]     
         losses = []
         for image in images:
-            y_hat = self.forward(image.unsqueeze(0)) 
+            with torch.no_grad():
+                y_hat = self.forward(image.unsqueeze(0)) 
             loss = F.mse_loss(y_hat, image.unsqueeze(0))
-            losses.append(loss)
+            losses.append(loss.numpy())
             
         return pd.DataFrame({"individual":individual, "loss":losses})
     

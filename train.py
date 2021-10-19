@@ -3,6 +3,7 @@ import comet_ml
 import glob
 from src import data
 from src import start_cluster
+import os
 from src.models import metadata, autoencoder
 from src import visualize
 from src import metrics
@@ -30,7 +31,12 @@ outliers = autoencoder.find_outliers(
     saved_model=None,
     comet_logger=comet_logger)
 
-outliers.to_csv("data/processed/filtered_train.csv")
+train = pd.read_csv("data/processed/train.csv")
+train["individual"] = train.image_path.apply(lambda x: os.path.splitext(os.path.basename(x))[0])
+train = train[~train.individual.isin(outliers.individual)]
+train.to_csv("data/processed/filtered_train.csv")
+
+outliers.to_csv("data/processed/outliers.csv")
 data_module.train_ds = data.TreeDataset(csv_file="data/processed/filtered_train.csv", image_size=data_module.config["image_size"], config=data_module.config)
 
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())

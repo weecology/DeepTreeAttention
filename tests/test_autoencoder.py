@@ -25,6 +25,7 @@ def config():
     config["gpus"] = 0
     config["fast_dev_run"] = True
     config["bands"] = 3
+    config["outlier_threshold"] = 0.5
     
     return config
 
@@ -42,9 +43,7 @@ def test_autoencoder(config):
     
 def test_find_outliers(config):
     prediction = autoencoder.find_outliers(data_dir="{}/tests/".format(ROOT), classes=2, config=config)
-    
-    prediction = pd.read_csv("{}/tests/data/processed/train.csv".format(ROOT))
     assert not prediction.empty
-    assert prediction.columns == ["individual","loss"]
+    assert all(prediction.columns == ["individual","loss"])
 
     
