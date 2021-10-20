@@ -24,12 +24,13 @@ if client:
     client.close()
 
 #Filter outliers
-outliers = autoencoder.find_outliers(
-    classes=data_module.num_classes,
-    config=data_module.config,
-    data_dir=data_module.data_dir,
-    saved_model=None,
-    comet_logger=comet_logger)
+with comet_logger.experiment.context_manager("autoencoder"):   
+    outliers = autoencoder.find_outliers(
+        classes=data_module.num_classes,
+        config=data_module.config,
+        data_dir=data_module.data_dir,
+        saved_model=None,
+        comet_logger=comet_logger)
 
 train = pd.read_csv("data/processed/train.csv")
 train["individual"] = train.image_path.apply(lambda x: os.path.splitext(os.path.basename(x))[0])
