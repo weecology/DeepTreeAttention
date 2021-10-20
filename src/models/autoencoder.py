@@ -149,7 +149,7 @@ def find_outliers(classes, config, data_dir, saved_model = None, comet_logger=No
         trainer = Trainer(
             gpus=config["gpus"],
             fast_dev_run=config["fast_dev_run"],
-            max_epochs=config["epochs"],
+            max_epochs=config["autoencoder_epochs"],
             accelerator=config["accelerator"],
             checkpoint_callback=False,
             logger=comet_logger)
@@ -161,7 +161,7 @@ def find_outliers(classes, config, data_dir, saved_model = None, comet_logger=No
     
     #remove lowest quantile
     threshold = prediction.loss.quantile(config["outlier_threshold"])
-    prediction = prediction[prediction.loss < threshold]
+    prediction = prediction[prediction.loss > threshold]
     
     return prediction
         
