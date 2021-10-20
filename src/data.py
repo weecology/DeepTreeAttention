@@ -331,7 +331,7 @@ class TreeData(LightningDataModule):
             train_crowns = generate.points_to_crowns(
                 field_data="{}/processed/train_points.shp".format(self.data_dir),
                 rgb_dir=self.config["rgb_sensor_pool"],
-                savedir=None,
+                savedir="{}/interim/".format(self.data_dir),
                 raw_box_savedir=None, 
                 client=self.client
             )
