@@ -37,7 +37,7 @@ train = train[~train.individual.isin(outliers.individual)]
 train.to_csv("data/processed/filtered_train.csv")
 
 outliers.to_csv("data/processed/outliers.csv")
-data_module.train_ds = data.TreeDataset(csv_file="data/processed/filtered_train.csv", image_size=data_module.config["image_size"], config=data_module.config)
+data_module.train_ds = data.TreeDataset(csv_file="data/processed/filtered_train.csv", image_size=data_module.config["image_size"], config=data_module.config, HSI=True, metadata=True)
 
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 

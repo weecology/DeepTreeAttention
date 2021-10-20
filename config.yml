@@ -24,7 +24,7 @@ min_CHM_diff: 3
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Outlier detection
-outlier_threshold: 0.05
+outlier_threshold: 0.10
 
 #Crop generation
 convert_h5: True
