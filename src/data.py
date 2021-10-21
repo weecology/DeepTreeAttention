@@ -94,15 +94,25 @@ def sample_plots(shp, test_fraction=0.1, min_samples=5):
         min_samples: minimum number of samples per class
     """
     #split by plot level
-    test_plots = shp.plotID.drop_duplicates().sample(frac=test_fraction)
-    
-    #in case of debug, there may be not enough plots to sample, grab the first for testing
-    if test_plots.empty:
-        test_plots = [shp.plotID.drop_duplicates().values[0]]
-    
+    plotIDs = shp.plotID.unique()
+    np.random.shuffle(plotIDs)
+    test_species = []
+    test_plots = []
+    for plotID in plotIDs:
+        selected_plot = shp[shp.plotID == plotID]
+        if not all([x in test_species for x in selected_plot.taxonID.unique()]):
+            test_plots.append(plotID)
+            for x in selected_plot.taxonID.unique():
+                test_species.append(x)
+        
     test = shp[shp.plotID.isin(test_plots)]
     train = shp[~shp.plotID.isin(test_plots)]
     
+    #if debug
+    if train.empty:
+        test = shp[shp.plotID == shp.plotID.unique()[0]]
+        train = shp[shp.plotID == shp.plotID.unique()[1]]
+        
     test = test.groupby("taxonID").filter(lambda x: x.shape[0] > min_samples)
     
     train = train[train.taxonID.isin(test.taxonID)]
@@ -121,7 +131,8 @@ def train_test_split(shp, savedir, config, client = None):
         """    
     #set seed.
     np.random.seed(1)
-    most_species = 0
+    #arbitrary large number to start search
+    test_points = 1000000
     if client:
         futures = [ ]
         for x in np.arange(config["iterations"]):
@@ -130,19 +141,19 @@ def train_test_split(shp, savedir, config, client = None):
         
         for x in as_completed(futures):
             train, test = x.result()
-            if len(train.taxonID.unique()) > most_species:
-                print(len(train.taxonID.unique()))
+            if test.shape[0] < test_points:
+                print(test.shape[0])
                 saved_train = train
                 saved_test = test
-                most_species = len(train.taxonID.unique())            
+                test_points = test.shape[0]          
     else:
         for x in np.arange(config["iterations"]):
             train, test = sample_plots(shp, min_samples=config["min_samples"], test_fraction=config["test_fraction"])
-            if len(train.taxonID.unique()) > most_species:
-                print(len(train.taxonID.unique()))
+            if test.shape[0] < test_points:
+                print(test.shape[0])
                 saved_train = train
                 saved_test = test
-                most_species = len(train.taxonID.unique())
+                test_points = test.shape[0]  
     
     train = saved_train
     test = saved_test    
