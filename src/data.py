@@ -103,7 +103,7 @@ def sample_plots(shp, test_fraction=0.1, min_samples=5):
     test = shp[shp.plotID.isin(test_plots)]
     train = shp[~shp.plotID.isin(test_plots)]
     
-    test = test.groupby("taxonID").filter(lambda x: x.shape[0] > min_samples)
+    train = train.groupby("taxonID").filter(lambda x: x.shape[0] > min_samples)
     
     train = train[train.taxonID.isin(test.taxonID)]
     test = test[test.taxonID.isin(train.taxonID)]
@@ -314,6 +314,13 @@ class TreeData(LightningDataModule):
             df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
             train, test = train_test_split(df,savedir="{}/processed".format(self.data_dir),config=self.config, client=None)   
             
+            #capture discarded species
+            individualIDs = np.concatenate([train.individualID.unique(), test.individualID.unique()])
+            unique_site_labels = np.concatenate([train.siteID.unique(), test.siteID.unique()])            
+            novel = df[~df.individualID.isin(individualIDs)]
+            novel = novel[novel.taxonID.isin(np.concatenate([train.taxonID.unique(), test.taxonID.unique()]))]
+            
+            novel.to_file("{}/processed/novel_species.shp".format(self.data_dir))
             test.to_file("{}/processed/test_points.shp".format(self.data_dir))
             train.to_file("{}/processed/train_points.shp".format(self.data_dir))
             
@@ -392,6 +399,9 @@ class TreeData(LightningDataModule):
             #Make sure no species were lost during generate
             train_annotations = train_annotations[train_annotations.label.isin(test_annotations.label.unique())]
                         
+            #update lists in case we lost any species
+            self.num_classes = len(train_annotations.label.unique())
+            
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
             
