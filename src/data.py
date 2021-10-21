@@ -318,7 +318,7 @@ class TreeData(LightningDataModule):
             individualIDs = np.concatenate([train.individualID.unique(), test.individualID.unique()])
             unique_site_labels = np.concatenate([train.siteID.unique(), test.siteID.unique()])            
             novel = df[~df.individualID.isin(individualIDs)]
-            novel = novel[novel.taxonID.isin(np.concatenate([train.taxonID.unique(), test.taxonID.unique()]))]
+            novel = novel[~novel.taxonID.isin(np.concatenate([train.taxonID.unique(), test.taxonID.unique()]))]
             
             novel.to_file("{}/processed/novel_species.shp".format(self.data_dir))
             test.to_file("{}/processed/test_points.shp".format(self.data_dir))
@@ -398,10 +398,7 @@ class TreeData(LightningDataModule):
             
             #Make sure no species were lost during generate
             train_annotations = train_annotations[train_annotations.label.isin(test_annotations.label.unique())]
-                        
-            #update lists in case we lost any species
-            self.num_classes = len(train_annotations.label.unique())
-            
+                                    
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
             
