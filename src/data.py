@@ -103,7 +103,7 @@ def sample_plots(shp, test_fraction=0.1, min_samples=5):
     test = shp[shp.plotID.isin(test_plots)]
     train = shp[~shp.plotID.isin(test_plots)]
     
-    train = train.groupby("taxonID").filter(lambda x: x.shape[0] > min_samples)
+    test = test.groupby("taxonID").filter(lambda x: x.shape[0] > min_samples)
     
     train = train[train.taxonID.isin(test.taxonID)]
     test = test[test.taxonID.isin(train.taxonID)]
