@@ -442,7 +442,7 @@ class TreeData(LightningDataModule):
         """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""       
         #get class weights
         class_weights = {}
-        for x in range(self.num_classes):
+        for x in range(np.array(list(self.label_to_taxonID.keys())).max()):
             class_weights[x] = 0 
         
         for index in range(len(self.train_ds)):
