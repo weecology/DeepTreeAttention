@@ -134,7 +134,6 @@ def train_test_split(shp, config, client = None):
         """    
     #set seed.
     print("splitting data into train test. Initial data has {} points from {} species".format(shp.shape[0],shp.taxonID.nunique()))
-    np.random.seed(1)
     test_species = 0
     ties = []
     if client:
@@ -157,6 +156,7 @@ def train_test_split(shp, config, client = None):
                 ties.append([train, test])          
     else:
         for x in np.arange(config["iterations"]):
+            np.random.seed(1)            
             train, test = sample_plots(shp, min_train_samples=config["min_train_samples"], min_test_samples=config["min_test_samples"])
             if test.taxonID.nunique() > test_species:
                 print("Selected test has {} points and {} species".format(test.shape[0], test.taxonID.nunique()))
