@@ -348,6 +348,7 @@ class TreeData(LightningDataModule):
             #load any megaplot data
             if not self.config["megaplot_dir"] is None:
                 megaplot_crowns = megaplot.load(directory=self.config["megaplot_dir"], rgb_pool=self.config["rgb_sensor_pool"], client = self.client, config=self.config)
+                megaplot_crowns = megaplot_crowns[megaplot_crowns.taxonID.isin(train_crowns.taxonID.unique())]
                 train_crowns = pd.concat([megaplot_crowns, train_crowns])
             
             train_crowns = train_crowns.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_samples"])
