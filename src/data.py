@@ -350,15 +350,13 @@ class TreeData(LightningDataModule):
             annotations = generate.generate_crops(
                 crowns,
                 savedir=self.config["crop_dir"],
-                label_dict=self.species_label_dict,
-                site_dict=self.site_label_dict,                
                 sensor_glob=self.config["HSI_sensor_pool"],
                 convert_h5=self.config["convert_h5"],   
                 rgb_glob=self.config["rgb_sensor_pool"],
                 HSI_tif_dir=self.config["HSI_tif_dir"],
                 client=self.client
             )
-            
+                        
             train_annotations, test_annotations = train_test_split(annotations,savedir="{}/processed".format(self.data_dir),config=self.config, client=None)   
             
             #capture discarded species
@@ -373,11 +371,11 @@ class TreeData(LightningDataModule):
             unique_species_labels = np.unique(unique_species_labels)
             self.num_classes = len(unique_species_labels)
             
-            #Taxon to ID dict and the reverse            
+            #Taxon to ID dict and the reverse    
             self.species_label_dict = {}
-            for index, label in enumerate(unique_species_labels):
-                self.species_label_dict[label] = index
-            
+            for index, taxonID in enumerate(unique_species_labels):
+                self.species_label_dict[taxonID] = index
+                
             #Store site labels
             unique_site_labels = np.concatenate([train_annotations.siteID.unique(), test_annotations.siteID.unique()])
             unique_site_labels = np.unique(unique_site_labels)
@@ -385,10 +383,17 @@ class TreeData(LightningDataModule):
             self.site_label_dict = {}
             for index, label in enumerate(unique_site_labels):
                 self.site_label_dict[label] = index
-            self.num_sites = len(self.site_label_dict)       
+            self.num_sites = len(self.site_label_dict)                   
             
             self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
-                               
+            
+            #Encode the numeric site and class data
+            train_annotations["label"] = train_annotations.taxonID.apply(lambda x: self.species_label_dict[x])
+            train_annotations["site"] = train_annotations.siteID.apply(lambda x: self.site_label_dict[x])
+            
+            test_annotations["label"] = test_annotations.taxonID.apply(lambda x: self.species_label_dict[x])
+            test_annotations["site"] = test_annotations.siteID.apply(lambda x: self.site_label_dict[x])
+            
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
             
@@ -405,27 +410,29 @@ class TreeData(LightningDataModule):
             )
                         
         else:
-            crowns = gpd.read_file("{}/processed/crowns".format(self.data_dir))
+            train_annotations = pd.read_csv("{}/processed/train.csv".format(self.data_dir))
+            test_annotations = pd.read_csv("{}/processed/test.csv".format(self.data_dir))
             
             #Store class labels
-            unique_species_labels = crowns.taxonID.unique()
+            unique_species_labels = np.concatenate([train_annotations.taxonID.unique(), test_annotations.taxonID.unique()])
             unique_species_labels = np.unique(unique_species_labels)
+            self.num_classes = len(unique_species_labels)
             
+            #Taxon to ID dict and the reverse    
             self.species_label_dict = {}
-            for index, label in enumerate(unique_species_labels):
-                self.species_label_dict[label] = index
-            self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
-            
-            self.num_classes = len(self.species_label_dict)
-            
+            for index, taxonID in enumerate(unique_species_labels):
+                self.species_label_dict[taxonID] = index
+                
             #Store site labels
-            unique_site_labels = np.concatenate([train.siteID.unique(), test.siteID.unique()])
+            unique_site_labels = np.concatenate([train_annotations.siteID.unique(), test_annotations.siteID.unique()])
             unique_site_labels = np.unique(unique_site_labels)
             
             self.site_label_dict = {}
             for index, label in enumerate(unique_site_labels):
                 self.site_label_dict[label] = index
-            self.num_sites = len(self.site_label_dict)
+            self.num_sites = len(self.site_label_dict)                   
+            
+            self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
 
     def train_dataloader(self):
         """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""       
