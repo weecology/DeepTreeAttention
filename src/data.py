@@ -130,6 +130,7 @@ def train_test_split(shp, savedir, config, client = None):
         None: train.shp and test.shp are written as side effect
         """    
     #set seed.
+    print("splitting data into train test. Initial data has {} points from {} species".format(shp.shape[0],shp.taxonID.nunique))
     np.random.seed(1)
     #arbitrary large number to start search
     test_points = 1000000
@@ -153,7 +154,7 @@ def train_test_split(shp, savedir, config, client = None):
                 print(test.shape[0])
                 saved_train = train
                 saved_test = test
-                test_points = test.shape[0]  
+                test_points = test.shape[0]
     
     train = saved_train
     test = saved_test    
@@ -333,16 +334,7 @@ class TreeData(LightningDataModule):
             
             novel.to_file("{}/processed/novel_species.shp".format(self.data_dir))
             test.to_file("{}/processed/test_points.shp".format(self.data_dir))
-            train.to_file("{}/processed/train_points.shp".format(self.data_dir))
-            
-            #Store site labels
-            unique_site_labels = np.concatenate([train.siteID.unique(), test.siteID.unique()])
-            unique_site_labels = np.unique(unique_site_labels)
-            
-            self.site_label_dict = {}
-            for index, label in enumerate(unique_site_labels):
-                self.site_label_dict[label] = index
-            self.num_sites = len(self.site_label_dict)        
+            train.to_file("{}/processed/train_points.shp".format(self.data_dir)) 
             
             #Create crown data
             train_crowns = generate.points_to_crowns(
@@ -381,6 +373,15 @@ class TreeData(LightningDataModule):
             for index, label in enumerate(unique_species_labels):
                 self.species_label_dict[label] = index
             
+            #Store site labels
+            unique_site_labels = np.concatenate([train_crowns.siteID.unique(), test_crowns.siteID.unique()])
+            unique_site_labels = np.unique(unique_site_labels)
+            
+            self.site_label_dict = {}
+            for index, label in enumerate(unique_site_labels):
+                self.site_label_dict[label] = index
+            self.num_sites = len(self.site_label_dict)       
+            
             self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
             
             train_annotations = generate.generate_crops(
@@ -406,10 +407,7 @@ class TreeData(LightningDataModule):
                 HSI_tif_dir=self.config["HSI_tif_dir"],                
                 convert_h5=self.config["convert_h5"]
             )  
-            
-            #Make sure no species were lost during generate
-            train_annotations = train_annotations[train_annotations.label.isin(test_annotations.label.unique())]
-                                    
+                                                
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
             
