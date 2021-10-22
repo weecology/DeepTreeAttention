@@ -357,7 +357,7 @@ class TreeData(LightningDataModule):
                 client=self.client
             )
                         
-            train_annotations, test_annotations = train_test_split(annotations,savedir="{}/processed".format(self.data_dir),config=self.config, client=None)   
+            train_annotations, test_annotations = train_test_split(annotations,savedir="{}/processed".format(self.data_dir),config=self.config, client=self.client)   
             
             #capture discarded species
             individualIDs = np.concatenate([train_annotations.individualID.unique(), test_annotations.individualID.unique()])
