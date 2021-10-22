@@ -146,7 +146,7 @@ def train_test_split(shp, config, client = None):
         for x in as_completed(futures):
             train, test = x.result()
             if test.shape[0] < test_points:
-                print(test.shape[0])
+                print("Selected test has {} points and {} species".format(test.shape[0], test.taxonID.nunique()))
                 saved_train = train
                 saved_test = test
                 test_points = test.shape[0]          
@@ -154,7 +154,7 @@ def train_test_split(shp, config, client = None):
         for x in np.arange(config["iterations"]):
             train, test = sample_plots(shp, min_train_samples=config["min_train_samples"], min_test_samples=config["min_test_samples"])
             if test.shape[0] < test_points:
-                print(test.shape[0])
+                print("Selected test has {} points and {} species".format(test.shape[0], test.taxonID.nunique()))
                 saved_train = train
                 saved_test = test
                 test_points = test.shape[0]
