@@ -244,8 +244,8 @@ class TreeModel(LightningModule):
         if experiment:
             #load image pool and crown predicrions
             rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
-            test_crowns = gpd.read_file("{}/data/processed/test_crowns.shp".format(self.ROOT))  
-            test_points = gpd.read_file("{}/data/processed/test_points.shp".format(self.ROOT))   
+            test_points = gpd.read_file("{}/data/processed/canopy_points.shp".format(self.ROOT))   
+            test_crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
             
             plt.ion()
             for index, row in df.sample(n=plot_n_individuals).iterrows():
