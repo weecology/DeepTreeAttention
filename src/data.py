@@ -150,11 +150,11 @@ def train_test_split(shp, config, client = None):
                 saved_train = train
                 saved_test = test
                 test_species = test.taxonID.nunique()
-                #reset ties
                 ties = []
+                ties.append([train, test])
             elif test.taxonID.nunique() == test_species:
                 print("ties")
-                ties.append(test)                
+                ties.append([train, test])          
     else:
         for x in np.arange(config["iterations"]):
             train, test = sample_plots(shp, min_train_samples=config["min_train_samples"], min_test_samples=config["min_test_samples"])
