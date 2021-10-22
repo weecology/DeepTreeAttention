@@ -14,7 +14,7 @@ import pandas as pd
 from pandas.util import hash_pandas_object
 
 #Create datamodule
-client = start_cluster.start(cpus=50, mem_size="5GB")
+client = start_cluster.start(cpus=100, mem_size="5GB")
 #client = None
 data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client, metadata=True)
 data_module.setup()

@@ -14,7 +14,7 @@ min_samples: 4
 #The proportion of plotIDs to use test
 test_fraction: 0.1
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
-iterations: 10000
+iterations: 50
 # minimum CHM height, leave blank to skip CHM filtering
 min_CHM_height: 1
 #Minimum difference between measured height and CHM height
