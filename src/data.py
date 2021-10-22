@@ -165,7 +165,7 @@ def train_test_split(shp, config, client = None):
                 ties.append(test)
     
     # The size of the datasets
-    print("The size of tied datasets with {} species is {}".format([test_species, x.shape[0] for x in ties]))
+    print("The size of tied datasets with {} species is {}".format(test_species, [x.shape[0] for x in ties]))
     
     train = saved_train
     test = saved_test    
