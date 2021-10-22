@@ -117,6 +117,7 @@ def sample_plots(shp, min_samples=5):
         train = shp[shp.plotID == shp.plotID.unique()[1]]
         
     test = test.groupby("taxonID").filter(lambda x: x.shape[0] > min_samples)
+    train = train.groupby("taxonID").filter(lambda x: x.shape[0] > min_samples)
     
     train = train[train.taxonID.isin(test.taxonID)]
     test = test[test.taxonID.isin(train.taxonID)]
