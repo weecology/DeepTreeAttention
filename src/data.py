@@ -165,13 +165,16 @@ def train_test_split(shp, config, client = None):
                 test_species = test.taxonID.nunique()
                 #reset ties
                 ties = []
+                ties.append([train, test])
             elif test.taxonID.nunique() == test_species:
                 print("ties")
-                ties.append(test)
+                ties.append([train, test])
     
     # The size of the datasets
-    print("The size of tied datasets with {} species is {}".format(test_species, [x.shape[0] for x in ties]))
-    
+    if len(ties) > 1:
+        print("The size of tied datasets with {} species is {}".format(test_species, [x[1].shape[0] for x in ties]))        
+        saved_train, saved_test = ties[np.argmin([x[1].shape[0] for x in ties])]
+        
     train = saved_train
     test = saved_test    
     
