@@ -135,8 +135,7 @@ def train_test_split(shp, config, client = None):
     #set seed.
     print("splitting data into train test. Initial data has {} points from {} species".format(shp.shape[0],shp.taxonID.nunique()))
     np.random.seed(1)
-    #arbitrary large number to start search
-    test_points = 1000000
+    test_species = 0
     if client:
         futures = [ ]
         for x in np.arange(config["iterations"]):
@@ -145,19 +144,19 @@ def train_test_split(shp, config, client = None):
         
         for x in as_completed(futures):
             train, test = x.result()
-            if test.shape[0] < test_points:
+            if test.shape[0] > test_species:
                 print("Selected test has {} points and {} species".format(test.shape[0], test.taxonID.nunique()))
                 saved_train = train
                 saved_test = test
-                test_points = test.shape[0]          
+                test_species = test.taxonID.nunique()
     else:
         for x in np.arange(config["iterations"]):
             train, test = sample_plots(shp, min_train_samples=config["min_train_samples"], min_test_samples=config["min_test_samples"])
-            if test.shape[0] < test_points:
+            if test.shape[0] > test_species:
                 print("Selected test has {} points and {} species".format(test.shape[0], test.taxonID.nunique()))
                 saved_train = train
                 saved_test = test
-                test_points = test.shape[0]
+                test_species = test.taxonID.nunique()
     
     train = saved_train
     test = saved_test    
