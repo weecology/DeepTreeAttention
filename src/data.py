@@ -124,17 +124,16 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3):
     
     return train, test
     
-def train_test_split(shp, savedir, config, client = None):
+def train_test_split(shp, config, client = None):
     """Create the train test split
     Args:
         shp: a filter pandas dataframe (or geodataframe)  
-        savedir: directly to save train/test and metadata csv files
         client: optional dask client
     Returns:
         None: train.shp and test.shp are written as side effect
         """    
     #set seed.
-    print("splitting data into train test. Initial data has {} points from {} species".format(shp.shape[0],shp.taxonID.nunique))
+    print("splitting data into train test. Initial data has {} points from {} species".format(shp.shape[0],shp.taxonID.nunique()))
     np.random.seed(1)
     #arbitrary large number to start search
     test_points = 1000000
@@ -358,7 +357,7 @@ class TreeData(LightningDataModule):
                 client=self.client
             )
                         
-            train_annotations, test_annotations = train_test_split(annotations,savedir="{}/processed".format(self.data_dir),config=self.config, client=self.client)   
+            train_annotations, test_annotations = train_test_split(annotations,config=self.config, client=self.client)   
             
             #capture discarded species
             individualIDs = np.concatenate([train_annotations.individualID.unique(), test_annotations.individualID.unique()])

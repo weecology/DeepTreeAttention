@@ -17,7 +17,8 @@ def config():
     config["iterations"] = 1
     config["rgb_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
     config["HSI_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
-    config["min_samples"] = 1
+    config["min_test_samples"] = 1
+    config["min_train_samples"] = 1
     config["crop_dir"] = tempfile.gettempdir()
     config["convert_h5"] = False
     config["megaplot_dir"] = None
