@@ -361,7 +361,9 @@ class TreeData(LightningDataModule):
                 raw_box_savedir=None, 
                 client=self.client
             )
-            test_crowns = test_crowns[test_crowns.taxonID.isin(train_crowns.taxonID.unique())]
+            test_crowns = test_crowns[test_crowns.taxonID.isin(train_crowns.taxonID.unique())]    
+            train_crowns = train_crowns[train_crowns.taxonID.isin(test_crowns.taxonID.unique())]            
+            
             test_crowns.to_file("{}/processed/test_crowns.shp".format(self.data_dir))
             
             #Store class labels
