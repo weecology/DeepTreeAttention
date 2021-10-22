@@ -86,7 +86,7 @@ def filter_data(path, config):
 
     return shp
 
-def sample_plots(shp, min_samples=5):
+def sample_plots(shp, min_train_samples=5, min_test_samples=3):
     """Sample and split a pandas dataframe based on plotID
     Args:
         shp: pandas dataframe of filtered tree locations
@@ -116,8 +116,8 @@ def sample_plots(shp, min_samples=5):
         test = shp[shp.plotID == shp.plotID.unique()[0]]
         train = shp[shp.plotID == shp.plotID.unique()[1]]
         
-    test = test.groupby("taxonID").filter(lambda x: x.shape[0] > min_samples)
-    train = train.groupby("taxonID").filter(lambda x: x.shape[0] > min_samples)
+    test = test.groupby("taxonID").filter(lambda x: x.shape[0] > min_test_samples)
+    train = train.groupby("taxonID").filter(lambda x: x.shape[0] > min_train_samples)
     
     train = train[train.taxonID.isin(test.taxonID)]
     test = test[test.taxonID.isin(train.taxonID)]
@@ -141,7 +141,7 @@ def train_test_split(shp, savedir, config, client = None):
     if client:
         futures = [ ]
         for x in np.arange(config["iterations"]):
-            future = client.submit(sample_plots, shp=shp, min_samples=config["min_samples"])
+            future = client.submit(sample_plots, shp=shp, min_train_samples=config["min_train_samples"], min_test_samples=config["min_test_samples"])
             futures.append(future)
         
         for x in as_completed(futures):
@@ -153,7 +153,7 @@ def train_test_split(shp, savedir, config, client = None):
                 test_points = test.shape[0]          
     else:
         for x in np.arange(config["iterations"]):
-            train, test = sample_plots(shp, min_samples=config["min_samples"])
+            train, test = sample_plots(shp, min_train_samples=config["min_train_samples"], min_test_samples=config["min_test_samples"])
             if test.shape[0] < test_points:
                 print(test.shape[0])
                 saved_train = train
