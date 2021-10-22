@@ -236,7 +236,7 @@ def points_to_crowns(
 def write_crop(row, img_path, label_dict, site_dict, savedir):
     """Wrapper to write a crop based on size and savedir"""
     filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])
-    annotation = pd.DataFrame({"image_path":[filename], "label":[label_dict[row["taxonID"]]], "site":[site_dict[row["siteID"]]]})
+    annotation = pd.DataFrame({"image_path":[filename], "label":[label_dict[row["taxonID"]]], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "site":[site_dict[row["siteID"]]]})
     
     return annotation
 

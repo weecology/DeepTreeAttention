@@ -334,45 +334,42 @@ class TreeData(LightningDataModule):
             
             #Filter points based on LiDAR height
             df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
-            train, test = train_test_split(df,savedir="{}/processed".format(self.data_dir),config=self.config, client=None)   
-            
-            #capture discarded species
-            individualIDs = np.concatenate([train.individualID.unique(), test.individualID.unique()])
-            unique_site_labels = np.concatenate([train.siteID.unique(), test.siteID.unique()])            
-            novel = df[~df.individualID.isin(individualIDs)]
-            novel = novel[~novel.taxonID.isin(np.concatenate([train.taxonID.unique(), test.taxonID.unique()]))]
-            
-            novel.to_file("{}/processed/novel_species.shp".format(self.data_dir))
-            test.to_file("{}/processed/test_points.shp".format(self.data_dir))
-            train.to_file("{}/processed/train_points.shp".format(self.data_dir)) 
+            df.to_file("{}/processed/canopy_points.shp".format(self.data_dir))
             
             #Create crown data
-            train_crowns = generate.points_to_crowns(
-                field_data="{}/processed/train_points.shp".format(self.data_dir),
+            crowns = generate.points_to_crowns(
+                field_data="{}/processed/canopy_points.shp".format(self.data_dir),
                 rgb_dir=self.config["rgb_sensor_pool"],
                 savedir=None,
                 raw_box_savedir=None, 
                 client=self.client
             )
             
+            crowns.to_file("{}/processed/crowns.shp".format(self.data_dir))
             
-            train_crowns = train_crowns.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_samples"])
-            train_crowns.to_file("{}/processed/train_crowns.shp".format(self.data_dir))
-                        
-            test_crowns = generate.points_to_crowns(
-                field_data="{}/processed/test_points.shp".format(self.data_dir),
-                rgb_dir=self.config["rgb_sensor_pool"],
-                savedir=None,
-                raw_box_savedir=None, 
+            annotations = generate.generate_crops(
+                crowns,
+                savedir=self.config["crop_dir"],
+                label_dict=self.species_label_dict,
+                site_dict=self.site_label_dict,                
+                sensor_glob=self.config["HSI_sensor_pool"],
+                convert_h5=self.config["convert_h5"],   
+                rgb_glob=self.config["rgb_sensor_pool"],
+                HSI_tif_dir=self.config["HSI_tif_dir"],
                 client=self.client
             )
-            test_crowns = test_crowns[test_crowns.taxonID.isin(train_crowns.taxonID.unique())]    
-            train_crowns = train_crowns[train_crowns.taxonID.isin(test_crowns.taxonID.unique())]            
             
-            test_crowns.to_file("{}/processed/test_crowns.shp".format(self.data_dir))
+            train_annotations, test_annotations = train_test_split(annotations,savedir="{}/processed".format(self.data_dir),config=self.config, client=None)   
+            
+            #capture discarded species
+            individualIDs = np.concatenate([train_annotations.individualID.unique(), test_annotations.individualID.unique()])
+            unique_site_labels = np.concatenate([train_annotations.siteID.unique(), test_annotations.siteID.unique()])            
+            novel = df[~df.individualID.isin(individualIDs)]
+            novel = novel[~novel.taxonID.isin(np.concatenate([train_annotations.taxonID.unique(), test_annotations.taxonID.unique()]))]
+            novel.to_file("{}/processed/novel_species.shp".format(self.data_dir))
             
             #Store class labels
-            unique_species_labels = np.concatenate([train_crowns.taxonID.unique(), test_crowns.taxonID.unique()])
+            unique_species_labels = np.concatenate([train_annotations.taxonID.unique(), test_annotations.taxonID.unique()])
             unique_species_labels = np.unique(unique_species_labels)
             self.num_classes = len(unique_species_labels)
             
@@ -382,7 +379,7 @@ class TreeData(LightningDataModule):
                 self.species_label_dict[label] = index
             
             #Store site labels
-            unique_site_labels = np.concatenate([train_crowns.siteID.unique(), test_crowns.siteID.unique()])
+            unique_site_labels = np.concatenate([train_annotations.siteID.unique(), test_annotations.siteID.unique()])
             unique_site_labels = np.unique(unique_site_labels)
             
             self.site_label_dict = {}
@@ -391,31 +388,7 @@ class TreeData(LightningDataModule):
             self.num_sites = len(self.site_label_dict)       
             
             self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
-            
-            train_annotations = generate.generate_crops(
-                train_crowns,
-                savedir=self.config["crop_dir"],
-                label_dict=self.species_label_dict,
-                site_dict=self.site_label_dict,                
-                sensor_glob=self.config["HSI_sensor_pool"],
-                convert_h5=self.config["convert_h5"],   
-                rgb_glob=self.config["rgb_sensor_pool"],
-                HSI_tif_dir=self.config["HSI_tif_dir"],
-                client=self.client
-            )    
-                
-            test_annotations = generate.generate_crops(
-                test_crowns,
-                savedir=self.config["crop_dir"],
-                label_dict=self.species_label_dict,
-                site_dict=self.site_label_dict,
-                sensor_glob=self.config["HSI_sensor_pool"],
-                rgb_glob=self.config["rgb_sensor_pool"],                
-                client=self.client,
-                HSI_tif_dir=self.config["HSI_tif_dir"],                
-                convert_h5=self.config["convert_h5"]
-            )  
-                                                
+                               
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
             
@@ -432,11 +405,10 @@ class TreeData(LightningDataModule):
             )
                         
         else:
-            test = gpd.read_file("{}/processed/test_crowns.shp".format(self.data_dir))
-            train = gpd.read_file("{}/processed/train_crowns.shp".format(self.data_dir))
+            crowns = gpd.read_file("{}/processed/crowns".format(self.data_dir))
             
             #Store class labels
-            unique_species_labels = np.concatenate([train.taxonID.unique(), test.taxonID.unique()])
+            unique_species_labels = crowns.taxonID.unique()
             unique_species_labels = np.unique(unique_species_labels)
             
             self.species_label_dict = {}
