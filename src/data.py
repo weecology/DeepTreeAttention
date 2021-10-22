@@ -95,6 +95,9 @@ def sample_plots(shp, min_samples=5):
     """
     #split by plot level
     plotIDs = shp.plotID.unique()
+    
+    #No contrib plots in test
+    plotIDs = [x for x in plotIDs if not 'contrib' in x]
     np.random.shuffle(plotIDs)
     test_species = []
     test_plots = []
@@ -319,6 +322,13 @@ class TreeData(LightningDataModule):
             #Convert raw neon data to x,y tree locatins
             df = filter_data(self.csv_file, config=self.config)
             
+            #load any megaplot data
+            if not self.config["megaplot_dir"] is None:
+                megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], rgb_pool=self.config["rgb_sensor_pool"], client = self.client, config=self.config)
+                #don't add species from contrib data (?) https://github.com/weecology/DeepTreeAttention/issues/65
+                megaplot_data = megaplot_data[megaplot_data.taxonID.isin(df.taxonID.unique())]
+                df = pd.concat([megaplot_data, df])
+                
             #DEBUG, just one site
             #df = df[df.siteID=="HARV"]
             
@@ -345,11 +355,6 @@ class TreeData(LightningDataModule):
                 client=self.client
             )
             
-            #load any megaplot data
-            if not self.config["megaplot_dir"] is None:
-                megaplot_crowns = megaplot.load(directory=self.config["megaplot_dir"], rgb_pool=self.config["rgb_sensor_pool"], client = self.client, config=self.config)
-                megaplot_crowns = megaplot_crowns[megaplot_crowns.taxonID.isin(train_crowns.taxonID.unique())]
-                train_crowns = pd.concat([megaplot_crowns, train_crowns])
             
             train_crowns = train_crowns.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_samples"])
             train_crowns.to_file("{}/processed/train_crowns.shp".format(self.data_dir))
