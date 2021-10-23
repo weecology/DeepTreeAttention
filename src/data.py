@@ -1,7 +1,7 @@
 #Ligthning data module
 import argparse
 from . import __file__
-from distributed import as_completed
+from distributed import wait
 import glob
 import geopandas as gpd
 import json
@@ -86,12 +86,13 @@ def filter_data(path, config):
 
     return shp
 
-def sample_plots(shp, min_train_samples=5, min_test_samples=3):
+def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     """Sample and split a pandas dataframe based on plotID
     Args:
         shp: pandas dataframe of filtered tree locations
         test_fraction: proportion of plots in test datasets
         min_samples: minimum number of samples per class
+        iteration: a dummy parameter to make dask submission unique
     """
     #split by plot level
     plotIDs = shp.plotID.unique()
@@ -139,10 +140,11 @@ def train_test_split(shp, config, client = None):
     if client:
         futures = [ ]
         for x in np.arange(config["iterations"]):
-            future = client.submit(sample_plots, shp=shp, min_train_samples=config["min_train_samples"], min_test_samples=config["min_test_samples"])
+            future = client.submit(sample_plots, shp=shp, min_train_samples=config["min_train_samples"], iteration=x, min_test_samples=config["min_test_samples"])
             futures.append(future)
         
-        for x in as_completed(futures):
+        wait(futures)
+        for x in futures:
             train, test = x.result()
             if test.taxonID.nunique() > test_species:
                 print("Selected test has {} points and {} species".format(test.shape[0], test.taxonID.nunique()))
@@ -318,9 +320,7 @@ class TreeData(LightningDataModule):
             self.config = read_config("{}/config.yml".format(self.ROOT))   
         else:
             self.config = config
-        
-        self.train_ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata)
-        
+                
     def setup(self,stage=None):
         #Clean data from raw csv, regenerate from scratch or check for progress and complete
         if self.regenerate:
@@ -377,7 +377,6 @@ class TreeData(LightningDataModule):
             
             #capture discarded species
             individualIDs = np.concatenate([train_annotations.individualID.unique(), test_annotations.individualID.unique()])
-            unique_site_labels = np.concatenate([train_annotations.siteID.unique(), test_annotations.siteID.unique()])            
             novel = df[~df.individualID.isin(individualIDs)]
             novel = novel[~novel.taxonID.isin(np.concatenate([train_annotations.taxonID.unique(), test_annotations.taxonID.unique()]))]
             novel.to_file("{}/processed/novel_species.shp".format(self.data_dir))
@@ -385,6 +384,7 @@ class TreeData(LightningDataModule):
             #Store class labels
             unique_species_labels = np.concatenate([train_annotations.taxonID.unique(), test_annotations.taxonID.unique()])
             unique_species_labels = np.unique(unique_species_labels)
+            unique_species_labels = np.sort(unique_species_labels)            
             self.num_classes = len(unique_species_labels)
             
             #Taxon to ID dict and the reverse    
@@ -424,7 +424,11 @@ class TreeData(LightningDataModule):
                 len(test_annotations.label.unique()),
                 len(test_annotations.site.unique()))
             )
-                        
+             
+            #Create dataloaders
+            self.train_ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata)
+            self.val_ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=self.HSI, metadata=self.metadata)
+             
         else:
             train_annotations = pd.read_csv("{}/processed/train.csv".format(self.data_dir))
             test_annotations = pd.read_csv("{}/processed/test.csv".format(self.data_dir))
@@ -432,6 +436,7 @@ class TreeData(LightningDataModule):
             #Store class labels
             unique_species_labels = np.concatenate([train_annotations.taxonID.unique(), test_annotations.taxonID.unique()])
             unique_species_labels = np.unique(unique_species_labels)
+            unique_species_labels = np.sort(unique_species_labels)            
             self.num_classes = len(unique_species_labels)
             
             #Taxon to ID dict and the reverse    
@@ -449,6 +454,10 @@ class TreeData(LightningDataModule):
             self.num_sites = len(self.site_label_dict)                   
             
             self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
+            
+            #Create dataloaders
+            self.train_ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata)
+            self.val_ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=self.HSI, metadata=self.metadata)            
 
     def train_dataloader(self):
         """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""       
@@ -490,9 +499,8 @@ class TreeData(LightningDataModule):
         return data_loader
     
     def val_dataloader(self):
-        ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=self.HSI, metadata=self.metadata)
         data_loader = torch.utils.data.DataLoader(
-            ds,
+            self.val_ds,
             batch_size=self.config["batch_size"],
             shuffle=False,
             num_workers=self.config["workers"],
