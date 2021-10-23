@@ -291,7 +291,10 @@ class TreeModel(LightningModule):
 
         #Log result by site
         if experiment:
-            results["site"] = results.individual.apply(lambda x: x.split(".")[-2])
+            results["individualID"] = results["individual"]
+            testdf = pd.read_csv("data/processed/test.csv")
+            testdf = testdf[["individualID","site"]]
+            results = results.merge(testdf)
             site_data_frame =[]
             for name, group in results.groupby("site"):
                 site_micro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label.values),target=torch.tensor(group.label.values), average="micro")
