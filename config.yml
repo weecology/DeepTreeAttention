@@ -9,13 +9,15 @@ HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/
 
 #NEON data filtering
 min_stem_diameter: 10
-#Minimum number of samples per class to be included
-min_samples: 5
+#Minimum number of test samples per class to be included
+min_train_samples: 5
+min_test_samples: 3
+
 #The proportion of plotIDs to use test
 test_fraction: 0.1
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
-iterations: 50
-# minimum CHM height, leave blank to skip CHM filtering
+iterations: 200
+#minimum CHM height, leave blank to skip CHM filtering
 min_CHM_height: 1
 #Minimum difference between measured height and CHM height
 min_CHM_diff: 3
@@ -44,7 +46,7 @@ resample_max: 500
 #Network Parameters
 gpus: 1
 workers: 20
-batch_size: 64
+batch_size: 128
 bands: 369
 lr: 0.001
 fast_dev_run: False

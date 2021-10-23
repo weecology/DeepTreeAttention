@@ -242,8 +242,8 @@ class TreeModel(LightningModule):
         if experiment:
             #load image pool and crown predicrions
             rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
-            test_crowns = gpd.read_file("{}/data/processed/test_crowns.shp".format(self.ROOT))  
-            test_points = gpd.read_file("{}/data/processed/test_points.shp".format(self.ROOT))   
+            test_points = gpd.read_file("{}/data/processed/canopy_points.shp".format(self.ROOT))   
+            test_crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
             
             plt.ion()
             for index, row in df.sample(n=plot_n_individuals).iterrows():
@@ -289,7 +289,10 @@ class TreeModel(LightningModule):
 
         #Log result by site
         if experiment:
-            results["site"] = results.individual.apply(lambda x: x.split(".")[-2])
+            results["individualID"] = results["individual"]
+            testdf = pd.read_csv("data/processed/test.csv")
+            testdf = testdf[["individualID","site"]]
+            results = results.merge(testdf)
             site_data_frame =[]
             for name, group in results.groupby("site"):
                 site_micro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label.values),target=torch.tensor(group.label.values), average="micro")

@@ -17,7 +17,8 @@ def config():
     config["iterations"] = 1
     config["rgb_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
     config["HSI_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
-    config["min_samples"] = 1
+    config["min_test_samples"] = 1
+    config["min_train_samples"] = 1
     config["crop_dir"] = tempfile.gettempdir()
     config["convert_h5"] = False
     config["megaplot_dir"] = None
@@ -42,7 +43,7 @@ def test_TreeData_setup(dm, config):
     assert not test.empty
     assert not train.empty
     assert not any([x in train.image_path.unique() for x in test.image_path.unique()])
-    assert all([x in ["image_path","label","site"] for x in train.columns])
+    assert all([x in ["image_path","label","site","taxonID","siteID","plotID","individualID","point_id"] for x in train.columns])
     
 def test_TreeDataset(dm, config,tmpdir):
     #Train loader

@@ -1,7 +1,7 @@
 #Ligthning data module
 import argparse
 from . import __file__
-from distributed import as_completed
+from distributed import wait
 import glob
 import geopandas as gpd
 import json
@@ -86,64 +86,97 @@ def filter_data(path, config):
 
     return shp
 
-def sample_plots(shp, test_fraction=0.1, min_samples=5):
+def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     """Sample and split a pandas dataframe based on plotID
     Args:
         shp: pandas dataframe of filtered tree locations
         test_fraction: proportion of plots in test datasets
         min_samples: minimum number of samples per class
+        iteration: a dummy parameter to make dask submission unique
     """
     #split by plot level
-    test_plots = shp.plotID.drop_duplicates().sample(frac=test_fraction)
+    plotIDs = shp.plotID.unique()
     
-    #in case of debug, there may be not enough plots to sample, grab the first for testing
-    if test_plots.empty:
-        test_plots = [shp.plotID.drop_duplicates().values[0]]
-    
+    #No contrib plots in test
+    plotIDs = [x for x in plotIDs if not 'contrib' in x]
+    np.random.shuffle(plotIDs)
+    test_species = []
+    test_plots = []
+    for plotID in plotIDs:
+        selected_plot = shp[shp.plotID == plotID]
+        if not all([x in test_species for x in selected_plot.taxonID.unique()]):
+            test_plots.append(plotID)
+            for x in selected_plot.taxonID.unique():
+                test_species.append(x)
+        
     test = shp[shp.plotID.isin(test_plots)]
     train = shp[~shp.plotID.isin(test_plots)]
     
-    test = test.groupby("taxonID").filter(lambda x: x.shape[0] > min_samples)
+    #if debug
+    if train.empty:
+        test = shp[shp.plotID == shp.plotID.unique()[0]]
+        train = shp[shp.plotID == shp.plotID.unique()[1]]
+        
+    test = test.groupby("taxonID").filter(lambda x: x.shape[0] > min_test_samples)
+    train = train.groupby("taxonID").filter(lambda x: x.shape[0] > min_train_samples)
     
     train = train[train.taxonID.isin(test.taxonID)]
     test = test[test.taxonID.isin(train.taxonID)]
     
     return train, test
     
-def train_test_split(shp, savedir, config, client = None):
+def train_test_split(shp, config, client = None):
     """Create the train test split
     Args:
         shp: a filter pandas dataframe (or geodataframe)  
-        savedir: directly to save train/test and metadata csv files
         client: optional dask client
     Returns:
         None: train.shp and test.shp are written as side effect
         """    
     #set seed.
-    np.random.seed(1)
-    most_species = 0
+    print("splitting data into train test. Initial data has {} points from {} species".format(shp.shape[0],shp.taxonID.nunique()))
+    test_species = 0
+    ties = []
     if client:
         futures = [ ]
         for x in np.arange(config["iterations"]):
-            future = client.submit(sample_plots, shp=shp, min_samples=config["min_samples"], test_fraction=config["test_fraction"])
+            future = client.submit(sample_plots, shp=shp, min_train_samples=config["min_train_samples"], iteration=x, min_test_samples=config["min_test_samples"])
             futures.append(future)
         
-        for x in as_completed(futures):
+        wait(futures)
+        for x in futures:
             train, test = x.result()
-            if len(train.taxonID.unique()) > most_species:
-                print(len(train.taxonID.unique()))
+            if test.taxonID.nunique() > test_species:
+                print("Selected test has {} points and {} species".format(test.shape[0], test.taxonID.nunique()))
                 saved_train = train
                 saved_test = test
-                most_species = len(train.taxonID.unique())            
+                test_species = test.taxonID.nunique()
+                ties = []
+                ties.append([train, test])
+            elif test.taxonID.nunique() == test_species:
+                print("ties")
+                ties.append([train, test])          
     else:
         for x in np.arange(config["iterations"]):
-            train, test = sample_plots(shp, min_samples=config["min_samples"], test_fraction=config["test_fraction"])
-            if len(train.taxonID.unique()) > most_species:
-                print(len(train.taxonID.unique()))
+            np.random.seed(1)            
+            train, test = sample_plots(shp, min_train_samples=config["min_train_samples"], min_test_samples=config["min_test_samples"])
+            if test.taxonID.nunique() > test_species:
+                print("Selected test has {} points and {} species".format(test.shape[0], test.taxonID.nunique()))
                 saved_train = train
                 saved_test = test
-                most_species = len(train.taxonID.unique())
+                test_species = test.taxonID.nunique()
+                #reset ties
+                ties = []
+                ties.append([train, test])
+            elif test.taxonID.nunique() == test_species:
+                print("ties")
+                ties.append([train, test])
     
+    # The size of the datasets
+    if len(ties) > 1:
+        print("The size of tied datasets with {} species is {}".format(test_species, [x[1].shape[0] for x in ties]))        
+        saved_train, saved_test = ties[np.argmin([x[1].shape[0] for x in ties])]
+        
     train = saved_train
     test = saved_test    
     
@@ -287,9 +320,7 @@ class TreeData(LightningDataModule):
             self.config = read_config("{}/config.yml".format(self.ROOT))   
         else:
             self.config = config
-        
-        self.train_ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata)
-        
+                
     def setup(self,stage=None):
         #Clean data from raw csv, regenerate from scratch or check for progress and complete
         if self.regenerate:
@@ -307,89 +338,78 @@ class TreeData(LightningDataModule):
             #Convert raw neon data to x,y tree locatins
             df = filter_data(self.csv_file, config=self.config)
             
+            #load any megaplot data
+            if not self.config["megaplot_dir"] is None:
+                megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], rgb_pool=self.config["rgb_sensor_pool"], client = self.client, config=self.config)
+                #don't add species from contrib data (?) https://github.com/weecology/DeepTreeAttention/issues/65
+                megaplot_data = megaplot_data[megaplot_data.taxonID.isin(df.taxonID.unique())]
+                df = pd.concat([megaplot_data, df])
+                
             #DEBUG, just one site
             #df = df[df.siteID=="HARV"]
             
             #Filter points based on LiDAR height
             df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
-            df = df.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_samples"])
-            train, test = train_test_split(df,savedir="{}/processed".format(self.data_dir),config=self.config, client=None)   
-            
-            test.to_file("{}/processed/test_points.shp".format(self.data_dir))
-            train.to_file("{}/processed/train_points.shp".format(self.data_dir))
-            
-            #Store site labels
-            unique_site_labels = np.concatenate([train.siteID.unique(), test.siteID.unique()])
-            unique_site_labels = np.unique(unique_site_labels)
-            
-            self.site_label_dict = {}
-            for index, label in enumerate(unique_site_labels):
-                self.site_label_dict[label] = index
-            self.num_sites = len(self.site_label_dict)        
+            df.to_file("{}/processed/canopy_points.shp".format(self.data_dir))
             
             #Create crown data
-            train_crowns = generate.points_to_crowns(
-                field_data="{}/processed/train_points.shp".format(self.data_dir),
+            crowns = generate.points_to_crowns(
+                field_data="{}/processed/canopy_points.shp".format(self.data_dir),
                 rgb_dir=self.config["rgb_sensor_pool"],
                 savedir="{}/interim/".format(self.data_dir),
                 raw_box_savedir=None, 
                 client=self.client
             )
             
-            #load any megaplot data
-            if not self.config["megaplot_dir"] is None:
-                megaplot_crowns = megaplot.load(directory=self.config["megaplot_dir"], rgb_pool=self.config["rgb_sensor_pool"], client = self.client, config=self.config)
-                train_crowns = pd.concat([megaplot_crowns, train_crowns])
+            crowns.to_file("{}/processed/crowns.shp".format(self.data_dir))
             
-            train_crowns.to_file("{}/processed/train_crowns.shp".format(self.data_dir))
-                        
-            test_crowns = generate.points_to_crowns(
-                field_data="{}/processed/test_points.shp".format(self.data_dir),
-                rgb_dir=self.config["rgb_sensor_pool"],
-                savedir=None,
-                raw_box_savedir=None, 
-                client=self.client
-            )
-            test_crowns.to_file("{}/processed/test_crowns.shp".format(self.data_dir))
-            
-            #Store class labels
-            unique_species_labels = np.concatenate([train_crowns.taxonID.unique(), test_crowns.taxonID.unique()])
-            unique_species_labels = np.unique(unique_species_labels)
-            self.num_classes = len(unique_species_labels)
-            
-            #Taxon to ID dict and the reverse            
-            self.species_label_dict = {}
-            for index, label in enumerate(unique_species_labels):
-                self.species_label_dict[label] = index
-            
-            self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
-            
-            train_annotations = generate.generate_crops(
-                train_crowns,
+            annotations = generate.generate_crops(
+                crowns,
                 savedir=self.config["crop_dir"],
-                label_dict=self.species_label_dict,
-                site_dict=self.site_label_dict,                
                 sensor_glob=self.config["HSI_sensor_pool"],
                 convert_h5=self.config["convert_h5"],   
                 rgb_glob=self.config["rgb_sensor_pool"],
                 HSI_tif_dir=self.config["HSI_tif_dir"],
                 client=self.client
-            )    
-                
-            test_annotations = generate.generate_crops(
-                test_crowns,
-                savedir=self.config["crop_dir"],
-                label_dict=self.species_label_dict,
-                site_dict=self.site_label_dict,
-                sensor_glob=self.config["HSI_sensor_pool"],
-                rgb_glob=self.config["rgb_sensor_pool"],                
-                client=self.client,
-                HSI_tif_dir=self.config["HSI_tif_dir"],                
-                convert_h5=self.config["convert_h5"]
-            )  
+            )
+                        
+            train_annotations, test_annotations = train_test_split(annotations,config=self.config, client=self.client)   
             
-            #Make sure no species were lost during generate
-            train_annotations = train_annotations[train_annotations.label.isin(test_annotations.label.unique())]
+            #capture discarded species
+            individualIDs = np.concatenate([train_annotations.individualID.unique(), test_annotations.individualID.unique()])
+            novel = df[~df.individualID.isin(individualIDs)]
+            novel = novel[~novel.taxonID.isin(np.concatenate([train_annotations.taxonID.unique(), test_annotations.taxonID.unique()]))]
+            novel.to_file("{}/processed/novel_species.shp".format(self.data_dir))
+            
+            #Store class labels
+            unique_species_labels = np.concatenate([train_annotations.taxonID.unique(), test_annotations.taxonID.unique()])
+            unique_species_labels = np.unique(unique_species_labels)
+            unique_species_labels = np.sort(unique_species_labels)            
+            self.num_classes = len(unique_species_labels)
+            
+            #Taxon to ID dict and the reverse    
+            self.species_label_dict = {}
+            for index, taxonID in enumerate(unique_species_labels):
+                self.species_label_dict[taxonID] = index
+                
+            #Store site labels
+            unique_site_labels = np.concatenate([train_annotations.siteID.unique(), test_annotations.siteID.unique()])
+            unique_site_labels = np.unique(unique_site_labels)
+            
+            self.site_label_dict = {}
+            for index, label in enumerate(unique_site_labels):
+                self.site_label_dict[label] = index
+            self.num_sites = len(self.site_label_dict)                   
+            
+            self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
+            
+            #Encode the numeric site and class data
+            train_annotations["label"] = train_annotations.taxonID.apply(lambda x: self.species_label_dict[x])
+            train_annotations["site"] = train_annotations.siteID.apply(lambda x: self.site_label_dict[x])
+            
+            test_annotations["label"] = test_annotations.taxonID.apply(lambda x: self.species_label_dict[x])
+            test_annotations["site"] = test_annotations.siteID.apply(lambda x: self.site_label_dict[x])
+            
             train_annotations.to_csv("{}/processed/train.csv".format(self.data_dir), index=False)            
             test_annotations.to_csv("{}/processed/test.csv".format(self.data_dir), index=False)
             
@@ -404,30 +424,40 @@ class TreeData(LightningDataModule):
                 len(test_annotations.label.unique()),
                 len(test_annotations.site.unique()))
             )
-                        
+             
+            #Create dataloaders
+            self.train_ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata)
+            self.val_ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=self.HSI, metadata=self.metadata)
+             
         else:
-            test = gpd.read_file("{}/processed/test_crowns.shp".format(self.data_dir))
-            train = gpd.read_file("{}/processed/train_crowns.shp".format(self.data_dir))
+            train_annotations = pd.read_csv("{}/processed/train.csv".format(self.data_dir))
+            test_annotations = pd.read_csv("{}/processed/test.csv".format(self.data_dir))
             
             #Store class labels
-            unique_species_labels = np.concatenate([train.taxonID.unique(), test.taxonID.unique()])
+            unique_species_labels = np.concatenate([train_annotations.taxonID.unique(), test_annotations.taxonID.unique()])
             unique_species_labels = np.unique(unique_species_labels)
+            unique_species_labels = np.sort(unique_species_labels)            
+            self.num_classes = len(unique_species_labels)
             
+            #Taxon to ID dict and the reverse    
             self.species_label_dict = {}
-            for index, label in enumerate(unique_species_labels):
-                self.species_label_dict[label] = index
-            self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
-            
-            self.num_classes = len(self.species_label_dict)
-            
+            for index, taxonID in enumerate(unique_species_labels):
+                self.species_label_dict[taxonID] = index
+                
             #Store site labels
-            unique_site_labels = np.concatenate([train.siteID.unique(), test.siteID.unique()])
+            unique_site_labels = np.concatenate([train_annotations.siteID.unique(), test_annotations.siteID.unique()])
             unique_site_labels = np.unique(unique_site_labels)
             
             self.site_label_dict = {}
             for index, label in enumerate(unique_site_labels):
                 self.site_label_dict[label] = index
-            self.num_sites = len(self.site_label_dict)
+            self.num_sites = len(self.site_label_dict)                   
+            
+            self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
+            
+            #Create dataloaders
+            self.train_ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata)
+            self.val_ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=self.HSI, metadata=self.metadata)            
 
     def train_dataloader(self):
         """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""       
@@ -469,9 +499,8 @@ class TreeData(LightningDataModule):
         return data_loader
     
     def val_dataloader(self):
-        ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=self.HSI, metadata=self.metadata)
         data_loader = torch.utils.data.DataLoader(
-            ds,
+            self.val_ds,
             batch_size=self.config["batch_size"],
             shuffle=False,
             num_workers=self.config["workers"],

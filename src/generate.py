@@ -233,22 +233,20 @@ def points_to_crowns(
     
     return results
 
-def write_crop(row, img_path, label_dict, site_dict, savedir):
+def write_crop(row, img_path, savedir):
     """Wrapper to write a crop based on size and savedir"""
     filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])
-    annotation = pd.DataFrame({"image_path":[filename], "label":[label_dict[row["taxonID"]]], "site":[site_dict[row["siteID"]]]})
+    annotation = pd.DataFrame({"image_path":[filename], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "siteID":[row["siteID"]]})
     
     return annotation
 
-def generate_crops(gdf, sensor_glob, savedir, label_dict, site_dict, client=None, convert_h5=False, rgb_glob=None, HSI_tif_dir=None):
+def generate_crops(gdf, sensor_glob, savedir, client=None, convert_h5=False, rgb_glob=None, HSI_tif_dir=None):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:
         shapefile: a .shp with geometry objects and an taxonID column
         savedir: path to save image crops
         img_pool: glob to search remote sensing files. This can be either RGB of .tif hyperspectral data, as long as it can be read by rasterio
-        label_dict (dict): taxonID -> numeric order
-        site_dict (dict): siteID -> numeric order
         client: optional dask client
         convert_h5: If HSI data is passed, make sure .tif conversion is complete
         rgb_glob: glob to search images to match when converting h5s -> tif.
@@ -279,7 +277,7 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, site_dict, client=None
                     img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
             except:
                 print("{} failed to find sensor path with traceback {}".format(row.geometry.bounds, traceback.print_exc()))
-            future = client.submit(write_crop,row=row,img_path=img_path, label_dict=label_dict, savedir=savedir, site_dict=site_dict)
+            future = client.submit(write_crop,row=row,img_path=img_path, savedir=savedir)
             futures.append(future)
             
         wait(futures)
@@ -304,7 +302,7 @@ def generate_crops(gdf, sensor_glob, savedir, label_dict, site_dict, client=None
                 print("{} failed to find sensor path with traceback".format(row.geometry.bounds, traceback.print_exc()))
                 continue
             try:
-                annotation = write_crop(row=row, img_path=img_path, savedir=savedir, label_dict=label_dict, site_dict=site_dict)
+                annotation = write_crop(row=row, img_path=img_path, savedir=savedir)
             except Exception as e:
                 print("index {} failed with {}".format(index,e))
                 continue

@@ -15,13 +15,15 @@ def read_files(directory, config=None):
     shps = [gpd.read_file(x) for x in shapefiles]
     sites = [os.path.splitext(os.path.basename(x))[0] for x in shapefiles]
     
-    site_dict = {}
+    sitedf = []
     for index, x in enumerate(sites):
         print(x)
         formatted_data = format(site=x, gdf=shps[index], directory=directory, config=config)
-        site_dict[x] = formatted_data
+        sitedf.append(formatted_data)
 
-    return site_dict
+    sitedf = pd.concat(sitedf)
+    
+    return sitedf
 
 def format(site, gdf, directory, config):
     """The goal of this function is to mimic for the format needed to input to generate.points_to_crowns. 
@@ -35,7 +37,7 @@ def format(site, gdf, directory, config):
     gdf = gdf.merge(species_data[["sp","taxonID"]])
     
     #give each an individual ID
-    gdf["individualID"] = gdf.index.to_series().apply(lambda x: "{}_{}".format(site,x)) 
+    gdf["individualID"] = gdf.index.to_series().apply(lambda x: "{}_contrib{}".format(site,x)) 
     gdf["siteID"] = site
     
     #PlotID variable to center on correct tile
@@ -79,17 +81,5 @@ def load(directory, rgb_pool,client, config):
         crowndf: a geopandas dataframe of crowns for all sites
     """
     formatted_data = read_files(directory=directory, config=config)
-    crown_list = []
-    for x in formatted_data:
-        formatted_data[x].to_file("{}/{}_points.shp".format(directory, x))        
-        crowns = generate.points_to_crowns(
-            field_data="{}/{}_points.shp".format(directory, x),
-            rgb_dir=rgb_pool,
-            savedir=None,
-            client=client,
-            raw_box_savedir=None)
-        crown_list.append(crowns)
     
-    crowndf = gpd.GeoDataFrame(pd.concat(crown_list))
-    
-    return crowndf
+    return formatted_data
