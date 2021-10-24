@@ -10,8 +10,8 @@ HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/
 #NEON data filtering
 min_stem_diameter: 10
 #Minimum number of test samples per class to be included
-min_train_samples: 5
-min_test_samples: 3
+min_train_samples: 10
+min_test_samples: 4
 
 #The proportion of plotIDs to use test
 test_fraction: 0.1
@@ -23,7 +23,7 @@ min_CHM_height: 1
 min_CHM_diff: 3
 
 #Megaplot XY Data
-megaplot_dir: /orange/idtrees-collab/megaplot/
+megaplot_dir: None
 
 #Crop generation
 convert_h5: True
@@ -42,7 +42,7 @@ resample_max: 500
 #Network Parameters
 gpus: 1
 workers: 20
-batch_size: 128
+batch_size: 64
 bands: 369
 lr: 0.001
 fast_dev_run: False
