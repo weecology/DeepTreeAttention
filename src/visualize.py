@@ -10,7 +10,6 @@ import rasterio
 from rasterio.plot import show
 from src import neon_paths
 import tempfile
-import torch
 
 def index_to_example(index, test_csv, test_crowns, test_points, rgb_pool, comet_experiment):
     """Function to plot an RGB image, the NEON field point and the deepforest crown given a test index

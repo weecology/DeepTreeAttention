@@ -81,9 +81,9 @@ visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
     results=results,
     species_label_dict=data_module.species_label_dict,
-    test_crowns="data/processed/test_crowns.shp",
+    test_crowns="data/processed/crowns.shp",
     test_csv="data/processed/test.csv",
-    test_points="data/processed/test_points.shp",
+    test_points="data/processed/canopy_points.shp",
     rgb_pool=rgb_pool
 )
 

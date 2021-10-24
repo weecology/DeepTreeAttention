@@ -326,10 +326,9 @@ class TreeData(LightningDataModule):
         if self.regenerate:
             #remove any previous runs
             try:
-                os.remove("{}/processed/test_points.shp".format(self.data_dir))
+                os.remove("{}/processed/canopy_points.shp".format(self.data_dir))
                 os.remove(" ".format(self.data_dir))
-                os.remove("{}/processed/filtered_data.csv".format(self.data_dir))
-                os.remove("{}/processed/train_crowns.shp".format(self.data_dir))
+                os.remove("{}/processed/crowns.shp".format(self.data_dir))
                 for x in glob.glob(self.config["crop_dir"]):
                     os.remove(x)
             except:
