@@ -23,7 +23,7 @@ min_CHM_height: 1
 min_CHM_diff: 3
 
 #Megaplot XY Data
-megaplot_dir: None
+megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation
 convert_h5: True
