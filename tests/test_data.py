@@ -22,6 +22,9 @@ def config():
     config["crop_dir"] = tempfile.gettempdir()
     config["convert_h5"] = False
     config["megaplot_dir"] = None
+    config["gpus"] = 0
+    config["bands"] = 3 
+    
     return config
 
 
