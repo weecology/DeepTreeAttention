@@ -36,10 +36,11 @@ class decoder_block(nn.Module):
         return x
 
 class autoencoder(LightningModule):
-    def __init__(self, bands, classes, config, data_dir):
+    def __init__(self, csv_file, bands, config, data_dir):
         super(autoencoder, self).__init__()    
         
         self.config = config
+        self.csv_file = csv_file
         self.data_dir = data_dir
         
         #Encoder
@@ -100,19 +101,8 @@ class autoencoder(LightningModule):
             
         return pd.DataFrame({"individual":individual, "loss":losses})
     
-    def val_dataloader(self):
-        ds = data.TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=True, metadata=False)
-        data_loader = torch.utils.data.DataLoader(
-            ds,
-            batch_size=self.config["batch_size"],
-            shuffle=False,
-            num_workers=self.config["workers"],
-        )
-        
-        return data_loader
-    
     def train_dataloader(self):
-        ds = data.TreeDataset(csv_file = "{}/processed/train.csv".format(self.data_dir), config=self.config, HSI=True, metadata=False)
+        ds = data.TreeDataset(csv_file = self.csv_file, config=self.config, HSI=True, metadata=False)
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],
@@ -123,7 +113,7 @@ class autoencoder(LightningModule):
         return data_loader
     
     def predict_dataloader(self):
-        ds = data.TreeDataset(csv_file = "{}/processed/train.csv".format(self.data_dir), config=self.config, HSI=True, metadata=False)
+        ds = data.TreeDataset(csv_file = self.csv_file.format(self.data_dir), config=self.config, HSI=True, metadata=False)
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],
@@ -138,14 +128,14 @@ class autoencoder(LightningModule):
 
         return {'optimizer':optimizer,"monitor":'val_loss'}
     
-def find_outliers(classes, config, data_dir, saved_model = None, comet_logger=None):
+def find_outliers(csv_file, config, data_dir, saved_model = None, comet_logger=None):
     """Train a deep autoencoder and remove input samples that cannot be recovered"""
     
     if saved_model:
         m = autoencoder.load_from_checkpoint(saved_model)
         m.data_dir = data_dir
     else:
-        m = autoencoder(config=config, bands = config["bands"], classes=classes, data_dir=data_dir)
+        m = autoencoder(csv_file=csv_file, config=config, bands = config["bands"], data_dir=data_dir)
         trainer = Trainer(
             gpus=config["gpus"],
             fast_dev_run=config["fast_dev_run"],

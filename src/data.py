@@ -15,6 +15,7 @@ from src import generate
 from src import CHM
 from src import augmentation
 from src import megaplot
+from src.models import autoencoder
 from shapely.geometry import Point
 import torch
 from torch.utils.data import Dataset
@@ -371,7 +372,19 @@ class TreeData(LightningDataModule):
                 HSI_tif_dir=self.config["HSI_tif_dir"],
                 client=self.client
             )
-                        
+                       
+            #Filter outliers
+            
+            annotations.to_csv("data/interim/before_outlier_removal.csv".format(self.data_dir))
+            outliers = autoencoder.find_outliers(
+                csv_file = "data/interim/before_outlier_removal.csv".format(self.data_dir),                
+                config=self.config,
+                data_dir=self.data_dir,
+                saved_model=None)
+            
+            outliers.to_csv("data/processed/outliers.csv")            
+            annotations = annotations[~annotations.individual.isin(outliers.individual)]            
+            
             train_annotations, test_annotations = train_test_split(annotations,config=self.config, client=self.client)   
             
             #capture discarded species

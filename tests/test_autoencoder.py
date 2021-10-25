@@ -36,14 +36,13 @@ def test_conv_module():
     assert output.shape == (20,32,11,11)
 
 def test_autoencoder(config):
-    m = autoencoder.autoencoder(bands=369, classes=10, config=config, data_dir="{}/tests/".format(ROOT))
+    m = autoencoder.autoencoder(csv_file="{}/tests/data/train.csv".format(ROOT), bands=369, config=config, data_dir="{}/tests/".format(ROOT))
     image = torch.randn(20, 369, 11, 11)
     output = m(image)    
     assert output.shape == image.shape
     
 def test_find_outliers(config):
-    prediction = autoencoder.find_outliers(data_dir="{}/tests/data/".format(ROOT), classes=2, config=config)
-    assert not prediction.empty
+    prediction = autoencoder.find_outliers(csv_file="{}/tests/data/processed/train.csv".format(ROOT), data_dir="{}/tests/data/".format(ROOT), config=config)
     assert all(prediction.columns == ["individual","loss"])
 
     
