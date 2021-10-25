@@ -87,14 +87,21 @@ def novel_prediction(model, csv_file, config):
     for batch in data_loader:
         individual, inputs, targets = batch
         with torch.no_grad():
-            pred = model.predict(inputs)
-            top_score = pred[np.argmax(pred)]
-            softmax_pred = F.softmax(pred, dim=0)
-        top_scores.append(top_score)
-        softmax_scores.append(softmax_pred)
+            pred = model(inputs["HSI"])
+            top_score = pred[np.arange(len(pred)), np.argmax(pred, 1)]
+            softmax_layer = F.softmax(pred, dim=1)
+            softmax_score = softmax_layer[np.arange(len(softmax_layer)), np.argmax(softmax_layer, 1)]
             
-    top_scores = np.concatenate(top_scores)              
+        individuals.append(individual)
+        top_scores.append(top_score)
+        softmax_scores.append(softmax_score)
+            
+    top_scores = np.concatenate(top_scores)  
+    individuals = np.concatenate(individuals)              
     softmax_scores = np.concatenate(softmax_scores)  
-    features = pd.DataFrame({"individual":individuals, "top_score": top_scores,"softmax_score":softmax_scores})
+    features = pd.DataFrame({"individualID":individuals, "top_score": top_scores,"softmax_score":softmax_scores})
     
-    return features    
+    original = pd.read_csv(csv_file)
+    mergeddf = features.merge(original)
+    
+    return mergeddf    
