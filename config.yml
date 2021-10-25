@@ -35,13 +35,13 @@ image_size: 11
 
 #Resampling
 #Minimum number of samples per species, all samples under this floor will have same sampling probability
-resample_min: 50
+resample_min: 1
 #maximum resample per species, all species above this threshold will have the same sampling probability
-resample_max: 1000
+resample_max: 10000
 
 #Network Parameters
 gpus: 1
-workers: 40
+workers: 20
 batch_size: 64
 bands: 369
 lr: 0.001
