@@ -26,8 +26,8 @@ min_CHM_diff: 3
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Outlier detection
-autoencoder_epochs: 10
-outlier_threshold: 0.95
+autoencoder_epochs: 15
+outlier_threshold: 0.90
 
 #Crop generation
 convert_h5: True
@@ -46,7 +46,7 @@ resample_max: 500
 #Network Parameters
 gpus: 1
 workers: 20
-batch_size: 128
+batch_size: 64
 bands: 369
 lr: 0.001
 fast_dev_run: False
