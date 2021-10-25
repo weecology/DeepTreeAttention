@@ -383,7 +383,7 @@ class TreeData(LightningDataModule):
                 saved_model=None)
             
             outliers.to_csv("data/processed/outliers.csv")            
-            annotations = annotations[~annotations.individual.isin(outliers.individual)]            
+            annotations = annotations[~annotations.individualID.isin(outliers.individual)]            
             
             train_annotations, test_annotations = train_test_split(annotations,config=self.config, client=self.client)   
             

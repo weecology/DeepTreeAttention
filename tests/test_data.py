@@ -24,6 +24,7 @@ def config():
     config["megaplot_dir"] = None
     config["gpus"] = 0
     config["bands"] = 3 
+    config["fast_dev_run"] = True
     
     return config
 
