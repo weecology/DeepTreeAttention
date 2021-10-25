@@ -14,9 +14,9 @@ import pandas as pd
 from pandas.util import hash_pandas_object
 
 #Create datamodule
-client = start_cluster.start(cpus=50, mem_size="5GB")
-#client = None
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client, metadata=True)
+#client = start_cluster.start(cpus=50, mem_size="5GB")
+client = None
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client, metadata=True)
 data_module.setup()
 
 comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
@@ -34,6 +34,8 @@ comet_logger.experiment.add_tag(git_branch)
 
 #Hash train and test
 test = pd.read_csv("data/processed/test.csv")
+train = pd.read_csv("data/processed/train.csv")
+
 comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(train))
 comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(test))
 comet_logger.experiment.log_table("train.csv", train)
