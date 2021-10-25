@@ -1,6 +1,7 @@
 #Train
 import comet_ml
 import glob
+import geopandas as gpd
 from src import main
 from src import data
 from src import start_cluster
@@ -32,10 +33,15 @@ comet_logger.experiment.add_tag(git_branch)
 #Hash train and test
 train = pd.read_csv("data/processed/train.csv")
 test = pd.read_csv("data/processed/test.csv")
+novel = gpd.read_file("data/processed/novel_species.shp")
+novel = pd.DataFrame(novel)
+
 comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(train))
 comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(test))
+comet_logger.experiment.log_parameter("num_species",data_module.num_classes)
 comet_logger.experiment.log_table("train.csv", train)
 comet_logger.experiment.log_table("test.csv", test)
+comet_logger.experiment.log_table("novel_species.csv", novel)
 
 model = metadata.metadata_sensor_fusion(sites=data_module.num_sites, classes=data_module.num_classes, bands=data_module.config["bands"])
 m = metadata.MetadataModel(
@@ -85,3 +91,8 @@ comet_logger.experiment.log_metric("within_site_confusion", within_site_confusio
 #get train features
 train_features = m.get_features(data_module.train_ds)
 comet_logger.experiment.log_table("train_features.csv", train_features)
+
+#Novel species prediction, get scores
+novel.to_csv("data/interim/novel.csv")
+novel_prediction = metrics.novel_prediction(model=m, csv_file="data/interim/novel.csv")
+comet_logger.experiment.log_table("novel_prediction.csv", novel_prediction)

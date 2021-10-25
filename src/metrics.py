@@ -1,4 +1,9 @@
 #Metrics
+import torch
+import numpy as np
+import pandas as pd
+from torch.nn import functional as F
+from src import data
 
 def site_confusion(y_true, y_pred, site_lists):
     """What proportion of misidentified species come from the same site?
@@ -65,3 +70,38 @@ def genus_confusion(y_true, y_pred, scientific_dict):
     proportion_within = within_genus/(within_genus + cross_genus)
     
     return proportion_within
+
+def novel_prediction(model, csv_file, config):
+    """Predict a dataset of species not included in the dataset and get the final activation score before/after softmax"""
+    novel_ds = data.TreeDataset(csv_file, image_size=config["image_size"], config=config)
+    
+    data_loader = torch.utils.data.DataLoader(
+        novel_ds,
+        batch_size=config["batch_size"],
+        num_workers=config["workers"])
+    
+    model.eval()
+    top_scores = []
+    softmax_scores = []
+    individuals = []
+    for batch in data_loader:
+        individual, inputs, targets = batch
+        with torch.no_grad():
+            pred = model(inputs["HSI"])
+            top_score = pred[np.arange(len(pred)), np.argmax(pred, 1)]
+            softmax_layer = F.softmax(pred, dim=1)
+            softmax_score = softmax_layer[np.arange(len(softmax_layer)), np.argmax(softmax_layer, 1)]
+            
+        individuals.append(individual)
+        top_scores.append(top_score)
+        softmax_scores.append(softmax_score)
+            
+    top_scores = np.concatenate(top_scores)  
+    individuals = np.concatenate(individuals)              
+    softmax_scores = np.concatenate(softmax_scores)  
+    features = pd.DataFrame({"individualID":individuals, "top_score": top_scores,"softmax_score":softmax_scores})
+    
+    original = pd.read_csv(csv_file)
+    mergeddf = features.merge(original)
+    
+    return mergeddf    
