@@ -476,27 +476,13 @@ class TreeData(LightningDataModule):
 
     def train_dataloader(self):
         """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""       
+        
         #get class weights
-        class_weights = {}
-        for x in range(self.num_classes):
-            class_weights[x] = 0 
-        
-        for index in range(len(self.train_ds)):
-            individual, inputs, label = self.train_ds[index]
-            class_weights[int(label)] = class_weights[int(label)] + 1
-                                   
-        #Provide a floor to class weights
-        for x in class_weights:
-            if class_weights[x] < self.config["resample_min"]:
-                class_weights[x] = self.config["resample_min"]
-        
-        #Provide a ceiling to class weights
-        for x in class_weights:
-            if class_weights[x] > self.config["resample_max"]:
-                class_weights[x] = self.config["resample_max"]
-                
+        train = pd.read_csv(self.train_file)
+        class_weights = train.label.value_counts().to_dict()     
+            
         data_weights = []
-        #upsample rare classes more as a residual
+        #balance classes
         for idx in range(len(self.train_ds)):
             path, image, targets = self.train_ds[idx]
             label = int(targets.numpy())
