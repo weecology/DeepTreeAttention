@@ -16,7 +16,7 @@ import pandas as pd
 from pandas.util import hash_pandas_object
 
 #Create datamodule
-client = start_cluster.start(cpus=75, mem_size="5GB")
+client = start_cluster.start(cpus=100, mem_size="4GB")
 #client = None
 
 config = data.read_config("config.yml")
