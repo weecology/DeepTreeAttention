@@ -377,7 +377,7 @@ class TreeData(LightningDataModule):
             
             #capture discarded species
             individualIDs = np.concatenate([train_annotations.individualID.unique(), test_annotations.individualID.unique()])
-            novel = df[~df.individualID.isin(individualIDs)]
+            novel = annotations[~annotations.individualID.isin(individualIDs)]
             novel = novel[~novel.taxonID.isin(np.concatenate([train_annotations.taxonID.unique(), test_annotations.taxonID.unique()]))]
             novel.to_file("{}/processed/novel_species.shp".format(self.data_dir))
             
