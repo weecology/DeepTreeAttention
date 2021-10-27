@@ -37,12 +37,6 @@ crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/year_crops/
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
 
-#Resampling
-#Minimum number of samples per species, all samples under this floor will have same sampling probability
-resample_min: 50
-#maximum resample per species, all species above this threshold will have the same sampling probability
-resample_max: 500
-
 #Network Parameters
 gpus: 1
 workers: 20
@@ -51,7 +45,7 @@ bands: 369
 lr: 0.001
 fast_dev_run: False
 accelerator: dp
-epochs: 60
+epochs: 55
 
 #Evaluation config
 #Top k class recall score
