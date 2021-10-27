@@ -132,9 +132,13 @@ def find_outliers(csv_file, config, data_dir, comet_logger=None):
             accelerator=config["accelerator"],
             checkpoint_callback=False,
             logger=comet_logger)
-
-        trainer.fit(model=m)
-
+        
+        if comet_logger:
+            with comet_logger.experiment.context_manager("{}_autoencoder".format(name)):
+                trainer.fit(model=m)
+        else:
+            trainer.fit(model=m)
+            
         prediction = trainer.predict(m)
         predictions.append(pd.concat(prediction))
     predictions = pd.concat(predictions)
@@ -143,9 +147,9 @@ def find_outliers(csv_file, config, data_dir, comet_logger=None):
     predictions.to_csv("{}/interim/reconstruction_error.csv".format(data_dir))
     threshold = predictions.loss.quantile(config["outlier_threshold"])
     print("Reconstruction threshold is {}".format(threshold))
-    prediction = prediction[prediction.loss > threshold]
+    predictions = predictions[predictions.loss > threshold]
     
-    return prediction
+    return predictions
         
         
         

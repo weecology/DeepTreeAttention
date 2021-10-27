@@ -233,14 +233,22 @@ def points_to_crowns(
     
     return results
 
-def write_crop(row, img_path, savedir):
+def write_crop(row, img_path, savedir, replace=True):
     """Wrapper to write a crop based on size and savedir"""
-    filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])
-    annotation = pd.DataFrame({"image_path":[filename], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "siteID":[row["siteID"]]})
-    
-    return annotation
+    if replace == False:
+        filename = "{}/{}.tif".format(savedir, row["individual"])
+        file_exists = os.path.exists(filename)
+        if file_exists:
+            annotation = pd.DataFrame({"image_path":[filename], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "siteID":[row["siteID"]]})            
+            return annotation            
+        else:
+            filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])  
+    else:
+        filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])
+        annotation = pd.DataFrame({"image_path":[filename], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "siteID":[row["siteID"]]})
+        return annotation
 
-def generate_crops(gdf, sensor_glob, savedir, client=None, convert_h5=False, rgb_glob=None, HSI_tif_dir=None):
+def generate_crops(gdf, sensor_glob, savedir, client=None, convert_h5=False, rgb_glob=None, HSI_tif_dir=None, replace=True):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:
@@ -262,7 +270,7 @@ def generate_crops(gdf, sensor_glob, savedir, client=None, convert_h5=False, rgb
     #There were erroneous point cloud .tif
     img_pool = [x for x in img_pool if not "point_cloud" in x]
     rgb_pool = [x for x in rgb_pool if not "point_cloud" in x]
-    
+                        
     if client:
         futures = []
         for index, row in gdf.iterrows():
@@ -277,7 +285,7 @@ def generate_crops(gdf, sensor_glob, savedir, client=None, convert_h5=False, rgb
                     img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
             except:
                 print("{} failed to find sensor path with traceback {}".format(row.geometry.bounds, traceback.print_exc()))
-            future = client.submit(write_crop,row=row,img_path=img_path, savedir=savedir)
+            future = client.submit(write_crop,row=row,img_path=img_path, savedir=savedir, replace=replace)
             futures.append(future)
             
         wait(futures)
@@ -302,7 +310,7 @@ def generate_crops(gdf, sensor_glob, savedir, client=None, convert_h5=False, rgb
                 print("{} failed to find sensor path with traceback".format(row.geometry.bounds, traceback.print_exc()))
                 continue
             try:
-                annotation = write_crop(row=row, img_path=img_path, savedir=savedir)
+                annotation = write_crop(row=row, img_path=img_path, savedir=savedir, replace=replace)
             except Exception as e:
                 print("index {} failed with {}".format(index,e))
                 continue
