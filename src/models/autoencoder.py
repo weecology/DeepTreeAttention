@@ -7,6 +7,7 @@ from src.models.Hang2020 import conv_module
 from src import data
 from pytorch_lightning import LightningModule, Trainer
 import pandas as pd
+from tempfile import gettempdir
 
 class encoder_block(nn.Module):
     def __init__(self, in_channels, filters, maxpool_kernel=None, pool=False):
@@ -114,14 +115,16 @@ class autoencoder(LightningModule):
 
         return {'optimizer':optimizer,"monitor":'val_loss'}
     
-def find_outliers(csv_file, config, data_dir, saved_model = None, comet_logger=None):
+def find_outliers(csv_file, config, data_dir, comet_logger=None):
     """Train a deep autoencoder and remove input samples that cannot be recovered"""
-    
-    if saved_model:
-        m = autoencoder.load_from_checkpoint(saved_model)
-        m.data_dir = data_dir
-    else:
-        m = autoencoder(csv_file=csv_file, config=config, bands = config["bands"], data_dir=data_dir)
+    #For each species train and predict
+    df = pd.read_csv(csv_file)
+    tmpdir = gettempdir()
+    predictions = []
+    for name, group in df.groupby("taxonID"):
+        fname = "{}/{}.csv".format(tmpdir, name)
+        group.to_csv(fname)
+        m = autoencoder(csv_file=fname, config=config, bands = config["bands"], data_dir=data_dir)
         trainer = Trainer(
             gpus=config["gpus"],
             fast_dev_run=config["fast_dev_run"],
@@ -129,17 +132,24 @@ def find_outliers(csv_file, config, data_dir, saved_model = None, comet_logger=N
             accelerator=config["accelerator"],
             checkpoint_callback=False,
             logger=comet_logger)
-    
-        trainer.fit(model=m)
-    
-    prediction = trainer.predict(m)
-    prediction = pd.concat(prediction)
-    
+        
+        if comet_logger:
+            with comet_logger.experiment.context_manager("{}_autoencoder".format(name)):
+                trainer.fit(model=m)
+        else:
+            trainer.fit(model=m)
+            
+        prediction = trainer.predict(m)
+        predictions.append(pd.concat(prediction))
+    predictions = pd.concat(predictions)
+            
     #remove lowest quantile
-    threshold = prediction.loss.quantile(config["outlier_threshold"])
-    prediction = prediction[prediction.loss > threshold]
+    predictions.to_csv("{}/interim/reconstruction_error.csv".format(data_dir))
+    threshold = predictions.loss.quantile(config["outlier_threshold"])
+    print("Reconstruction threshold is {}".format(threshold))
+    predictions = predictions[predictions.loss > threshold]
     
-    return prediction
+    return predictions
         
         
         

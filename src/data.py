@@ -294,7 +294,7 @@ class TreeData(LightningDataModule):
     The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
     Use regenerate=True to override this behavior in setup()
     """
-    def __init__(self, csv_file, HSI=True, metadata=False, regenerate = False, client = None, config=None, data_dir=None, experiment=None):
+    def __init__(self, csv_file, HSI=True, metadata=False, regenerate = False, client = None, config=None, data_dir=None, comet_logger=None):
         """
         Args:
             config: optional config file to override
@@ -307,7 +307,7 @@ class TreeData(LightningDataModule):
         self.csv_file = csv_file
         self.HSI = HSI
         self.metadata = metadata
-        self.experiment = experiment
+        self.comet_logger = comet_logger
         
         #default training location
         self.client = client
@@ -371,20 +371,20 @@ class TreeData(LightningDataModule):
                 convert_h5=self.config["convert_h5"],   
                 rgb_glob=self.config["rgb_sensor_pool"],
                 HSI_tif_dir=self.config["HSI_tif_dir"],
-                client=self.client
+                client=self.client,
+                replace=self.config["replace"]
             )
                        
             #Filter outliers
-            
             annotations.to_csv("data/interim/before_outlier_removal.csv".format(self.data_dir))
-            if self.experiment:
-                with self.experiment.context_manager("autoencoder"):
-                    outliers = autoencoder.find_outliers(
-                        csv_file = "data/interim/before_outlier_removal.csv".format(self.data_dir),                
-                        config=self.config,
-                        data_dir=self.data_dir,
-                        saved_model=None)
             
+            outliers = autoencoder.find_outliers(
+                csv_file = "data/interim/before_outlier_removal.csv".format(self.data_dir),                
+                config=self.config,
+                data_dir=self.data_dir,
+                comet_logger= self.comet_logger
+            )
+        
             outliers.to_csv("data/processed/outliers.csv")            
             annotations = annotations[~annotations.individualID.isin(outliers.individual)]            
             
