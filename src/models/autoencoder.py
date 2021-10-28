@@ -145,9 +145,13 @@ class autoencoder(LightningModule):
             individual, inputs, label = batch
             epoch_labels.append(label)
             #trigger activation hook
-            pred = self(inputs["HSI"])
+            if self.device == "cuda":
+                image = inputs["HSI"].cuda()
+            else:
+                image = inputs["HSI"]
+            pred = self(image)
             epoch_activations.append(self.activation["vis_layer"])
-        
+
         #Create a single array
         epoch_labels = np.concatenate(epoch_labels)
         epoch_activations = np.concatenate(epoch_activations) 
