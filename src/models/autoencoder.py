@@ -156,8 +156,8 @@ class autoencoder(LightningModule):
 
         #Create a single array
         epoch_labels = np.concatenate(epoch_labels)
-        vis_epoch_activations = np.concatenate(vis_epoch_activations) 
-        encoder_epoch_activations = np.concatenate(encoder_epoch_activations) 
+        vis_epoch_activations = torch.tensor(np.concatenate(vis_epoch_activations))
+        encoder_epoch_activations = torch.tensor(np.concatenate(encoder_epoch_activations))
         
         layerplot_vis = visualize.plot_2d_layer(vis_epoch_activations, epoch_labels)
         try:
@@ -165,7 +165,7 @@ class autoencoder(LightningModule):
         except Exception as e:
             print("Comet logger failed: {}".format(e))
             
-        layerplot_encoder = visualize.plot_2d_layer(encoder_epoch_activations, epoch_labels, use_tsne=True)
+        layerplot_encoder = visualize.plot_2d_layer(encoder_epoch_activations, epoch_labels, use_pca=True)
         try:
             self.logger.experiment.log_figure(figure=layerplot_encoder, figure_name="2d_encoder_projection", step=self.current_epoch)
         except Exception as e:
