@@ -145,13 +145,12 @@ class autoencoder(LightningModule):
             individual, inputs, label = batch
             epoch_labels.append(label)
             #trigger activation hook
-            print("current device is:".format(self.device))
             if next(self.parameters()).is_cuda:
                 image = inputs["HSI"].cuda()
             else:
                 image = inputs["HSI"]
             pred = self(image)
-            epoch_activations.append(self.activation["vis_layer"])
+            epoch_activations.append(self.activation["vis_layer"].cpu())
 
         #Create a single array
         epoch_labels = np.concatenate(epoch_labels)
@@ -159,7 +158,7 @@ class autoencoder(LightningModule):
         
         layerplot = visualize.plot_2d_layer(epoch_activations, epoch_labels)
         try:
-            self.logger.experiment.log_figure(figure=layerplot, name="2d_projection", step=self.current_epoch)
+            self.logger.experiment.log_figure(figure=layerplot, figure_name="2d_projection", step=self.current_epoch)
         except Exception as e:
             print("Comet logger failed: {}".format(e))
             
@@ -217,7 +216,7 @@ def find_outliers(annotations, config, data_dir, comet_logger=None):
         else:
             image = inputs["HSI"]
         pred = m(image)
-        epoch_activations.append(m.activation["vis_layer"])
+        epoch_activations.append(m.activation["vis_layer"].cpu())
 
     #Create a single array
     epoch_activations = np.concatenate(epoch_activations) 
