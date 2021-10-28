@@ -377,11 +377,9 @@ class TreeData(LightningDataModule):
                 replace=self.config["replace"]
             )
                        
-            #Filter outliers
-            annotations.to_csv("data/interim/before_outlier_removal.csv".format(self.data_dir))
-            
+            #Filter outliers            
             outliers = autoencoder.find_outliers(
-                csv_file = "data/interim/before_outlier_removal.csv".format(self.data_dir),                
+                df = annotations,
                 config=self.config,
                 data_dir=self.data_dir,
                 comet_logger= self.comet_logger
