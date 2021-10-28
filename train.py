@@ -39,8 +39,7 @@ comet_logger.experiment.add_tag(git_branch)
 #Hash train and test
 test = pd.read_csv("data/processed/test.csv")
 train = pd.read_csv("data/processed/train.csv")
-novel = gpd.read_file("data/processed/novel_species.shp")
-novel = pd.DataFrame(novel)
+novel = pd.read_csv("data/processed/novel_species.csv")
 
 comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(train))
 comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(test))
@@ -99,8 +98,7 @@ train_features = m.get_features(data_module.train_ds)
 comet_logger.experiment.log_table("train_features.csv", train_features)
 
 #Novel species prediction, get scores
-novel.to_csv("data/interim/novel.csv")
-novel_prediction = metrics.novel_prediction(model=m, csv_file="data/interim/novel.csv", config=config)
+novel_prediction = metrics.novel_prediction(model=m, csv_file="data/processed/novel_species.csv", config=config)
 comet_logger.experiment.log_table("novel_prediction.csv", novel_prediction)
 mean_novel_prediction = novel_prediction.softmax_score.mean()
 comet_logger.experiment.log_metric(name="Mean unknown species softmax score", value=mean_novel_prediction)
