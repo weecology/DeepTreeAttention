@@ -145,7 +145,8 @@ class autoencoder(LightningModule):
             individual, inputs, label = batch
             epoch_labels.append(label)
             #trigger activation hook
-            if self.device == "cuda":
+            print("current device is:".format(self.device))
+            if next(self.parameters()).is_cuda:
                 image = inputs["HSI"].cuda()
             else:
                 image = inputs["HSI"]
@@ -164,7 +165,7 @@ class autoencoder(LightningModule):
             
         #reset activations
         self.activation = {}
-        
+                
 def find_outliers(annotations, config, data_dir, comet_logger=None):
     """Train a deep autoencoder and remove input samples that cannot be recovered"""
     #For each species train and predict
@@ -195,13 +196,41 @@ def find_outliers(annotations, config, data_dir, comet_logger=None):
     prediction = trainer.predict(m)
     predictions = pd.concat(prediction)
             
-    #remove lowest quantile        
+    #remove lowest quantile    
     predictions.to_csv("{}/interim/reconstruction_error.csv".format(data_dir))
     threshold = predictions.loss.quantile(config["outlier_threshold"])
     print("Reconstruction threshold is {}".format(threshold))
-    predictions = predictions[predictions.loss > threshold]
+    outliers = predictions[predictions.loss > threshold]
     
-    return predictions
+    #Upload loss image with the outliers
+    #plot 2d projection layer
+    epoch_labels = []
+    epoch_activations = []
+    individuals = []
+    for batch in m.train_dataloader():
+        individual, inputs, label = batch
+        epoch_labels.append(label)
+        individuals.append(individual)
+        #trigger activation hook
+        if next(m.parameters()).is_cuda:
+            image = inputs["HSI"].cuda()
+        else:
+            image = inputs["HSI"]
+        pred = m(image)
+        epoch_activations.append(m.activation["vis_layer"])
+
+    #Create a single array
+    epoch_activations = np.concatenate(epoch_activations) 
+    individuals = np.concatenate(individuals) 
+    
+    #color by outlier status
+    outlier_color = [x in outliers.individual for x in individuals] * 1
+    layerplot = visualize.plot_2d_layer(epoch_activations, outlier_color)   
+    
+    if comet_logger:
+        comet_logger.experiment.log_figure(layerplot)
+    
+    return outliers
         
         
         
