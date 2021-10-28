@@ -110,6 +110,4 @@ def plot_2d_layer(features, labels=None, use_tsne=False):
         features["label"] = labels
         features["color"] = features.label.apply(lambda x: colors[x])
         
-        fig = features.plot.scatter(x="a",y="b",color=features.color, alpha=0.75)
-    
-    return fig
+        features.plot.scatter(x="a",y="b",color=features.color, alpha=0.75)

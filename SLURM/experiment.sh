@@ -22,6 +22,7 @@ source activate DeepTreeAttention
 
 cd ~/DeepTreeAttention/
 module load git gcc
+export COMET_LOGGING_CONSOLE=info
 python train.py $1
 EOT
 
