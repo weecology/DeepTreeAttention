@@ -233,7 +233,7 @@ def find_outliers(annotations, config, data_dir, comet_logger=None):
     individuals = np.concatenate(individuals) 
     
     #color by outlier status
-    outlier_color = [(x in outliers.individual)*1 for x in individuals]
+    outlier_color = [(x in outliers.individual.values)*1 for x in individuals]
     layerplot = visualize.plot_2d_layer(epoch_activations, outlier_color)   
     
     if comet_logger:

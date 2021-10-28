@@ -159,7 +159,6 @@ def train_test_split(shp, config, client = None):
                 ties.append([train, test])          
     else:
         for x in np.arange(config["iterations"]):
-            np.random.seed(1)            
             train, test = sample_plots(shp, min_train_samples=config["min_train_samples"], min_test_samples=config["min_test_samples"])
             if test.taxonID.nunique() > test_species:
                 print("Selected test has {} points and {} species".format(test.shape[0], test.taxonID.nunique()))
@@ -376,19 +375,21 @@ class TreeData(LightningDataModule):
                 client=self.client,
                 replace=self.config["replace"]
             )
-                       
+            
+            before_outlier_detection = annotations.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_test_samples"])
+            
             #Filter outliers            
             outliers = autoencoder.find_outliers(
-                annotations = annotations,
+                annotations = before_outlier_detection,
                 config=self.config,
                 data_dir=self.data_dir,
                 comet_logger= self.comet_logger
             )
         
             outliers.to_csv("data/processed/outliers.csv")            
-            annotations = annotations[~annotations.individualID.isin(outliers.individual)]            
+            after_outlier_detection = before_outlier_detection[~before_outlier_detection.individualID.isin(outliers.individual)]            
             
-            train_annotations, test_annotations = train_test_split(annotations,config=self.config, client=self.client)   
+            train_annotations, test_annotations = train_test_split(after_outlier_detection,config=self.config, client=self.client)   
             
             #capture discarded species
             individualIDs = np.concatenate([train_annotations.individualID.unique(), test_annotations.individualID.unique()])

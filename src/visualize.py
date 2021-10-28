@@ -80,14 +80,16 @@ def confusion_matrix(comet_experiment, results, species_label_dict, test_csv, te
         labels=list(species_label_dict.keys()),
         max_categories=len(species_label_dict.keys()))
 
-def n_colors(n):
+def n_colors(n, set_color_seed=True):
     colors = []
+    if set_color_seed:
+        np.random.seed(0)
     for x in range(n):
         color = list(np.random.choice(range(256), size=3)/255)
         colors.append(color)
     return colors 
     
-def plot_2d_layer(features, labels=None, use_pca=False):
+def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True):
     """Given a 2D tensor array and a list of labels, plot and optionally color
     Args:
         features: input feature matrix
@@ -95,7 +97,7 @@ def plot_2d_layer(features, labels=None, use_pca=False):
         use_pca: Whether to first reduce dimensionality using pca"""
     
     num_categories = max(np.unique(labels)) + 1   
-    colors = n_colors(n = num_categories)
+    colors = n_colors(n = num_categories, set_color_seed=set_color_seed)
     
     if use_pca:
         pca = PCA(2)

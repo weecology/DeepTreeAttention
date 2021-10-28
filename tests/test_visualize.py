@@ -86,3 +86,16 @@ def test_plot_2d_layer_pca():
     features = torch.randn(20,8,10,10)    
     labels = torch.randint(0, 10, (20,))
     plot1 = visualize.plot_2d_layer(features, labels=labels, use_pca=True)
+#confirm setting same seed gives same colors
+
+
+def test_n_colors():
+    draw1 = visualize.n_colors(10, set_color_seed=False)
+    draw2 = visualize.n_colors(10, set_color_seed=False)
+    
+    assert not draw1 == draw2
+    
+    draw1 = visualize.n_colors(10, set_color_seed=True)
+    draw2 = visualize.n_colors(10, set_color_seed=True)
+    
+    assert draw1 == draw2    
