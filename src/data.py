@@ -379,7 +379,7 @@ class TreeData(LightningDataModule):
                        
             #Filter outliers            
             outliers = autoencoder.find_outliers(
-                df = annotations,
+                annotations = annotations,
                 config=self.config,
                 data_dir=self.data_dir,
                 comet_logger= self.comet_logger
