@@ -39,8 +39,6 @@ class decoder_block(nn.Module):
         
         return x
 
-
-
 class autoencoder(LightningModule):
     def __init__(self, csv_file, bands, config, data_dir):
         super(autoencoder, self).__init__()    
@@ -68,8 +66,6 @@ class autoencoder(LightningModule):
         def getActivation(name):
             # the hook signature
             def hook(model, input, output):
-                print("I am a hook")
-                print("The shape of this layer is {}".format(output.shape))
                 self.activation[name] = output.detach()
             return hook
         
