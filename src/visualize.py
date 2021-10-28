@@ -10,6 +10,7 @@ import rasterio
 from rasterio.plot import show
 from src import neon_paths
 import tempfile
+from sklearn.manifold import TSNE
 
 def index_to_example(index, test_csv, test_crowns, test_points, rgb_pool, comet_experiment):
     """Function to plot an RGB image, the NEON field point and the deepforest crown given a test index
@@ -86,13 +87,29 @@ def n_colors(n):
         colors.append(color)
     return colors 
     
-def plot_2d_layer(features, labels=None, pca=False):
-    """Given a 2D tensor array and a list of labels, plot and optionally color"""
-    colors = n_colors(n = len(np.unique(labels)))
-    features = pd.DataFrame(features, columns=["a","b"])
-    features["label"] = labels
-    features["color"] = features.label.apply(lambda x: colors[x])
+def plot_2d_layer(features, labels=None, use_tsne=False):
+    """Given a 2D tensor array and a list of labels, plot and optionally color
+    Args:
+        features: input feature matrix
+        labels: label for each feature row
+        use_tsne: Whether to first reduce dimensionality using tsne"""
     
-    plt = features.plot.scatter(x="a",y="b",color=features.color)
+    num_categories = max(np.unique(labels)) + 1   
+    colors = n_colors(n = num_categories)
     
-    return plt
+    if use_tsne:
+        tsne = TSNE(2, verbose=1)
+        tsne_proj = tsne.fit_transform(features)     
+        fig, ax = plt.subplots(figsize=(8,8))
+        for lab in range(num_categories):
+            indices = labels==lab
+            ax.scatter(tsne_proj[indices,0],tsne_proj[indices,1], c=colors[lab], label = lab ,alpha=0.5)
+        ax.legend(fontsize='large', markerscale=2)
+    else: 
+        features = pd.DataFrame(features, columns=["a","b"])
+        features["label"] = labels
+        features["color"] = features.label.apply(lambda x: colors[x])
+        
+        fig = features.plot.scatter(x="a",y="b",color=features.color, alpha=0.75)
+    
+    return fig

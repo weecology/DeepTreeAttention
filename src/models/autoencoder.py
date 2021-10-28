@@ -62,11 +62,11 @@ class autoencoder(LightningModule):
         
         #Visualization
         # a dict to store the activations        
-        self.activation = {}
+        self.vis_activation = {}
         def getActivation(name):
             # the hook signature
             def hook(model, input, output):
-                self.activation[name] = output.detach()
+                self.vis_activation[name] = output.detach()
             return hook
         
         self.vis_layer.register_forward_hook(getActivation("vis_layer"))        
@@ -150,7 +150,7 @@ class autoencoder(LightningModule):
             else:
                 image = inputs["HSI"]
             pred = self(image)
-            epoch_activations.append(self.activation["vis_layer"].cpu())
+            epoch_activations.append(self.vis_activation["vis_layer"].cpu())
 
         #Create a single array
         epoch_labels = np.concatenate(epoch_labels)
@@ -163,7 +163,7 @@ class autoencoder(LightningModule):
             print("Comet logger failed: {}".format(e))
             
         #reset activations
-        self.activation = {}
+        self.vis_activation = {}
                 
 def find_outliers(annotations, config, data_dir, comet_logger=None):
     """Train a deep autoencoder and remove input samples that cannot be recovered"""
@@ -216,7 +216,7 @@ def find_outliers(annotations, config, data_dir, comet_logger=None):
         else:
             image = inputs["HSI"]
         pred = m(image)
-        epoch_activations.append(m.activation["vis_layer"].cpu())
+        epoch_activations.append(m.vis_activation["vis_layer"].cpu())
 
     #Create a single array
     epoch_activations = np.concatenate(epoch_activations) 
