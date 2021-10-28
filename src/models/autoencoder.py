@@ -135,45 +135,45 @@ class autoencoder(LightningModule):
 
         return {'optimizer':optimizer,"monitor":'val_loss'}
 
-    def on_epoch_end(self):
-        """At the end of each epoch trigger the dataset to collect intermediate activation for plotting"""
-        #plot 2d projection layer
-        epoch_labels = []
-        vis_epoch_activations = []
-        encoder_epoch_activations = []
+    #def on_epoch_end(self):
+        #"""At the end of each epoch trigger the dataset to collect intermediate activation for plotting"""
+        ##plot 2d projection layer
+        #epoch_labels = []
+        #vis_epoch_activations = []
+        #encoder_epoch_activations = []
         
-        for batch in self.train_dataloader():
-            individual, inputs, label = batch
-            epoch_labels.append(label)
-            #trigger activation hook
-            if next(self.parameters()).is_cuda:
-                image = inputs["HSI"].cuda()
-            else:
-                image = inputs["HSI"]
-            pred = self(image)
-            vis_epoch_activations.append(self.vis_activation["vis_layer"].cpu())
-            encoder_epoch_activations.append(self.vis_activation["encoder_block3"].cpu())
+        #for batch in self.train_dataloader():
+            #individual, inputs, label = batch
+            #epoch_labels.append(label)
+            ##trigger activation hook
+            #if next(self.parameters()).is_cuda:
+                #image = inputs["HSI"].cuda()
+            #else:
+                #image = inputs["HSI"]
+            #pred = self(image)
+            #vis_epoch_activations.append(self.vis_activation["vis_layer"].cpu())
+            #encoder_epoch_activations.append(self.vis_activation["encoder_block3"].cpu())
 
-        #Create a single array
-        epoch_labels = np.concatenate(epoch_labels)
-        vis_epoch_activations = torch.tensor(np.concatenate(vis_epoch_activations))
-        encoder_epoch_activations = torch.tensor(np.concatenate(encoder_epoch_activations))
+        ##Create a single array
+        #epoch_labels = np.concatenate(epoch_labels)
+        #vis_epoch_activations = torch.tensor(np.concatenate(vis_epoch_activations))
+        #encoder_epoch_activations = torch.tensor(np.concatenate(encoder_epoch_activations))
         
-        layerplot_vis = visualize.plot_2d_layer(vis_epoch_activations, epoch_labels)
-        try:
-            self.logger.experiment.log_figure(figure=layerplot_vis, figure_name="2d_vis_projection", step=self.current_epoch)
-        except Exception as e:
-            print("Comet logger failed: {}".format(e))
+        #layerplot_vis = visualize.plot_2d_layer(vis_epoch_activations, epoch_labels)
+        #try:
+            #self.logger.experiment.log_figure(figure=layerplot_vis, figure_name="2d_vis_projection", step=self.current_epoch)
+        #except Exception as e:
+            #print("Comet logger failed: {}".format(e))
             
-        layerplot_encoder = visualize.plot_2d_layer(encoder_epoch_activations, epoch_labels, use_pca=True)
-        try:
-            self.logger.experiment.log_figure(figure=layerplot_encoder, figure_name="2d_encoder_projection", step=self.current_epoch)
-        except Exception as e:
-            print("Comet logger failed: {}".format(e))
+        #layerplot_encoder = visualize.plot_2d_layer(encoder_epoch_activations, epoch_labels, use_pca=True)
+        #try:
+            #self.logger.experiment.log_figure(figure=layerplot_encoder, figure_name="2d_encoder_projection", step=self.current_epoch)
+        #except Exception as e:
+            #print("Comet logger failed: {}".format(e))
                 
-        #reset activations
-        self.vis_epoch_activations = {}
-        self.encoder_epoch_activations = {}
+        ##reset activations
+        #self.vis_epoch_activations = {}
+        #self.encoder_epoch_activations = {}
         
 def find_outliers(annotations, config, data_dir, comet_logger=None):
     """Train a deep autoencoder and identify outliers based on a quantile threshold"""
