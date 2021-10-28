@@ -145,7 +145,6 @@ class autoencoder(LightningModule):
             individual, inputs, label = batch
             epoch_labels.append(label)
             #trigger activation hook
-            print("current device is:".format(self.device))
             if next(self.parameters()).is_cuda:
                 image = inputs["HSI"].cuda()
             else:
@@ -159,7 +158,7 @@ class autoencoder(LightningModule):
         
         layerplot = visualize.plot_2d_layer(epoch_activations, epoch_labels)
         try:
-            self.logger.experiment.log_figure(figure=layerplot, name="2d_projection", step=self.current_epoch)
+            self.logger.experiment.log_figure(figure=layerplot, figure_name="2d_projection", step=self.current_epoch)
         except Exception as e:
             print("Comet logger failed: {}".format(e))
             
