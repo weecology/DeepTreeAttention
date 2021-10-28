@@ -151,7 +151,7 @@ class autoencoder(LightningModule):
             else:
                 image = inputs["HSI"]
             pred = self(image)
-            epoch_activations.append(self.activation["vis_layer"])
+            epoch_activations.append(self.activation["vis_layer"].cpu())
 
         #Create a single array
         epoch_labels = np.concatenate(epoch_labels)
@@ -217,7 +217,7 @@ def find_outliers(annotations, config, data_dir, comet_logger=None):
         else:
             image = inputs["HSI"]
         pred = m(image)
-        epoch_activations.append(m.activation["vis_layer"])
+        epoch_activations.append(m.activation["vis_layer"].cpu())
 
     #Create a single array
     epoch_activations = np.concatenate(epoch_activations) 
