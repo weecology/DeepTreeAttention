@@ -86,14 +86,13 @@ def n_colors(n):
         colors.append(color)
     return colors 
     
-def plot_2d_layer(features, labels=None):
+def plot_2d_layer(features, labels=None, pca=False):
     """Given a 2D tensor array and a list of labels, plot and optionally color"""
     colors = n_colors(n = len(np.unique(labels)))
     features = pd.DataFrame(features, columns=["a","b"])
     features["label"] = labels
     features["color"] = features.label.apply(lambda x: colors[x])
     
-    features.plot.scatter(x="a",y="b",color=features.color)
-    plt.legend(np.unique(labels), loc='upper right')
+    plt = features.plot.scatter(x="a",y="b",color=features.color)
     
     return plt
