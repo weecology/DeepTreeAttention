@@ -27,6 +27,7 @@ def config():
     config["epochs"] = 1
     config["bands"] = 3
     config["outlier_threshold"] = 0.5
+    config["batch_size"] = 2
     
     return config
 

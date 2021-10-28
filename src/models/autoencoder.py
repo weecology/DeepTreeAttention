@@ -6,6 +6,7 @@ from torch import optim
 from src.models.Hang2020 import conv_module
 from src import visualize
 from src import data
+import numpy as np
 from pytorch_lightning import LightningModule, Trainer
 import pandas as pd
 from tempfile import gettempdir
@@ -54,7 +55,7 @@ class autoencoder(LightningModule):
         self.encoder_block3 = encoder_block(in_channels=32, filters=16, pool=True)
         
         #2D projection layer for visualization hook
-        self.vis_layer = nn.Linear(in_features=16, out_features=2)
+        self.vis_layer = nn.Linear(in_features=1936, out_features=2)
         
         #Decoder
         self.decoder_block1 = decoder_block(in_channels=16, filters=32)
@@ -72,7 +73,7 @@ class autoencoder(LightningModule):
                 self.activation[name] = output.detach()
             return hook
         
-        self.vis_layer.register_backward_hook(getActivation("vis_layer"))        
+        self.vis_layer.register_forward_hook(getActivation("vis_layer"))        
 
     def forward(self, x):
         x = self.encoder_block1(x)
@@ -80,7 +81,8 @@ class autoencoder(LightningModule):
         x = self.encoder_block3(x)
         
         #vis layer projection
-        y = self.vis_layer(x)
+        y = x.view(-1, 16*11*11)
+        y = self.vis_layer(y)
 
         x = self.decoder_block1(x)
         x = self.decoder_block2(x)
@@ -92,7 +94,7 @@ class autoencoder(LightningModule):
         """Train on a loaded dataset
         """
         #allow for empty data if data augmentation is generated
-        individual, inputs = batch
+        individual, inputs, labels = batch
         images = inputs["HSI"]
         y_hat = self.forward(images)
         loss = F.mse_loss(y_hat, images)    
@@ -100,7 +102,7 @@ class autoencoder(LightningModule):
         return loss
     
     def predict_step(self, batch, batch_idx):
-        individual, inputs = batch
+        individual, inputs, labels = batch
         images = inputs["HSI"]     
         losses = []
         for image in images:
@@ -112,7 +114,7 @@ class autoencoder(LightningModule):
         return pd.DataFrame({"individual":individual, "loss":losses})
     
     def train_dataloader(self):
-        ds = data.TreeDataset(csv_file = self.csv_file, config=self.config, HSI=True, metadata=False, train=False)
+        ds = data.TreeDataset(csv_file = self.csv_file, config=self.config, HSI=True, metadata=False, train=True)
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],
@@ -123,7 +125,7 @@ class autoencoder(LightningModule):
         return data_loader
     
     def predict_dataloader(self):
-        ds = data.TreeDataset(csv_file = self.csv_file.format(self.data_dir), config=self.config, HSI=True, metadata=False, train=False)
+        ds = data.TreeDataset(csv_file = self.csv_file.format(self.data_dir), config=self.config, HSI=True, metadata=False, train=True)
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],
@@ -137,15 +139,31 @@ class autoencoder(LightningModule):
         optimizer = optim.Adam(self.parameters(), lr=self.config["lr"])
 
         return {'optimizer':optimizer,"monitor":'val_loss'}
-    
+
     def on_epoch_end(self):
+        """At the end of each epoch trigger the dataset to collect intermediate activation for plotting"""
         #plot 2d projection layer
-        layerplot = visualize.plot_2d_layer(self.activation)
+        epoch_labels = []
+        epoch_activations = []
+        for batch in self.train_dataloader():
+            individual, inputs, label = batch
+            epoch_labels.append(label)
+            #trigger activation hook
+            pred = self(inputs["HSI"])
+            epoch_activations.append(self.activation["vis_layer"])
+        
+        #Create a single array
+        epoch_labels = np.concatenate(epoch_labels)
+        epoch_activations = np.concatenate(epoch_activations) 
+        
+        layerplot = visualize.plot_2d_layer(epoch_activations, epoch_labels)
         try:
             self.logger.experiment.log_figure(figure=layerplot, name="2d_projection", step=self.current_epoch)
         except Exception as e:
             print("Comet logger failed: {}".format(e))
             
+        #reset activations
+        self.activation = {}
         
 def find_outliers(csv_file, config, data_dir, comet_logger=None):
     """Train a deep autoencoder and remove input samples that cannot be recovered"""
