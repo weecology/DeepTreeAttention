@@ -24,7 +24,7 @@ def config():
     config["megaplot_dir"] = None
     config["gpus"] = 0
     config["fast_dev_run"] = False
-    config["epochs"] = 1
+    config["autoencoder_epochs"] = 1
     config["bands"] = 3
     config["outlier_threshold"] = 0.5
     config["batch_size"] = 2
@@ -44,7 +44,8 @@ def test_autoencoder(config):
     assert output.shape == image.shape
     
 def test_find_outliers(config):
-    prediction = autoencoder.find_outliers(csv_file="{}/tests/data/processed/train.csv".format(ROOT), data_dir="{}/tests/data/".format(ROOT), config=config)
+    df = pd.read_csv("{}/tests/data/processed/train.csv".format(ROOT))
+    prediction = autoencoder.find_outliers(annotations=df, data_dir="{}/tests/data/".format(ROOT), config=config)
     assert all(prediction.columns == ["individual","loss"])
 
     

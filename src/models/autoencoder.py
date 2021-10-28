@@ -161,10 +161,22 @@ class autoencoder(LightningModule):
         #reset activations
         self.activation = {}
         
-def find_outliers(csv_file, config, data_dir, comet_logger=None):
+def find_outliers(annotations, config, data_dir, comet_logger=None):
     """Train a deep autoencoder and remove input samples that cannot be recovered"""
     #For each species train and predict
-    m = autoencoder(csv_file=csv_file, config=config, bands = config["bands"], data_dir=data_dir)
+    
+    #Store class labels
+    unique_species_labels = annotations.taxonID.unique()
+    
+    #Taxon to ID dict and the reverse    
+    species_label_dict = {}
+    for index, taxonID in enumerate(unique_species_labels):
+        species_label_dict[taxonID] = index
+    
+    annotations["label"] = annotations.taxonID.apply(lambda x: species_label_dict[x])
+    fname = "{}/interim/before_outlier.csv".format(data_dir)
+    annotations.to_csv(fname)
+    m = autoencoder(csv_file=fname, config=config, bands = config["bands"], data_dir=data_dir)
     
     trainer = Trainer(
         gpus=config["gpus"],
