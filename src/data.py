@@ -376,6 +376,7 @@ class TreeData(LightningDataModule):
             )
                        
             #Filter outliers
+            annotations = annotations.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_test_samples"])
             annotations.to_csv("data/interim/before_outlier_removal.csv".format(self.data_dir))
             
             outliers = autoencoder.find_outliers(

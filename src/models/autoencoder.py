@@ -4,10 +4,12 @@ import torch
 import torch.nn as nn
 from torch import optim
 from src.models.Hang2020 import conv_module
+from src import visualize
 from src import data
 from pytorch_lightning import LightningModule, Trainer
 import pandas as pd
 from tempfile import gettempdir
+
 
 class encoder_block(nn.Module):
     def __init__(self, in_channels, filters, maxpool_kernel=None, pool=False):
@@ -36,6 +38,8 @@ class decoder_block(nn.Module):
         
         return x
 
+
+
 class autoencoder(LightningModule):
     def __init__(self, csv_file, bands, config, data_dir):
         super(autoencoder, self).__init__()    
@@ -49,15 +53,34 @@ class autoencoder(LightningModule):
         self.encoder_block2 = encoder_block(in_channels=64, filters=32, pool=True)
         self.encoder_block3 = encoder_block(in_channels=32, filters=16, pool=True)
         
+        #2D projection layer for visualization hook
+        self.vis_layer = nn.Linear(in_features=16, out_features=2)
+        
         #Decoder
         self.decoder_block1 = decoder_block(in_channels=16, filters=32)
         self.decoder_block2 = decoder_block(in_channels=32, filters=64)
         self.decoder_block3 = decoder_block(in_channels=64, filters=bands)
+        
+        #Visualization
+        # a dict to store the activations        
+        self.activation = {}
+        def getActivation(name):
+            # the hook signature
+            def hook(model, input, output):
+                print("I am a hook")
+                print("The shape of this layer is {}".format(output.shape))
+                self.activation[name] = output.detach()
+            return hook
+        
+        self.vis_layer.register_backward_hook(getActivation("vis_layer"))        
 
     def forward(self, x):
         x = self.encoder_block1(x)
         x = self.encoder_block2(x)
         x = self.encoder_block3(x)
+        
+        #vis layer projection
+        y = self.vis_layer(x)
 
         x = self.decoder_block1(x)
         x = self.decoder_block2(x)
@@ -115,35 +138,34 @@ class autoencoder(LightningModule):
 
         return {'optimizer':optimizer,"monitor":'val_loss'}
     
+    def on_epoch_end(self):
+        #plot 2d projection layer
+        layerplot = visualize.plot_2d_layer(self.activation)
+        try:
+            self.logger.experiment.log_figure(figure=layerplot, name="2d_projection", step=self.current_epoch)
+        except Exception as e:
+            print("Comet logger failed: {}".format(e))
+            
+        
 def find_outliers(csv_file, config, data_dir, comet_logger=None):
     """Train a deep autoencoder and remove input samples that cannot be recovered"""
     #For each species train and predict
-    df = pd.read_csv(csv_file)
-    tmpdir = gettempdir()
-    predictions = []
-    for name, group in df.groupby("taxonID"):
-        fname = "{}/{}.csv".format(tmpdir, name)
-        group.to_csv(fname)
-        m = autoencoder(csv_file=fname, config=config, bands = config["bands"], data_dir=data_dir)
-        trainer = Trainer(
-            gpus=config["gpus"],
-            fast_dev_run=config["fast_dev_run"],
-            max_epochs=config["autoencoder_epochs"],
-            accelerator=config["accelerator"],
-            checkpoint_callback=False,
-            logger=comet_logger)
-        
-        if comet_logger:
-            with comet_logger.experiment.context_manager("{}_autoencoder".format(name)):
-                trainer.fit(model=m)
-        else:
-            trainer.fit(model=m)
+    m = autoencoder(csv_file=csv_file, config=config, bands = config["bands"], data_dir=data_dir)
+    
+    trainer = Trainer(
+        gpus=config["gpus"],
+        fast_dev_run=config["fast_dev_run"],
+        max_epochs=config["autoencoder_epochs"],
+        accelerator=config["accelerator"],
+        checkpoint_callback=False,
+        logger=comet_logger)
+    
+    trainer.fit(model=m)
             
-        prediction = trainer.predict(m)
-        predictions.append(pd.concat(prediction))
-    predictions = pd.concat(predictions)
+    prediction = trainer.predict(m)
+    predictions = pd.concat(prediction)
             
-    #remove lowest quantile
+    #remove lowest quantile        
     predictions.to_csv("{}/interim/reconstruction_error.csv".format(data_dir))
     threshold = predictions.loss.quantile(config["outlier_threshold"])
     print("Reconstruction threshold is {}".format(threshold))
