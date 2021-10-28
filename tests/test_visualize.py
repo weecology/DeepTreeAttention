@@ -80,9 +80,9 @@ def test_confusion_matrix(dm, m, experiment):
 def test_plot_2d_layer_2D():
     features = torch.randn(20,2)    
     labels = torch.randint(0, 10, (20,))
-    plot1 = visualize.plot_2d_layer(features, labels=labels, use_tsne=False)
+    plot1 = visualize.plot_2d_layer(features, labels=labels, use_pca=False)
     
-def test_plot_2d_layer_TSNE():
-    features = torch.randn(20,10)    
+def test_plot_2d_layer_pca():
+    features = torch.randn(20,8,10,10)    
     labels = torch.randint(0, 10, (20,))
-    plot1 = visualize.plot_2d_layer(features, labels=labels, use_tsne=True)
+    plot1 = visualize.plot_2d_layer(features, labels=labels, use_pca=True)

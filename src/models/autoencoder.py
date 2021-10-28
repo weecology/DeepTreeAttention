@@ -9,8 +9,6 @@ from src import data
 import numpy as np
 from pytorch_lightning import LightningModule, Trainer
 import pandas as pd
-from tempfile import gettempdir
-
 
 class encoder_block(nn.Module):
     def __init__(self, in_channels, filters, maxpool_kernel=None, pool=False):
@@ -70,6 +68,7 @@ class autoencoder(LightningModule):
             return hook
         
         self.vis_layer.register_forward_hook(getActivation("vis_layer"))        
+        self.encoder_block3.register_forward_hook(getActivation("encoder_block3"))        
 
     def forward(self, x):
         x = self.encoder_block1(x)
@@ -140,7 +139,9 @@ class autoencoder(LightningModule):
         """At the end of each epoch trigger the dataset to collect intermediate activation for plotting"""
         #plot 2d projection layer
         epoch_labels = []
-        epoch_activations = []
+        vis_epoch_activations = []
+        encoder_epoch_activations = []
+        
         for batch in self.train_dataloader():
             individual, inputs, label = batch
             epoch_labels.append(label)
@@ -150,23 +151,32 @@ class autoencoder(LightningModule):
             else:
                 image = inputs["HSI"]
             pred = self(image)
-            epoch_activations.append(self.vis_activation["vis_layer"].cpu())
+            vis_epoch_activations.append(self.vis_activation["vis_layer"].cpu())
+            encoder_epoch_activations.append(self.vis_activation["encoder_block3"].cpu())
 
         #Create a single array
         epoch_labels = np.concatenate(epoch_labels)
-        epoch_activations = np.concatenate(epoch_activations) 
+        vis_epoch_activations = torch.tensor(np.concatenate(vis_epoch_activations))
+        encoder_epoch_activations = torch.tensor(np.concatenate(encoder_epoch_activations))
         
-        layerplot = visualize.plot_2d_layer(epoch_activations, epoch_labels)
+        layerplot_vis = visualize.plot_2d_layer(vis_epoch_activations, epoch_labels)
         try:
-            self.logger.experiment.log_figure(figure=layerplot, figure_name="2d_projection", step=self.current_epoch)
+            self.logger.experiment.log_figure(figure=layerplot_vis, figure_name="2d_vis_projection", step=self.current_epoch)
         except Exception as e:
             print("Comet logger failed: {}".format(e))
             
-        #reset activations
-        self.vis_activation = {}
+        layerplot_encoder = visualize.plot_2d_layer(encoder_epoch_activations, epoch_labels, use_pca=True)
+        try:
+            self.logger.experiment.log_figure(figure=layerplot_encoder, figure_name="2d_encoder_projection", step=self.current_epoch)
+        except Exception as e:
+            print("Comet logger failed: {}".format(e))
                 
+        #reset activations
+        self.vis_epoch_activations = {}
+        self.encoder_epoch_activations = {}
+        
 def find_outliers(annotations, config, data_dir, comet_logger=None):
-    """Train a deep autoencoder and remove input samples that cannot be recovered"""
+    """Train a deep autoencoder and identify outliers based on a quantile threshold"""
     #For each species train and predict
     
     #Store class labels
