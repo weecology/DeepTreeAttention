@@ -23,9 +23,11 @@ def config():
     config["convert_h5"] = False
     config["megaplot_dir"] = None
     config["gpus"] = 0
-    config["fast_dev_run"] = True
+    config["fast_dev_run"] = False
+    config["epochs"] = 1
     config["bands"] = 3
     config["outlier_threshold"] = 0.5
+    config["batch_size"] = 2
     
     return config
 

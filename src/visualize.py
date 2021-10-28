@@ -78,4 +78,22 @@ def confusion_matrix(comet_experiment, results, species_label_dict, test_csv, te
         results.pred_label.values,
         labels=list(species_label_dict.keys()),
         max_categories=len(species_label_dict.keys()))
+
+def n_colors(n):
+    colors = []
+    for x in range(n):
+        color = list(np.random.choice(range(256), size=3)/255)
+        colors.append(color)
+    return colors 
     
+def plot_2d_layer(features, labels=None):
+    """Given a 2D tensor array and a list of labels, plot and optionally color"""
+    colors = n_colors(n = len(np.unique(labels)))
+    features = pd.DataFrame(features, columns=["a","b"])
+    features["label"] = labels
+    features["color"] = features.label.apply(lambda x: colors[x])
+    
+    features.plot.scatter(x="a",y="b",color=features.color)
+    plt.legend(np.unique(labels), loc='upper right')
+    
+    return plt
