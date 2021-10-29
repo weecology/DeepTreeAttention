@@ -107,7 +107,7 @@ class autoencoder(LightningModule):
         autoencoder_yhat, classification_yhat = self.forward(images) 
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
         classification_loss = F.cross_entropy(classification_yhat, labels)
-        loss = autoencoder_loss + classification_loss
+        loss = autoencoder_loss + (classification_loss * 0.1)
         
         softmax_prob = F.softmax(classification_yhat, dim =1)
         output = self.metrics(softmax_prob, labels) 
