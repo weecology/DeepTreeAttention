@@ -28,6 +28,7 @@ def config():
     config["bands"] = 3
     config["outlier_threshold"] = 0.5
     config["batch_size"] = 2
+    config["top_k"] = 1
     
     return config
 
@@ -38,10 +39,13 @@ def test_conv_module():
     assert output.shape == (20,32,11,11)
 
 def test_autoencoder(config):
-    m = autoencoder.autoencoder(csv_file="{}/tests/data/train.csv".format(ROOT), bands=369, config=config, data_dir="{}/tests/".format(ROOT))
-    image = torch.randn(20, 369, 11, 11)
-    output = m(image)    
-    assert output.shape == image.shape
+    m = autoencoder.autoencoder(csv_file="{}/tests/data/train.csv".format(ROOT), classes=10, bands=369, config=config, data_dir="{}/tests/".format(ROOT))
+    images = torch.randn(20, 369, 11, 11)
+    labels = torch.randint(0, 10, (20,))
+    
+    autoencoder_output, classification_output = m(images)    
+    assert autoencoder_output.shape == images.shape
+    assert classification_output.shape == (20, 10)
     
 def test_find_outliers(config):
     df = pd.read_csv("{}/tests/data/processed/train.csv".format(ROOT))
