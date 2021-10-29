@@ -10,6 +10,7 @@ import numpy as np
 from pytorch_lightning import LightningModule, Trainer
 import pandas as pd
 import torchmetrics
+from matplotlib import pyplot as plt
 
 
 class encoder_block(nn.Module):
@@ -77,7 +78,7 @@ class autoencoder(LightningModule):
         micro_recall = torchmetrics.Accuracy(average="micro")
         macro_recall = torchmetrics.Accuracy(average="macro", num_classes=classes)
         top_k_recall = torchmetrics.Accuracy(average="micro",top_k=self.config["top_k"])
-        self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall,"Macro Accuracy":macro_recall,"Top {} Accuracy".format(self.config["top_k"]): top_k_recall})
+        self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall,"Macro Accuracy":macro_recall,"Top {} Accuracy".format(self.config["top_k"]): top_k_recall}, prefix="autoencoder")
 
     def forward(self, x):
         x = self.encoder_block1(x)
@@ -110,7 +111,7 @@ class autoencoder(LightningModule):
         
         softmax_prob = F.softmax(classification_yhat, dim =1)
         output = self.metrics(softmax_prob, labels) 
-        self.log_dict(output, on_epoch=True)
+        self.log_dict(output, on_epoch=True, on_step=False)
         
         return loss
         
@@ -253,7 +254,8 @@ def find_outliers(annotations, config, data_dir, comet_logger=None):
     
     #color by outlier status
     outlier_color = [(x in outliers.individual.values)*1 for x in individuals]
-    layerplot = visualize.plot_2d_layer(epoch_activations, outlier_color)   
+    layerplot = visualize.plot_2d_layer(epoch_activations, outlier_color)
+    plt.legend(["Inlier","Outlier"], loc='upper left')
     
     if comet_logger:
         comet_logger.experiment.log_figure(figure = layerplot, figure_name = "outliers.png")

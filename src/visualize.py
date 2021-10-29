@@ -114,4 +114,4 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True):
         features["label"] = labels
         features["color"] = features.label.apply(lambda x: colors[x])
         
-        features.plot.scatter(x="a",y="b",color=features.color, alpha=0.75)
+        features.plot.scatter(x="a",y="b",color=features.color, alpha=0.75)        
