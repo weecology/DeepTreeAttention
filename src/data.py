@@ -379,7 +379,7 @@ class TreeData(LightningDataModule):
             individualIDs = np.concatenate([train_annotations.individualID.unique(), test_annotations.individualID.unique()])
             novel = annotations[~annotations.individualID.isin(individualIDs)]
             novel = novel[~novel.taxonID.isin(np.concatenate([train_annotations.taxonID.unique(), test_annotations.taxonID.unique()]))]
-            novel.to_file("{}/processed/novel_species.shp".format(self.data_dir))
+            novel.to_csv("{}/processed/novel_species.csv".format(self.data_dir))
             
             #Store class labels
             unique_species_labels = np.concatenate([train_annotations.taxonID.unique(), test_annotations.taxonID.unique()])
