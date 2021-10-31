@@ -24,10 +24,20 @@ class simulation_data(LightningDataModule):
         
     def download_mnist(self):
         pass
+    
     def sample_mnist(self):
         pass
-    def corrupt(self):
+    
+    def add_noise(self):
         pass
+    
+    def swap_labels(self):
+        pass
+    
+    def corrupt(self, df):
+        df = self.add_noise(df)
+        df = self.swap_labels(df)
+    
     def split_train_test(self):
         pass
     
@@ -90,6 +100,9 @@ class simulator():
     
     def outlier_detection(df, true_state):
         """How many of the noise data are currently labeled as outliers"""
+        pass
+    
+    def label_switching(df, true_state):
         pass
     
     def evaluate(self):
