@@ -1,0 +1,12 @@
+#simulation config
+batch_size: 128
+workers: 10
+
+#Comet dashboard
+comet_workspace: bw4sz
+
+#Training
+gpus: 0
+fast_dev_run: False
+accelerator: dp
+epochs: 10
