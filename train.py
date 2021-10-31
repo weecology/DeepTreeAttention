@@ -94,7 +94,7 @@ comet_logger.experiment.log_table("train_features.csv", train_features)
 
 #Novel species prediction, get scores
 novel.to_csv("data/interim/novel.csv")
-novel_prediction = metrics.novel_prediction(model=m, csv_file="data/interim/novel.csv", config=config)
+novel_prediction = metrics.novel_prediction(model=m, csv_file="data/interim/novel.csv", config=data_module.config)
 comet_logger.experiment.log_table("novel_prediction.csv", novel_prediction)
 mean_novel_prediction = novel_prediction.softmax_score.mean()
 comet_logger.experiment.log_metric(name="Mean unknown species softmax score", value=mean_novel_prediction)
