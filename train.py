@@ -15,9 +15,9 @@ import pandas as pd
 from pandas.util import hash_pandas_object
 
 #Create datamodule
-#client = start_cluster.start(cpus=50, mem_size="5GB")
-client = None
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client, metadata=True)
+client = start_cluster.start(cpus=50, mem_size="5GB")
+#client = None
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client, metadata=True)
 data_module.setup()
 comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
 if client:
@@ -94,7 +94,7 @@ comet_logger.experiment.log_table("train_features.csv", train_features)
 
 #Novel species prediction, get scores
 novel.to_csv("data/interim/novel.csv")
-novel_prediction = metrics.novel_prediction(model=m, csv_file="data/interim/novel.csv")
+novel_prediction = metrics.novel_prediction(model=m, csv_file="data/interim/novel.csv", config=config)
 comet_logger.experiment.log_table("novel_prediction.csv", novel_prediction)
 mean_novel_prediction = novel_prediction.softmax_score.mean()
 comet_logger.experiment.log_metric(name="Mean unknown species softmax score", value=mean_novel_prediction)
