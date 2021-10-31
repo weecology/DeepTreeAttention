@@ -13,8 +13,6 @@ min_stem_diameter: 10
 min_train_samples: 10
 min_test_samples: 4
 
-#The proportion of plotIDs to use test
-test_fraction: 0.1
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
 iterations: 200
 #minimum CHM height, leave blank to skip CHM filtering
@@ -27,17 +25,13 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation
 convert_h5: True
+replace: True
+new_train_test_split: False
 #Directoy to store cropped images from crowns
 crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/year_crops/
 
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
-
-#Resampling
-#Minimum number of samples per species, all samples under this floor will have same sampling probability
-resample_min: 50
-#maximum resample per species, all species above this threshold will have the same sampling probability
-resample_max: 500
 
 #Network Parameters
 gpus: 1

@@ -158,7 +158,6 @@ def train_test_split(shp, config, client = None):
                 ties.append([train, test])          
     else:
         for x in np.arange(config["iterations"]):
-            np.random.seed(1)            
             train, test = sample_plots(shp, min_train_samples=config["min_train_samples"], min_test_samples=config["min_test_samples"])
             if test.taxonID.nunique() > test_species:
                 print("Selected test has {} points and {} species".format(test.shape[0], test.taxonID.nunique()))
@@ -293,7 +292,7 @@ class TreeData(LightningDataModule):
     The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
     Use regenerate=True to override this behavior in setup()
     """
-    def __init__(self, csv_file, HSI=True, metadata=False, regenerate = False, client = None, config=None, data_dir=None):
+    def __init__(self, csv_file, HSI=True, metadata=False, regenerate = False, client = None, config=None, data_dir=None, comet_logger=None):
         """
         Args:
             config: optional config file to override
@@ -306,6 +305,7 @@ class TreeData(LightningDataModule):
         self.csv_file = csv_file
         self.HSI = HSI
         self.metadata = metadata
+        self.comet_logger = comet_logger
         
         #default training location
         self.client = client
@@ -324,44 +324,45 @@ class TreeData(LightningDataModule):
     def setup(self,stage=None):
         #Clean data from raw csv, regenerate from scratch or check for progress and complete
         if self.regenerate:
-            #remove any previous runs
-            try:
-                os.remove("{}/processed/test_points.shp".format(self.data_dir))
-                os.remove(" ".format(self.data_dir))
-                os.remove("{}/processed/filtered_data.csv".format(self.data_dir))
-                os.remove("{}/processed/train_crowns.shp".format(self.data_dir))
-                for x in glob.glob(self.config["crop_dir"]):
-                    os.remove(x)
-            except:
-                pass
+            if self.config["replace"]:#remove any previous runs
+                try:
+                    os.remove("{}/processed/canopy_points.shp".format(self.data_dir))
+                    os.remove(" ".format(self.data_dir))
+                    os.remove("{}/processed/crowns.shp".format(self.data_dir))
+                    for x in glob.glob(self.config["crop_dir"]):
+                        os.remove(x)
+                except:
+                    pass
+                    
+                #Convert raw neon data to x,y tree locatins
+                df = filter_data(self.csv_file, config=self.config)
                 
-            #Convert raw neon data to x,y tree locatins
-            df = filter_data(self.csv_file, config=self.config)
-            
-            #load any megaplot data
-            if not self.config["megaplot_dir"] is None:
-                megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], rgb_pool=self.config["rgb_sensor_pool"], client = self.client, config=self.config)
-                #don't add species from contrib data (?) https://github.com/weecology/DeepTreeAttention/issues/65
-                megaplot_data = megaplot_data[megaplot_data.taxonID.isin(df.taxonID.unique())]
-                df = pd.concat([megaplot_data, df])
+                #load any megaplot data
+                if not self.config["megaplot_dir"] is None:
+                    megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], rgb_pool=self.config["rgb_sensor_pool"], client = self.client, config=self.config)
+                    #don't add species from contrib data (?) https://github.com/weecology/DeepTreeAttention/issues/65
+                    megaplot_data = megaplot_data[megaplot_data.taxonID.isin(df.taxonID.unique())]
+                    df = pd.concat([megaplot_data, df])
+                    
+                #DEBUG, just one site
+                #df = df[df.siteID=="HARV"]
                 
-            #DEBUG, just one site
-            #df = df[df.siteID=="HARV"]
-            
-            #Filter points based on LiDAR height
-            df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
-            df.to_file("{}/processed/canopy_points.shp".format(self.data_dir))
-            
-            #Create crown data
-            crowns = generate.points_to_crowns(
-                field_data="{}/processed/canopy_points.shp".format(self.data_dir),
-                rgb_dir=self.config["rgb_sensor_pool"],
-                savedir=None,
-                raw_box_savedir=None, 
-                client=self.client
-            )
-            
-            crowns.to_file("{}/processed/crowns.shp".format(self.data_dir))
+                #Filter points based on LiDAR height
+                df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
+                df.to_file("{}/processed/canopy_points.shp".format(self.data_dir))
+                
+                #Create crown data
+                crowns = generate.points_to_crowns(
+                    field_data="{}/processed/canopy_points.shp".format(self.data_dir),
+                    rgb_dir=self.config["rgb_sensor_pool"],
+                    savedir="{}/interim/".format(self.data_dir),
+                    raw_box_savedir=None, 
+                    client=self.client
+                )
+                
+                crowns.to_file("{}/processed/crowns.shp".format(self.data_dir))
+            else:
+                crowns = gpd.read_file("{}/processed/crowns.shp".format(self.data_dir))
             
             annotations = generate.generate_crops(
                 crowns,
@@ -370,11 +371,19 @@ class TreeData(LightningDataModule):
                 convert_h5=self.config["convert_h5"],   
                 rgb_glob=self.config["rgb_sensor_pool"],
                 HSI_tif_dir=self.config["HSI_tif_dir"],
-                client=self.client
+                client=self.client,
+                replace=self.config["replace"]
             )
-                        
-            train_annotations, test_annotations = train_test_split(annotations,config=self.config, client=self.client)   
             
+            if self.config["new_train_test_split"]:
+                train_annotations, test_annotations = train_test_split(annotations,config=self.config, client=self.client)   
+            else:
+                previous_train = pd.read_csv("{}/processed/train.csv".format(self.data_dir))
+                previous_test = pd.read_csv("{}/processed/test.csv".format(self.data_dir))
+                
+                train_annotations = annotations[annotations.individualID.isin(previous_train.individualID)]
+                test_annotations = annotations[annotations.individualID.isin(previous_test.individualID)]
+                
             #capture discarded species
             individualIDs = np.concatenate([train_annotations.individualID.unique(), test_annotations.individualID.unique()])
             novel = annotations[~annotations.individualID.isin(individualIDs)]
