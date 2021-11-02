@@ -1,21 +1,28 @@
 #MNSIT simulation
 from distributed import wait
+import os
+import numpy as np
 from pytorch_lightning.loggers import CometLogger
-from pytorch_lightning import LightningDataModule
+from pytorch_lightning import LightningDataModule, LightningModule
 from pytorch_lightning import Trainer
 from src.data import read_config
 from src import start_cluster
+from src.models.simulation import autoencoder
 import torch
+import torchvision
+import pandas as pd
 from torch.utils.data import Dataset
+
+ROOT = os.path.dirname(os.path.dirname(__file__))
 
 class mnist_dataset(Dataset):
     def __init__(self):
         pass
+    def __getitem__(self):
+        pass
     def __len__(self):
         pass
-    def __getitem__(self, index):
-        pass
-                
+    
 class simulation_data(LightningDataModule):
     """A simulation data module"""
     def __init__(self, config):
@@ -23,8 +30,8 @@ class simulation_data(LightningDataModule):
         self.config = config
         
     def download_mnist(self):
-        pass
-    
+        self.raw_ds = torchvision.datasets.MNIST('{}/data/simulation/', train=True, download=True)                            
+                            
     def sample_mnist(self):
         pass
     
@@ -50,6 +57,8 @@ class simulation_data(LightningDataModule):
         self.train_ds = mnist_dataset(self.train)
         self.val_ds = mnist_dataset(self.test)
         
+        self.num_classes = np.unique(true_state.label)
+        
     def train_dataloader(self):
         data_loader = torch.utils.data.DataLoader(
             self.val_ds,
@@ -71,20 +80,23 @@ class simulation_data(LightningDataModule):
         return data_loader
     
 class simulator():
-    def __init__(self, model, log = True):
+    def __init__(self, config, log = True):
         """Simulation object
         Args:
-            model: a pytorch lightning model to run
             comet_experiment: an optional comet logger 
+            config: path to config.yml
         """
-        self.config = read_config("simulation.yml")
-        self.model = model
+        self.config = read_config(config)
         if log:
             self.comet_experiment = CometLogger(project_name="DeepTreeAttention", workspace=self.config["comet_workspace"],auto_output_logging = "simple")
             self.comet_experiment.experiment.add_tag("simulation")
-        
+    
     def generate_data(self):
         self.data_module = simulation_data(config=self.config)
+        self.data_module.setup()
+    
+    def create_model(self):
+        self.model = autoencoder(bands=1, classes=self.data_module.num_classes, config=self.config)
         
     def train(self):
         #Create trainer
@@ -106,17 +118,17 @@ class simulator():
         pass
     
     def evaluate(self):
-        df = self.model.predict(self.val_ds)
+        df = self.model.predict(self.data_module.val_ds)
         outlier_results = self.outlier_detection(df, self.data_module.true_state)
         label_switching = self.label_switching(df, self.data_module.true_state)
         
         results = pd.concat(list(outlier_results, label_switching))
         return results
         
-    
-def run(ID):
-    sim = simulator()
+def run(ID, config_path):
+    sim = simulator(config_path)    
     sim.generate_data()
+    sim.create_model()
     sim.train()
     results = sim.evaluate()
     results["simulation_id"] = ID
@@ -126,7 +138,7 @@ if __name__ == "__main__":
     client = start_cluster.start(gpus=2)
     futures = []
     for x in range(10):
-        future = client.submit(run, ID=x)
+        future = client.submit(run, ID=x, config_path="simulation.yml")
         futures.append(future)
     wait(futures)
     resultdf = []

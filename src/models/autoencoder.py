@@ -12,7 +12,6 @@ import pandas as pd
 import torchmetrics
 from matplotlib import pyplot as plt
 
-
 class encoder_block(nn.Module):
     def __init__(self, in_channels, filters, maxpool_kernel=None, pool=False):
         super(encoder_block, self).__init__()
@@ -105,6 +104,7 @@ class autoencoder(LightningModule):
         individual, inputs, labels = batch
         images = inputs["HSI"]
         autoencoder_yhat, classification_yhat = self.forward(images) 
+        
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
         classification_loss = F.cross_entropy(classification_yhat, labels)
         loss = autoencoder_loss + (classification_loss * 0.1)
@@ -169,6 +169,7 @@ class autoencoder(LightningModule):
                 image = inputs["HSI"].cuda()
             else:
                 image = inputs["HSI"]
+            
             pred = self(image)
             vis_epoch_activations.append(self.vis_activation["vis_layer"].cpu())
             encoder_epoch_activations.append(self.vis_activation["encoder_block3"].cpu())
