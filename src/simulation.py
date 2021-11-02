@@ -1,6 +1,8 @@
 #MNSIT simulation
+import cv2
 from distributed import wait
 import os
+import glob
 import numpy as np
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning import LightningDataModule, LightningModule
@@ -11,17 +13,26 @@ from src.models.simulation import autoencoder
 import torch
 import torchvision
 import pandas as pd
+from skimage import io
 from torch.utils.data import Dataset
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 
 class mnist_dataset(Dataset):
-    def __init__(self):
-        pass
-    def __getitem__(self):
-        pass
+    """Yield an MNIST instance"""
+    def __init__(self, df):
+        self.annotations = df
+    
+    def __getitem__(self, index):
+        image_path = self.annotations.image_path.loc[index]    
+        image = io.imread(image_path)
+        observed_label = self.annotations.observed_lavel.loc[index]      
+        
+        return image, observed_label        
+        
     def __len__(self):
-        pass
+        self.annotations.shape[0]
+        
     
 class simulation_data(LightningDataModule):
     """A simulation data module"""
@@ -30,34 +41,61 @@ class simulation_data(LightningDataModule):
         self.config = config
         
     def download_mnist(self):
-        self.raw_ds = torchvision.datasets.MNIST('{}/data/simulation/', train=True, download=True)                            
-                            
-    def sample_mnist(self):
-        pass
+        self.raw_ds = torchvision.datasets.MNIST('{}/data/simulation/'.format(ROOT), train=True, download=True)                            
+        
+        #Grab 500 examples and write jpegs and class labels
+        class_labels = {}
+        for x in range(10):
+            class_labels[x] = 0
+        
+        image_paths = []
+        labels = []
+        for x in range(len(self.raw_ds)):
+            image, label = self.raw_ds[x]
+            if class_labels[label] < 500:
+                class_labels[label] = class_labels[label] + 1
+                labels.append(label)
+                fname = "{}/data/simulation/{}_{}".format(ROOT, label,class_labels[label])
+                image_paths.append(fname)
+                image.save('{}.png'.format(fname))
+            
+        df = pd.DataFrame({"image_path":image_paths, "label":labels})
+        
+        return df 
     
-    def add_noise(self):
-        pass
+    def corrupt(self):
+        
+        self.raw_df["true_label"] = self.raw_df["label"]
+        self.raw_df["observed_label"] = self.raw_df["true_label"]
+        
+        novel_set = self.raw_df[self.raw_df.label.isin([8,9])]
+        novel_set = novel_set.groupby("label").apply(lambda x: x.head(self.config["novel_class_examples"]))
+        in_set = self.raw_df[~self.raw_df.label.isin([8,9])]
+        
+        #label swap within in set
+        labels_to_corrupt = in_set.groupby("label").apply(lambda x: x.sample(frac=self.config["proportion_switch"]))
+        labels_to_corrupt["observed_label"] = labels_to_corrupt.label.apply(lambda x: np.random.choice(range(8)))
+        
+        uncorrupted_labels = in_set[~in_set.image_path.isin(labels_to_corrupt.image_path)]
+        corrupted_data = pd.concat([uncorrupted_labels, labels_to_corrupt, novel_set])
+        
+        return corrupted_data
     
-    def swap_labels(self):
-        pass
-    
-    def corrupt(self, df):
-        df = self.add_noise(df)
-        df = self.swap_labels(df)
-    
-    def split_train_test(self):
-        pass
+    def split(self):
+        """Split train/test"""
+        
+        train = self.corrupted_mnist.groupby("observed_label").sample(frac = 0.9)
+        test = self.corrupted_mnist[~self.corrupted_mnist.image_path.isin(train.image_path)]
+        
+        return train, test
     
     def setup(self):
-        self.mnist_data = self.download_mnist()
-        self.true_state = self.sample_mnist(self.mnist_data)
-        self.corrupted_mnist = self.corrupt(self.true_state)
-        self.train, self.test = self.split_train_test(self.corrupted_mnist)
-        
+        self.raw_df = self.download_mnist()
+        self.corrupted_mnist = self.corrupt()   
+        self.train, self.test = self.split()
         self.train_ds = mnist_dataset(self.train)
         self.val_ds = mnist_dataset(self.test)
-        
-        self.num_classes = np.unique(true_state.label)
+        self.num_classes = len(np.unique(self.train.label))
         
     def train_dataloader(self):
         data_loader = torch.utils.data.DataLoader(

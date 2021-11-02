@@ -1,6 +1,8 @@
 #simulation config
 batch_size: 128
 workers: 10
+novel_class_examples: 20
+proportion_switch: 0.1
 
 #Comet dashboard
 comet_workspace: bw4sz
@@ -10,3 +12,5 @@ gpus: 0
 fast_dev_run: False
 accelerator: dp
 epochs: 10
+lr: 0.001
+
