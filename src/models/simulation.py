@@ -49,7 +49,8 @@ class autoencoder(LightningModule):
         self.encoder_block3 = encoder_block(in_channels=32, filters=16, pool=True)
         
         #Classification layer
-        self.vis_layer = nn.Linear(in_features=12544, out_features=2)
+        self.vis_conv1= encoder_block(in_channels=16, filters=8)        
+        self.vis_layer = nn.Linear(in_features=6272, out_features=2)
         self.fc1 = nn.Linear(in_features=2, out_features=classes)
         
         #Decoder
@@ -78,8 +79,9 @@ class autoencoder(LightningModule):
         x = self.encoder_block2(x)
         x = self.encoder_block3(x)
         
-        #vis layer projection
-        y = x.view(-1, 16*28*28)
+        #classification layer projection
+        y = self.vis_conv1(x)
+        y = y.view(-1, 8*28*28)        
         y = self.vis_layer(y)
         y = F.relu(y)
         y = self.fc1(y)
@@ -136,48 +138,6 @@ class autoencoder(LightningModule):
                                                          eps=1e-08)
         
         return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
-    
-
-    def on_train_end(self):
-        """At the end of each epoch trigger the dataset to collect intermediate activation for plotting"""
-        #plot 2d projection layer
-        epoch_labels = []
-        vis_epoch_activations = []
-        encoder_epoch_activations = []
-        
-        for batch in self.train_dataloader():
-            images, observed_labels, true_labels  = batch
-            epoch_labels.append(observed_labels)
-            #trigger activation hook
-            if next(self.parameters()).is_cuda:
-                image = images.cuda()
-            else:
-                image = images
-            
-            pred = self(image)
-            vis_epoch_activations.append(self.vis_activation["vis_layer"].cpu())
-            encoder_epoch_activations.append(self.vis_activation["encoder_block3"].cpu())
-
-        #Create a single array
-        epoch_labels = np.concatenate(epoch_labels)
-        vis_epoch_activations = torch.tensor(np.concatenate(vis_epoch_activations))
-        encoder_epoch_activations = torch.tensor(np.concatenate(encoder_epoch_activations))
-        
-        layerplot_vis = visualize.plot_2d_layer(vis_epoch_activations, epoch_labels)
-        try:
-            self.logger.experiment.log_figure(figure=layerplot_vis, figure_name="2d_vis_projection", step=self.current_epoch)
-        except Exception as e:
-            print("Comet logger failed: {}".format(e))
-            
-        layerplot_encoder = visualize.plot_2d_layer(encoder_epoch_activations, epoch_labels, use_pca=True)
-        try:
-            self.logger.experiment.log_figure(figure=layerplot_encoder, figure_name="2d_encoder_projection", step=self.current_epoch)
-        except Exception as e:
-            print("Comet logger failed: {}".format(e))
-                
-        #reset activations
-        self.vis_epoch_activations = {}
-        self.encoder_epoch_activations = {}
         
         
         

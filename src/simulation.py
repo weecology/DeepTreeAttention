@@ -5,6 +5,7 @@ from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning import LightningDataModule
 from pytorch_lightning import Trainer
 from src.models.simulation import autoencoder
+from src import visualize
 from skimage import io
 import torch
 import torchvision
@@ -69,37 +70,41 @@ class simulation_data(LightningDataModule):
         
         return df 
     
-    def corrupt(self):
+    def corrupt_and_split(self):
+        """Switch labels of some within sample class and add some novel classes"""
         self.raw_df["true_label"] = self.raw_df["label"]
         self.raw_df["observed_label"] = self.raw_df["true_label"]
         
         novel_set = self.raw_df[self.raw_df.label.isin([8,9])]
         novel_set = novel_set.groupby("label").apply(lambda x: x.head(self.config["novel_class_examples"]))
+        novel_set["outlier"] = "novel"
+        
         in_set = self.raw_df[~self.raw_df.label.isin([8,9])]
         
         #label swap within in set
         labels_to_corrupt = in_set.groupby("label").apply(lambda x: x.sample(frac=self.config["proportion_switch"]))
         labels_to_corrupt["observed_label"] = labels_to_corrupt.label.apply(lambda x: np.random.choice(range(8)))
+        labels_to_corrupt["outlier"] = "label_swap"
         
         uncorrupted_labels = in_set[~in_set.image_path.isin(labels_to_corrupt.image_path)]
-        corrupted_data = pd.concat([uncorrupted_labels, labels_to_corrupt, novel_set])
+        uncorrupted_labels["outlier"] = False
         
-        return corrupted_data
-    
-    def split(self):
-        """Split train/test"""
-        train = self.corrupted_mnist.groupby("observed_label").sample(frac = 0.9)
-        test = self.corrupted_mnist[~self.corrupted_mnist.image_path.isin(train.image_path)]
+        self.corrupted_data = pd.concat([uncorrupted_labels, labels_to_corrupt])
+        
+        train = self.corrupted_data.groupby("observed_label").sample(frac = 0.9)
+        test = self.corrupted_data[~self.corrupted_data.image_path.isin(train.image_path)]  
+        
+        #add novel to just test
+        test = pd.concat([test, novel_set])
         
         return train, test
     
     def setup(self, stage=None):
         self.raw_df = self.download_mnist()
-        self.corrupted_mnist = self.corrupt()   
-        self.train, self.test = self.split()
+        self.train, self.test = self.corrupt_and_split()
         self.train_ds = mnist_dataset(self.train)
         self.val_ds = mnist_dataset(self.test)
-        self.num_classes = len(np.unique(self.train.label))
+        self.num_classes = len(np.unique(self.test.label))
         
     def train_dataloader(self):
         data_loader = torch.utils.data.DataLoader(
@@ -120,7 +125,7 @@ class simulation_data(LightningDataModule):
         )
         
         return data_loader
-    
+        
 class simulator():
     def __init__(self, config, log = True):
         """Simulation object
@@ -154,6 +159,49 @@ class simulator():
         
         self.trainer.fit(self.model, datamodule=self.data_module)
     
+    def generate_plots(self):
+        """At the end of each epoch trigger the dataset to collect intermediate activation for plotting"""
+        #plot 2d projection layer
+        epoch_labels = []
+        vis_epoch_activations = []
+        encoder_epoch_activations = []
+        sample_ids = []
+        for batch in self.data_module.val_dataloader():
+            index, images, observed_labels, true_labels  = batch
+            epoch_labels.append(observed_labels)
+            sample_ids.append(index)
+            
+            #trigger activation hook
+            if next(self.model.parameters()).is_cuda:
+                image = images.cuda()
+            else:
+                image = images
+            
+            pred = self.model(image)
+            vis_epoch_activations.append(self.model.vis_activation["vis_layer"].cpu())
+            encoder_epoch_activations.append(self.model.vis_activation["encoder_block3"].cpu())
+
+        #Create a single array
+        epoch_labels = np.concatenate(epoch_labels)
+        vis_epoch_activations = torch.tensor(np.concatenate(vis_epoch_activations))
+        encoder_epoch_activations = torch.tensor(np.concatenate(encoder_epoch_activations))
+        sample_ids = np.concatenate(sample_ids)
+        
+        #look up sample ids
+        outlier_class = self.data_module.test.outlier.loc[sample_ids]
+        
+        #plot different sets
+        layerplot_vis = visualize.plot_2d_layer(vis_epoch_activations, epoch_labels)
+        self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="2d_vis_projection_labels", step=self.current_epoch)        
+        
+        layerplot_vis = visualize.plot_2d_layer(vis_epoch_activations, outlier_class)        
+        self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="2d_vis_projection_labels", step=self.current_epoch)
+
+        layerplot_encoder = visualize.plot_2d_layer(encoder_epoch_activations, epoch_labels, use_pca=True)
+        self.comet_experiment.experiment.log_figure(figure=layerplot_encoder, figure_name="PCA_encoder_projection_labels", step=self.current_epoch)
+        layerplot_encoder = visualize.plot_2d_layer(encoder_epoch_activations, outlier_class, use_pca=True)
+        self.comet_experiment.experiment.log_figure(figure=layerplot_encoder, figure_name="PCA_encoder_projection_outliers", step=self.current_epoch)
+        
     def outlier_detection(self, results):
         """Given a set of predictions, label outliers"""
         threshold = results.autoencoder_loss.quantile(self.config["outlier_threshold"])
