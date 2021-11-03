@@ -8,7 +8,7 @@ proportion_switch: 0.1
 comet_workspace: bw4sz
 
 #Training
-gpus: 0
+gpus: 1
 fast_dev_run: False
 accelerator: dp
 epochs: 50

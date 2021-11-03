@@ -1,20 +1,13 @@
-from src import start_cluster
+import comet_ml
 from src import data
 from src import simulation
-from distributed import wait
 import pandas as pd
 
-client = start_cluster.start(gpus=2)
-futures = []
+resultdf = []
 config = data.read_config("simulation.yml")
 for x in range(10):
-    future = client.submit(simulation.run, ID=x, config=config)
-    futures.append(future)
-wait(futures)
-resultdf = []
-for x in futures:
-    result = x.result()
+    result = simulation.run(ID=x, config=config)
     resultdf.append(result)
-
+    
 resultdf = pd.concat(resultdf)
 resultdf.to_csv("data/processed/simulation.csv")
