@@ -218,6 +218,7 @@ class simulator():
         return pd.DataFrame({"outlier_accuracy": [outlier_accuracy], "outlier_precision": [outlier_precision], "classification_accuracy": [mean_accuracy]})
         
 def run(ID, config):
+    os.environ['SLURM_JOB_NAME'] = 'bash'
     sim = simulator(config)    
     sim.generate_data()
     sim.create_model()
