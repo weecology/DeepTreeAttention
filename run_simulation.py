@@ -5,6 +5,7 @@ import pandas as pd
 
 resultdf = []
 config = data.read_config("simulation.yml")
+
 for x in range(10):
     result = simulation.run(ID=x, config=config)
     resultdf.append(result)
