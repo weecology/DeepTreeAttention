@@ -274,6 +274,7 @@ def run(ID, config):
     sim.generate_data()
     sim.create_model()
     sim.train()
+    sim.generate_plots()
     results = sim.evaluate()
     results["simulation_id"] = ID
     return results
