@@ -1,8 +1,6 @@
 #MNSIT simulation
-import cv2
 from distributed import wait
 import os
-import glob
 import numpy as np
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning import LightningDataModule, LightningModule
@@ -15,6 +13,7 @@ import torchvision
 import pandas as pd
 from skimage import io
 from torch.utils.data import Dataset
+from torch.nn import functional as F
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 
@@ -23,16 +22,21 @@ class mnist_dataset(Dataset):
     def __init__(self, df):
         self.annotations = df
     
-    def __getitem__(self, index):
-        image_path = self.annotations.image_path.loc[index]    
-        image = io.imread(image_path)
-        observed_label = self.annotations.observed_lavel.loc[index]      
-        
-        return image, observed_label        
-        
     def __len__(self):
-        self.annotations.shape[0]
+        return self.annotations.shape[0]
         
+    def __getitem__(self, index):
+        image_path = self.annotations.image_path.iloc[index]    
+        image = io.imread(image_path)
+        observed_label = self.annotations.observed_label.iloc[index]      
+        true_label = self.annotations.true_label.iloc[index]      
+        
+        image = torch.tensor(image).unsqueeze(0).float()
+        observed_label = torch.tensor(observed_label)
+        true_label = torch.tensor(true_label)
+        
+        return image, observed_label, true_label        
+               
     
 class simulation_data(LightningDataModule):
     """A simulation data module"""
@@ -55,9 +59,9 @@ class simulation_data(LightningDataModule):
             if class_labels[label] < 500:
                 class_labels[label] = class_labels[label] + 1
                 labels.append(label)
-                fname = "{}/data/simulation/{}_{}".format(ROOT, label,class_labels[label])
+                fname = "{}/data/simulation/{}_{}.png".format(ROOT, label,class_labels[label])
                 image_paths.append(fname)
-                image.save('{}.png'.format(fname))
+                image.save('{}'.format(fname))
             
         df = pd.DataFrame({"image_path":image_paths, "label":labels})
         
@@ -89,7 +93,7 @@ class simulation_data(LightningDataModule):
         
         return train, test
     
-    def setup(self):
+    def setup(self, stage=None):
         self.raw_df = self.download_mnist()
         self.corrupted_mnist = self.corrupt()   
         self.train, self.test = self.split()
@@ -125,7 +129,8 @@ class simulator():
             config: path to config.yml
         """
         self.config = read_config(config)
-        if log:
+        self.log = log
+        if self.log:
             self.comet_experiment = CometLogger(project_name="DeepTreeAttention", workspace=self.config["comet_workspace"],auto_output_logging = "simple")
             self.comet_experiment.experiment.add_tag("simulation")
     
@@ -138,7 +143,7 @@ class simulator():
         
     def train(self):
         #Create trainer
-        trainer = Trainer(
+        self.trainer = Trainer(
             gpus=self.config["gpus"],
             fast_dev_run=self.config["fast_dev_run"],
             max_epochs=self.config["epochs"],
@@ -146,22 +151,70 @@ class simulator():
             checkpoint_callback=False,
             logger=self.comet_experiment)
         
-        trainer.fit(self.model, datamodule=self.data_module)
+        self.trainer.fit(self.model, datamodule=self.data_module)
     
-    def outlier_detection(df, true_state):
-        """How many of the noise data are currently labeled as outliers"""
+    def outlier_detection(self, results):
+        """Given a set of predictions, label outliers"""
+        threshold = results.loss.quantile(self.config["outlier_threshold"])
+        print("Reconstruction threshold is {}".format(threshold))
+        results["outlier"] = results[results.loss > threshold]
+        
+        return results
+    
+    def label_switching(self):
+        """Detect clusters and identify mislabeled data"""
         pass
     
-    def label_switching(df, true_state):
-        pass
     
     def evaluate(self):
-        df = self.model.predict(self.data_module.val_ds)
-        outlier_results = self.outlier_detection(df, self.data_module.true_state)
-        label_switching = self.label_switching(df, self.data_module.true_state)
+        observed_y = []
+        yhat = []
+        y = []
+        autoencoder_loss = []
+        self.model.eval()
+        for batch in self.model.val_dataloader():
+            images, observed_labels, true_labels = batch
+            observed_y.append(observed_labels)
+            y.append(true_labels)
+            #trigger activation hook
+            if next(self.model.parameters()).is_cuda:
+                images = images.cuda()
+            with torch.no_grad():
+                for image in images:
+                    image_yhat, classification_yhat = self.model(image.unsqueeze(0))
+                    yhat.append(classification_yhat)
+                    loss = F.mse_loss(image_yhat, image)    
+                    autoencoder_loss.append(loss.numpy())
+           
+        yhat = np.concatenate(yhat)
+        yhat = np.argmax(yhat, 1)
+        autoencoder_loss = np.asarray(autoencoder_loss)
         
-        results = pd.concat(list(outlier_results, label_switching))
-        return results
+        results = pd.DataFrame({"true_label":y,"observed_label": observed_y,"predicted_label":yhat, "autoencoder_loss": autoencoder_loss})
+        results = self.outlier_detection(results)
+        
+        if self.log:
+            self.comet_experiment.experiment.log_table("results.csv",results)
+        
+        #Mean Proportion of true classes are correct
+        mean_accuracy = results.filter(~results.true_label.isin([8,9])).groupby("label").apply(lambda x: x.true_label == x.predicted_label).mean()
+        if self.log:
+            self.comet_experiment.log_metrics("Mean accuracy", mean_accuracy)
+        
+        true_outliers = results[~results.true_label == results.observed_label]
+        #inset data does not have class 8 ir 9
+        inset = true_outliers[~true_outliers.true_label.isin(8,9)]
+        outlier_accuracy = sum(inset.outlier)/inset.shape[0]
+        outlier_precision = sum(inset.outlier)/results.filter(~results.true_label.isin([8,9])).shape[0]
+        
+        if self.log:
+            self.comet_experiment.experiment.log_metric("outlier_accuracy", outlier_accuracy)
+            self.comet_experiment.experiment.log_metric("outlier_precision", outlier_precision)
+            
+        #TODO 
+        #label_switching = self.label_switching(df, self.data_module.true_state)
+        
+        return pd.DataFrame({"outlier_accuracy": outlier_accuracy, "outlier_precision": outlier_precision, "classification_accuracy": mean_accuracy})
         
 def run(ID, config_path):
     sim = simulator(config_path)    

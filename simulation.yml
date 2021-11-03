@@ -1,6 +1,6 @@
 #simulation config
 batch_size: 128
-workers: 10
+workers: 0
 novel_class_examples: 20
 proportion_switch: 0.1
 
@@ -11,6 +11,8 @@ comet_workspace: bw4sz
 gpus: 0
 fast_dev_run: False
 accelerator: dp
-epochs: 10
+epochs: 1
 lr: 0.001
 
+#Outlier detection
+outlier_threshold: 0.95
