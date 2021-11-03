@@ -1,6 +1,6 @@
 #simulation config
-batch_size: 128
-workers: 20
+batch_size: 8
+workers: 1
 novel_class_examples: 20
 proportion_switch: 0.1
 
@@ -10,7 +10,7 @@ comet_workspace: bw4sz
 #Training
 gpus: 1
 fast_dev_run: False
-accelerator: dp
+accelerator:
 epochs: 50
 lr: 0.001
 
