@@ -1,19 +1,16 @@
 #MNSIT simulation
-from distributed import wait
 import os
 import numpy as np
 from pytorch_lightning.loggers import CometLogger
-from pytorch_lightning import LightningDataModule, LightningModule
+from pytorch_lightning import LightningDataModule
 from pytorch_lightning import Trainer
-from src.data import read_config
-from src import start_cluster
-from src import data
 from src.models.simulation import autoencoder
 import torch
 import torchvision
 import pandas as pd
 from skimage import io
 from torch.utils.data import Dataset
+from torchvision import transforms
 from torch.nn import functional as F
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -45,7 +42,10 @@ class simulation_data(LightningDataModule):
         self.config = config
         
     def download_mnist(self):
-        self.raw_ds = torchvision.datasets.MNIST('{}/data/simulation/'.format(ROOT), train=True, download=True)                            
+        self.raw_ds = torchvision.datasets.MNIST('{}/data/simulation/'.format(ROOT), train=True, download=True,transform=transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+        ]))                            
         
         #Grab 500 examples and write jpegs and class labels
         class_labels = {}
@@ -131,6 +131,7 @@ class simulator():
         if self.log:
             self.comet_experiment = CometLogger(project_name="DeepTreeAttention", workspace=self.config["comet_workspace"],auto_output_logging = "simple")
             self.comet_experiment.experiment.add_tag("simulation")
+            self.comet_experiment.experiment.log_parameters(self.config)
     
     def generate_data(self):
         self.data_module = simulation_data(config=self.config)
