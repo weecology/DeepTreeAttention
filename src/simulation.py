@@ -20,7 +20,11 @@ class mnist_dataset(Dataset):
     """Yield an MNIST instance"""
     def __init__(self, df):
         self.annotations = df
-    
+        self.transforms = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+        ])
+        
     def __len__(self):
         return self.annotations.shape[0]
         
@@ -30,7 +34,7 @@ class mnist_dataset(Dataset):
         observed_label = self.annotations.observed_label.iloc[index]      
         true_label = self.annotations.true_label.iloc[index]      
         
-        image = torch.tensor(image).unsqueeze(0).float()
+        image = self.transforms(image)
         observed_label = torch.tensor(observed_label)
         true_label = torch.tensor(true_label)
         
@@ -43,10 +47,7 @@ class simulation_data(LightningDataModule):
         self.config = config
         
     def download_mnist(self):
-        self.raw_ds = torchvision.datasets.MNIST('{}/data/simulation/'.format(ROOT), train=True, download=True,transform=transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
-        ]))                            
+        self.raw_ds = torchvision.datasets.MNIST('{}/data/simulation/'.format(ROOT), train=True, download=True)                            
         
         #Grab 500 examples and write jpegs and class labels
         class_labels = {}
@@ -57,12 +58,12 @@ class simulation_data(LightningDataModule):
         labels = []
         for x in range(len(self.raw_ds)):
             image, label = self.raw_ds[x]
-            if class_labels[label] < 500:
+            if class_labels[label] < 5000:
                 class_labels[label] = class_labels[label] + 1
                 labels.append(label)
                 fname = "{}/data/simulation/{}_{}.png".format(ROOT, label,class_labels[label])
                 image_paths.append(fname)
-                io.imsave(fname, image.squeeze(0).numpy())
+                image.save(fname)
             
         df = pd.DataFrame({"image_path":image_paths, "label":labels})
         
