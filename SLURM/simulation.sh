@@ -19,4 +19,6 @@ source activate DeepTreeAttention
 cd ~/DeepTreeAttention/
 module load git gcc
 export COMET_LOGGING_CONSOLE=info
+export DASK_DISTRIBUTED__WORKER__DAEMON=False
+
 python run_simulation.py
