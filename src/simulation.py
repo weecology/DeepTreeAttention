@@ -7,6 +7,7 @@ from pytorch_lightning import LightningDataModule, LightningModule
 from pytorch_lightning import Trainer
 from src.data import read_config
 from src import start_cluster
+from src import data
 from src.models.simulation import autoencoder
 import torch
 import torchvision
@@ -37,7 +38,6 @@ class mnist_dataset(Dataset):
         
         return image, observed_label, true_label        
                
-    
 class simulation_data(LightningDataModule):
     """A simulation data module"""
     def __init__(self, config):
@@ -68,7 +68,6 @@ class simulation_data(LightningDataModule):
         return df 
     
     def corrupt(self):
-        
         self.raw_df["true_label"] = self.raw_df["label"]
         self.raw_df["observed_label"] = self.raw_df["true_label"]
         
@@ -87,7 +86,6 @@ class simulation_data(LightningDataModule):
     
     def split(self):
         """Split train/test"""
-        
         train = self.corrupted_mnist.groupby("observed_label").sample(frac = 0.9)
         test = self.corrupted_mnist[~self.corrupted_mnist.image_path.isin(train.image_path)]
         
@@ -128,7 +126,7 @@ class simulator():
             comet_experiment: an optional comet logger 
             config: path to config.yml
         """
-        self.config = read_config(config)
+        self.config = config
         self.log = log
         if self.log:
             self.comet_experiment = CometLogger(project_name="DeepTreeAttention", workspace=self.config["comet_workspace"],auto_output_logging = "simple")
@@ -155,9 +153,9 @@ class simulator():
     
     def outlier_detection(self, results):
         """Given a set of predictions, label outliers"""
-        threshold = results.loss.quantile(self.config["outlier_threshold"])
+        threshold = results.autoencoder_loss.quantile(self.config["outlier_threshold"])
         print("Reconstruction threshold is {}".format(threshold))
-        results["outlier"] = results[results.loss > threshold]
+        results["outlier"] = results.autoencoder_loss > threshold
         
         return results
     
@@ -188,6 +186,8 @@ class simulator():
            
         yhat = np.concatenate(yhat)
         yhat = np.argmax(yhat, 1)
+        y = np.concatenate(y)
+        observed_y = np.concatenate(observed_y)
         autoencoder_loss = np.asarray(autoencoder_loss)
         
         results = pd.DataFrame({"true_label":y,"observed_label": observed_y,"predicted_label":yhat, "autoencoder_loss": autoencoder_loss})
@@ -197,13 +197,14 @@ class simulator():
             self.comet_experiment.experiment.log_table("results.csv",results)
         
         #Mean Proportion of true classes are correct
-        mean_accuracy = results.filter(~results.true_label.isin([8,9])).groupby("label").apply(lambda x: x.true_label == x.predicted_label).mean()
-        if self.log:
-            self.comet_experiment.log_metrics("Mean accuracy", mean_accuracy)
+        mean_accuracy = results[~results.true_label.isin([8,9])].groupby("true_label").apply(lambda x: x.true_label == x.predicted_label).mean()
         
-        true_outliers = results[~results.true_label == results.observed_label]
+        if self.log:
+            self.comet_experiment.experiment.log_metric(name="Mean accuracy", value=mean_accuracy)
+        
+        true_outliers = results[~(results.true_label == results.observed_label)]
         #inset data does not have class 8 ir 9
-        inset = true_outliers[~true_outliers.true_label.isin(8,9)]
+        inset = true_outliers[~true_outliers.true_label.isin([8,9])]
         outlier_accuracy = sum(inset.outlier)/inset.shape[0]
         outlier_precision = sum(inset.outlier)/results.filter(~results.true_label.isin([8,9])).shape[0]
         
@@ -214,29 +215,14 @@ class simulator():
         #TODO 
         #label_switching = self.label_switching(df, self.data_module.true_state)
         
-        return pd.DataFrame({"outlier_accuracy": outlier_accuracy, "outlier_precision": outlier_precision, "classification_accuracy": mean_accuracy})
+        return pd.DataFrame({"outlier_accuracy": [outlier_accuracy], "outlier_precision": [outlier_precision], "classification_accuracy": [mean_accuracy]})
         
-def run(ID, config_path):
-    sim = simulator(config_path)    
+def run(ID, config):
+    sim = simulator(config)    
     sim.generate_data()
     sim.create_model()
     sim.train()
     results = sim.evaluate()
     results["simulation_id"] = ID
     return results
-    
-if __name__ == "__main__":
-    client = start_cluster.start(gpus=2)
-    futures = []
-    for x in range(10):
-        future = client.submit(run, ID=x, config_path="simulation.yml")
-        futures.append(future)
-    wait(futures)
-    resultdf = []
-    for x in futures:
-        result = x.result()
-        resultdf.append(result)
-    
-    resultdf = pd.concat(resultdf)
-    resultdf.to_csv("data/processed/simulation.csv")
     
