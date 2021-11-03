@@ -219,8 +219,6 @@ class simulator():
         
 def run(ID, config):
     #Set a couple dask env variables
-    os.environ['SLURM_JOB_NAME'] = 'bash'
-    os.environ['DASK_DISTRIBUTED__WORKER__DAEMON'] = False
     sim = simulator(config)    
     sim.generate_data()
     sim.create_model()
