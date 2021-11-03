@@ -2,6 +2,7 @@
 batch_size: 8
 workers: 1
 novel_class_examples: 20
+samples: 5000
 proportion_switch: 0.1
 
 #Comet dashboard

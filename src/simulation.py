@@ -58,7 +58,7 @@ class simulation_data(LightningDataModule):
         labels = []
         for x in range(len(self.raw_ds)):
             image, label = self.raw_ds[x]
-            if class_labels[label] < 5000:
+            if class_labels[label] < self.config["samples"]:
                 class_labels[label] = class_labels[label] + 1
                 labels.append(label)
                 fname = "{}/data/simulation/{}_{}.png".format(ROOT, label,class_labels[label])
