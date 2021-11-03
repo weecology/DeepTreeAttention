@@ -5,6 +5,7 @@ from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning import LightningDataModule
 from pytorch_lightning import Trainer
 from src.models.simulation import autoencoder
+from skimage import io
 import torch
 import torchvision
 import pandas as pd
@@ -61,7 +62,7 @@ class simulation_data(LightningDataModule):
                 labels.append(label)
                 fname = "{}/data/simulation/{}_{}.png".format(ROOT, label,class_labels[label])
                 image_paths.append(fname)
-                image.save('{}'.format(fname))
+                io.imsave(fname, image.squeeze(0).numpy())
             
         df = pd.DataFrame({"image_path":image_paths, "label":labels})
         
