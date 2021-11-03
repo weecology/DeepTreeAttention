@@ -100,18 +100,43 @@ class autoencoder(LightningModule):
         
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
         classification_loss = F.cross_entropy(classification_yhat, observed_labels)
-        #loss = autoencoder_loss + (classification_loss * 0.1)
+        loss = autoencoder_loss + (classification_loss * 0.1)
+
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        """Train on a loaded dataset
+        """
+        #allow for empty data if data augmentation is generated
+        images, observed_labels, true_labels = batch 
+        autoencoder_yhat, classification_yhat = self.forward(images) 
+        
+        autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
+        classification_loss = F.cross_entropy(classification_yhat, observed_labels)
+        loss = autoencoder_loss + (classification_loss * 0.1)
         
         softmax_prob = F.softmax(classification_yhat, dim =1)
         output = self.metrics(softmax_prob, true_labels) 
+        self.log("val_loss", loss, on_epoch=True)
         self.log_dict(output, on_epoch=True, on_step=False)
         
-        return autoencoder_loss
-
+        return loss
+            
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.config["lr"])
 
-        return {'optimizer':optimizer,"monitor":'val_loss'}
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                         mode='min',
+                                                         factor=0.5,
+                                                         patience=10,
+                                                         verbose=True,
+                                                         threshold=0.0001,
+                                                         threshold_mode='rel',
+                                                         cooldown=0,
+                                                         eps=1e-08)
+        
+        return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
+    
 
     def on_train_end(self):
         """At the end of each epoch trigger the dataset to collect intermediate activation for plotting"""

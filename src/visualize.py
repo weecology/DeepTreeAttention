@@ -107,11 +107,11 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True):
         fig, ax = plt.subplots(figsize=(8,8))
         for lab in range(num_categories):
             indices = labels==lab
-            ax.scatter(pca_proj[indices,0],pca_proj[indices,1], c=colors[lab], label = lab ,alpha=0.5)
+            ax.scatter(pca_proj[indices,0],pca_proj[indices,1], c=colors[lab], label = lab ,alpha=0.75, markersize=5)
         ax.legend(fontsize='large', markerscale=2)
     else: 
         features = pd.DataFrame(features, columns=["a","b"])
         features["label"] = labels
         features["color"] = features.label.apply(lambda x: colors[x])
         
-        features.plot.scatter(x="a",y="b",color=features.color, alpha=0.75)        
+        features.plot.scatter(x="a",y="b",color=features.color, alpha=0.75, s=5)        
