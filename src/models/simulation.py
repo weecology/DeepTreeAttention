@@ -47,8 +47,7 @@ class autoencoder(LightningModule):
         
         #Classification layer
         self.vis_conv1= encoder_block(in_channels=16, filters=8)        
-        self.vis_layer = nn.Linear(in_features=6272, out_features=2)
-        self.fc1 = nn.Linear(in_features=2, out_features=classes)
+        self.vis_layer = nn.Linear(in_features=6272, out_features=classes)
         
         #Decoder
         self.decoder_block1 = decoder_block(in_channels=16, filters=32)
@@ -80,9 +79,6 @@ class autoencoder(LightningModule):
         y = self.vis_conv1(x)
         y = y.view(-1, 8*28*28)        
         y = self.vis_layer(y)
-        y = F.relu(y)
-        y = self.fc1(y)
-        y = F.relu(y)
 
         x = self.decoder_block1(x)
         x = self.decoder_block2(x)

@@ -187,14 +187,15 @@ class simulator():
         outlier_class = self.data_module.test.outlier.iloc[sample_ids].astype('category').cat.codes.astype(int).values
         
         #plot different sets
-        layerplot_vis = visualize.plot_2d_layer(vis_epoch_activations, epoch_labels)
+        layerplot_vis = visualize.plot_2d_layer(vis_epoch_activations, epoch_labels, use_pca=True)
         self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="2d_vis_projection_labels", step=self.model.current_epoch)        
         
-        layerplot_vis = visualize.plot_2d_layer(vis_epoch_activations, outlier_class, size_weights=outlier_class+1)        
+        layerplot_vis = visualize.plot_2d_layer(vis_epoch_activations, outlier_class, use_pca=True, size_weights=outlier_class+1)        
         self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="2d_vis_projection_outliers", step=self.model.current_epoch)
 
         layerplot_encoder = visualize.plot_2d_layer(encoder_epoch_activations, epoch_labels, use_pca=True)
         self.comet_experiment.experiment.log_figure(figure=layerplot_encoder, figure_name="PCA_encoder_projection_labels", step=self.model.current_epoch)
+        
         layerplot_encoder = visualize.plot_2d_layer(encoder_epoch_activations, outlier_class, use_pca=True, size_weights=outlier_class+1)
         self.comet_experiment.experiment.log_figure(figure=layerplot_encoder, figure_name="PCA_encoder_projection_outliers", step=self.model.current_epoch)
         
