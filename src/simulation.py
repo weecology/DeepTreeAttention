@@ -70,28 +70,26 @@ class simulation_data(LightningDataModule):
         """Switch labels of some within sample class and add some novel classes"""
         self.raw_df["observed_label"] = self.raw_df["label"]
         
+        #Split clean data into train test
+        in_set = self.raw_df[~self.raw_df.label.isin([8,9])]
+        in_set["outlier"] = "inlier"
+        train = in_set.sample(frac=0.9)
+        test = in_set[~in_set.image_path.isin(train.image_path)]
+        
+        #Add small novel examples to test
         novel_set = self.raw_df[self.raw_df.label.isin([8,9])]
         novel_set = novel_set.groupby("label").apply(lambda x: x.head(self.config["novel_class_examples"]))
         novel_set["outlier"] = "novel"
         
-        in_set = self.raw_df[~self.raw_df.label.isin([8,9])]
+        test = pd.concat([test,novel_set])
         
-        #label swap within in set
-        labels_to_corrupt = in_set.groupby("label").apply(lambda x: x.sample(frac=self.config["proportion_switch"]))
+        #label swap within train
+        labels_to_corrupt = train.groupby("label").apply(lambda x: x.sample(frac=self.config["proportion_switch"]))
         labels_to_corrupt["observed_label"] = labels_to_corrupt.label.apply(lambda x: np.random.choice(range(8)))
         labels_to_corrupt["outlier"] = "label_swap"
         
-        uncorrupted_labels = in_set[~in_set.image_path.isin(labels_to_corrupt.image_path)]
-        uncorrupted_labels["outlier"] = "Inlier"
-        
-        self.corrupted_data = pd.concat([uncorrupted_labels, labels_to_corrupt])
-        
-        train = in_set.groupby("observed_label").sample(frac = 0.9)
-        test = in_set[~in_set.image_path.isin(train.image_path)]  
-        
-        #add novel to just test
-        train = pd.concat([train, self.corrupted_data])
-        test = pd.concat([test, novel_set])
+        train = train[~train.image_path.isin(labels_to_corrupt.image_path)]
+        train = pd.concat([train, labels_to_corrupt])
         
         return train, test
     
