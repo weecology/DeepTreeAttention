@@ -21,8 +21,6 @@ class mnist_dataset(Dataset):
     """Yield an MNIST instance"""
     def __init__(self, df):
         self.annotations = df
-        self.transforms = transforms.Compose([
-        transforms.ToTensor()])
         
     def __len__(self):
         return self.annotations.shape[0]
@@ -30,10 +28,10 @@ class mnist_dataset(Dataset):
     def __getitem__(self, index):
         image_path = self.annotations.image_path.iloc[index]    
         image = io.imread(image_path)
+        image = torch.tensor(image).unsqueeze(0).float()
         observed_label = self.annotations.observed_label.iloc[index]      
         label = self.annotations.label.iloc[index]      
         
-        image = self.transforms(image)
         observed_label = torch.tensor(observed_label)
         label = torch.tensor(label)
         
