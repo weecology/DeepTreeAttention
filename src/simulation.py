@@ -252,7 +252,7 @@ class simulator():
         true_outliers = results[~(results.label == results.observed_label)]
         
         if true_outliers.empty:
-            pd.DataFrame({"outlier_accuracy": [None], "outlier_precision": [None], "classification_accuracy": [mean_accuracy]})
+            return pd.DataFrame({"outlier_accuracy": [None], "outlier_precision": [None], "classification_accuracy": [mean_accuracy]})
         else:
             #inset data does not have class 8 ir 9
             inset = true_outliers[~true_outliers.label.isin([8,9])]

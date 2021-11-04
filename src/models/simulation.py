@@ -114,7 +114,7 @@ class autoencoder(LightningModule):
         softmax_prob = F.softmax(classification_yhat, dim =1)
         
         #pad to full length of novel classes
-        softmax_prob = F.pad(input=softmax_prob, pad=(0, 2, 0, 0), mode='constant', value=0)
+        softmax_prob = F.pad(input=softmax_prob, pad=(0, 2, 0, 0), mode='constant', value=1.2*10-7)
         
         output = self.metrics(softmax_prob, true_labels) 
         self.log("val_loss", classification_loss, on_epoch=True)
