@@ -174,7 +174,7 @@ class simulator():
                 image = images
             
             pred = self.model(image)
-            vis_epoch_activations.append(self.model.vis_activation["vis_layer"].cpu())
+            vis_epoch_activations.append(self.model.vis_activation["vis_conv1"].cpu())
             encoder_epoch_activations.append(self.model.vis_activation["encoder_block3"].cpu())
 
         #Create a single array
