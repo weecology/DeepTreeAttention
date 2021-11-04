@@ -116,7 +116,7 @@ class autoencoder(LightningModule):
         
         softmax_prob = F.softmax(classification_yhat, dim =1)
         output = self.metrics(softmax_prob, true_labels) 
-        self.log("val_loss", classification_loss, on_epoch=True)
+        self.log("val_loss", autoencoder_loss, on_epoch=True)
         self.log_dict(output, on_epoch=True, on_step=False)
         
         return autoencoder_loss
