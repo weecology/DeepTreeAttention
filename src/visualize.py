@@ -89,16 +89,22 @@ def n_colors(n, set_color_seed=True):
         colors.append(color)
     return colors 
     
-def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True):
+def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, size_weights=None):
     """Given a 2D tensor array and a list of labels, plot and optionally color
     Args:
         features: input feature matrix
         labels: numeric label for each feature row
-        use_pca: Whether to first reduce dimensionality using pca"""
+        use_pca: Whether to first reduce dimensionality using pca
+        size_weights: array the same length as the features that gives the size multiplier for each point
+        """
 
     num_categories = max(np.unique(labels)) + 1   
     colors = n_colors(n = num_categories, set_color_seed=set_color_seed)
     
+    if size_weights:
+        s = 5 * size_weights
+    else:
+        s = 5
     if use_pca:
         pca = PCA(2)
         #flatten features
@@ -107,11 +113,13 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True):
         fig, ax = plt.subplots(figsize=(8,8))
         for lab in range(num_categories):
             indices = labels==lab
-            ax.scatter(pca_proj[indices,0],pca_proj[indices,1], c=colors[lab], label = lab ,alpha=0.75, s=5)
+            ax.scatter(pca_proj[indices,0],pca_proj[indices,1], c=colors[lab], label = lab ,alpha=0.75, s=s)
         ax.legend(fontsize='large', markerscale=2)
     else: 
         features = pd.DataFrame(features, columns=["a","b"])
         features["label"] = labels
         features["color"] = features.label.apply(lambda x: colors[x])
         
-        features.plot.scatter(x="a",y="b",color=features.color, alpha=0.75, s=5)        
+        features.plot.scatter(x="a",y="b",color=features.color, alpha=0.75, s=s)    
+        plt.legend(fontsize='large', markerscale=2)
+        

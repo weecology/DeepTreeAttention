@@ -3,7 +3,7 @@ batch_size: 128
 workers: 20
 novel_class_examples: 20
 samples: 5000
-proportion_switch: 0.1
+proportion_switch: 0.001
 
 #Comet dashboard
 comet_workspace: bw4sz
@@ -13,7 +13,7 @@ gpus: 1
 fast_dev_run: False
 accelerator: dp
 epochs: 50
-lr: 0.001
+lr: 0.01
 
 #Outlier detection
 outlier_threshold: 0.95
