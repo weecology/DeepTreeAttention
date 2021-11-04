@@ -101,7 +101,7 @@ class autoencoder(LightningModule):
         classification_loss = F.cross_entropy(classification_yhat, observed_labels)
         #loss = autoencoder_loss + (classification_loss * 0.1)
 
-        return classification_loss
+        return autoencoder_loss
 
     def validation_step(self, batch, batch_idx):
         """Train on a loaded dataset
@@ -119,7 +119,7 @@ class autoencoder(LightningModule):
         self.log("val_loss", classification_loss, on_epoch=True)
         self.log_dict(output, on_epoch=True, on_step=False)
         
-        return classification_loss
+        return autoencoder_loss
             
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.config["lr"])
