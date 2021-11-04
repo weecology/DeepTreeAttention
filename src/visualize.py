@@ -113,7 +113,7 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, siz
         fig, ax = plt.subplots(figsize=(8,8))
         for lab in range(num_categories):
             indices = labels==lab
-            if len(s) > 1:
+            if len(size_weights) > 0:
                 point_size = s[indices]
             else:
                 point_size = s
