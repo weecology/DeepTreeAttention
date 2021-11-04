@@ -63,7 +63,7 @@ class autoencoder(LightningModule):
                 self.vis_activation[name] = output.detach()
             return hook
         
-        self.vis_layer.register_forward_hook(getActivation("vis_conv1"))        
+        self.vis_conv1.register_forward_hook(getActivation("vis_conv1"))        
         self.encoder_block3.register_forward_hook(getActivation("encoder_block3"))        
 
         #Metrics
@@ -77,6 +77,7 @@ class autoencoder(LightningModule):
         
         #classification layer projection
         y = self.vis_conv1(x)
+        y = F.relu(y)
         y = y.view(-1, 8*28*28)        
         y = self.vis_layer(y)
 

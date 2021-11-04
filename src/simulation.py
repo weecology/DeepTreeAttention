@@ -13,7 +13,6 @@ import torchvision
 import pandas as pd
 
 from torch.utils.data import Dataset
-from torchvision import transforms
 from torch.nn import functional as F
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -100,7 +99,7 @@ class simulation_data(LightningDataModule):
         self.train, self.test = self.corrupt_and_split()
         self.train_ds = mnist_dataset(self.train)
         self.val_ds = mnist_dataset(self.test)
-        self.num_classes = len(np.unique(self.test.label))
+        self.num_classes = len(np.unique(self.train.label))
         
     def train_dataloader(self):
         data_loader = torch.utils.data.DataLoader(
