@@ -4,11 +4,8 @@ import torch
 import torch.nn as nn
 from torch import optim
 from src.models.Hang2020 import conv_module
-from src import visualize
-import numpy as np
 from pytorch_lightning import LightningModule
 import torchmetrics
-from matplotlib import pyplot as plt
 
 class encoder_block(nn.Module):
     def __init__(self, in_channels, filters, maxpool_kernel=None, pool=False):

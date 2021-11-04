@@ -33,13 +33,13 @@ class mnist_dataset(Dataset):
         image_path = self.annotations.image_path.iloc[index]    
         image = io.imread(image_path)
         observed_label = self.annotations.observed_label.iloc[index]      
-        true_label = self.annotations.true_label.iloc[index]      
+        label = self.annotations.label.iloc[index]      
         
         image = self.transforms(image)
         observed_label = torch.tensor(observed_label)
-        true_label = torch.tensor(true_label)
+        label = torch.tensor(label)
         
-        return index, image, observed_label, true_label        
+        return index, image, observed_label, label        
                
 class simulation_data(LightningDataModule):
     """A simulation data module"""
@@ -50,7 +50,7 @@ class simulation_data(LightningDataModule):
     def download_mnist(self):
         self.raw_ds = torchvision.datasets.MNIST('{}/data/simulation/'.format(ROOT), train=True, download=True)                            
         
-        #Grab 500 examples and write jpegs and class labels
+        #Grab examples and write pngs and class labels
         class_labels = {}
         for x in range(10):
             class_labels[x] = 0
@@ -72,8 +72,7 @@ class simulation_data(LightningDataModule):
     
     def corrupt_and_split(self):
         """Switch labels of some within sample class and add some novel classes"""
-        self.raw_df["true_label"] = self.raw_df["label"]
-        self.raw_df["observed_label"] = self.raw_df["true_label"]
+        self.raw_df["observed_label"] = self.raw_df["label"]
         
         novel_set = self.raw_df[self.raw_df.label.isin([8,9])]
         novel_set = novel_set.groupby("label").apply(lambda x: x.head(self.config["novel_class_examples"]))
@@ -87,7 +86,7 @@ class simulation_data(LightningDataModule):
         labels_to_corrupt["outlier"] = "label_swap"
         
         uncorrupted_labels = in_set[~in_set.image_path.isin(labels_to_corrupt.image_path)]
-        uncorrupted_labels["outlier"] = False
+        uncorrupted_labels["outlier"] = "Inlier"
         
         self.corrupted_data = pd.concat([uncorrupted_labels, labels_to_corrupt])
         
@@ -167,7 +166,7 @@ class simulator():
         encoder_epoch_activations = []
         sample_ids = []
         for batch in self.data_module.val_dataloader():
-            index, images, observed_labels, true_labels  = batch
+            index, images, observed_labels, labels  = batch
             epoch_labels.append(observed_labels)
             sample_ids.append(index)
             
@@ -188,7 +187,7 @@ class simulator():
         sample_ids = np.concatenate(sample_ids)
         
         #look up sample ids
-        outlier_class = self.data_module.test.outlier.iloc[sample_ids]
+        outlier_class = self.data_module.test.outlier.iloc[sample_ids].astype('category').cat.codes.astype(int).values
         
         #plot different sets
         layerplot_vis = visualize.plot_2d_layer(vis_epoch_activations, epoch_labels)
@@ -222,9 +221,9 @@ class simulator():
         autoencoder_loss = []
         self.model.eval()
         for batch in self.model.val_dataloader():
-            index, images, observed_labels, true_labels = batch
+            index, images, observed_labels, labels = batch
             observed_y.append(observed_labels)
-            y.append(true_labels)
+            y.append(labels)
             #trigger activation hook
             if next(self.model.parameters()).is_cuda:
                 images = images.cuda()
@@ -241,23 +240,23 @@ class simulator():
         observed_y = np.concatenate(observed_y)
         autoencoder_loss = np.asarray(autoencoder_loss)
         
-        results = pd.DataFrame({"true_label":y,"observed_label": observed_y,"predicted_label":yhat, "autoencoder_loss": autoencoder_loss})
+        results = pd.DataFrame({"label":y,"observed_label": observed_y,"predicted_label":yhat, "autoencoder_loss": autoencoder_loss})
         results = self.outlier_detection(results)
         
         if self.log:
             self.comet_experiment.experiment.log_table("results.csv",results)
         
         #Mean Proportion of true classes are correct
-        mean_accuracy = results[~results.true_label.isin([8,9])].groupby("true_label").apply(lambda x: x.true_label == x.predicted_label).mean()
+        mean_accuracy = results[~results.label.isin([8,9])].groupby("label").apply(lambda x: x.label == x.predicted_label).mean()
         
         if self.log:
             self.comet_experiment.experiment.log_metric(name="Mean accuracy", value=mean_accuracy)
         
-        true_outliers = results[~(results.true_label == results.observed_label)]
+        true_outliers = results[~(results.label == results.observed_label)]
         #inset data does not have class 8 ir 9
-        inset = true_outliers[~true_outliers.true_label.isin([8,9])]
+        inset = true_outliers[~true_outliers.label.isin([8,9])]
         outlier_accuracy = sum(inset.outlier)/inset.shape[0]
-        outlier_precision = sum(inset.outlier)/results.filter(~results.true_label.isin([8,9])).shape[0]
+        outlier_precision = sum(inset.outlier)/results.filter(~results.label.isin([8,9])).shape[0]
         
         if self.log:
             self.comet_experiment.experiment.log_metric("outlier_accuracy", outlier_accuracy)
