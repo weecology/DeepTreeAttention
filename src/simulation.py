@@ -102,7 +102,7 @@ class simulation_data(LightningDataModule):
         
     def train_dataloader(self):
         data_loader = torch.utils.data.DataLoader(
-            self.val_ds,
+            self.train_ds,
             batch_size=self.config["batch_size"],
             shuffle=True,
             num_workers=self.config["workers"],
