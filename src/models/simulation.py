@@ -107,14 +107,16 @@ class autoencoder(LightningModule):
         index, images, observed_labels, true_labels = batch 
         autoencoder_yhat, classification_yhat = self.forward(images) 
         
-        autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
-        classification_loss = F.cross_entropy(classification_yhat, observed_labels)
+        autoencoder_loss = F.mse_loss(autoencoder_yhat, images)  
+        
+        #ignore novel classes
+        observed_labels =  torch.tensor([x if x not in [8,9] else -1 for x in observed_labels])
+        classification_loss = F.cross_entropy(classification_yhat, observed_labels, ignore_index=-1)
+        
         #loss = autoencoder_loss + (classification_loss * 0.1)
         
-        softmax_prob = F.softmax(classification_yhat, dim =1)
-        
-        #pad to full length of novel classes
-        softmax_prob = F.pad(input=softmax_prob, pad=(0, 2, 0, 0), mode='constant', value=1.2*10-7)
+        softmax_prob = F.softmax(classification_yhat, dim=1)
+        softmax_prob = F.pad(input=softmax_prob, pad=(0, 2, 0, 0), mode='constant', value=0)
         
         output = self.metrics(softmax_prob, true_labels) 
         self.log("val_loss", classification_loss, on_epoch=True)
