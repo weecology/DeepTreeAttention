@@ -6,11 +6,12 @@ from pytorch_lightning import LightningDataModule
 from pytorch_lightning import Trainer
 from src.models.simulation import autoencoder
 from src import visualize
-from skimage import io
+
+from PIL import Image
 import torch
 import torchvision
 import pandas as pd
-from skimage import io
+
 from torch.utils.data import Dataset
 from torchvision import transforms
 from torch.nn import functional as F
@@ -27,7 +28,8 @@ class mnist_dataset(Dataset):
         
     def __getitem__(self, index):
         image_path = self.annotations.image_path.iloc[index]    
-        image = io.imread(image_path)
+        image = Image.open(image_path)
+        image = np.array(image)
         image = torch.tensor(image).unsqueeze(0).float()
         observed_label = self.annotations.observed_label.iloc[index]      
         label = self.annotations.label.iloc[index]      
@@ -248,19 +250,23 @@ class simulator():
             self.comet_experiment.experiment.log_metric(name="Mean accuracy", value=mean_accuracy)
         
         true_outliers = results[~(results.label == results.observed_label)]
-        #inset data does not have class 8 ir 9
-        inset = true_outliers[~true_outliers.label.isin([8,9])]
-        outlier_accuracy = sum(inset.outlier)/inset.shape[0]
-        outlier_precision = sum(inset.outlier)/results.filter(~results.label.isin([8,9])).shape[0]
         
-        if self.log:
-            self.comet_experiment.experiment.log_metric("outlier_accuracy", outlier_accuracy)
-            self.comet_experiment.experiment.log_metric("outlier_precision", outlier_precision)
+        if true_outliers.empty:
+            pd.DataFrame({"outlier_accuracy": [None], "outlier_precision": [None], "classification_accuracy": [mean_accuracy]})
+        else:
+            #inset data does not have class 8 ir 9
+            inset = true_outliers[~true_outliers.label.isin([8,9])]
+            outlier_accuracy = sum(inset.outlier)/inset.shape[0]
+            outlier_precision = sum(inset.outlier)/results.filter(~results.label.isin([8,9])).shape[0]
             
-        #TODO 
-        #label_switching = self.label_switching(df, self.data_module.true_state)
-        
-        return pd.DataFrame({"outlier_accuracy": [outlier_accuracy], "outlier_precision": [outlier_precision], "classification_accuracy": [mean_accuracy]})
+            if self.log:
+                self.comet_experiment.experiment.log_metric("outlier_accuracy", outlier_accuracy)
+                self.comet_experiment.experiment.log_metric("outlier_precision", outlier_precision)
+                
+            #TODO 
+            #label_switching = self.label_switching(df, self.data_module.true_state)
+            
+            return pd.DataFrame({"outlier_accuracy": [outlier_accuracy], "outlier_precision": [outlier_precision], "classification_accuracy": [mean_accuracy]})
         
 def run(ID, config):
     #Set a couple dask env variables
