@@ -102,7 +102,7 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, siz
     colors = n_colors(n = num_categories, set_color_seed=set_color_seed)
     
     if len(size_weights) > 0:
-        s = 5 * size_weights
+        s = 5.0 * size_weights + 1
     else:
         s = 5
     if use_pca:
@@ -113,7 +113,11 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, siz
         fig, ax = plt.subplots(figsize=(8,8))
         for lab in range(num_categories):
             indices = labels==lab
-            ax.scatter(pca_proj[indices,0],pca_proj[indices,1], c=colors[lab], label = lab ,alpha=0.75, s=s)
+            if len(s) > 1:
+                point_size = s[indices]
+            else:
+                point_size = s
+            ax.scatter(pca_proj[indices,0],pca_proj[indices,1], c=colors[lab], label = lab ,alpha=0.75, s=point_size)
         ax.legend(fontsize='large', markerscale=2)
     else: 
         features = pd.DataFrame(features, columns=["a","b"])
