@@ -89,7 +89,7 @@ def n_colors(n, set_color_seed=True):
         colors.append(color)
     return colors 
     
-def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, size_weights=None):
+def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, size_weights=[]):
     """Given a 2D tensor array and a list of labels, plot and optionally color
     Args:
         features: input feature matrix
@@ -101,7 +101,7 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, siz
     num_categories = max(np.unique(labels)) + 1   
     colors = n_colors(n = num_categories, set_color_seed=set_color_seed)
     
-    if size_weights:
+    if len(size_weights) > 0:
         s = 5 * size_weights
     else:
         s = 5
