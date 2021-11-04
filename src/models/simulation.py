@@ -110,7 +110,9 @@ class autoencoder(LightningModule):
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)  
         
         #ignore novel classes
-        observed_labels =  torch.tensor([x if x not in [8,9] else -1 for x in observed_labels])
+        observed_labels[observed_labels==8] = -1
+        observed_labels[observed_labels==9] = -1
+        
         classification_loss = F.cross_entropy(classification_yhat, observed_labels, ignore_index=-1)
         
         #loss = autoencoder_loss + (classification_loss * 0.1)
