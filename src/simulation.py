@@ -86,10 +86,11 @@ class simulation_data(LightningDataModule):
         
         self.corrupted_data = pd.concat([uncorrupted_labels, labels_to_corrupt])
         
-        train = self.corrupted_data.groupby("observed_label").sample(frac = 0.9)
-        test = self.corrupted_data[~self.corrupted_data.image_path.isin(train.image_path)]  
+        train = in_set.groupby("observed_label").sample(frac = 0.9)
+        test = in_set[~in_set.image_path.isin(train.image_path)]  
         
         #add novel to just test
+        train = pd.concat([train, self.corrupted_data])
         test = pd.concat([test, novel_set])
         
         return train, test
