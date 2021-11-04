@@ -67,9 +67,9 @@ class autoencoder(LightningModule):
         self.encoder_block3.register_forward_hook(getActivation("encoder_block3"))        
 
         #Metrics
-        micro_recall = torchmetrics.Accuracy(average="micro")
-        self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall}, prefix="autoencoder")
-
+        micro_recall = torchmetrics.Accuracy(average="micro", num_classes=10)
+        self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall}, prefix="_autoencoder")
+        
     def forward(self, x):
         x = self.encoder_block1(x)
         x = self.encoder_block2(x)
@@ -112,6 +112,10 @@ class autoencoder(LightningModule):
         #loss = autoencoder_loss + (classification_loss * 0.1)
         
         softmax_prob = F.softmax(classification_yhat, dim =1)
+        
+        #pad to full length of novel classes
+        softmax_prob = F.pad(input=softmax_prob, pad=(0, 2, 0, 0), mode='constant', value=0)
+        
         output = self.metrics(softmax_prob, true_labels) 
         self.log("val_loss", classification_loss, on_epoch=True)
         self.log_dict(output, on_epoch=True, on_step=False)

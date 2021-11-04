@@ -102,7 +102,7 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, siz
     colors = n_colors(n = num_categories, set_color_seed=set_color_seed)
     
     if len(size_weights) > 0:
-        s = 5.0 * size_weights + 1
+        s = 7.0 * size_weights + 1
     else:
         s = 5
     if use_pca:
