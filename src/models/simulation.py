@@ -97,20 +97,20 @@ class autoencoder(LightningModule):
         """Train on a loaded dataset
         """
         #allow for empty data if data augmentation is generated
-        images, observed_labels, true_labels = batch 
+        index, images, observed_labels, true_labels = batch 
         autoencoder_yhat, classification_yhat = self.forward(images) 
         
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
         classification_loss = F.cross_entropy(classification_yhat, observed_labels)
         #loss = autoencoder_loss + (classification_loss * 0.1)
 
-        return autoencoder_loss
+        return classification_loss
 
     def validation_step(self, batch, batch_idx):
         """Train on a loaded dataset
         """
         #allow for empty data if data augmentation is generated
-        images, observed_labels, true_labels = batch 
+        index, images, observed_labels, true_labels = batch 
         autoencoder_yhat, classification_yhat = self.forward(images) 
         
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
@@ -122,7 +122,7 @@ class autoencoder(LightningModule):
         self.log("val_loss", autoencoder_loss, on_epoch=True)
         self.log_dict(output, on_epoch=True, on_step=False)
         
-        return autoencoder_loss
+        return classification_loss
             
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.config["lr"])
