@@ -39,7 +39,7 @@ class mnist_dataset(Dataset):
         observed_label = torch.tensor(observed_label)
         true_label = torch.tensor(true_label)
         
-        return image, observed_label, true_label        
+        return index, image, observed_label, true_label        
                
 class simulation_data(LightningDataModule):
     """A simulation data module"""
@@ -188,7 +188,7 @@ class simulator():
         sample_ids = np.concatenate(sample_ids)
         
         #look up sample ids
-        outlier_class = self.data_module.test.outlier.loc[sample_ids]
+        outlier_class = self.data_module.test.outlier.iloc[sample_ids]
         
         #plot different sets
         layerplot_vis = visualize.plot_2d_layer(vis_epoch_activations, epoch_labels)
@@ -222,7 +222,7 @@ class simulator():
         autoencoder_loss = []
         self.model.eval()
         for batch in self.model.val_dataloader():
-            images, observed_labels, true_labels = batch
+            index, images, observed_labels, true_labels = batch
             observed_y.append(observed_labels)
             y.append(true_labels)
             #trigger activation hook
