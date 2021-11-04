@@ -22,9 +22,7 @@ class mnist_dataset(Dataset):
     def __init__(self, df):
         self.annotations = df
         self.transforms = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
-        ])
+        transforms.ToTensor()])
         
     def __len__(self):
         return self.annotations.shape[0]
