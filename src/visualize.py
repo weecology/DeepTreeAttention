@@ -93,9 +93,9 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True):
     """Given a 2D tensor array and a list of labels, plot and optionally color
     Args:
         features: input feature matrix
-        labels: label for each feature row
+        labels: numeric label for each feature row
         use_pca: Whether to first reduce dimensionality using pca"""
-    
+
     num_categories = max(np.unique(labels)) + 1   
     colors = n_colors(n = num_categories, set_color_seed=set_color_seed)
     
