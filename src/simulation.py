@@ -82,8 +82,6 @@ class simulation_data(LightningDataModule):
         novel_set = novel_set.groupby("label").apply(lambda x: x.head(self.config["novel_class_examples"]))
         novel_set["outlier"] = "novel"
         
-        test = pd.concat([test,novel_set])
-        
         #label swap within train
         labels_to_corrupt = train.groupby("label").apply(lambda x: x.sample(frac=self.config["proportion_switch"]))
         labels_to_corrupt["observed_label"] = labels_to_corrupt.label.apply(lambda x: np.random.choice(range(8)))
@@ -91,6 +89,15 @@ class simulation_data(LightningDataModule):
         
         train = train[~train.image_path.isin(labels_to_corrupt.image_path)]
         train = pd.concat([train, labels_to_corrupt])
+        
+        #label swap within test
+        labels_to_corrupt = test.groupby("label").apply(lambda x: x.sample(frac=self.config["proportion_switch"]))
+        labels_to_corrupt["observed_label"] = labels_to_corrupt.label.apply(lambda x: np.random.choice(range(8)))
+        labels_to_corrupt["outlier"] = "label_swap"
+        
+        test = test[~test.image_path.isin(labels_to_corrupt.image_path)]
+        test = pd.concat([test, labels_to_corrupt])
+        test = pd.concat([test,novel_set])
         
         return train, test
     
