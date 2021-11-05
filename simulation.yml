@@ -14,7 +14,7 @@ fast_dev_run: False
 accelerator:
 epochs: 20
 lr: 0.1
-classification_loss_scalar: 0.1
+classification_loss_scalar: 0
 
 #Outlier detection
 outlier_threshold: 0.95
