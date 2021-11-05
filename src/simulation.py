@@ -221,9 +221,11 @@ class simulator():
         ax.axvline(threshold, color='k', linestyle='dashed', linewidth=1)
         self.comet_experiment.experiment.log_figure(figure_name="loss_histogram", figure=fig)
         
+        fig = plt.figure()
+        ax = fig.add_subplot()        
         props = dict(boxes="Gray", whiskers="Orange", medians="Blue", caps="Gray")        
-        box = results.boxplot("autoencoder_loss", by="outlier", patch_artist=True, color=props)
-        box.axhline(threshold, color='k', linestyle='dashed', linewidth=1)        
+        box = results.boxplot("autoencoder_loss", by="outlier", patch_artist=True, color=props, ax=ax)
+        ax.axhline(threshold, color='k', linestyle='dashed', linewidth=1)        
         self.comet_experiment.experiment.log_figure(figure_name="outlier_boxplots")
         
         print("Reconstruction threshold is {}".format(threshold))
