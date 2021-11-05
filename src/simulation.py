@@ -1,4 +1,5 @@
 #MNSIT simulation
+from matplotlib import pyplot as plt
 import os
 import numpy as np
 from pytorch_lightning.loggers import CometLogger
@@ -14,6 +15,7 @@ import pandas as pd
 
 from torch.utils.data import Dataset
 from torch.nn import functional as F
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 
@@ -43,6 +45,7 @@ class simulation_data(LightningDataModule):
     def __init__(self, config):
         super().__init__()
         self.config = config
+        self.tmpdir = tempfile.TemporaryDirectory()
         
     def download_mnist(self):
         self.raw_ds = torchvision.datasets.MNIST('{}/data/simulation/'.format(ROOT), train=True, download=True)                            
@@ -59,7 +62,7 @@ class simulation_data(LightningDataModule):
             if class_labels[label] < self.config["samples"]:
                 class_labels[label] = class_labels[label] + 1
                 labels.append(label)
-                fname = "{}/data/simulation/{}_{}.png".format(ROOT, label,class_labels[label])
+                fname = "{}/{}_{}.png".format(self.tmpdir.name, label,class_labels[label])
                 image_paths.append(fname)
                 image.save(fname)
             
@@ -208,6 +211,20 @@ class simulator():
     def outlier_detection(self, results):
         """Given a set of predictions, label outliers"""
         threshold = results.autoencoder_loss.quantile(self.config["outlier_threshold"])
+        
+        results["outlier"] = results.test_index.apply(lambda x: self.data_module.test.iloc[x].outlier)
+        
+        #plot historgram
+        fig = plt.figure()
+        ax = fig.add_subplot()
+        ax.hist(results.autoencoder_loss, bins=20, color='c', edgecolor='k', alpha=0.65)
+        ax.axvline(threshold, color='k', linestyle='dashed', linewidth=1)
+        self.comet_experiment.experiment.log_figure(figure_name="loss_histogram", figure=fig)
+        
+        props = dict(boxes="Gray", whiskers="Orange", medians="Blue", caps="Gray")        
+        box = results.boxplot("autoencoder_loss", by="outlier", patch_artist=True, color=props)
+        self.comet_experiment.experiment.log_figure(figure_name="outlier_boxplots")
+        
         print("Reconstruction threshold is {}".format(threshold))
         results["outlier"] = results.autoencoder_loss > threshold
         
@@ -223,11 +240,13 @@ class simulator():
         yhat = []
         y = []
         autoencoder_loss = []
+        sample_ids = []
         self.model.eval()
         for batch in self.model.val_dataloader():
             index, images, observed_labels, labels = batch
             observed_y.append(observed_labels)
             y.append(labels)
+            sample_ids.append(index)
             #trigger activation hook
             if next(self.model.parameters()).is_cuda:
                 images = images.cuda()
@@ -241,10 +260,11 @@ class simulator():
         yhat = np.concatenate(yhat)
         yhat = np.argmax(yhat, 1)
         y = np.concatenate(y)
+        sample_ids = np.concatenate(sample_ids)
         observed_y = np.concatenate(observed_y)
         autoencoder_loss = np.asarray(autoencoder_loss)
         
-        results = pd.DataFrame({"label":y,"observed_label": observed_y,"predicted_label":yhat, "autoencoder_loss": autoencoder_loss})
+        results = pd.DataFrame({"test_index":sample_ids,"label":y,"observed_label": observed_y,"predicted_label":yhat, "autoencoder_loss": autoencoder_loss})
         results = self.outlier_detection(results)
         
         if self.log:
@@ -284,5 +304,9 @@ def run(ID, config):
     sim.generate_plots()
     results = sim.evaluate()
     results["simulation_id"] = ID
+    
+    #Cleanup tmpdir
+    sim.data_module.tmpdir.cleanup()
+    
     return results
     
