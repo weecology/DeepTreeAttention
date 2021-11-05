@@ -4,6 +4,7 @@ workers: 1
 novel_class_examples: 20
 samples: 5000
 proportion_switch: 0.001
+proportion_image_corrupt: 0.001
 
 #Comet dashboard
 comet_workspace: bw4sz

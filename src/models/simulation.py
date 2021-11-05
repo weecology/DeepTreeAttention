@@ -33,7 +33,22 @@ class decoder_block(nn.Module):
         x = F.relu(x)
         
         return x
-
+    
+class classifier(nn.Module):
+    def __init__(self, classes):
+        super(classifier, self).__init__()
+        #Classification layer
+        self.vis_conv1= encoder_block(in_channels=16, filters=8)        
+        self.vis_layer = nn.Linear(in_features=6272, out_features=classes)
+        
+    def forward(self, x):
+        y = self.vis_conv1(x)
+        y = F.relu(y)
+        y = y.view(-1, 8*28*28)        
+        y = self.vis_layer(y)
+        
+        return y
+    
 class autoencoder(LightningModule):
     def __init__(self, bands, classes, config):
         super(autoencoder, self).__init__()    
@@ -45,9 +60,7 @@ class autoencoder(LightningModule):
         self.encoder_block2 = encoder_block(in_channels=64, filters=32, pool=True)
         self.encoder_block3 = encoder_block(in_channels=32, filters=16, pool=True)
         
-        #Classification layer
-        self.vis_conv1= encoder_block(in_channels=16, filters=8)        
-        self.vis_layer = nn.Linear(in_features=6272, out_features=classes)
+        self.classifier = classifier(classes)
         
         #Decoder
         self.decoder_block1 = decoder_block(in_channels=16, filters=32)
@@ -63,7 +76,7 @@ class autoencoder(LightningModule):
                 self.vis_activation[name] = output.detach()
             return hook
         
-        self.vis_conv1.register_forward_hook(getActivation("vis_conv1"))        
+        self.classifier.vis_conv1.register_forward_hook(getActivation("vis_conv1"))        
         self.encoder_block3.register_forward_hook(getActivation("encoder_block3"))        
 
         #Metrics
@@ -76,10 +89,7 @@ class autoencoder(LightningModule):
         x = self.encoder_block3(x)
         
         #classification layer projection
-        y = self.vis_conv1(x)
-        y = F.relu(y)
-        y = y.view(-1, 8*28*28)        
-        y = self.vis_layer(y)
+        y = self.classifier(x)
 
         x = self.decoder_block1(x)
         x = self.decoder_block2(x)
