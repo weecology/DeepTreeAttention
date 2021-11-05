@@ -96,9 +96,9 @@ class autoencoder(LightningModule):
         
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
         classification_loss = F.cross_entropy(classification_yhat, observed_labels)
-        #loss = autoencoder_loss  + classification_loss * self.config["classification_loss_scalar"]
+        loss = autoencoder_loss  + classification_loss * self.config["classification_loss_scalar"]
 
-        return classification_loss
+        return loss
 
     def validation_step(self, batch, batch_idx):
         """Train on a loaded dataset
@@ -121,10 +121,10 @@ class autoencoder(LightningModule):
         softmax_prob = F.pad(input=softmax_prob, pad=(0, 2, 0, 0), mode='constant', value=0)
         
         output = self.metrics(softmax_prob, true_labels) 
-        self.log("val_loss", classification_loss, on_epoch=True)
+        self.log("val_loss", loss, on_epoch=True)
         self.log_dict(output, on_epoch=True, on_step=False)
         
-        return classification_loss
+        return loss
             
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.config["lr"])
