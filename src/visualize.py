@@ -83,7 +83,7 @@ def confusion_matrix(comet_experiment, results, species_label_dict, test_csv, te
 def n_colors(n, set_color_seed=True):
     colors = []
     if set_color_seed:
-        np.random.seed(0)
+        np.random.seed(2)
     for x in range(n):
         color = list(np.random.choice(range(256), size=3)/255)
         colors.append(color)
