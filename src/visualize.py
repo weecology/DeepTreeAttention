@@ -124,6 +124,6 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, siz
         features["label"] = labels
         features["color"] = features.label.apply(lambda x: colors[x])
         
-        features.plot.scatter(x="a",y="b",color=features.color, alpha=0.75, s=s)    
-        plt.legend(fontsize='large', markerscale=2)
-        
+        axes = features.plot.scatter(x="a",y="b",color=features.color, alpha=0.75, s=s)   
+        axes[0].legend(fontsize='large', markerscale=2)
+                

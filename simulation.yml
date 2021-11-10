@@ -13,7 +13,7 @@ comet_workspace: bw4sz
 gpus: 1
 fast_dev_run: False
 accelerator:
-epochs: 10
+epochs: 15
 lr: 0.1
 
 classification_loss_scalar: 1
