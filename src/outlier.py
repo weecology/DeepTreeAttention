@@ -36,7 +36,7 @@ def autoencoder_outliers(results, outlier_threshold, experiment):
     mean_accuracy = results[~results.label.isin([8,9])].groupby("label").apply(lambda x: x.label == x.predicted_label).mean()
     
     if experiment:
-        experiment.log_metric(name="Mean accuracy", value=mean_accuracy)
+        experiment.log_metric(name="Classification accuracy", value=mean_accuracy)
     
     true_outliers = results[~(results.label == results.observed_label)]
     
@@ -49,10 +49,10 @@ def autoencoder_outliers(results, outlier_threshold, experiment):
         outlier_precision = sum(inset.outlier)/results.filter(~results.label.isin([8,9])).shape[0]
         
         if experiment:
-            experiment.log_metric("outlier_accuracy", outlier_accuracy)
-            experiment.log_metric("outlier_precision", outlier_precision)
+            experiment.log_metric("autoencoder_label_switching_accuracy", outlier_accuracy)
+            experiment.log_metric("autoencoder_label_switching_precision", outlier_precision)
             
-        return pd.DataFrame({"outlier_accuracy": [outlier_accuracy], "outlier_precision": [outlier_precision], "classification_accuracy": [mean_accuracy]})
+        return pd.DataFrame({"autoencoder_label_switching_accuracy": [outlier_accuracy], "autoencoder_label_switching_precision": [outlier_precision], "classification_accuracy": [mean_accuracy]})
                 
 def distance_outliers(results, features, labels, threshold, experiment):
     """Detect clusters and identify mislabeled data
@@ -92,17 +92,15 @@ def distance_outliers(results, features, labels, threshold, experiment):
     else:     
         corruption_accuracy = sum(corrupted_data.distance_outlier)/corrupted_data.shape[0]
         corruption_precision = sum(corrupted_data.distance_outlier)/results.shape[0]
-        
-    #Plot centroid distance
-    for x in centroids:
-        centroid_plot = visualize.plot_2d_layer(features[labels==x,:], labels=results["distance_outlier"].astype(int))
-        plt.plot(centroids[x][0], centroids[x][1],'go')    
-        plt.title("class {} outliers".format(centroids[x]))
     
-    if experiment:
-        results.centroid_distance.hist()
-        experiment.log_figure("class {} outliers".format(centroids[x]))        
-        experiment.log_figure("centroid_distance")        
+    if experiment:        
+        #Plot centroid distance
+        for x in centroids:
+            centroid_plot = visualize.plot_2d_layer(features[labels==x,:], labels=results["distance_outlier"].astype(int))
+            plt.plot(centroids[x][0], centroids[x][1],'go')    
+            plt.title("class {} outliers".format(x))
+            experiment.log_figure("class {} outliers".format(centroids[x]))      
+            
         experiment.log_metric("novel_accuracy", novel_accuracy)
         experiment.log_metric("distance_outlier_accuracy", outlier_accuracy)
         experiment.log_metric("distance_outlier_precision", outlier_precision)
