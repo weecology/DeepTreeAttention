@@ -128,7 +128,7 @@ class autoencoder(LightningModule):
         
         classification_loss = F.cross_entropy(classification_yhat, observed_labels, ignore_index=-1)
         
-        loss = autoencoder_loss + classification_loss * self.config["classification_loss_scalar"]
+        loss = self.config["autoencoder_loss_scalar"] * autoencoder_loss + classification_loss * self.config["classification_loss_scalar"]
         
         softmax_prob = F.softmax(classification_yhat, dim=1)
         softmax_prob = F.pad(input=softmax_prob, pad=(0, 2, 0, 0), mode='constant', value=0)
