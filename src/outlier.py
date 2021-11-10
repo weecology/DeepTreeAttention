@@ -94,6 +94,11 @@ def distance_outliers(results, features, labels, threshold, experiment):
         corruption_precision = sum(corrupted_data.distance_outlier)/results.shape[0]
     
     if experiment:        
+        #Distance by outlier type
+        box = results.boxplot("distance_outlier", by="outlier", return_type='axes')
+        box.set_ylabel("Distance from class centroid")
+        box.set_xlabel("Type of outlier")
+        
         #Plot centroid distance
         for x in centroids:
             centroid_plot = visualize.plot_2d_layer(features[labels==x,:], labels=results["distance_outlier"].astype(int))
