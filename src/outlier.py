@@ -27,7 +27,7 @@ def autoencoder_outliers(results, outlier_threshold, experiment):
         experiment.log_figure(figure_name="outlier_boxplots")
     
     print("Reconstruction threshold is {}".format(threshold))
-    results["outlier"] = results.autoencoder_loss > threshold
+    results["predicted_outlier"] = results.autoencoder_loss > threshold
     
     if experiment:
         experiment.log_table("results.csv",results)
@@ -44,8 +44,8 @@ def autoencoder_outliers(results, outlier_threshold, experiment):
         corruption_accuracy = None
         corruption_precision = None
     else:     
-        corruption_accuracy = sum(corrupted_data.distance_outlier)/corrupted_data.shape[0]
-        corruption_precision = sum(corrupted_data.distance_outlier)/results.shape[0]
+        corruption_accuracy = sum(corrupted_data.predicted_outlier)/corrupted_data.shape[0]
+        corruption_precision = sum(corrupted_data.predicted_outlier)/results.shape[0]
 
     true_outliers = results[~(results.label == results.observed_label)]
     
@@ -54,8 +54,8 @@ def autoencoder_outliers(results, outlier_threshold, experiment):
     else:
         #inset data does not have class 8 ir 9
         inset = true_outliers[~true_outliers.label.isin([8,9])]
-        outlier_accuracy = sum(inset.outlier)/inset.shape[0]
-        outlier_precision = sum(inset.outlier)/results.filter(~results.label.isin([8,9])).shape[0]
+        outlier_accuracy = sum(inset.predicted_outlier)/inset.shape[0]
+        outlier_precision = sum(inset.predicted_outlier)/results.filter(~results.label.isin([8,9])).shape[0]
         
         if experiment:
             experiment.log_metric("autoencoder_label_switching_accuracy", outlier_accuracy)
@@ -95,8 +95,8 @@ def distance_outliers(results, features, labels, threshold, experiment):
     #Label switching
     true_outliers = results[~(results.label == results.observed_label)]
     inset = true_outliers[~true_outliers.label.isin([8,9])]    
-    outlier_accuracy = sum(inset.outlier)/inset.shape[0]
-    outlier_precision = sum(inset.outlier)/results.filter(~results.label.isin([8,9])).shape[0]    
+    outlier_accuracy = sum(inset.predicted_outlier)/inset.shape[0]
+    outlier_precision = sum(inset.predicted_outlier)/results.filter(~results.label.isin([8,9])).shape[0]    
     
     #Image corruptions
     corrupted_data = results[results.image_corrupt==True]
@@ -117,8 +117,14 @@ def distance_outliers(results, features, labels, threshold, experiment):
         for x in centroids:
             centroid_plot = visualize.plot_2d_layer(features[labels==x,:], labels=results["distance_outlier"].astype(int))
             plt.plot(centroids[x][0], centroids[x][1],'go')
-            plt.title("class {} outliers".format(x))
-            experiment.log_figure("class {} outliers".format(x))      
+            plt.title("Class {} predicted outliers".format(x))
+            experiment.log_figure("class {} predicted outliers".format(x))      
+            
+            results["label_swap"] = results["outlier"] == "label_swap"
+            centroid_plot = visualize.plot_2d_layer(features[labels==x,:], labels=results["label_swap"].astype(int))
+            plt.plot(centroids[x][0], centroids[x][1],'go')
+            plt.title("Class {} predicted outliers".format(x))
+            experiment.log_figure("class {} predicted outliers".format(x))      
             
         experiment.log_metric("novel_accuracy", novel_accuracy)
         experiment.log_metric("distance_outlier_accuracy", outlier_accuracy)
