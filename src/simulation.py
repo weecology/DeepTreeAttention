@@ -6,6 +6,7 @@ from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning import LightningDataModule
 from pytorch_lightning import Trainer
 from src.models.simulation import autoencoder
+from src import outlier
 from src import visualize
 
 from PIL import Image
@@ -163,6 +164,7 @@ class simulator():
             self.comet_experiment.experiment.log_parameters(self.config)
     
     def generate_data(self):
+        """Simulation data from RAW MNIST dataset"""
         self.data_module = simulation_data(config=self.config)
         self.data_module.setup()
     
@@ -170,6 +172,7 @@ class simulator():
         self.model = autoencoder(bands=1, classes=self.data_module.num_classes, config=self.config)
         
     def train(self):
+        """Train a neural network arch"""
         #Create trainer
         self.trainer = Trainer(
             gpus=self.config["gpus"],
@@ -187,6 +190,8 @@ class simulator():
         epoch_labels = []
         vis_epoch_activations = []
         encoder_epoch_activations = []
+        classification_bottleneck = []
+        
         sample_ids = []
         for batch in self.data_module.val_dataloader():
             index, images, observed_labels, labels  = batch
@@ -202,66 +207,40 @@ class simulator():
             pred = self.model(image)
             vis_epoch_activations.append(self.model.vis_activation["vis_conv1"].cpu())
             encoder_epoch_activations.append(self.model.vis_activation["encoder_block3"].cpu())
+            classification_bottleneck.append(self.model.vis_activation["classification_bottleneck"].cpu().numpy())
 
         #Create a single array
         epoch_labels = np.concatenate(epoch_labels)
-        vis_epoch_activations = torch.tensor(np.concatenate(vis_epoch_activations))
-        encoder_epoch_activations = torch.tensor(np.concatenate(encoder_epoch_activations))
+        self.vis_epoch_activations = torch.tensor(np.concatenate(vis_epoch_activations))
+        self.encoder_epoch_activations = torch.tensor(np.concatenate(encoder_epoch_activations))
+        self.classification_bottleneck = np.concatenate(classification_bottleneck)
         sample_ids = np.concatenate(sample_ids)
         
         #look up sample ids
         outlier_class = self.data_module.test.outlier.iloc[sample_ids].astype('category').cat.codes.astype(int).values
         
         #plot different sets
-        layerplot_vis = visualize.plot_2d_layer(vis_epoch_activations, epoch_labels, use_pca=True)
+        layerplot_vis = visualize.plot_2d_layer(self.vis_epoch_activations, epoch_labels, use_pca=True)
         self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="2d_vis_projection_labels", step=self.model.current_epoch)        
         
-        layerplot_vis = visualize.plot_2d_layer(vis_epoch_activations, outlier_class, use_pca=True, size_weights=outlier_class+1)        
+        layerplot_vis = visualize.plot_2d_layer(self.vis_epoch_activations, outlier_class, use_pca=True, size_weights=outlier_class+1)        
         self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="2d_vis_projection_outliers", step=self.model.current_epoch)
 
-        layerplot_encoder = visualize.plot_2d_layer(encoder_epoch_activations, epoch_labels, use_pca=True)
+        layerplot_encoder = visualize.plot_2d_layer(self.encoder_epoch_activations, epoch_labels, use_pca=True)
         self.comet_experiment.experiment.log_figure(figure=layerplot_encoder, figure_name="PCA_encoder_projection_labels", step=self.model.current_epoch)
         
-        layerplot_encoder = visualize.plot_2d_layer(encoder_epoch_activations, outlier_class, use_pca=True, size_weights=outlier_class+1)
+        layerplot_encoder = visualize.plot_2d_layer(self.encoder_epoch_activations, outlier_class, use_pca=True, size_weights=outlier_class+1)
         self.comet_experiment.experiment.log_figure(figure=layerplot_encoder, figure_name="PCA_encoder_projection_outliers", step=self.model.current_epoch)
-        
-    def outlier_detection(self, results):
-        """Given a set of predictions, label outliers"""
-        threshold = results.autoencoder_loss.quantile(self.config["outlier_threshold"])
-        
-        results["outlier"] = results.test_index.apply(lambda x: self.data_module.test.iloc[x].outlier)
-        
-        #plot historgram
-        fig = plt.figure()
-        ax = fig.add_subplot()
-        ax.hist(results.autoencoder_loss, bins=20, color='c', edgecolor='k', alpha=0.65)
-        ax.axvline(threshold, color='k', linestyle='dashed', linewidth=1)
-        self.comet_experiment.experiment.log_figure(figure_name="loss_histogram", figure=fig)
-        
-        fig = plt.figure()
-        ax = fig.add_subplot()        
-        props = dict(boxes="Gray", whiskers="Orange", medians="Blue", caps="Gray")        
-        box = results.boxplot("autoencoder_loss", by="outlier", patch_artist=True, color=props, ax=ax)
-        ax.axhline(threshold, color='k', linestyle='dashed', linewidth=1)        
-        self.comet_experiment.experiment.log_figure(figure_name="outlier_boxplots")
-        
-        print("Reconstruction threshold is {}".format(threshold))
-        results["outlier"] = results.autoencoder_loss > threshold
-        
-        return results
     
-    def label_switching(self):
-        """Detect clusters and identify mislabeled data"""
-        pass
-    
-    
-    def evaluate(self):
+    def predict_validation(self):
+        """Generate labels and predictions for validation data_loader"""
         observed_y = []
         yhat = []
         y = []
         autoencoder_loss = []
         sample_ids = []
         self.model.eval()
+        
         for batch in self.model.val_dataloader():
             index, images, observed_labels, labels = batch
             observed_y.append(observed_labels)
@@ -284,38 +263,23 @@ class simulator():
         observed_y = np.concatenate(observed_y)
         autoencoder_loss = np.asarray(autoencoder_loss)
         
-        results = pd.DataFrame({"test_index":sample_ids,"label":y,"observed_label": observed_y,"predicted_label":yhat, "autoencoder_loss": autoencoder_loss})
-        results = self.outlier_detection(results)
+        results = pd.DataFrame({"test_index":sample_ids,"label":y,"observed_label": observed_y,"predicted_label":yhat, "autoencoder_loss": autoencoder_loss})        
+    
+        return results
+    
+    def evaluate(self):
+        """Generate evaluation statistics for outlier detection"""
+        results = self.predict_validation()
+        results["outlier"] = results.test_index.apply(lambda x: self.data_module.test.iloc[x].outlier)
+        results["image_corrupt"] = results.test_index.apply(lambda x: self.data_module.test.iloc[x].image_corrupt)        
+        outlier_detection_loss = outlier.autoencoder_outliers(results, outlier_threshold=self.config["outlier_threshold"], experiment=self.comet_experiment.experiment)
+        outlier_detection_distance = outlier.distance_outliers(results, self.classification_bottleneck, labels=results.label, threshold=self.config["distance_threshold"], experiment=self.comet_experiment.experiment)
+        results = pd.concat([outlier_detection_loss, outlier_detection_distance])
         
-        if self.log:
-            self.comet_experiment.experiment.log_table("results.csv",results)
-        
-        #Mean Proportion of true classes are correct
-        mean_accuracy = results[~results.label.isin([8,9])].groupby("label").apply(lambda x: x.label == x.predicted_label).mean()
-        
-        if self.log:
-            self.comet_experiment.experiment.log_metric(name="Mean accuracy", value=mean_accuracy)
-        
-        true_outliers = results[~(results.label == results.observed_label)]
-        
-        if true_outliers.empty:
-            return pd.DataFrame({"outlier_accuracy": [None], "outlier_precision": [None], "classification_accuracy": [mean_accuracy]})
-        else:
-            #inset data does not have class 8 ir 9
-            inset = true_outliers[~true_outliers.label.isin([8,9])]
-            outlier_accuracy = sum(inset.outlier)/inset.shape[0]
-            outlier_precision = sum(inset.outlier)/results.filter(~results.label.isin([8,9])).shape[0]
-            
-            if self.log:
-                self.comet_experiment.experiment.log_metric("outlier_accuracy", outlier_accuracy)
-                self.comet_experiment.experiment.log_metric("outlier_precision", outlier_precision)
-                
-            #TODO 
-            #label_switching = self.label_switching(df, self.data_module.true_state)
-            
-            return pd.DataFrame({"outlier_accuracy": [outlier_accuracy], "outlier_precision": [outlier_precision], "classification_accuracy": [mean_accuracy]})
-        
+        return results
+
 def run(ID, config):
+    """A single run of the simulation"""
     #Set a couple dask env variables
     sim = simulator(config)    
     sim.generate_data()

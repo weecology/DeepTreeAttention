@@ -38,14 +38,16 @@ class classifier(nn.Module):
     def __init__(self, classes):
         super(classifier, self).__init__()
         #Classification layer
-        self.vis_conv1= encoder_block(in_channels=16, filters=8)        
-        self.vis_layer = nn.Linear(in_features=6272, out_features=classes)
+        self.vis_conv1= encoder_block(in_channels=16, filters=2) 
+        self.classfication_bottleneck = nn.Linear(in_features=1568, out_features=2)        
+        self.classfication_layer = nn.Linear(in_features=2, out_features=classes)
         
     def forward(self, x):
         y = self.vis_conv1(x)
         y = F.relu(y)
-        y = y.view(-1, 8*28*28)        
-        y = self.vis_layer(y)
+        y = y.view(-1, 2*28*28)        
+        y = self.classfication_bottleneck(y)
+        y = self.classfication_layer(y)
         
         return y
     
@@ -76,7 +78,8 @@ class autoencoder(LightningModule):
                 self.vis_activation[name] = output.detach()
             return hook
         
-        self.classifier.vis_conv1.register_forward_hook(getActivation("vis_conv1"))        
+        self.classifier.vis_conv1.register_forward_hook(getActivation("vis_conv1"))    
+        self.classifier.classfication_bottleneck.register_forward_hook(getActivation("classification_bottleneck"))        
         self.encoder_block3.register_forward_hook(getActivation("encoder_block3"))        
 
         #Metrics
@@ -106,7 +109,7 @@ class autoencoder(LightningModule):
         
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
         classification_loss = F.cross_entropy(classification_yhat, observed_labels)
-        loss = autoencoder_loss  + classification_loss * self.config["classification_loss_scalar"]
+        loss = self.config["autoencoder_loss_scalar"] * autoencoder_loss  + classification_loss * self.config["classification_loss_scalar"]
 
         return loss
 
