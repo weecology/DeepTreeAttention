@@ -124,7 +124,7 @@ def distance_outliers(results, features, labels, threshold, experiment):
             centroid_plot = visualize.plot_2d_layer(features[labels==x,:], labels=results["label_swap"].astype(int))
             plt.plot(centroids[x][0], centroids[x][1],'go')
             plt.title("Class {} predicted outliers".format(x))
-            experiment.log_figure("class {} predicted outliers".format(x))      
+            experiment.log_figure("class {} true outliers".format(x))      
             
         experiment.log_metric("novel_accuracy", novel_accuracy)
         experiment.log_metric("distance_outlier_accuracy", outlier_accuracy)
