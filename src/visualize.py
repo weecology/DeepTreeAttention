@@ -120,10 +120,13 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, siz
             ax.scatter(pca_proj[indices,0],pca_proj[indices,1], c=colors[lab], label = lab ,alpha=0.75, s=point_size)
         ax.legend(fontsize='large', markerscale=2)
     else: 
+        fig, ax = plt.subplots()        
         features = pd.DataFrame(features, columns=["a","b"])
         features["label"] = labels
         features["color"] = features.label.apply(lambda x: colors[x])
-        
-        axes = features.plot.scatter(x="a",y="b",color=features.color, alpha=0.75, s=s)   
-        axes.legend(fontsize='large', markerscale=2)
+        for label in np.unique(features.label):
+            x = features[features.label == label].a
+            y = features[features.label == label].b
+            ax.scatter(x,y,color=colors[label], alpha=0.75, s=s, label=label)   
+            ax.legend(markerscale=2)
                 
