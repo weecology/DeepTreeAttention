@@ -1,6 +1,5 @@
 #Autoencoder
 from torch.nn import functional as F
-import torch
 import torch.nn as nn
 from torch import optim
 from src.models.Hang2020 import conv_module

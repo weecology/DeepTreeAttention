@@ -95,8 +95,8 @@ def distance_outliers(results, features, labels, threshold, experiment):
     #Label switching
     true_outliers = results[~(results.label == results.observed_label)]
     inset = true_outliers[~true_outliers.label.isin([8,9])]    
-    outlier_accuracy = sum(inset.predicted_outlier)/inset.shape[0]
-    outlier_precision = sum(inset.predicted_outlier)/results.filter(~results.label.isin([8,9])).shape[0]    
+    outlier_accuracy = sum(inset.distance_outlier)/inset.shape[0]
+    outlier_precision = sum(inset.distance_outlier)/results.filter(~results.label.isin([8,9])).shape[0]    
     
     #Image corruptions
     corrupted_data = results[results.image_corrupt==True]
