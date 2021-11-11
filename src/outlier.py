@@ -129,11 +129,10 @@ def distance_outliers(results, features, labels, threshold, experiment):
         experiment.log_metric("novel_accuracy", novel_accuracy)
         experiment.log_metric("distance_outlier_accuracy", outlier_accuracy)
         experiment.log_metric("distance_outlier_precision", outlier_precision)
-        experiment.log_metric("corruption_accuracy", corruption_accuracy)
-        experiment.log_metric("corruption_precision", corruption_precision)
+        experiment.log_metric("distance_corruption_accuracy", corruption_accuracy)
+        experiment.log_metric("distance_corruption_precision", corruption_precision)
         
     return pd.DataFrame({"distance_label_switching_accuracy": [outlier_accuracy], "distance_label_switching_precision": [outlier_precision], "novel_accuracy":[novel_accuracy]})
-    
     
 def calculate_centroids(features, labels):
     """calculate class centroids in a multidim feature space
