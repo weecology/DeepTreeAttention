@@ -127,6 +127,12 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, siz
         for label in np.unique(features.label):
             x = features[features.label == label].a
             y = features[features.label == label].b
-            ax.scatter(x,y,color=colors[label], alpha=0.75, s=s, label=label)   
+            
+            if len(size_weights) > 0:
+                point_size = s[features.label == label]
+            else:
+                point_size = s
+                
+            ax.scatter(x,y,color=colors[label], alpha=0.75, s=point_size, label=label)   
             ax.legend(markerscale=2)
                 
