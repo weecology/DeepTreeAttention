@@ -14,11 +14,11 @@ gpus: 1
 fast_dev_run: False
 accelerator:
 epochs: 15
-lr: 0.1
+lr: 0.01
 
 classification_loss_scalar: 1
 autoencoder_loss_scalar: 0
 
 #Outlier detection
 outlier_threshold: 0.98
-distance_threshold: 2
+distance_threshold: 20
