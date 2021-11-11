@@ -103,7 +103,7 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, siz
     if len(size_weights) > 0:
         s = 7.0 * size_weights + 1
     else:
-        s = 5
+        s = 4
     if use_pca:
         pca = PCA(2)
         #flatten features
@@ -116,22 +116,19 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, siz
                 point_size = s[indices]
             else:
                 point_size = s
-            ax.scatter(pca_proj[indices,0],pca_proj[indices,1], c=colors[index], label = lab ,alpha=0.75, s=point_size)
+            ax.scatter(pca_proj[indices,0],pca_proj[indices,1], c=colors[index], label = lab ,alpha=0.7, s=point_size)
         ax.legend(fontsize='large', markerscale=2)
     else: 
-        fig, ax = plt.subplots()        
-        features = pd.DataFrame(features, columns=["a","b"])
-        features["label"] = labels
-        features["color"] = features.label.apply(lambda x: colors[x])
-        for label in np.unique(features.label):
-            x = features[features.label == label].a
-            y = features[features.label == label].b
+        fig, ax = plt.subplots()                
+        for index, label in enumerate(np.unique(labels)):
+            x = features[labels == label, 0]
+            y = features[labels == label, 1]
             
             if len(size_weights) > 0:
-                point_size = s[features.label == label]
+                point_size = s[labels == label]
             else:
                 point_size = s
                 
-            ax.scatter(x,y,color=colors[label], alpha=0.75, s=point_size, label=label)   
+            ax.scatter(x,y,color=colors[index], alpha=0.7, s=point_size, label=label)   
             ax.legend(markerscale=2)
                 
