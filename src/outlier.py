@@ -115,13 +115,14 @@ def distance_outliers(results, features, labels, threshold, experiment):
         
         #Plot centroid distance
         for x in centroids:
-            centroid_plot = visualize.plot_2d_layer(features[labels==x,:], labels=results["distance_outlier"].astype(int))
+            cluster_points = results[results.observed_label == x]
+            centroid_plot = visualize.plot_2d_layer(features[labels==x,:], labels=cluster_points["distance_outlier"].astype(int))
             plt.plot(centroids[x][0], centroids[x][1],'go')
             plt.title("Class {} predicted outliers".format(x))
             experiment.log_figure("class {} predicted outliers".format(x))      
             
             results["label_swap"] = results["outlier"] == "label_swap"
-            centroid_plot = visualize.plot_2d_layer(features[labels==x,:], labels=results["label_swap"].astype(int))
+            centroid_plot = visualize.plot_2d_layer(features[labels==x,:], labels=cluster_points["label_swap"].astype(int))
             plt.plot(centroids[x][0], centroids[x][1],'go')
             plt.title("Class {} true outliers".format(x))
             experiment.log_figure("class {} true outliers".format(x))      
@@ -129,11 +130,10 @@ def distance_outliers(results, features, labels, threshold, experiment):
         experiment.log_metric("novel_accuracy", novel_accuracy)
         experiment.log_metric("distance_outlier_accuracy", outlier_accuracy)
         experiment.log_metric("distance_outlier_precision", outlier_precision)
-        experiment.log_metric("corruption_accuracy", corruption_accuracy)
-        experiment.log_metric("corruption_precision", corruption_precision)
+        experiment.log_metric("distance_corruption_accuracy", corruption_accuracy)
+        experiment.log_metric("distance_corruption_precision", corruption_precision)
         
     return pd.DataFrame({"distance_label_switching_accuracy": [outlier_accuracy], "distance_label_switching_precision": [outlier_precision], "novel_accuracy":[novel_accuracy]})
-    
     
 def calculate_centroids(features, labels):
     """calculate class centroids in a multidim feature space

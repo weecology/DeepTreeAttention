@@ -97,7 +97,6 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, siz
         use_pca: Whether to first reduce dimensionality using pca
         size_weights: array the same length as the features that gives the size multiplier for each point
         """
-
     num_categories = max(np.unique(labels)) + 1   
     colors = n_colors(n = num_categories, set_color_seed=set_color_seed)
     
@@ -108,7 +107,7 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, siz
     if use_pca:
         pca = PCA(2)
         #flatten features
-        features = features.view(-1,features.shape[1] * features.shape[2] *features.shape[3])
+        features = np.reshape(features, (features.shape[0], features.shape[1] * features.shape[2] *features.shape[3]))
         pca_proj = pca.fit_transform(features)     
         fig, ax = plt.subplots(figsize=(8,8))
         for lab in range(num_categories):

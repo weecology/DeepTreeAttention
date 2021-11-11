@@ -183,55 +183,7 @@ class simulator():
             logger=self.comet_experiment)
         
         self.trainer.fit(self.model, datamodule=self.data_module)
-    
-    def generate_plots(self):
-        """At the end of each epoch trigger the dataset to collect intermediate activation for plotting"""
-        #plot 2d projection layer
-        epoch_labels = []
-        vis_epoch_activations = []
-        encoder_epoch_activations = []
-        classification_bottleneck = []
-        
-        sample_ids = []
-        for batch in self.data_module.val_dataloader():
-            index, images, observed_labels, labels  = batch
-            epoch_labels.append(observed_labels)
-            sample_ids.append(index)
-            
-            #trigger activation hook
-            if next(self.model.parameters()).is_cuda:
-                image = images.cuda()
-            else:
-                image = images
-            
-            pred = self.model(image)
-            vis_epoch_activations.append(self.model.vis_activation["vis_conv1"].cpu())
-            encoder_epoch_activations.append(self.model.vis_activation["encoder_block3"].cpu())
-            classification_bottleneck.append(self.model.vis_activation["classification_bottleneck"].cpu().numpy())
 
-        #Create a single array
-        epoch_labels = np.concatenate(epoch_labels)
-        self.vis_epoch_activations = torch.tensor(np.concatenate(vis_epoch_activations))
-        self.encoder_epoch_activations = torch.tensor(np.concatenate(encoder_epoch_activations))
-        self.classification_bottleneck = np.concatenate(classification_bottleneck)
-        sample_ids = np.concatenate(sample_ids)
-        
-        #look up sample ids
-        outlier_class = self.data_module.test.outlier.iloc[sample_ids].astype('category').cat.codes.astype(int).values
-        
-        #plot different sets
-        layerplot_vis = visualize.plot_2d_layer(self.classification_bottleneck, epoch_labels, use_pca=False)
-        self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_labels", step=self.model.current_epoch)        
-        
-        layerplot_vis = visualize.plot_2d_layer(self.classification_bottleneck, outlier_class, use_pca=False, size_weights=outlier_class+1)        
-        self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_outliers", step=self.model.current_epoch)
-
-        layerplot_encoder = visualize.plot_2d_layer(self.encoder_epoch_activations, epoch_labels, use_pca=True)
-        self.comet_experiment.experiment.log_figure(figure=layerplot_encoder, figure_name="PCA_encoder_projection_labels", step=self.model.current_epoch)
-        
-        layerplot_encoder = visualize.plot_2d_layer(self.encoder_epoch_activations, outlier_class, use_pca=True, size_weights=outlier_class+1)
-        self.comet_experiment.experiment.log_figure(figure=layerplot_encoder, figure_name="PCA_encoder_projection_outliers", step=self.model.current_epoch)
-    
     def predict_validation(self):
         """Generate labels and predictions for validation data_loader"""
         observed_y = []
@@ -239,11 +191,15 @@ class simulator():
         y = []
         autoencoder_loss = []
         sample_ids = []
+        vis_epoch_activations = []
+        encoder_epoch_activations = []
+        classification_bottleneck = []
+        
         self.model.eval()
         
         for batch in self.model.val_dataloader():
             index, images, observed_labels, labels = batch
-            observed_y.append(observed_labels)
+            observed_y.append(observed_labels.numpy())
             y.append(labels)
             sample_ids.append(index)
             #trigger activation hook
@@ -255,6 +211,9 @@ class simulator():
                     yhat.append(classification_yhat)
                     loss = F.mse_loss(image_yhat, image)    
                     autoencoder_loss.append(loss.numpy())
+                    vis_epoch_activations.append(self.model.vis_activation["vis_conv1"].cpu().numpy())
+                    encoder_epoch_activations.append(self.model.vis_activation["encoder_block3"].cpu().numpy())
+                    classification_bottleneck.append(self.model.vis_activation["classification_bottleneck"].cpu().numpy())                    
            
         yhat = np.concatenate(yhat)
         yhat = np.argmax(yhat, 1)
@@ -263,6 +222,27 @@ class simulator():
         observed_y = np.concatenate(observed_y)
         autoencoder_loss = np.asarray(autoencoder_loss)
         
+        #Create a single array
+        self.classification_conv_activations = np.concatenate(vis_epoch_activations)
+        self.encoder_activations = np.concatenate(encoder_epoch_activations)
+        self.classification_bottleneck = np.concatenate(classification_bottleneck)
+        
+        #look up sample ids
+        outlier_class = self.data_module.test.outlier.iloc[sample_ids].astype('category').cat.codes.astype(int).values
+        
+        #plot different sets
+        layerplot_vis = visualize.plot_2d_layer(features=self.classification_bottleneck, labels=observed_y, use_pca=False)
+        self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_labels", step=self.model.current_epoch)        
+        
+        layerplot_vis = visualize.plot_2d_layer(features=self.classification_bottleneck, labels=outlier_class, use_pca=False, size_weights=outlier_class+1)        
+        self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_outliers", step=self.model.current_epoch)
+
+        layerplot_encoder = visualize.plot_2d_layer(self.encoder_activations, observed_y, use_pca=True)
+        self.comet_experiment.experiment.log_figure(figure=layerplot_encoder, figure_name="PCA_encoder_projection_labels", step=self.model.current_epoch)
+        
+        layerplot_encoder = visualize.plot_2d_layer(self.encoder_activations, outlier_class, use_pca=True, size_weights=outlier_class+1)
+        self.comet_experiment.experiment.log_figure(figure=layerplot_encoder, figure_name="PCA_encoder_projection_outliers", step=self.model.current_epoch)
+            
         results = pd.DataFrame({"test_index":sample_ids,"label":y,"observed_label": observed_y,"predicted_label":yhat, "autoencoder_loss": autoencoder_loss})        
     
         return results
@@ -285,7 +265,6 @@ def run(ID, config):
     sim.generate_data()
     sim.create_model()
     sim.train()
-    sim.generate_plots()
     results = sim.evaluate()
     results["simulation_id"] = ID
     
