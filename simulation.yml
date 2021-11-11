@@ -21,4 +21,4 @@ autoencoder_loss_scalar: 0
 
 #Outlier detection
 outlier_threshold: 0.98
-distance_threshold: 25
+distance_threshold: 2
