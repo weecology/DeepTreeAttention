@@ -3,6 +3,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
 from src import visualize
+import scipy
+from scipy.spatial import distance
 
 def autoencoder_outliers(results, outlier_threshold, experiment):
     """Given a set of predictions, label outliers"""
@@ -76,8 +78,10 @@ def distance_outliers(results, features, labels, threshold, experiment):
         labels: class of each test set, in the same order as feature array first dimension
         threshold: numeric threshold for outlier delination from class center in feature space
         """
+    #Calculate mean and covariance matrix within feature space
     centroids = calculate_centroids(features, labels)
-    results["centroid_distance"] = distance_from_centroids(features, centroids, labels)
+    cov = calculate_covariance(features, labels)
+    results["centroid_distance"] = distance_from_centroids(features, centroids, labels, cov)
     results["distance_outlier"] = results["centroid_distance"] > threshold
     
     true_outliers = results[~(results.label == results.observed_label)]
@@ -150,14 +154,35 @@ def calculate_centroids(features, labels):
         centroids[x] = class_features.mean(axis=0)
         
     return centroids
+
+def calculate_covariance(features, labels):
+    """calculate class centroids in a multidim feature space
+    Args:
+        features: a numpy array of B, C, H, W, usually a encoding feature block
+        labels: class label of each sample in the same order as the feature block batch dimensions
+    Returns:
+        centroids: a dict of locations for each class
+    """
+    unique_labels = np.unique(labels)
+    cov = {}
+    for x in unique_labels:
+        class_features = features[labels == x,:]
+        cov[x] = scipy.linalg.inv(np.cov(class_features.T))
         
-def distance_from_centroids(features, centroids, labels):
+    return cov
+
+def distance_from_centroids(features, centroids, labels, cov):
     """Euclidean distance from feature center for each label
+    Args:
+        features: numpy array of features to cluster
+        centroids: dictionary of centroid features class -> numpy_array
+        labels: list of classes in the order of feature rows
+        cov: dictionary of var-cov matrix of each feature class
     """
     distances = []
-    for x in range(features.shape[0]):      
-        distance = np.linalg.norm(features[x,:] - centroids[labels[x]])
-        distances.append(distance)
+    for x in range(features.shape[0]):  
+        mahal_dist = scipy.spatial.distance.mahalanobis(features[x,:], centroids[labels[x]], cov[labels[x]])        
+        distances.append(mahal_dist)
     
     return distances
     
