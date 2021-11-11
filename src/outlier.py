@@ -116,13 +116,13 @@ def distance_outliers(results, features, labels, threshold, experiment):
         #Plot centroid distance
         for x in centroids:
             cluster_points = results[results.observed_label == x]
-            centroid_plot = visualize.plot_2d_layer(features[labels==x,:], labels=cluster_points["distance_outlier"].astype(int))
+            centroid_plot = visualize.plot_2d_layer(features[results.observed_label == x,:], labels=cluster_points["distance_outlier"].astype(int))
             plt.plot(centroids[x][0], centroids[x][1],'go')
             plt.title("Class {} predicted outliers".format(x))
             experiment.log_figure("class {} predicted outliers".format(x))      
             
-            results["label_swap"] = results["outlier"] == "label_swap"
-            centroid_plot = visualize.plot_2d_layer(features[labels==x,:], labels=cluster_points["label_swap"].astype(int))
+            cluster_points["label_swap"] = cluster_points["outlier"] == "label_swap"
+            centroid_plot = visualize.plot_2d_layer(features[results.observed_label == x,:], labels=cluster_points["label_swap"].astype(int))
             plt.plot(centroids[x][0], centroids[x][1],'go')
             plt.title("Class {} true outliers".format(x))
             experiment.log_figure("class {} true outliers".format(x))      
