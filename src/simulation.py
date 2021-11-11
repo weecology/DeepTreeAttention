@@ -220,11 +220,11 @@ class simulator():
         outlier_class = self.data_module.test.outlier.iloc[sample_ids].astype('category').cat.codes.astype(int).values
         
         #plot different sets
-        layerplot_vis = visualize.plot_2d_layer(self.vis_epoch_activations, epoch_labels, use_pca=True)
-        self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="2d_vis_projection_labels", step=self.model.current_epoch)        
+        layerplot_vis = visualize.plot_2d_layer(self.classification_bottleneck, epoch_labels, use_pca=False)
+        self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_labels", step=self.model.current_epoch)        
         
-        layerplot_vis = visualize.plot_2d_layer(self.vis_epoch_activations, outlier_class, use_pca=True, size_weights=outlier_class+1)        
-        self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="2d_vis_projection_outliers", step=self.model.current_epoch)
+        layerplot_vis = visualize.plot_2d_layer(self.classification_bottleneck, outlier_class, use_pca=False, size_weights=outlier_class+1)        
+        self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_outliers", step=self.model.current_epoch)
 
         layerplot_encoder = visualize.plot_2d_layer(self.encoder_epoch_activations, epoch_labels, use_pca=True)
         self.comet_experiment.experiment.log_figure(figure=layerplot_encoder, figure_name="PCA_encoder_projection_labels", step=self.model.current_epoch)
