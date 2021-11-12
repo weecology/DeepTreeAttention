@@ -187,22 +187,22 @@ class simulator():
             
             self.trainer.fit(self.model, datamodule=self.data_module)
             
-        #with self.comet_experiment.experiment.context_manager("autoencoder_only"):  
-            #self.model.config["classification_loss_scalar"] = 0
-            #self.model.config["autoencoder_loss_scalar"] = 1
-            #self.model.config["epochs"] = 5            
-            #self.trainer = Trainer(
-                #gpus=self.config["gpus"],
-                #fast_dev_run=self.config["fast_dev_run"],
-                #max_epochs=self.config["epochs"],
-                #accelerator=self.config["accelerator"],
-                #checkpoint_callback=False,
-                #logger=self.comet_experiment)
+        with self.comet_experiment.experiment.context_manager("autoencoder_only"):  
+            self.model.config["classification_loss_scalar"] = 0
+            self.model.config["autoencoder_loss_scalar"] = 1
+            self.config["epochs"] = 5            
+            self.trainer = Trainer(
+                gpus=self.config["gpus"],
+                fast_dev_run=self.config["fast_dev_run"],
+                max_epochs=self.config["epochs"],
+                accelerator=self.config["accelerator"],
+                checkpoint_callback=False,
+                logger=self.comet_experiment)
 
-            #for x in self.model.classifier.parameters():
-                #x.requires_grad = False
+            for x in self.model.classifier.parameters():
+                x.requires_grad = False
                 
-            #self.trainer.fit(self.model, datamodule=self.data_module)
+            self.trainer.fit(self.model, datamodule=self.data_module)
             
     def predict_validation(self):
         """Generate labels and predictions for validation data_loader"""
