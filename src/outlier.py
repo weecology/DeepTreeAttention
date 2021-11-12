@@ -47,7 +47,7 @@ def autoencoder_outliers(results, outlier_threshold, experiment):
         corruption_precision = None
     else:     
         corruption_accuracy = sum(corrupted_data.predicted_outlier)/corrupted_data.shape[0]
-        corruption_precision = sum(corrupted_data.predicted_outlier)/results.shape[0]
+        corruption_precision = sum(corrupted_data.predicted_outlier)/sum(results.predicted_outlier)
 
     true_outliers = results[~(results.label == results.observed_label)]
     
@@ -57,7 +57,7 @@ def autoencoder_outliers(results, outlier_threshold, experiment):
         #inset data does not have class 8 ir 9
         inset = true_outliers[~true_outliers.label.isin([8,9])]
         outlier_accuracy = sum(inset.predicted_outlier)/inset.shape[0]
-        outlier_precision = sum(inset.predicted_outlier)/results.filter(~results.label.isin([8,9])).shape[0]
+        outlier_precision = sum(inset.predicted_outlier)/sum(results[~results.label.isin([8,9])].predicted_outlier)
         
         if experiment:
             experiment.log_metric("autoencoder_label_switching_accuracy", outlier_accuracy)
@@ -94,13 +94,13 @@ def distance_outliers(results, features, labels, threshold, experiment):
     if novel.empty:
         novel_accuracy = None
     else:
-        novel_accuracy = sum(novel.outlier)/novel.shape[0]
+        novel_accuracy = sum(novel.distance_outlier)/novel.shape[0]
     
     #Label switching
     true_outliers = results[~(results.label == results.observed_label)]
     inset = true_outliers[~true_outliers.label.isin([8,9])]    
     outlier_accuracy = sum(inset.distance_outlier)/inset.shape[0]
-    outlier_precision = sum(inset.distance_outlier)/results.filter(~results.label.isin([8,9])).shape[0]    
+    outlier_precision = sum(inset.distance_outlier)/sum(results[~results.label.isin([8,9])].distance_outlier)
     
     #Image corruptions
     corrupted_data = results[results.image_corrupt==True]
@@ -109,7 +109,7 @@ def distance_outliers(results, features, labels, threshold, experiment):
         corruption_precision = None
     else:     
         corruption_accuracy = sum(corrupted_data.distance_outlier)/corrupted_data.shape[0]
-        corruption_precision = sum(corrupted_data.distance_outlier)/results.shape[0]
+        corruption_precision = sum(corrupted_data.distance_outlier)/sum(results.distance_outlier)
     
     if experiment:        
         #Distance by outlier type
@@ -137,7 +137,7 @@ def distance_outliers(results, features, labels, threshold, experiment):
             plt.title("Class {} true outliers".format(x))
             experiment.log_figure("class {} true outliers".format(x))      
             
-        experiment.log_metric("novel_accuracy", novel_accuracy)
+        experiment.log_metric("distance_novel_accuracy", novel_accuracy)
         experiment.log_metric("distance_label_switching_accuracy", outlier_accuracy)
         experiment.log_metric("distance_label_switching_precision", outlier_precision)
         experiment.log_metric("distance_corruption_accuracy", corruption_accuracy)
