@@ -198,10 +198,19 @@ class simulator():
                 checkpoint_callback=False,
                 logger=self.comet_experiment)
 
-            #freeze classification layers
-            for x in self.model.classifier.parameters():
+            #freeze classification and below layers
+            for x in self.model.parameters():
                 x.requires_grad = False
-                
+            
+            for x in self.model.decoder_block1.parameters():
+                x.requires_grad = True
+            
+            for x in self.model.decoder_block2.parameters():
+                x.requires_grad = True
+            
+            for x in self.model.decoder_block3.parameters():
+                x.requires_grad = True
+                        
             self.trainer.fit(self.model, datamodule=self.data_module)
             
     def predict_validation(self):
