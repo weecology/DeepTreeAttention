@@ -119,9 +119,12 @@ def distance_outliers(results, features, labels, threshold, experiment):
         
         #Plot centroid distance
         for x in centroids:
+            fig = plt.figure()
+            ax = plt.subplot()
             cluster_points = results[results.observed_label == x]            
-            cluster_points["centroid_distance"].hist()
+            cluster_points["centroid_distance"].hist(ax=ax)
             experiment.log_figure("class {} centroid distance")
+            plt.close(fig)
             
             centroid_plot = visualize.plot_2d_layer(features[results.observed_label == x,:], labels=cluster_points["distance_outlier"].astype(int), size_weights=cluster_points["distance_outlier"].astype(int)+1)
             plt.plot(centroids[x][0], centroids[x][1],'go')
