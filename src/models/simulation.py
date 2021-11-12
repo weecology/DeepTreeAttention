@@ -83,7 +83,7 @@ class autoencoder(LightningModule):
 
         #Metrics
         micro_recall = torchmetrics.Accuracy(average="micro", num_classes=10)
-        self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall}, prefix="_autoencoder")
+        self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall}, prefix="autoencoder_")
         
     def forward(self, x):
         x = self.encoder_block1(x)
