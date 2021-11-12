@@ -180,7 +180,7 @@ class simulator():
             self.trainer = Trainer(
                 gpus=self.config["gpus"],
                 fast_dev_run=self.config["fast_dev_run"],
-                max_epochs=self.config["epochs"],
+                max_epochs=self.config["classifier_epochs"],
                 accelerator=self.config["accelerator"],
                 checkpoint_callback=False,
                 logger=self.comet_experiment)
@@ -190,15 +190,15 @@ class simulator():
         with self.comet_experiment.experiment.context_manager("autoencoder_only"):  
             self.model.config["classification_loss_scalar"] = 0
             self.model.config["autoencoder_loss_scalar"] = 1
-            self.config["epochs"] = 5            
             self.trainer = Trainer(
                 gpus=self.config["gpus"],
                 fast_dev_run=self.config["fast_dev_run"],
-                max_epochs=self.config["epochs"],
+                max_epochs=self.config["autoencoder_epochs"],
                 accelerator=self.config["accelerator"],
                 checkpoint_callback=False,
                 logger=self.comet_experiment)
 
+            #freeze classification layers
             for x in self.model.classifier.parameters():
                 x.requires_grad = False
                 
