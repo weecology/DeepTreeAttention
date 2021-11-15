@@ -10,6 +10,7 @@ proportion_image_corrupt: 0.01
 comet_workspace: bw4sz
 
 #Training
+include_outliers: True
 gpus: 1
 fast_dev_run: False
 accelerator:

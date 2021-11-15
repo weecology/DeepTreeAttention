@@ -4,7 +4,6 @@ from matplotlib import pyplot as plt
 import pandas as pd
 from src import visualize
 import scipy
-from scipy.spatial import distance
 
 def autoencoder_outliers(results, outlier_threshold, experiment):
     """Given a set of predictions, label outliers"""
@@ -51,6 +50,13 @@ def autoencoder_outliers(results, outlier_threshold, experiment):
 
     true_outliers = results[~(results.label == results.observed_label)]
     
+    #inset data does not have class 8 ir 9
+    novel = true_outliers[true_outliers.label.isin([8,9])]
+    if novel.empty:
+        novel_accuracy = None
+    else:
+        novel_accuracy = sum(novel.predicted_outlier)/novel.shape[0]
+        
     if true_outliers.empty:
         return pd.DataFrame({"autoencoder_label_switching_accuracy": [None], "autoencoder_label_switching_precision": [None], "classification_accuracy": [mean_accuracy]})
     else:
@@ -60,6 +66,7 @@ def autoencoder_outliers(results, outlier_threshold, experiment):
         outlier_precision = sum(inset.predicted_outlier)/sum(results[~results.label.isin([8,9])].predicted_outlier)
         
         if experiment:
+            experiment.log_metric("autoencoder_novel_accuracy", novel_accuracy)            
             experiment.log_metric("autoencoder_label_switching_accuracy", outlier_accuracy)
             experiment.log_metric("autoencoder_label_switching_precision", outlier_precision)
             experiment.log_metric("autoencoder_image_corruption_accuracy", corruption_accuracy)
