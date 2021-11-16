@@ -17,7 +17,7 @@ def run():
     """Run a tree experiment"""
     #Create datamodule
     client = start_cluster.start(cpus=75, mem_size="5GB")
-    client = None
+    #client = None
     
     config = data.read_config("config.yml")
     comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"],auto_output_logging = "simple")
