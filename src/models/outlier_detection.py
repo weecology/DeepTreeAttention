@@ -160,7 +160,7 @@ class autoencoder(LightningModule):
         
         return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
     
-    def train(self):
+    def train(self, dataloader):
         """Train a neural network arch"""
         #Create trainer
         with self.comet_logger.experiment.context_manager("classification_only"):
@@ -174,7 +174,7 @@ class autoencoder(LightningModule):
                 checkpoint_callback=False,
                 logger=self.comet_logger)
             
-            self.trainer.fit(self, datamodule=self.data_module)
+            self.trainer.fit(self, datamodule=dataloader)
             
         with self.comet_logger.experiment.context_manager("autoencoder_only"):  
             self.config["classification_loss_scalar"] = 0
@@ -200,7 +200,7 @@ class autoencoder(LightningModule):
             for x in self.model.decoder_block3.parameters():
                 x.requires_grad = True
                         
-            self.trainer.fit(self, datamodule=self.data_module)
+            self.trainer.fit(self, dataloader)
             
     def predict(self, dataloader):
         """Generate labels and predictions for a data_loader"""
