@@ -172,7 +172,7 @@ class autoencoder(LightningModule):
                 max_epochs=self.config["classifier_epochs"],
                 accelerator=self.config["accelerator"],
                 checkpoint_callback=False,
-                logger=self.comet_experiment)
+                logger=self.comet_logger)
             
             self.trainer.fit(self, datamodule=self.data_module)
             
@@ -185,7 +185,7 @@ class autoencoder(LightningModule):
                 max_epochs=self.config["autoencoder_epochs"],
                 accelerator=self.config["accelerator"],
                 checkpoint_callback=False,
-                logger=self.comet_experiment)
+                logger=self.comet_logger)
 
             #freeze classification and below layers
             for x in self.model.parameters():
