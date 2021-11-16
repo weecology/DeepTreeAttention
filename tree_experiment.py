@@ -38,7 +38,7 @@ def run():
         comet_logger.experiment.add_tag(git_branch)
         
         #Hash train and test
-        test = pd.read_csv("data/processed/test_with_outliers.csv")
+        test = pd.read_csv("data/processed/test.csv")
         train = pd.read_csv("data/processed/train.csv")
         novel = pd.read_csv("data/processed/novel_species.csv")
         
@@ -106,5 +106,5 @@ def run():
     rows = pd.concat(rows)
     rows.to_csv("results/experiment_{}.csv".format(comet_logger.experiment.get_key()))
     
-for i in range(1):
+for i in range(2):
     run()
