@@ -313,7 +313,7 @@ def generate_crops(gdf, sensor_glob, savedir, client=None, convert_h5=False, rgb
                 annotation = write_crop(row=row, img_path=img_path, savedir=savedir, replace=replace)
             except Exception as e:
                 print("index {} failed with {}".format(index,e))
-                continue
+                raise
     
             annotations.append(annotation)
     

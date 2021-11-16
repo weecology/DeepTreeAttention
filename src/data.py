@@ -15,7 +15,8 @@ from src import generate
 from src import CHM
 from src import augmentation
 from src import megaplot
-from src.models import autoencoder
+from src import outlier
+from src.models.outlier_detection import autoencoder
 from shapely.geometry import Point
 import torch
 from torch.utils.data import Dataset
@@ -188,7 +189,6 @@ def train_test_split(shp, config, client = None):
         
 def read_config(config_path):
     """Read config yaml file"""
-    
     #Allow command line to override 
     parser = argparse.ArgumentParser("DeepTreeAttention config")
     parser.add_argument('-d', '--my-dict', type=json.loads, default=None)
@@ -243,8 +243,11 @@ class TreeDataset(Dataset):
     Args:
        csv_file: path to csv file with image_path and label
     """
-    def __init__(self, csv_file, image_size=10, config=None, train=True, HSI=True, metadata=False):
+    def __init__(self, csv_file, image_size=10, config=None, train=True, HSI=True, metadata=False, include_outliers=True):
         self.annotations = pd.read_csv(csv_file)
+        if not include_outliers:
+            self.annotations = self.annotations[self.annotations["outlier"] == True]
+            
         self.train = train
         self.HSI = HSI
         self.metadata = metadata
@@ -377,18 +380,8 @@ class TreeData(LightningDataModule):
             )
             
             before_outlier_detection = annotations.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_test_samples"])
-            
-            #Filter outliers            
-            outliers = autoencoder.find_outliers(
-                annotations = before_outlier_detection,
-                config=self.config,
-                data_dir=self.data_dir,
-                comet_logger= self.comet_logger
-            )
-        
-            outliers.to_csv("data/processed/outliers.csv")            
-            after_outlier_detection = before_outlier_detection[~before_outlier_detection.individualID.isin(outliers.individual)]            
-            
+            outlier_model = autoencoder(bands=self.config["bands"], classes = self.num_classes, config=self.config)
+            after_outlier_detection = outlier.predict_outliers(model = outlier_model, annotations=before_outlier_detection)
             train_annotations, test_annotations = train_test_split(after_outlier_detection,config=self.config, client=self.client)   
             
             #capture discarded species
@@ -442,8 +435,8 @@ class TreeData(LightningDataModule):
             )
              
             #Create dataloaders
-            self.train_ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata)
-            self.val_ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=self.HSI, metadata=self.metadata)
+            self.train_ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata, include_outliers=self.config["include_outliers"])
+            self.val_ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=self.HSI, metadata=self.metadata, include_outliers=self.config["include_outliers"])
              
         else:
             train_annotations = pd.read_csv("{}/processed/train.csv".format(self.data_dir))
@@ -471,14 +464,11 @@ class TreeData(LightningDataModule):
             
             self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
             
-            #Create dataloaders
-            self.train_ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata)
-            self.val_ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=self.HSI, metadata=self.metadata)            
-
     def train_dataloader(self):
         """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""       
         
         #get class weights
+        self.train_ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata, include_outliers=self.config["include_outliers"])        
         train = pd.read_csv(self.train_file)
         class_weights = train.label.value_counts().to_dict()     
             
@@ -501,6 +491,7 @@ class TreeData(LightningDataModule):
         return data_loader
     
     def val_dataloader(self):
+        self.val_ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=self.HSI, metadata=self.metadata, include_outliers=self.config["include_outliers"])                    
         data_loader = torch.utils.data.DataLoader(
             self.val_ds,
             batch_size=self.config["batch_size"],

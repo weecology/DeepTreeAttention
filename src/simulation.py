@@ -5,7 +5,7 @@ import numpy as np
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning import LightningDataModule
 from pytorch_lightning import Trainer
-from src.models.simulation import autoencoder
+from src.models.outlier_detection import autoencoder
 from src import outlier
 from src import visualize
 

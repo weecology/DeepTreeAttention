@@ -1,5 +1,6 @@
 #simulation config
 batch_size: 128
+image_size: 28
 workers: 1
 novel_class_examples: 20
 samples: 5000
