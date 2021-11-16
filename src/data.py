@@ -246,7 +246,7 @@ class TreeDataset(Dataset):
     def __init__(self, csv_file, image_size=10, config=None, train=True, HSI=True, metadata=False, include_outliers=True):
         self.annotations = pd.read_csv(csv_file)
         if not include_outliers:
-            self.annotations = self.annotations[self.annotations["outlier"] == True]
+            self.annotations = self.annotations[self.annotations["predicted_outlier"] == True]
             
         self.train = train
         self.HSI = HSI
