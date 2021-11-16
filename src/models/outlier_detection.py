@@ -6,7 +6,7 @@ import torch
 from torch import optim
 from src.models.Hang2020 import conv_module
 from src import visualize
-from pytorch_lightning import LightningModule
+from pytorch_lightning import LightningModule, Trainer
 import pandas as pd
 import torchmetrics
 
@@ -57,10 +57,11 @@ class classifier(nn.Module):
         return y
     
 class autoencoder(LightningModule):
-    def __init__(self, bands, classes, config):
+    def __init__(self, bands, classes, config, comet_logger):
         super(autoencoder, self).__init__()    
         
         self.config = config
+        self.comet_logger = comet_logger
         
         #Encoder
         self.encoder_block1 = encoder_block(in_channels=bands, filters=64, pool=True)
@@ -159,6 +160,48 @@ class autoencoder(LightningModule):
         
         return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
     
+    def train(self):
+        """Train a neural network arch"""
+        #Create trainer
+        with self.comet_logger.experiment.context_manager("classification_only"):
+            self.config["classification_loss_scalar"] = 1
+            self.config["autoencoder_loss_scalar"] = 0         
+            self.trainer = Trainer(
+                gpus=self.config["gpus"],
+                fast_dev_run=self.config["fast_dev_run"],
+                max_epochs=self.config["classifier_epochs"],
+                accelerator=self.config["accelerator"],
+                checkpoint_callback=False,
+                logger=self.comet_experiment)
+            
+            self.trainer.fit(self, datamodule=self.data_module)
+            
+        with self.comet_logger.experiment.context_manager("autoencoder_only"):  
+            self.config["classification_loss_scalar"] = 0
+            self.config["autoencoder_loss_scalar"] = 1
+            self.trainer = Trainer(
+                gpus=self.config["gpus"],
+                fast_dev_run=self.config["fast_dev_run"],
+                max_epochs=self.config["autoencoder_epochs"],
+                accelerator=self.config["accelerator"],
+                checkpoint_callback=False,
+                logger=self.comet_experiment)
+
+            #freeze classification and below layers
+            for x in self.model.parameters():
+                x.requires_grad = False
+            
+            for x in self.model.decoder_block1.parameters():
+                x.requires_grad = True
+            
+            for x in self.model.decoder_block2.parameters():
+                x.requires_grad = True
+            
+            for x in self.model.decoder_block3.parameters():
+                x.requires_grad = True
+                        
+            self.trainer.fit(self, datamodule=self.data_module)
+            
     def predict(self, dataloader):
         """Generate labels and predictions for a data_loader"""
         observed_y = []

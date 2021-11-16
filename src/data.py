@@ -246,7 +246,7 @@ class TreeDataset(Dataset):
     def __init__(self, csv_file, image_size=10, config=None, train=True, HSI=True, metadata=False, include_outliers=True):
         self.annotations = pd.read_csv(csv_file)
         if not include_outliers:
-            self.annotations = self.annotations[self.annotations["predicted_outlier"] == True]
+            self.annotations = self.annotations[self.annotations["predicted_outlier"] == False]
             
         self.train = train
         self.HSI = HSI
@@ -380,7 +380,8 @@ class TreeData(LightningDataModule):
             )
             
             before_outlier_detection = annotations.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_test_samples"])
-            outlier_model = autoencoder(bands=self.config["bands"], classes = len(annotations.taxonID.unique()), config=self.config)
+            outlier_model = autoencoder(bands=self.config["bands"], classes = len(annotations.taxonID.unique()), config=self.config, comet_logger=self.comet_logger)
+            outlier_model.train()
             before_outlier_detection["label"] = before_outlier_detection.taxonID.astype("category").cat.codes
             after_outlier_detection = outlier.predict_outliers(model = outlier_model, annotations=before_outlier_detection, config=self.config)
             train_annotations, test_annotations = train_test_split(after_outlier_detection,config=self.config, client=self.client)   
