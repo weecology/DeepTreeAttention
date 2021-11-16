@@ -379,9 +379,11 @@ class TreeData(LightningDataModule):
                 replace=self.config["replace"]
             )
             
+                
             before_outlier_detection = annotations.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_test_samples"])
-            outlier_model = autoencoder(bands=self.config["bands"], classes = self.num_classes, config=self.config)
-            after_outlier_detection = outlier.predict_outliers(model = outlier_model, annotations=before_outlier_detection)
+            outlier_model = autoencoder(bands=self.config["bands"], classes = len(annotations.taxonID.unique()), config=self.config)
+            before_outlier_detection["label"] = before_outlier_detection.taxonID.astype("category").cat.codes
+            after_outlier_detection = outlier.predict_outliers(model = outlier_model, annotations=before_outlier_detection, config=self.config)
             train_annotations, test_annotations = train_test_split(after_outlier_detection,config=self.config, client=self.client)   
             
             #capture discarded species
