@@ -50,7 +50,7 @@ image_size: 11
 
 #Network Parameters
 gpus: 1
-workers: 20
+workers: 12
 batch_size: 64
 bands: 369
 lr: 0.001

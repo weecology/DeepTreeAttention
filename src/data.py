@@ -379,7 +379,6 @@ class TreeData(LightningDataModule):
                 replace=self.config["replace"]
             )
             
-                
             before_outlier_detection = annotations.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_test_samples"])
             outlier_model = autoencoder(bands=self.config["bands"], classes = len(annotations.taxonID.unique()), config=self.config)
             before_outlier_detection["label"] = before_outlier_detection.taxonID.astype("category").cat.codes
