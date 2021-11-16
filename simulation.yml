@@ -1,5 +1,6 @@
 #simulation config
 batch_size: 128
+image_size: 28
 workers: 1
 novel_class_examples: 20
 samples: 5000
@@ -10,7 +11,6 @@ proportion_image_corrupt: 0.01
 comet_workspace: bw4sz
 
 #Training
-include_outliers: True
 gpus: 1
 fast_dev_run: False
 accelerator:

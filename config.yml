@@ -23,11 +23,20 @@ min_CHM_height: 1
 min_CHM_diff: 3
 
 #Megaplot XY Data
-megaplot_dir: /orange/idtrees-collab/megaplot/
+megaplot_dir:
 
 #Outlier detection
+include_outliers: True
 autoencoder_epochs: 25
 outlier_threshold: 0.95
+classifier_epochs: 20
+autoencoder_epochs: 20
+classification_loss_scalar: 1
+autoencoder_loss_scalar: 0
+
+#Outlier detection
+outlier_threshold: 0.98
+distance_threshold: 2
 
 #Crop generation
 convert_h5: True

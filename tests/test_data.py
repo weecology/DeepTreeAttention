@@ -25,6 +25,7 @@ def config():
     config["gpus"] = 0
     config["bands"] = 3 
     config["fast_dev_run"] = True
+    config["top_k"] = 2
     
     return config
 

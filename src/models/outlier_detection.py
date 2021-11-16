@@ -1,9 +1,13 @@
 #Autoencoder
+import numpy as np
 from torch.nn import functional as F
 import torch.nn as nn
+import torch
 from torch import optim
 from src.models.Hang2020 import conv_module
+from src import visualize
 from pytorch_lightning import LightningModule
+import pandas as pd
 import torchmetrics
 
 class encoder_block(nn.Module):
@@ -34,17 +38,19 @@ class decoder_block(nn.Module):
         return x
     
 class classifier(nn.Module):
-    def __init__(self, classes):
+    def __init__(self, classes, image_size = 28):
         super(classifier, self).__init__()
+        self.image_size = image_size
+        self.feature_length = 2 * self.image_size * image_size
         #Classification layer
         self.vis_conv1= encoder_block(in_channels=16, filters=2) 
-        self.classfication_bottleneck = nn.Linear(in_features=1568, out_features=2)        
+        self.classfication_bottleneck = nn.Linear(in_features=self.feature_length, out_features=2)        
         self.classfication_layer = nn.Linear(in_features=2, out_features=classes)
         
     def forward(self, x):
         y = self.vis_conv1(x)
         y = F.relu(y)
-        y = y.view(-1, 2*28*28)        
+        y = y.view(-1, self.feature_length)        
         y = self.classfication_bottleneck(y)
         y = self.classfication_layer(y)
         
@@ -61,7 +67,7 @@ class autoencoder(LightningModule):
         self.encoder_block2 = encoder_block(in_channels=64, filters=32, pool=True)
         self.encoder_block3 = encoder_block(in_channels=32, filters=16, pool=True)
         
-        self.classifier = classifier(classes)
+        self.classifier = classifier(classes, image_size=config["image_size"])
         
         #Decoder
         self.decoder_block1 = decoder_block(in_channels=16, filters=32)
@@ -152,6 +158,51 @@ class autoencoder(LightningModule):
                                                          eps=1e-08)
         
         return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
+    
+    def predict(self, dataloader):
+        """Generate labels and predictions for a data_loader"""
+        observed_y = []
+        yhat = []
+        autoencoder_loss = []
+        sample_ids = []
+        vis_epoch_activations = []
+        encoder_epoch_activations = []
+        classification_bottleneck = []
+        
+        self.eval()
+        
+        for batch in dataloader:
+            index, inputs, observed_labels = batch
+            images = inputs["HSI"]
+            observed_y.append(observed_labels.numpy())
+            sample_ids.append(index)
+            #trigger activation hook
+            if next(self.parameters()).is_cuda:
+                images = images.cuda()
+            with torch.no_grad():
+                for image in images:
+                    image_yhat, classification_yhat = self(image.unsqueeze(0))
+                    yhat.append(classification_yhat)
+                    loss = F.mse_loss(image_yhat, image)    
+                    autoencoder_loss.append(loss.numpy())
+                    vis_epoch_activations.append(self.vis_activation["vis_conv1"].cpu().numpy())
+                    encoder_epoch_activations.append(self.vis_activation["encoder_block3"].cpu().numpy())
+                    classification_bottleneck.append(self.vis_activation["classification_bottleneck"].cpu().numpy())                    
+           
+        yhat = np.concatenate(yhat)
+        yhat = np.argmax(yhat, 1)
+        sample_ids = np.concatenate(sample_ids)
+        observed_y = np.concatenate(observed_y)
+        autoencoder_loss = np.asarray(autoencoder_loss)
+        
+        #Create a single array
+        self.classification_conv_activations = np.concatenate(vis_epoch_activations)
+        self.encoder_activations = np.concatenate(encoder_epoch_activations)
+        self.classification_bottleneck = np.concatenate(classification_bottleneck)
+        
+        results = pd.DataFrame({"test_index":sample_ids,"observed_label": observed_y,"predicted_label":yhat,"autoencoder_loss": autoencoder_loss})        
+    
+        return results
         
         
         

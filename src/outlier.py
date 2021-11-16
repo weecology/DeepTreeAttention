@@ -3,7 +3,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
 from src import visualize
+from src import data
 import scipy
+import tempfile
+import torch
 
 def autoencoder_outliers(results, outlier_threshold, experiment):
     """Given a set of predictions, label outliers"""
@@ -180,7 +183,10 @@ def calculate_covariance(features, labels):
     cov = {}
     for x in unique_labels:
         class_features = features[labels == x,:]
-        cov[x] = scipy.linalg.inv(np.cov(class_features.T))
+        try: 
+            cov[x] = scipy.linalg.inv(np.cov(class_features.T))
+        except:
+            cov[x] = np.array([[0,0],[0,0]])
         
     return cov
 
@@ -198,4 +204,36 @@ def distance_from_centroids(features, centroids, labels, cov):
         distances.append(mahal_dist)
     
     return distances
+    
+def predict_outliers(model, annotations, config):
+    """Predict outliers and append a column to annotations based on a given model. Model object must contain a predict method"""
+    
+    #predict annotations
+    with tempfile.TemporaryDirectory() as tmpdir:
+        annotations.to_csv("{}/annotations.csv".format(tmpdir))
+        ds = data.TreeDataset(csv_file="{}/annotations.csv".format(tmpdir), image_size=config["image_size"])
+        data_loader = torch.utils.data.DataLoader(
+            ds,
+            batch_size=config["batch_size"],
+            num_workers=config["workers"],
+            shuffle=False
+        )
+        
+        results = model.predict(data_loader)
+    features = model.classification_bottleneck
+    
+    #loss outlier
+    threshold = results.autoencoder_loss.quantile(config["outlier_threshold"])
+    results["predicted_outlier"] = results.autoencoder_loss > threshold
+    
+    # distance outlier
+    centroids = calculate_centroids(features, results.observed_label)
+    cov = calculate_covariance(features, results.observed_label)
+    results["centroid_distance"] = distance_from_centroids(features, centroids, results.observed_label, cov)
+    results["predicted_outlier"] = results["centroid_distance"] > config["distance_threshold"]
+    
+    annotations["predicted_outlier"] = results["predicted_outlier"]
+    
+    return annotations
+    
     
