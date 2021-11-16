@@ -3,8 +3,8 @@ batch_size: 128
 workers: 1
 novel_class_examples: 20
 samples: 5000
-proportion_switch: 0.01
-proportion_image_corrupt: 0.01
+proportion_switch: 0.1
+proportion_image_corrupt: 0.1
 
 #Comet dashboard
 comet_workspace: bw4sz
@@ -13,8 +13,8 @@ comet_workspace: bw4sz
 gpus: 1
 fast_dev_run: False
 accelerator:
-classifier_epochs: 20
-autoencoder_epochs: 20
+classifier_epochs: 10
+autoencoder_epochs: 25
 lr: 0.01
 
 classification_loss_scalar: 1
@@ -22,4 +22,4 @@ autoencoder_loss_scalar: 0
 
 #Outlier detection
 outlier_threshold: 0.98
-distance_threshold: 3
+distance_threshold: 4
