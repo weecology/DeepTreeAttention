@@ -49,6 +49,10 @@ def filter_data(path, config):
     field = field[~(field.individualID.isin(shaded_ids))]
     field = field[(field.height > 3) | (field.height.isnull())]
     field = field[field.stemDiameter > config["min_stem_diameter"]]
+    
+    #Merge doug fir
+    field.loc[field.taxonID=="PSMEM","taxonID"] = "PSME"
+    
     field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
     field = field[~(field.eventID.str.contains("2014"))]
     with_heights = field[~field.height.isnull()]
@@ -391,7 +395,7 @@ class TreeData(LightningDataModule):
                 shuffle=False
             )
             outlier_detection.train(outlier_model, dataloader=dataloader, config=self.config, comet_logger=self.comet_logger)            
-            after_outlier_detection = outlier.predict_outliers(model = outlier_model, annotations=before_outlier_detection, config=self.config)
+            after_outlier_detection = outlier.predict_outliers(model = outlier_model, annotations=before_outlier_detection, config=self.config, experiment=self.comet_logger.experiment)
             predicted_outliers = after_outlier_detection[after_outlier_detection.predicted_outlier == True]
             if self.comet_logger:
                 self.comet_logger.experiment.log_metric("predicted_outliers", predicted_outliers.shape[0])
