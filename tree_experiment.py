@@ -21,6 +21,7 @@ def run():
     
     config = data.read_config("config.yml")
     comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"],auto_output_logging = "simple")
+    comet_logger.experiment.add_tag("Autoencoder")
     data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client, metadata=True, comet_logger=comet_logger)
     data_module.setup()
         
@@ -30,6 +31,7 @@ def run():
     rows = []
     for x in [False, True]:
         comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"],auto_output_logging = "simple")        
+        comet_logger.experiment.add_tag("Tree Experiment")        
         data_module.config["include_outliers"] = x
         comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
         
