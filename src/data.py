@@ -392,6 +392,10 @@ class TreeData(LightningDataModule):
             )
             outlier_detection.train(outlier_model, dataloader=dataloader, config=self.config, comet_logger=self.comet_logger)            
             after_outlier_detection = outlier.predict_outliers(model = outlier_model, annotations=before_outlier_detection, config=self.config)
+            predicted_outliers = after_outlier_detection[after_outlier_detection.predicted_outlier == True]
+            if self.comet_logger:
+                self.comet_logger.experiment.log_metric("predicted_outliers", predicted_outliers.shape[0])
+                self.comet_logger.experiment.log_table("predicted_outliers.csv", predicted_outliers)
             train_annotations, test_annotations = train_test_split(after_outlier_detection,config=self.config, client=self.client)   
             
             #capture discarded species
