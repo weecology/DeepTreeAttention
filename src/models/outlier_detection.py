@@ -159,48 +159,6 @@ class autoencoder(LightningModule):
                                                          eps=1e-08)
         
         return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
-    
-    def train(self, dataloader):
-        """Train a neural network arch"""
-        #Create trainer
-        with self.comet_logger.experiment.context_manager("classification_only"):
-            self.config["classification_loss_scalar"] = 1
-            self.config["autoencoder_loss_scalar"] = 0         
-            self.trainer = Trainer(
-                gpus=self.config["gpus"],
-                fast_dev_run=self.config["fast_dev_run"],
-                max_epochs=self.config["classifier_epochs"],
-                accelerator=self.config["accelerator"],
-                checkpoint_callback=False,
-                logger=self.comet_logger)
-            
-            self.trainer.fit(self, dataloader)
-            
-        with self.comet_logger.experiment.context_manager("autoencoder_only"):  
-            self.config["classification_loss_scalar"] = 0
-            self.config["autoencoder_loss_scalar"] = 1
-            self.trainer = Trainer(
-                gpus=self.config["gpus"],
-                fast_dev_run=self.config["fast_dev_run"],
-                max_epochs=self.config["autoencoder_epochs"],
-                accelerator=self.config["accelerator"],
-                checkpoint_callback=False,
-                logger=self.comet_logger)
-
-            #freeze classification and below layers
-            for x in self.model.parameters():
-                x.requires_grad = False
-            
-            for x in self.model.decoder_block1.parameters():
-                x.requires_grad = True
-            
-            for x in self.model.decoder_block2.parameters():
-                x.requires_grad = True
-            
-            for x in self.model.decoder_block3.parameters():
-                x.requires_grad = True
-                        
-            self.trainer.fit(self, dataloader)
             
     def predict(self, dataloader):
         """Generate labels and predictions for a data_loader"""
@@ -247,7 +205,47 @@ class autoencoder(LightningModule):
     
         return results
         
+def train(model, dataloader, config, comet_logger):
+    """Train a neural network arch"""
+    #Create trainer
+    with comet_logger.experiment.context_manager("classification_only"):
+        config["classification_loss_scalar"] = 1
+        config["autoencoder_loss_scalar"] = 0         
+        trainer = Trainer(
+            gpus=config["gpus"],
+            fast_dev_run=config["fast_dev_run"],
+            max_epochs=config["classifier_epochs"],
+            accelerator=config["accelerator"],
+            checkpoint_callback=False,
+            logger=comet_logger)
         
+        trainer.fit(model, dataloader)
+        
+    with comet_logger.experiment.context_manager("autoencoder_only"):  
+        config["classification_loss_scalar"] = 0
+        config["autoencoder_loss_scalar"] = 1
+        trainer = Trainer(
+            gpus=config["gpus"],
+            fast_dev_run=config["fast_dev_run"],
+            max_epochs=config["autoencoder_epochs"],
+            accelerator=config["accelerator"],
+            checkpoint_callback=False,
+            logger=comet_logger)
+
+        #freeze classification and below layers
+        for x in model.parameters():
+            x.requires_grad = False
+        
+        for x in model.decoder_block1.parameters():
+            x.requires_grad = True
+        
+        for x in model.decoder_block2.parameters():
+            x.requires_grad = True
+        
+        for x in model.decoder_block3.parameters():
+            x.requires_grad = True
+                    
+        trainer.fit(model, dataloader)
         
     
             
