@@ -174,7 +174,7 @@ class autoencoder(LightningModule):
                 checkpoint_callback=False,
                 logger=self.comet_logger)
             
-            self.trainer.fit(self, datamodule=dataloader)
+            self.trainer.fit(self, dataloader)
             
         with self.comet_logger.experiment.context_manager("autoencoder_only"):  
             self.config["classification_loss_scalar"] = 0
