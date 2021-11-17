@@ -227,8 +227,7 @@ class tree_classifier(nn.Module):
         #Classification layer
         self.vis_conv1= encoder_block(in_channels=16, filters=8) 
         self.vis_conv2= encoder_block(in_channels=8, filters=2) 
-        self.classfication_bottleneck = nn.Linear(in_features=self.feature_length, out_features=2)        
-        self.classfication_layer = nn.Linear(in_features=2, out_features=classes)
+        self.classfication_bottleneck = nn.Linear(in_features=self.feature_length, out_features=classes)        
         
         #Visualization
         # a dict to store the activations        
@@ -249,7 +248,6 @@ class tree_classifier(nn.Module):
         y = F.relu(y)
         y = y.view(-1, self.feature_length)        
         y = self.classfication_bottleneck(y)
-        y = self.classfication_layer(y)
         
         return y
     
