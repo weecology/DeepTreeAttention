@@ -215,7 +215,8 @@ class tree_autoencoder(autoencoder):
         """Train on a loaded dataset
         """
         #allow for empty data if data augmentation is generated
-        index, images, observed_labels = batch 
+        index, inputs, observed_labels = batch 
+        images = inputs["HSI"]
         autoencoder_yhat, classification_yhat = self.forward(images) 
         
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
@@ -228,7 +229,8 @@ class tree_autoencoder(autoencoder):
         """Train on a loaded dataset
         """
         #allow for empty data if data augmentation is generated
-        index, images, observed_labels = batch 
+        index, inputs, observed_labels = batch 
+        images = inputs["HSI"]        
         autoencoder_yhat, classification_yhat = self.forward(images) 
         
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)  
