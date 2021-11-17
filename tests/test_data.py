@@ -26,6 +26,9 @@ def config():
     config["bands"] = 3 
     config["fast_dev_run"] = True
     config["top_k"] = 2
+    config["autoencoder_epochs"] = 1
+    config["classifier_epochs"] = 1
+    
     
     return config
 

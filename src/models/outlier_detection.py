@@ -47,6 +47,18 @@ class classifier(nn.Module):
         self.classfication_bottleneck = nn.Linear(in_features=self.feature_length, out_features=2)        
         self.classfication_layer = nn.Linear(in_features=2, out_features=classes)
         
+        #Visualization
+        # a dict to store the activations        
+        self.vis_activation = {}
+        def getActivation(name):
+            # the hook signature
+            def hook(model, input, output):
+                self.vis_activation[name] = output.detach()
+            return hook
+        
+        self.vis_conv1.register_forward_hook(getActivation("vis_conv1"))    
+        self.classfication_bottleneck.register_forward_hook(getActivation("classification_bottleneck"))   
+        
     def forward(self, x):
         y = self.vis_conv1(x)
         y = F.relu(y)
@@ -83,9 +95,7 @@ class autoencoder(LightningModule):
             def hook(model, input, output):
                 self.vis_activation[name] = output.detach()
             return hook
-        
-        self.classifier.vis_conv1.register_forward_hook(getActivation("vis_conv1"))    
-        self.classifier.classfication_bottleneck.register_forward_hook(getActivation("classification_bottleneck"))        
+             
         self.encoder_block3.register_forward_hook(getActivation("encoder_block3"))        
 
         #Metrics
@@ -113,6 +123,7 @@ class autoencoder(LightningModule):
         index, images, observed_labels, true_labels = batch 
         autoencoder_yhat, classification_yhat = self.forward(images) 
         
+        #Calculate loss
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
         classification_loss = F.cross_entropy(classification_yhat, observed_labels)
         loss = self.config["autoencoder_loss_scalar"] * autoencoder_loss  + classification_loss * self.config["classification_loss_scalar"]
@@ -186,9 +197,9 @@ class autoencoder(LightningModule):
                     yhat.append(classification_yhat)
                     loss = F.mse_loss(image_yhat, image)    
                     autoencoder_loss.append(loss.numpy())
-                    vis_epoch_activations.append(self.vis_activation["vis_conv1"].cpu().numpy())
+                    vis_epoch_activations.append(self.classifier.vis_activation["vis_conv1"].cpu().numpy())
                     encoder_epoch_activations.append(self.vis_activation["encoder_block3"].cpu().numpy())
-                    classification_bottleneck.append(self.vis_activation["classification_bottleneck"].cpu().numpy())                    
+                    classification_bottleneck.append(self.classifier.vis_activation["classification_bottleneck"].cpu().numpy())                    
            
         yhat = np.concatenate(yhat)
         yhat = np.argmax(yhat, 1)
@@ -219,8 +230,22 @@ class tree_classifier(nn.Module):
         self.classfication_bottleneck = nn.Linear(in_features=self.feature_length, out_features=2)        
         self.classfication_layer = nn.Linear(in_features=2, out_features=classes)
         
+        #Visualization
+        # a dict to store the activations        
+        self.vis_activation = {}
+        def getActivation(name):
+            # the hook signature
+            def hook(model, input, output):
+                self.vis_activation[name] = output.detach()
+            return hook
+        
+        self.vis_conv1.register_forward_hook(getActivation("vis_conv1"))    
+        self.classfication_bottleneck.register_forward_hook(getActivation("classification_bottleneck"))   
+        
     def forward(self, x):
         y = self.vis_conv1(x)
+        y = F.relu(y)
+        y = self.vis_conv2(y)
         y = F.relu(y)
         y = y.view(-1, self.feature_length)        
         y = self.classfication_bottleneck(y)
@@ -234,6 +259,10 @@ class tree_autoencoder(autoencoder):
         
         #Deeper classification head
         self.classifier = tree_classifier(classes=classes, image_size=config["image_size"])
+
+        #Metrics
+        micro_recall = torchmetrics.Accuracy(average="micro", num_classes=classes)
+        self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall}, prefix="autoencoder_")        
         
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
@@ -276,9 +305,20 @@ class tree_autoencoder(autoencoder):
 def train(model, dataloader, config, comet_logger):
     """Train a neural network arch"""
     #Create trainer
-    with comet_logger.experiment.context_manager("classification_only"):
-        config["classification_loss_scalar"] = 1
-        config["autoencoder_loss_scalar"] = 0         
+    config["classification_loss_scalar"] = 1
+    config["autoencoder_loss_scalar"] = 0         
+    if comet_logger:
+        with comet_logger.experiment.context_manager("classification_only"):
+            trainer = Trainer(
+                gpus=config["gpus"],
+                fast_dev_run=config["fast_dev_run"],
+                max_epochs=config["classifier_epochs"],
+                accelerator=config["accelerator"],
+                checkpoint_callback=False,
+                logger=comet_logger)
+        
+            trainer.fit(model, dataloader)
+    else:
         trainer = Trainer(
             gpus=config["gpus"],
             fast_dev_run=config["fast_dev_run"],
@@ -286,10 +326,36 @@ def train(model, dataloader, config, comet_logger):
             accelerator=config["accelerator"],
             checkpoint_callback=False,
             logger=comet_logger)
-        
-        trainer.fit(model, dataloader)
-        
-    with comet_logger.experiment.context_manager("autoencoder_only"):  
+    
+        trainer.fit(model, dataloader)        
+    
+    #freeze classification and below layers
+    for x in model.parameters():
+        x.requires_grad = False
+    
+    for x in model.decoder_block1.parameters():
+        x.requires_grad = True
+    
+    for x in model.decoder_block2.parameters():
+        x.requires_grad = True
+    
+    for x in model.decoder_block3.parameters():
+        x.requires_grad = True    
+    if comet_logger:
+        with comet_logger.experiment.context_manager("autoencoder_only"):  
+            config["classification_loss_scalar"] = 0
+            config["autoencoder_loss_scalar"] = 1
+            trainer = Trainer(
+                gpus=config["gpus"],
+                fast_dev_run=config["fast_dev_run"],
+                max_epochs=config["autoencoder_epochs"],
+                accelerator=config["accelerator"],
+                checkpoint_callback=False,
+                logger=comet_logger)
+
+                    
+            trainer.fit(model, dataloader)
+    else:
         config["classification_loss_scalar"] = 0
         config["autoencoder_loss_scalar"] = 1
         trainer = Trainer(
@@ -300,20 +366,8 @@ def train(model, dataloader, config, comet_logger):
             checkpoint_callback=False,
             logger=comet_logger)
 
-        #freeze classification and below layers
-        for x in model.parameters():
-            x.requires_grad = False
-        
-        for x in model.decoder_block1.parameters():
-            x.requires_grad = True
-        
-        for x in model.decoder_block2.parameters():
-            x.requires_grad = True
-        
-        for x in model.decoder_block3.parameters():
-            x.requires_grad = True
-                    
-        trainer.fit(model, dataloader)
+                
+        trainer.fit(model, dataloader)        
         
     
             
