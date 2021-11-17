@@ -378,10 +378,10 @@ class TreeData(LightningDataModule):
                 client=self.client,
                 replace=self.config["replace"]
             )
-            
             #Outlier detection
             before_outlier_detection = annotations.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_test_samples"])
             outlier_model = outlier_detection.autoencoder(bands=self.config["bands"], classes = len(annotations.taxonID.unique()), config=self.config, comet_logger=self.comet_logger)
+            before_outlier_detection["label"] = before_outlier_detection.taxonID.astype("category").cat.codes                        
             before_outlier_detection.to_csv("{}/before_outlier_detection.csv".format(self.data_dir))
             ds = TreeDataset(csv_file="{}/before_outlier_detection.csv".format(self.data_dir), image_size=self.config["image_size"])
             dataloader = torch.utils.data.DataLoader(
@@ -391,7 +391,6 @@ class TreeData(LightningDataModule):
                 shuffle=False
             )
             outlier_detection.train(outlier_model, dataloader=dataloader, config=self.config, comet_logger=self.comet_logger)            
-            before_outlier_detection["label"] = before_outlier_detection.taxonID.astype("category").cat.codes
             after_outlier_detection = outlier.predict_outliers(model = outlier_model, annotations=before_outlier_detection, config=self.config)
             train_annotations, test_annotations = train_test_split(after_outlier_detection,config=self.config, client=self.client)   
             
