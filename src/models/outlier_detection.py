@@ -209,7 +209,7 @@ class autoencoder(LightningModule):
 
 class tree_autoencoder(autoencoder):
     def __init__(self, bands, classes, config, comet_logger):
-        super(autoencoder, self).__init__() 
+        super(tree_autoencoder, self).__init__(bands, classes, config, comet_logger) 
         
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
