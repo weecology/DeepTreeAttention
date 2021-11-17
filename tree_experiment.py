@@ -29,6 +29,7 @@ def run():
         
     rows = []
     for x in [False, True]:
+        comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"],auto_output_logging = "simple")        
         data_module.config["include_outliers"] = x
         comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
         
@@ -56,7 +57,7 @@ def run():
             label_dict=data_module.species_label_dict, 
             config=data_module.config)
         
-        comet_logger.experiment.log_parameters(m.config)
+        comet_logger.experiment.log_parameters(data_module.config)
         
         #Create trainer
         trainer = Trainer(

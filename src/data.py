@@ -393,6 +393,7 @@ class TreeData(LightningDataModule):
             outlier_detection.train(outlier_model, dataloader=dataloader, config=self.config, comet_logger=self.comet_logger)            
             after_outlier_detection = outlier.predict_outliers(model = outlier_model, annotations=before_outlier_detection, config=self.config)
             predicted_outliers = after_outlier_detection[after_outlier_detection.predicted_outlier == True]
+            print("There are X outliers".format(predicted_outliers.shape[0]))
             if self.comet_logger:
                 self.comet_logger.experiment.log_metric("predicted_outliers", predicted_outliers.shape[0])
                 self.comet_logger.experiment.log_table("predicted_outliers.csv", predicted_outliers)
@@ -447,11 +448,7 @@ class TreeData(LightningDataModule):
                 len(test_annotations.label.unique()),
                 len(test_annotations.site.unique()))
             )
-             
-            #Create dataloaders
-            self.train_ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata, include_outliers=self.config["include_outliers"])
-            self.val_ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=self.HSI, metadata=self.metadata, include_outliers=self.config["include_outliers"])
-             
+                          
         else:
             train_annotations = pd.read_csv("{}/processed/train.csv".format(self.data_dir))
             test_annotations = pd.read_csv("{}/processed/test.csv".format(self.data_dir))
