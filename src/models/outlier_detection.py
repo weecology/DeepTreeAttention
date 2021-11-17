@@ -222,12 +222,12 @@ class tree_classifier(nn.Module):
     def __init__(self, classes, image_size = 28):
         super(tree_classifier, self).__init__()
         self.image_size = image_size
-        self.feature_length = 2 * self.image_size * image_size
+        self.feature_length = 8 * self.image_size * image_size
         
         #Classification layer
         self.vis_conv1= encoder_block(in_channels=16, filters=8) 
-        self.vis_conv2= encoder_block(in_channels=8, filters=2) 
-        self.classfication_bottleneck = nn.Linear(in_features=self.feature_length, out_features=classes)        
+        self.classfication_bottleneck = nn.Linear(in_features=self.feature_length, out_features=2)        
+        self.classfication_layer = nn.Linear(in_features=2, out_features=classes)
         
         #Visualization
         # a dict to store the activations        
@@ -244,10 +244,9 @@ class tree_classifier(nn.Module):
     def forward(self, x):
         y = self.vis_conv1(x)
         y = F.relu(y)
-        y = self.vis_conv2(y)
-        y = F.relu(y)
         y = y.view(-1, self.feature_length)        
         y = self.classfication_bottleneck(y)
+        y = self.classfication_layer(y)
         
         return y
     
