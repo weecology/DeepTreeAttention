@@ -297,7 +297,17 @@ class tree_autoencoder(autoencoder):
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.config["lr"])
 
-        return {'optimizer':optimizer}    
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                         mode='min',
+                                                         factor=0.5,
+                                                         patience=10,
+                                                         verbose=True,
+                                                         threshold=0.0001,
+                                                         threshold_mode='rel',
+                                                         cooldown=0,
+                                                         eps=1e-08)
+        
+        return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'loss'} 
         
 def train(model, dataloader, config, comet_logger):
     """Train a neural network arch"""
