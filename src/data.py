@@ -380,7 +380,7 @@ class TreeData(LightningDataModule):
             )
             #Outlier detection
             before_outlier_detection = annotations.groupby("taxonID").filter(lambda x: x.shape[0] > self.config["min_test_samples"])
-            outlier_model = outlier_detection.autoencoder(bands=self.config["bands"], classes = len(annotations.taxonID.unique()), config=self.config, comet_logger=self.comet_logger)
+            outlier_model = outlier_detection.tree_autoencoder(bands=self.config["bands"], classes = len(annotations.taxonID.unique()), config=self.config, comet_logger=self.comet_logger)
             before_outlier_detection["label"] = before_outlier_detection.taxonID.astype("category").cat.codes                        
             before_outlier_detection.to_csv("{}/before_outlier_detection.csv".format(self.data_dir))
             ds = TreeDataset(csv_file="{}/before_outlier_detection.csv".format(self.data_dir), image_size=self.config["image_size"])

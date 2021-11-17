@@ -204,6 +204,43 @@ class autoencoder(LightningModule):
         results = pd.DataFrame({"test_index":sample_ids,"observed_label": observed_y,"predicted_label":yhat,"autoencoder_loss": autoencoder_loss})        
     
         return results
+
+#Subclass model for trees
+
+class tree_autoencoder(autoencoder):
+    def __init__(self, bands, classes, config, comet_logger):
+        super(autoencoder, self).__init__() 
+        
+    def training_step(self, batch, batch_idx):
+        """Train on a loaded dataset
+        """
+        #allow for empty data if data augmentation is generated
+        index, images, observed_labels = batch 
+        autoencoder_yhat, classification_yhat = self.forward(images) 
+        
+        autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
+        classification_loss = F.cross_entropy(classification_yhat, observed_labels)
+        loss = self.config["autoencoder_loss_scalar"] * autoencoder_loss  + classification_loss * self.config["classification_loss_scalar"]
+
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        """Train on a loaded dataset
+        """
+        #allow for empty data if data augmentation is generated
+        index, images, observed_labels = batch 
+        autoencoder_yhat, classification_yhat = self.forward(images) 
+        
+        autoencoder_loss = F.mse_loss(autoencoder_yhat, images)  
+        classification_loss = F.cross_entropy(classification_yhat, observed_labels)
+        loss = self.config["autoencoder_loss_scalar"] * autoencoder_loss + classification_loss * self.config["classification_loss_scalar"]
+        
+        softmax_prob = F.softmax(classification_yhat, dim=1)
+        output = self.metrics(softmax_prob, observed_labels) 
+        self.log("val_loss", loss, on_epoch=True)
+        self.log_dict(output, on_epoch=True, on_step=False)
+        
+        return loss    
         
 def train(model, dataloader, config, comet_logger):
     """Train a neural network arch"""
