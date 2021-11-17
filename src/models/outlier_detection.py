@@ -243,6 +243,11 @@ class tree_autoencoder(autoencoder):
         self.log_dict(output, on_epoch=True, on_step=False)
         
         return loss    
+    
+    def configure_optimizers(self):
+        optimizer = optim.Adam(self.parameters(), lr=self.config["lr"])
+
+        return {'optimizer':optimizer}    
         
 def train(model, dataloader, config, comet_logger):
     """Train a neural network arch"""
