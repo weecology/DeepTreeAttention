@@ -169,7 +169,7 @@ class simulator():
         self.data_module.setup()
     
     def create_model(self):
-        self.model = autoencoder(bands=1, classes=self.data_module.num_classes, config=self.config)
+        self.model = autoencoder(bands=1, classes=self.data_module.num_classes, config=self.config, comet_logger=self.comet_experiment)
         
     def train(self):
         """Train a neural network arch"""
@@ -240,9 +240,9 @@ class simulator():
                     yhat.append(classification_yhat)
                     loss = F.mse_loss(image_yhat, image)    
                     autoencoder_loss.append(loss.numpy())
-                    vis_epoch_activations.append(self.model.vis_activation["vis_conv1"].cpu().numpy())
+                    vis_epoch_activations.append(self.model.classifier.vis_activation["vis_conv1"].cpu().numpy())
                     encoder_epoch_activations.append(self.model.vis_activation["encoder_block3"].cpu().numpy())
-                    classification_bottleneck.append(self.model.vis_activation["classification_bottleneck"].cpu().numpy())                    
+                    classification_bottleneck.append(self.model.classifier.vis_activation["classification_bottleneck"].cpu().numpy())                    
            
         yhat = np.concatenate(yhat)
         yhat = np.argmax(yhat, 1)

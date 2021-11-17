@@ -110,7 +110,10 @@ def distance_outliers(results, features, labels, threshold, experiment):
     true_outliers = results[~(results.label == results.observed_label)]
     inset = true_outliers[~true_outliers.label.isin([8,9])]    
     outlier_accuracy = sum(inset.distance_outlier)/inset.shape[0]
-    outlier_precision = sum(inset.distance_outlier)/sum(results[~results.label.isin([8,9])].distance_outlier)
+    try:
+        outlier_precision = sum(inset.distance_outlier)/sum(results[~results.label.isin([8,9])].distance_outlier)
+    except:
+        outlier_precision = None
     
     #Image corruptions
     corrupted_data = results[results.image_corrupt==True]
@@ -119,7 +122,10 @@ def distance_outliers(results, features, labels, threshold, experiment):
         corruption_precision = None
     else:     
         corruption_accuracy = sum(corrupted_data.distance_outlier)/corrupted_data.shape[0]
-        corruption_precision = sum(corrupted_data.distance_outlier)/sum(results.distance_outlier)
+        try:
+            corruption_precision = sum(corrupted_data.distance_outlier)/sum(results.distance_outlier)
+        except:
+            corruption_precision = None
     
     if experiment:        
         #Distance by outlier type
