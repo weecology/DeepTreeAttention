@@ -100,11 +100,11 @@ def run():
         #mean_novel_prediction = novel_prediction.softmax_score.mean()
         #comet_logger.experiment.log_metric(name="Mean unknown species softmax score", value=mean_novel_prediction)
         
-        row = pd.DataFrame({"Outliers": x, "Micro Accuracy":m.metrics["Micro Accuracy"],"Macro Accuracy":m.metrics["Macro Accuracy"]})
+        row = pd.DataFrame({"Outliers": [x], "Micro Accuracy":m.metrics["Micro Accuracy"],"Macro Accuracy":m.metrics["Macro Accuracy"]})
         rows.append(row)
     
     rows = pd.concat(rows)
     rows.to_csv("results/experiment_{}.csv".format(comet_logger.experiment.get_key()))
     
-for i in range(2):
+for i in range(10):
     run()
