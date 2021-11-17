@@ -47,6 +47,8 @@ def filter_data(path, config):
     field = field[~(field.individualID.isin(shaded_ids))]
     field = field[(field.height > 3) | (field.height.isnull())]
     field = field[field.stemDiameter > config["min_stem_diameter"]]
+    field.loc[field.taxonID=="PSMEM","taxonID"] = "PSME"
+    
     field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
     field = field[~(field.eventID.str.contains("2014"))]
     with_heights = field[~field.height.isnull()]
