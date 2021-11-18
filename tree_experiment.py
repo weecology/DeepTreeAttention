@@ -109,5 +109,5 @@ def run():
     rows = pd.concat(rows)
     rows.to_csv("results/experiment_{}.csv".format(comet_logger.experiment.get_key()))
     
-for i in range(10):
+for i in range(2):
     run()
