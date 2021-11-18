@@ -29,9 +29,7 @@ def config():
     config["autoencoder_epochs"] = 1
     config["classifier_epochs"] = 1
     
-    
     return config
-
 
 #Data module
 @pytest.fixture(scope="session")
@@ -71,4 +69,3 @@ def test_resample(config, dm, tmpdir):
     data_loader = dm.train_dataloader()
     labels = []
     individual, image, label = iter(data_loader).next()
-
