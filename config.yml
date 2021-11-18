@@ -27,14 +27,13 @@ megaplot_dir:
 
 #Outlier detection
 include_outliers: True
-outlier_threshold: 0.95
 classifier_epochs: 30
 autoencoder_epochs: 10
 classification_loss_scalar: 1
 autoencoder_loss_scalar: 0
 
 #Outlier detection
-outlier_threshold: 0.98
+outlier_threshold: 0.95
 distance_threshold: 2
 
 #Crop generation
