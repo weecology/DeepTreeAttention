@@ -12,6 +12,7 @@ import subprocess
 from pytorch_lightning.loggers import CometLogger
 import pandas as pd
 from pandas.util import hash_pandas_object
+from datetime import datetime
 
 def run():
     """Run a tree experiment"""
@@ -19,6 +20,8 @@ def run():
     client = start_cluster.start(cpus=75, mem_size="5GB")
     #client = None
     
+    now = datetime.now() # current date and time
+    timestamp = now.strftime("%H:%M:%S")
     config = data.read_config("config.yml")
     comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"],auto_output_logging = "simple")
     comet_logger.experiment.add_tag("Autoencoder")
@@ -103,11 +106,11 @@ def run():
         #mean_novel_prediction = novel_prediction.softmax_score.mean()
         #comet_logger.experiment.log_metric(name="Mean unknown species softmax score", value=mean_novel_prediction)
         
-        row = pd.DataFrame({"Outliers": [x], "Micro Accuracy":m.metrics["Micro Accuracy"],"Macro Accuracy":m.metrics["Macro Accuracy"]})
+        row = pd.DataFrame({"timestamp":[timestamp],"Outliers": [x], "Micro Accuracy":m.metrics["Micro Accuracy"],"Macro Accuracy":m.metrics["Macro Accuracy"]})
         rows.append(row)
     
     rows = pd.concat(rows)
     rows.to_csv("results/experiment_{}.csv".format(comet_logger.experiment.get_key()))
     
-for i in range(2):
+for i in range(10):
     run()
