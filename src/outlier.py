@@ -211,7 +211,7 @@ def distance_from_centroids(features, centroids, labels, cov):
     
     return distances
     
-def predict_outliers(model, annotations, config, experiment=None):
+def predict_outliers(model, annotations, config, comet_logger=None):
     """Predict outliers and append a column to annotations based on a given model. Model object must contain a predict method"""
     
     #predict annotations
@@ -234,15 +234,16 @@ def predict_outliers(model, annotations, config, experiment=None):
     
     #Plot outliers
     #plot historgram
-    if experiment:
+    if comet_logger:
         fig = plt.figure()
         ax = fig.add_subplot()
         ax.hist(results.autoencoder_loss, bins=20, color='c', edgecolor='k', alpha=0.65)
         ax.axvline(threshold, color='k', linestyle='dashed', linewidth=1)    
+        comet_logger.experiment.log_figure(figure=layerplot_vis, figure_name="autoencoder_loss")        
         
         #plot encoder set
         layerplot_vis = visualize.plot_2d_layer(features=features, labels=results.observed_label, use_pca=False)
-        experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_labels")        
+        comet_logger.experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_labels")        
                 
     # distance outlier
     centroids = calculate_centroids(features, results.observed_label)
