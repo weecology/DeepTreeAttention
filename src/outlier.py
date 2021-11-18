@@ -227,9 +227,16 @@ def predict_outliers(model, annotations, config, comet_logger=None):
         
         results = model.predict(data_loader)
     features = model.classification_bottleneck
+
+    # distance outlier
+    centroids = calculate_centroids(features, results.observed_label)
+    cov = calculate_covariance(features, results.observed_label)
+    results["centroid_distance"] = distance_from_centroids(features, centroids, results.observed_label, cov)
     
     #loss outlier
-    threshold = results.autoencoder_loss.quantile(config["outlier_threshold"])
+    threshold = results.autoencoder_loss.quantile(config["outlier_threshold"])    
+    results["predicted_outlier"] = (results["centroid_distance"] > config["distance_threshold"]) | (results.autoencoder_loss > threshold)
+    annotations["predicted_outlier"] = results["predicted_outlier"].values
     
     #Plot outliers
     #plot historgram
@@ -243,14 +250,7 @@ def predict_outliers(model, annotations, config, comet_logger=None):
         #plot encoder set
         layerplot_vis = visualize.plot_2d_layer(features=features, labels=results.observed_label, use_pca=False)
         comet_logger.experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_labels")        
-                
-    # distance outlier
-    centroids = calculate_centroids(features, results.observed_label)
-    cov = calculate_covariance(features, results.observed_label)
-    results["centroid_distance"] = distance_from_centroids(features, centroids, results.observed_label, cov)
-    results["predicted_outlier"] = (results["centroid_distance"] > config["distance_threshold"]) | (results.autoencoder_loss > threshold)
-    annotations["predicted_outlier"] = results["predicted_outlier"]
-    
+        
     return annotations
     
     
