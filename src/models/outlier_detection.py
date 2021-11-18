@@ -272,6 +272,7 @@ class tree_autoencoder(autoencoder):
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
         classification_loss = F.cross_entropy(classification_yhat, observed_labels)
         loss = self.config["autoencoder_loss_scalar"] * autoencoder_loss  + classification_loss * self.config["classification_loss_scalar"]
+        self.log("loss", loss, on_epoch=True)
 
         return loss
 
