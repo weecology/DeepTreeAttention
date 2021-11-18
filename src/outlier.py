@@ -230,7 +230,6 @@ def predict_outliers(model, annotations, config, comet_logger=None):
     
     #loss outlier
     threshold = results.autoencoder_loss.quantile(config["outlier_threshold"])
-    results["predicted_outlier"] = results.autoencoder_loss > threshold
     
     #Plot outliers
     #plot historgram
@@ -249,8 +248,7 @@ def predict_outliers(model, annotations, config, comet_logger=None):
     centroids = calculate_centroids(features, results.observed_label)
     cov = calculate_covariance(features, results.observed_label)
     results["centroid_distance"] = distance_from_centroids(features, centroids, results.observed_label, cov)
-    results["predicted_outlier"] = results["centroid_distance"] > config["distance_threshold"]
-    
+    results["predicted_outlier"] = (results["centroid_distance"] > config["distance_threshold"]) | (results.autoencoder_loss > threshold)
     annotations["predicted_outlier"] = results["predicted_outlier"]
     
     return annotations
