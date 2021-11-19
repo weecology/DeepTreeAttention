@@ -1,5 +1,6 @@
 #visualize
 from descartes import PolygonPatch
+import glob
 import geopandas as gpd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -131,4 +132,40 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, siz
                 
             ax.scatter(x,y,color=colors[index], alpha=0.7, s=point_size, label=label)   
             ax.legend(markerscale=2)
-                
+
+def plot_points_and_crowns(df, ROOT, plot_n_individuals, config, experiment):
+    """Plot a dataframe of results"""
+    #load image pool and crown predicrions
+    rgb_pool = glob.glob(config["rgb_sensor_pool"], recursive=True)
+    test_points = gpd.read_file("{}/data/processed/canopy_points.shp".format(ROOT))   
+    test_crowns = gpd.read_file("{}/data/processed/crowns.shp".format(ROOT))   
+    tmpdir = tempfile.gettempdir()
+    
+    plt.ion()
+    for index, row in df.head(n=plot_n_individuals).iterrows():
+        fig = plt.figure(0)
+        ax = fig.add_subplot(1, 1, 1)                
+        individual = row["individual"]
+        geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
+        left, bottom, right, top = geom.bounds
+        
+        #Find image
+        img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
+        src = rasterio.open(img_path)
+        img = src.read(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
+        img_transform = src.window_transform(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
+        
+        #Plot crown
+        patches = [PolygonPatch(geom, edgecolor='red', facecolor='none')]
+        show(img, ax=ax, transform=img_transform)                
+        ax.add_collection(PatchCollection(patches, match_original=True))
+        
+        #Plot field coordinate
+        stem = test_points[test_points.individual == individual]
+        stem.plot(ax=ax)
+        
+        plt.savefig("{}/{}.png".format(tmpdir, row["individual"]))
+        experiment.log_image("{}/{}.png".format(tmpdir, row["individual"]), name = "crown: {}, True: {}, Predicted {}".format(row["individual"], row.true_taxa,row.pred_taxa))
+        src.close()
+        plt.close("all")
+    plt.ioff()    
