@@ -59,7 +59,8 @@ trainer = Trainer(
     max_epochs=data_module.config["epochs"],
     accelerator=data_module.config["accelerator"],
     checkpoint_callback=False,
-    logger=comet_logger)
+    logger=comet_logger,
+    profiler="simple")
 
 trainer.fit(m, datamodule=data_module)
 results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
