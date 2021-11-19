@@ -16,18 +16,12 @@ import pandas as pd
 from pandas.util import hash_pandas_object
 
 #Create datamodule
-<<<<<<< HEAD
 #client = start_cluster.start(cpus=75, mem_size="5GB")
 client = None
 
 config = data.read_config("config.yml")
 comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"],auto_output_logging = "simple")
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client, metadata=True, comet_logger=comet_logger)
-=======
-#client = start_cluster.start(cpus=50, mem_size="5GB")
-client = None
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client, metadata=True)
->>>>>>> main
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client, metadata=True, comet_logger=comet_logger)
 data_module.setup()
 
 if client:
@@ -70,7 +64,8 @@ trainer = Trainer(
     max_epochs=data_module.config["epochs"],
     accelerator=data_module.config["accelerator"],
     checkpoint_callback=False,
-    logger=comet_logger)
+    logger=comet_logger,
+    profiler='simple')
 
 trainer.fit(m, datamodule=data_module)
 results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
