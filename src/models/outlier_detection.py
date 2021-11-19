@@ -211,7 +211,7 @@ class autoencoder(LightningModule):
         self.encoder_activations = np.concatenate(encoder_epoch_activations)
         self.classification_bottleneck = np.concatenate(classification_bottleneck)
         
-        results = pd.DataFrame({"test_index":sample_ids,"observed_label": observed_y,"predicted_label":yhat,"autoencoder_loss": autoencoder_loss})        
+        results = pd.DataFrame({"individual":sample_ids,"observed_label": observed_y,"predicted_label":yhat,"autoencoder_loss": autoencoder_loss})        
     
         return results
 
