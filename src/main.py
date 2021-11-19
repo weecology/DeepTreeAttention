@@ -6,8 +6,6 @@ from deepforest.main import deepforest
 from descartes import PolygonPatch
 import os
 import numpy as np
-from matplotlib import pyplot as plt
-from matplotlib.collections import PatchCollection
 from pytorch_lightning import LightningModule
 import pandas as pd
 from torch.nn import functional as F
@@ -16,12 +14,11 @@ import torch
 from torchvision import transforms
 import torchmetrics
 import tempfile
-import rasterio
-from rasterio.plot import show
 from src import data
 from src import generate
 from src import neon_paths
 from src import patches
+from src import visualize
 from shapely.geometry import Point, box
 
 class TreeModel(LightningModule):
@@ -239,39 +236,7 @@ class TreeModel(LightningModule):
         df["true_taxa"] = df["label"].apply(lambda x: self.index_to_label[x])
  
         if experiment:
-            #load image pool and crown predicrions
-            rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
-            test_points = gpd.read_file("{}/data/processed/canopy_points.shp".format(self.ROOT))   
-            test_crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
-            
-            plt.ion()
-            for index, row in df.sample(n=plot_n_individuals).iterrows():
-                fig = plt.figure(0)
-                ax = fig.add_subplot(1, 1, 1)                
-                individual = row["individual"]
-                geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
-                left, bottom, right, top = geom.bounds
-                
-                #Find image
-                img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
-                src = rasterio.open(img_path)
-                img = src.read(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
-                img_transform = src.window_transform(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
-                
-                #Plot crown
-                patches = [PolygonPatch(geom, edgecolor='red', facecolor='none')]
-                show(img, ax=ax, transform=img_transform)                
-                ax.add_collection(PatchCollection(patches, match_original=True))
-                
-                #Plot field coordinate
-                stem = test_points[test_points.individual == individual]
-                stem.plot(ax=ax)
-                
-                plt.savefig("{}/{}.png".format(self.tmpdir, row["individual"]))
-                experiment.log_image("{}/{}.png".format(self.tmpdir, row["individual"]), name = "crown: {}, True: {}, Predicted {}".format(row["individual"], row.true_taxa,row.pred_taxa))
-                src.close()
-                plt.close("all")
-            plt.ioff()
+            visualize.plot_points_and_crowns(df=df, ROOT=self.ROOT, plot_n_individuals=plot_n_individuals, config=self.config, experiment=experiment)
             
         return df
     

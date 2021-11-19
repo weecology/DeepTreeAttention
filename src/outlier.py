@@ -7,6 +7,7 @@ from src import data
 import scipy
 import tempfile
 import torch
+import os
 
 def autoencoder_outliers(results, outlier_threshold, experiment):
     """Given a set of predictions, label outliers"""
@@ -211,7 +212,7 @@ def distance_from_centroids(features, centroids, labels, cov):
     
     return distances
     
-def predict_outliers(model, annotations, config, comet_logger=None):
+def predict_outliers(model, annotations, config, plot_n_individuals=100, comet_logger=None):
     """Predict outliers and append a column to annotations based on a given model. Model object must contain a predict method"""
     
     #predict annotations
@@ -235,7 +236,9 @@ def predict_outliers(model, annotations, config, comet_logger=None):
     
     #loss outlier
     threshold = results.autoencoder_loss.quantile(config["outlier_threshold"])    
-    results["predicted_outlier"] = (results["centroid_distance"] > config["distance_threshold"]) | (results.autoencoder_loss > threshold)
+    distance_outliers = results["centroid_distance"] > config["distance_threshold"]
+    loss_outliers = results.autoencoder_loss > threshold
+    results["predicted_outlier"] = distance_outliers | loss_outliers
     annotations["predicted_outlier"] = results["predicted_outlier"].values
     
     #Plot outliers
@@ -250,6 +253,13 @@ def predict_outliers(model, annotations, config, comet_logger=None):
         #plot encoder set
         layerplot_vis = visualize.plot_2d_layer(features=features, labels=results.observed_label, use_pca=False)
         comet_logger.experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_labels")        
+        
+        comet_logger.experiment.log_metric("Distance outliers", distance_outliers)
+        comet_logger.experiment.log_metric("Loss outliers", loss_outliers)
+        
+        #plot outliers
+        ROOT = os.path.dirname(os.path.dirname(__file__))
+        visualize.plot_points_and_crowns(df=results[results.predicted_outlier==True], ROOT=ROOT, plot_n_individuals=plot_n_individuals, config=config, experiment=comet_logger.experiment)
         
     return annotations
     
