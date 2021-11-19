@@ -28,7 +28,7 @@ megaplot_dir:
 #Outlier detection
 include_outliers: True
 outlier_threshold: 0.95
-classifier_epochs: 40
+classifier_epochs: 100
 autoencoder_epochs: 15
 classification_loss_scalar: 1
 autoencoder_loss_scalar: 0
@@ -55,7 +55,7 @@ bands: 369
 lr: 0.01
 fast_dev_run: False
 accelerator: dp
-epochs: 50
+epochs: 80
 
 #Evaluation config
 #Top k class recall score
