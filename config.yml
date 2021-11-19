@@ -14,34 +14,19 @@ min_train_samples: 10
 min_test_samples: 4
 
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
-iterations: 500
+iterations: 200
 #minimum CHM height, leave blank to skip CHM filtering
 min_CHM_height: 1
 #Minimum difference between measured height and CHM height
 min_CHM_diff: 3
 
 #Megaplot XY Data
-megaplot_dir:
-
-#Outlier detection
-include_outliers: True
-classifier_epochs: 30
-autoencoder_epochs: 10
-classification_loss_scalar: 1
-autoencoder_loss_scalar: 0
-
-#Outlier detection
-outlier_threshold: 0.95
-distance_threshold: 2
+megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation
 convert_h5: True
 replace: False
-<<<<<<< HEAD
-
-=======
 new_train_test_split: False
->>>>>>> main
 #Directoy to store cropped images from crowns
 crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/year_crops/
 
@@ -50,22 +35,13 @@ image_size: 11
 
 #Network Parameters
 gpus: 1
-<<<<<<< HEAD
-workers: 12
-batch_size: 64
-=======
 workers: 20
 batch_size: 32
->>>>>>> main
 bands: 369
 lr: 0.0001
 fast_dev_run: False
 accelerator: dp
-<<<<<<< HEAD
-epochs: 50
-=======
 epochs: 90
->>>>>>> main
 
 #Evaluation config
 #Top k class recall score
