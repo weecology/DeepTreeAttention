@@ -115,8 +115,9 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     missing_ids = plot_data[~plot_data.individual.isin(merged_boxes.individual)]
     
     if not missing_ids.empty:
-        created_boxes= create_boxes(missing_ids)
-        merged_boxes = merged_boxes.append(created_boxes)
+        #created_boxes= create_boxes(missing_ids)
+        #merged_boxes = merged_boxes.append(created_boxes)
+        pass
     
     #If there are multiple boxes per point, take the center box
     grouped = merged_boxes.groupby("individual")

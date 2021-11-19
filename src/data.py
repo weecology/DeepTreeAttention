@@ -354,6 +354,7 @@ class TreeData(LightningDataModule):
                     
                 #DEBUG, just one site
                 df = df[df.siteID=="HARV"]
+
                 
                 #Filter points based on LiDAR height
                 df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
@@ -380,8 +381,8 @@ class TreeData(LightningDataModule):
                 rgb_glob=self.config["rgb_sensor_pool"],
                 HSI_tif_dir=self.config["HSI_tif_dir"],
                 client=self.client,
-                replace=self.config["replace"]
-            )
+                replace=self.config["replace"])
+
             #Outlier detection
             before_outlier_detection = annotations.groupby("taxonID").filter(lambda x: x.shape[0] > (self.config["min_train_samples"] + self.config["min_test_samples"]))
             outlier_model = outlier_detection.tree_autoencoder(bands=self.config["bands"], classes = len(before_outlier_detection.taxonID.unique()), config=self.config, comet_logger=self.comet_logger)
@@ -401,7 +402,16 @@ class TreeData(LightningDataModule):
                 self.comet_logger.experiment.log_metric("predicted_outliers", predicted_outliers.shape[0])
                 self.comet_logger.experiment.log_table("predicted_outliers.csv", predicted_outliers)
             train_annotations, test_annotations = train_test_split(after_outlier_detection,config=self.config, client=self.client)   
-            
+
+            if self.config["new_train_test_split"]:
+                train_annotations, test_annotations = train_test_split(annotations,config=self.config, client=self.client)   
+            else:
+                previous_train = pd.read_csv("{}/processed/train.csv".format(self.data_dir))
+                previous_test = pd.read_csv("{}/processed/test.csv".format(self.data_dir))
+                
+                train_annotations = annotations[annotations.individualID.isin(previous_train.individualID)]
+                test_annotations = annotations[annotations.individualID.isin(previous_test.individualID)]
+                
             #capture discarded species
             individualIDs = np.concatenate([train_annotations.individualID.unique(), test_annotations.individualID.unique()])
             novel = annotations[~annotations.individualID.isin(individualIDs)]
