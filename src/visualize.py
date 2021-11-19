@@ -165,7 +165,12 @@ def plot_points_and_crowns(df, ROOT, plot_n_individuals, config, experiment):
         stem.plot(ax=ax)
         
         plt.savefig("{}/{}.png".format(tmpdir, row["individual"]))
-        experiment.log_image("{}/{}.png".format(tmpdir, row["individual"]), name = "crown: {}, True: {}, Predicted {}".format(row["individual"], row.true_taxa,row.pred_taxa))
+        
+        try:
+            experiment.log_image("{}/{}.png".format(tmpdir, row["individual"]), name = "crown: {}, True: {}, Predicted {}".format(row["individual"], row.true_taxa,row.pred_taxa))
+        except:
+            experiment.log_image("{}/{}.png".format(tmpdir, row["individual"]))
+        
         src.close()
         plt.close("all")
     plt.ioff()    
