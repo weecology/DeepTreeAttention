@@ -14,14 +14,25 @@ min_train_samples: 10
 min_test_samples: 4
 
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
-iterations: 200
+iterations: 500
 #minimum CHM height, leave blank to skip CHM filtering
 min_CHM_height: 1
 #Minimum difference between measured height and CHM height
 min_CHM_diff: 3
 
 #Megaplot XY Data
-megaplot_dir: /orange/idtrees-collab/megaplot/
+megaplot_dir:
+
+#Outlier detection
+include_outliers: True
+classifier_epochs: 50
+autoencoder_epochs: 10
+classification_loss_scalar: 1
+autoencoder_loss_scalar: 0
+
+#Outlier detection
+outlier_threshold: 0.95
+distance_threshold: 2
 
 #Crop generation
 convert_h5: True
@@ -36,12 +47,11 @@ image_size: 11
 #Network Parameters
 gpus: 1
 workers: 20
-batch_size: 32
 bands: 369
 lr: 0.0001
 fast_dev_run: False
-accelerator: dp
-epochs: 90
+accelerator:
+epochs: 100
 
 #Evaluation config
 #Top k class recall score
