@@ -65,7 +65,7 @@ trainer = Trainer(
     accelerator=data_module.config["accelerator"],
     checkpoint_callback=False,
     logger=comet_logger,
-    profiler='simple')
+    profiler="simple")
 
 trainer.fit(m, datamodule=data_module)
 results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
@@ -99,12 +99,9 @@ train_features = m.get_features(data_module.train_ds)
 comet_logger.experiment.log_table("train_features.csv", train_features)
 
 #Novel species prediction, get scores
-<<<<<<< HEAD
-novel_prediction = metrics.novel_prediction(model=m.model.sensor_model, csv_file="data/processed/novel_species.csv", config=config)
-=======
 novel.to_csv("data/interim/novel.csv")
 novel_prediction = metrics.novel_prediction(model=m, csv_file="data/interim/novel.csv", config=data_module.config)
->>>>>>> main
+
 comet_logger.experiment.log_table("novel_prediction.csv", novel_prediction)
 mean_novel_prediction = novel_prediction.softmax_score.mean()
 comet_logger.experiment.log_metric(name="Mean unknown species softmax score", value=mean_novel_prediction)
