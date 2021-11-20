@@ -401,10 +401,9 @@ class TreeData(LightningDataModule):
             if self.comet_logger:
                 self.comet_logger.experiment.log_metric("predicted_outliers", predicted_outliers.shape[0])
                 self.comet_logger.experiment.log_table("predicted_outliers.csv", predicted_outliers)
-            train_annotations, test_annotations = train_test_split(after_outlier_detection,config=self.config, client=self.client)   
 
             if self.config["new_train_test_split"]:
-                train_annotations, test_annotations = train_test_split(annotations,config=self.config, client=self.client)   
+                train_annotations, test_annotations = train_test_split(after_outlier_detection,config=self.config, client=self.client)   
             else:
                 previous_train = pd.read_csv("{}/processed/train.csv".format(self.data_dir))
                 previous_test = pd.read_csv("{}/processed/test.csv".format(self.data_dir))
