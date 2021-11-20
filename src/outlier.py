@@ -254,8 +254,8 @@ def predict_outliers(model, annotations, config, plot_n_individuals=100, comet_l
         layerplot_vis = visualize.plot_2d_layer(features=features, labels=results.observed_label, use_pca=False)
         comet_logger.experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_labels")        
         
-        comet_logger.experiment.log_metric("Distance outliers", distance_outliers)
-        comet_logger.experiment.log_metric("Loss outliers", loss_outliers)
+        comet_logger.experiment.log_metric("Distance outliers", distance_outliers.shape[0])
+        comet_logger.experiment.log_metric("Loss outliers", loss_outliers.shape[0])
         
         #plot outliers
         ROOT = os.path.dirname(os.path.dirname(__file__))
