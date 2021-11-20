@@ -1,12 +1,10 @@
 #Train
 import comet_ml
 import glob
-import geopandas as gpd
 from src import main
 from src import data
 from src import start_cluster
-import os
-from src.models import metadata, autoencoder
+from src.models import metadata
 from src import visualize
 from src import metrics
 from pytorch_lightning import Trainer
