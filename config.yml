@@ -45,8 +45,8 @@ crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/year_crops/
 image_size: 11
 
 #Network Parameters
-gpus: 1D
-workers: 12
+gpus: 1
+workers: 20
 bands: 369
 lr: 0.0001
 fast_dev_run: False
