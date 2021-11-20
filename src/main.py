@@ -85,7 +85,7 @@ class TreeModel(LightningModule):
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                          mode='min',
                                                          factor=0.5,
-                                                         patience=10,
+                                                         patience=5,
                                                          verbose=True,
                                                          threshold=0.001,
                                                          threshold_mode='rel',
