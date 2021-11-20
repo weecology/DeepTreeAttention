@@ -521,8 +521,7 @@ class TreeData(LightningDataModule):
             self.train_ds,
             batch_size=self.config["batch_size"],
             num_workers=self.config["workers"],
-            worker_init_fn=seed_worker,
-            seed_worker=worker_func,
+            worker_init_fn=worker_func,
             sampler=sampler
         )
         
