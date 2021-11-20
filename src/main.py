@@ -90,6 +90,7 @@ class TreeModel(LightningModule):
                                                          threshold=0.001,
                                                          threshold_mode='rel',
                                                          cooldown=0,
+                                                         min_lr=0.000001,
                                                          eps=1e-08)
         
         return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
