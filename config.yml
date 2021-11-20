@@ -25,7 +25,7 @@ megaplot_dir:
 
 #Outlier detection
 include_outliers: True
-classifier_epochs: 30
+classifier_epochs: 50
 autoencoder_epochs: 10
 classification_loss_scalar: 1
 autoencoder_loss_scalar: 0
