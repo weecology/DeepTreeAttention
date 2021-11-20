@@ -47,6 +47,7 @@ image_size: 11
 #Network Parameters
 gpus: 1
 workers: 20
+batch_size: 32
 bands: 369
 lr: 0.0001
 fast_dev_run: False
