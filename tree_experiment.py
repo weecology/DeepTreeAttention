@@ -6,6 +6,9 @@ from src import start_cluster
 from src.models import metadata
 from src import visualize
 from src import metrics
+import torch
+import numpy
+import random
 
 from pytorch_lightning import Trainer
 import subprocess
@@ -15,6 +18,20 @@ import pandas as pd
 from pandas.util import hash_pandas_object
 from datetime import datetime
 
+def seed_all(seed):
+    if not seed:
+        seed = 10
+
+    print("[ Using Seed : ", seed, " ]")
+
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.cuda.manual_seed(seed)
+    numpy.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    
 def run():
     """Run a tree experiment"""
     #Create datamodule
@@ -31,6 +48,8 @@ def run():
         
     if client:
         client.close()
+    if config["set_seeds"]:
+        seed_all(seed=10)
         
     rows = []
     for x in [False, True]:
@@ -75,6 +94,7 @@ def run():
                 accelerator=data_module.config["accelerator"],
                 checkpoint_callback=False,
                 callbacks=[lr_monitor],
+                profiler='simple',
                 logger=comet_logger)
             
             trainer.fit(m, datamodule=data_module)

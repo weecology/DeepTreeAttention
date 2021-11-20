@@ -10,6 +10,7 @@ import os
 import pandas as pd
 from pytorch_lightning import LightningDataModule
 import rasterio as rio
+import random
 from sklearn import preprocessing
 from src import generate
 from src import CHM
@@ -212,6 +213,11 @@ def read_config(config_path):
         
     return config
 
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
+    
 def preprocess_image(image, channel_is_first=False):
     """Preprocess a loaded image, if already C*H*W set channel_is_first=True"""
     img = np.asarray(image, dtype='float32')
@@ -504,10 +510,19 @@ class TreeData(LightningDataModule):
             data_weights.append(1/image_weight)
             
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights = data_weights, num_samples=len(self.train_ds))
+        
+        #random seed worker?
+        if self.config["set_seeds"]:
+            worker_func = seed_worker
+        else:
+            worker_func = None
+            
         data_loader = torch.utils.data.DataLoader(
             self.train_ds,
             batch_size=self.config["batch_size"],
             num_workers=self.config["workers"],
+            worker_init_fn=seed_worker,
+            seed_worker=worker_func,
             sampler=sampler
         )
         

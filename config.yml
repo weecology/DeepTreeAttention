@@ -45,6 +45,7 @@ crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/year_crops/
 image_size: 11
 
 #Network Parameters
+set_seeds: True
 gpus: 1
 workers: 20
 batch_size: 32
