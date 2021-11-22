@@ -509,7 +509,7 @@ class TreeData(LightningDataModule):
             image_weight = class_weights[label]
             data_weights.append(1/image_weight)
             
-        self.train_sampler = torch.utils.data.sampler.WeightedRandomSampler(weights = data_weights, num_samples=len(self.train_ds)/10, replacement=False)
+        self.train_sampler = torch.utils.data.sampler.WeightedRandomSampler(weights = data_weights, num_samples=int(len(self.train_ds)/5), replacement=False)
         
         #random seed worker?
         if self.config["set_seeds"]:
