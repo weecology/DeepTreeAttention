@@ -32,7 +32,7 @@ autoencoder_loss_scalar: 0
 
 #Outlier detection
 outlier_threshold: 0.98
-distance_threshold: 3
+distance_threshold: 2
 
 #Crop generation
 convert_h5: True
@@ -45,7 +45,7 @@ crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/year_crops/
 image_size: 11
 
 #Network Parameters
-set_seeds: True
+set_seeds: False
 gpus: 1
 workers: 20
 batch_size: 32

@@ -35,15 +35,15 @@ def seed_all(seed):
 def run():
     """Run a tree experiment"""
     #Create datamodule
-    #client = start_cluster.start(cpus=75, mem_size="5GB")
-    client = None
+    client = start_cluster.start(cpus=75, mem_size="5GB")
+    #client = None
     
     now = datetime.now() # current date and time
     timestamp = now.strftime("%H:%M:%S")
     config = data.read_config("config.yml")
     comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"],auto_output_logging = "simple")
     comet_logger.experiment.add_tag("Autoencoder")
-    data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client, metadata=True, comet_logger=comet_logger)
+    data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client, metadata=True, comet_logger=comet_logger)
     data_module.setup()
         
     if client:
@@ -53,7 +53,7 @@ def run():
         
     rows = []
     for x in [False, True]:
-        for x in range(2):
+        for i in range(5):
             comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"],auto_output_logging = "simple")        
             comet_logger.experiment.add_tag("Tree Experiment")        
             data_module.config["include_outliers"] = x
@@ -136,5 +136,5 @@ def run():
     rows = pd.concat(rows)
     rows.to_csv("results/experiment_{}.csv".format(comet_logger.experiment.get_key()))
     
-for i in range(10):
+for i in range(3):
     run()
