@@ -4,6 +4,7 @@ import pytest
 import pandas as pd
 import tempfile
 import numpy as np
+import torch
 
 import os
 ROOT = os.path.dirname(os.path.dirname(data.__file__))
@@ -64,8 +65,4 @@ def test_TreeDataset(dm, config,tmpdir):
     
     assert len(data_loader) == annotations.shape[0]
     
-def test_resample(config, dm, tmpdir):
-    #Set to a smaller number to ensure easy calculation
-    data_loader = dm.train_dataloader()
-    labels = []
-    individual, image, label = iter(data_loader).next()
+        
