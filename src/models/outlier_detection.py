@@ -6,6 +6,7 @@ import torch
 from torch import optim
 from src.models.Hang2020 import conv_module
 from src import visualize
+from src import center_loss
 from pytorch_lightning import LightningModule, Trainer
 import pandas as pd
 import torchmetrics
@@ -42,6 +43,7 @@ class classifier(nn.Module):
         super(classifier, self).__init__()
         self.image_size = image_size
         self.feature_length = 2 * self.image_size * image_size
+        
         #Classification layer
         self.vis_conv1= encoder_block(in_channels=16, filters=2) 
         self.classfication_bottleneck = nn.Linear(in_features=self.feature_length, out_features=2)        
@@ -80,6 +82,7 @@ class autoencoder(LightningModule):
         self.encoder_block3 = encoder_block(in_channels=32, filters=16, pool=True)
         
         self.classifier = classifier(classes, image_size=config["image_size"])
+        self.alpha = nn.Parameter(torch.tensor(0.5, dtype=float), requires_grad=True)
         
         #Decoder
         self.decoder_block1 = decoder_block(in_channels=16, filters=32)
@@ -100,6 +103,9 @@ class autoencoder(LightningModule):
         #Metrics
         micro_recall = torchmetrics.Accuracy(average="micro", num_classes=10)
         self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall}, prefix="autoencoder_")
+        
+        #center loss
+        self.closs = center_loss.CenterLoss(num_classes=classes, use_gpu="cuda" in self.device.type)
         
     def forward(self, x):
         x = self.encoder_block1(x)
@@ -122,9 +128,14 @@ class autoencoder(LightningModule):
         index, images, observed_labels, true_labels = batch 
         autoencoder_yhat, classification_yhat = self.forward(images) 
         
-        #Calculate loss
+        #Calculate losses
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
         classification_loss = F.cross_entropy(classification_yhat, observed_labels)
+        features = self.classifier.vis_activation["classification_bottleneck"]
+        step_center_loss = self.closs(features, observed_labels)
+        self.log("center loss", step_center_loss,on_epoch=True,on_step=False)
+        
+        classification_loss = classification_loss + self.alpha * step_center_loss
         loss = self.config["autoencoder_loss_scalar"] * autoencoder_loss  + classification_loss * self.config["classification_loss_scalar"]
 
         return loss
