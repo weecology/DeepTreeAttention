@@ -53,7 +53,7 @@ def run():
         
     rows = []
     for x in [False, True]:
-        for x in range(2):
+        for i in range(5):
             comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"],auto_output_logging = "simple")        
             comet_logger.experiment.add_tag("Tree Experiment")        
             data_module.config["include_outliers"] = x
@@ -136,5 +136,5 @@ def run():
     rows = pd.concat(rows)
     rows.to_csv("results/experiment_{}.csv".format(comet_logger.experiment.get_key()))
     
-for i in range(10):
+for i in range(3):
     run()
