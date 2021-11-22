@@ -27,6 +27,8 @@ def config():
     config["top_k"] = 1
     config["convert_h5"] = False
     config["plot_n_individuals"] = 1
+    config["gpus"] = 0
+    config["include_outliers"] = True
     
     return config
 
@@ -69,6 +71,7 @@ def m(config, dm):
 def test_fit(config, m, dm):
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m,datamodule=dm)
+    m.metrics["Micro Accuracy"]
     
 def test_predict_dataloader(config, m, dm, experiment):
     df = m.predict_dataloader(dm.val_dataloader(), experiment = experiment)
