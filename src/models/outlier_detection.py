@@ -167,7 +167,7 @@ class autoencoder(LightningModule):
         return loss
             
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=self.config["lr"])
+        optimizer = optim.Adam(list(self.parameters()) + list(self.closs.parameters()), lr=self.config["lr"])
 
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                          mode='min',
