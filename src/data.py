@@ -358,8 +358,8 @@ class TreeData(LightningDataModule):
                     megaplot_data = megaplot_data[megaplot_data.taxonID.isin(df.taxonID.unique())]
                     df = pd.concat([megaplot_data, df])
                     
-                #DEBUG, just one site
-                df = df[df.siteID=="HARV"]
+                #DEBUG, just two sites
+                df = df[df.siteID.isin(["HARV","BART"])]
 
                 #Filter points based on LiDAR height
                 df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
