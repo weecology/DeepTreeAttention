@@ -148,7 +148,6 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
 
 def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, deepforest_model=None):
     """wrapper function for dask, see main.py"""
-    
     if deepforest_model is None:
         from deepforest import main
         deepforest_model = main.deepforest()
