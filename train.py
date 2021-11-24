@@ -54,7 +54,7 @@ m = metadata.MetadataModel(
 
 comet_logger.experiment.log_parameters(m.config)
 
-profiler = AdvancedProfiler(filename="test_profile",dir="results/")
+profiler = AdvancedProfiler(filename="test_profile",dirpath="results")
 
 #Create trainer
 trainer = Trainer(
