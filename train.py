@@ -11,6 +11,8 @@ from src import metrics
 from pytorch_lightning import Trainer
 import subprocess
 from pytorch_lightning.loggers import CometLogger
+from pytorch_lightning.profiler import AdvancedProfiler
+
 import pandas as pd
 from pandas.util import hash_pandas_object
 
@@ -52,6 +54,8 @@ m = metadata.MetadataModel(
 
 comet_logger.experiment.log_parameters(m.config)
 
+profiler = AdvancedProfiler(filename="test_profile",dir="results")
+
 #Create trainer
 trainer = Trainer(
     gpus=data_module.config["gpus"],
@@ -59,6 +63,7 @@ trainer = Trainer(
     max_epochs=data_module.config["epochs"],
     accelerator=data_module.config["accelerator"],
     checkpoint_callback=False,
+    profiler=profiler,
     logger=comet_logger)
 
 trainer.fit(m, datamodule=data_module)
