@@ -23,9 +23,13 @@ min_CHM_diff: 4
 #Megaplot XY Data
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
-#Crop generation
+#Crop generation, whether to make a new dataset and customize which parts to recreate
+#Make new dataset
+regenerate: True
 convert_h5: True
+#Overwrite existing crops
 replace: True
+#Use existing plotIDs for train/test split
 new_train_test_split: True
 #Directoy to store cropped images from crowns
 crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/year_crops/
