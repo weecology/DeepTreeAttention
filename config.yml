@@ -10,15 +10,15 @@ HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/
 #NEON data filtering
 min_stem_diameter: 10
 #Minimum number of test samples per class to be included
-min_train_samples: 10
+min_train_samples: 6
 min_test_samples: 4
 
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
-iterations: 500
+iterations: 5000
 #minimum CHM height, leave blank to skip CHM filtering
 min_CHM_height: 1
 #Minimum difference between measured height and CHM height
-min_CHM_diff: 3
+min_CHM_diff: 4
 
 #Megaplot XY Data
 megaplot_dir:
@@ -31,12 +31,12 @@ classification_loss_scalar: 1
 autoencoder_loss_scalar: 0
 
 #Outlier detection
-outlier_threshold: 0.98
-distance_threshold: 2
+outlier_threshold: 0.96
+distance_threshold: 4
 
 #Crop generation
 convert_h5: True
-replace: False
+replace: True
 new_train_test_split: True
 #Directoy to store cropped images from crowns
 crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/year_crops/
@@ -47,13 +47,13 @@ image_size: 11
 #Network Parameters
 set_seeds: False
 gpus: 1
-workers: 20
+workers: 0
 batch_size: 32
 bands: 369
 lr: 0.0001
 fast_dev_run: False
 accelerator:
-epochs: 100
+epochs: 130
 
 #Evaluation config
 #Top k class recall score
