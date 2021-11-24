@@ -21,7 +21,7 @@ min_CHM_height: 1
 min_CHM_diff: 4
 
 #Megaplot XY Data
-megaplot_dir:
+megaplot_dir:/orange/idtrees-collab/megaplot/
 
 #Outlier detection
 include_outliers: True
