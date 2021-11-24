@@ -106,6 +106,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     
     #No contrib plots in test
     plotIDs = [x for x in plotIDs if not 'contrib' in x]
+    
     np.random.shuffle(plotIDs)
     test_species = []
     test_plots = []
@@ -123,7 +124,10 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     if train.empty:
         test = shp[shp.plotID == shp.plotID.unique()[0]]
         train = shp[shp.plotID == shp.plotID.unique()[1]]
-        
+    
+    #remove fixed boxes from test
+    test = test.loc[~test["box_id"].str.contains("fixed").fillna(False)]
+    
     test = test.groupby("taxonID").filter(lambda x: x.shape[0] > min_test_samples)
     train = train.groupby("taxonID").filter(lambda x: x.shape[0] > min_train_samples)
     
@@ -315,12 +319,13 @@ class TreeData(LightningDataModule):
     The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
     Use regenerate=True to override this behavior in setup()
     """
-    def __init__(self, csv_file, HSI=True, metadata=False, regenerate = False, client = None, config=None, data_dir=None, comet_logger=None):
+    def __init__(self, csv_file, HSI=True, metadata=False, regenerate = False, client = None, config=None, data_dir=None, comet_logger=None, debug=False):
         """
         Args:
             config: optional config file to override
             data_dir: override data location, defaults to ROOT   
             regenerate: Whether to recreate raw data
+            debug: a test mode for small samples
         """
         super().__init__()
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -329,6 +334,7 @@ class TreeData(LightningDataModule):
         self.HSI = HSI
         self.metadata = metadata
         self.comet_logger = comet_logger
+        self.debug = debug 
         
         #default training location
         self.client = client
@@ -367,13 +373,13 @@ class TreeData(LightningDataModule):
                     megaplot_data = megaplot_data[megaplot_data.taxonID.isin(df.taxonID.unique())]
                     df = pd.concat([megaplot_data, df])
                     
-                #DEBUG, just two sites
-                df = df[df.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])]
-
+                #Just one site
+                if not self.debug:
+                    df = df[df.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])]
+                
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter",len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples before CHM filter",df.shape[0])
-                    
 
                 #Filter points based on LiDAR height
                 df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
@@ -382,7 +388,7 @@ class TreeData(LightningDataModule):
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after CHM filter",len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after CHM filter",df.shape[0])
-                    
+
                 #Create crown data
                 crowns = generate.points_to_crowns(
                     field_data="{}/processed/canopy_points.shp".format(self.data_dir),
@@ -395,7 +401,7 @@ class TreeData(LightningDataModule):
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after crown prediction",len(crowns.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after crown prediction",crowns.shape[0])
-                    
+
                 crowns.to_file("{}/processed/crowns.shp".format(self.data_dir))
             else:
                 crowns = gpd.read_file("{}/processed/crowns.shp".format(self.data_dir))
@@ -426,6 +432,7 @@ class TreeData(LightningDataModule):
                 num_workers=self.config["workers"],
                 shuffle=False
             )
+            
             outlier_detection.train(outlier_model, dataloader=dataloader, config=self.config, comet_logger=self.comet_logger)            
             after_outlier_detection = outlier.predict_outliers(model=outlier_model, annotations=before_outlier_detection, config=self.config, comet_logger=self.comet_logger)
             predicted_outliers = after_outlier_detection[after_outlier_detection.predicted_outlier == True]

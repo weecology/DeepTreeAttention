@@ -117,8 +117,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     if not missing_ids.empty:
         created_boxes= create_boxes(missing_ids)
         merged_boxes = merged_boxes.append(created_boxes)
-        #pass
-    
+
     #If there are multiple boxes per point, take the center box
     grouped = merged_boxes.groupby("individual")
     
@@ -245,7 +244,7 @@ def write_crop(row, img_path, savedir, replace=True):
             filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])  
     else:
         filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])
-        annotation = pd.DataFrame({"image_path":[filename], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "siteID":[row["siteID"]]})
+        annotation = pd.DataFrame({"image_path":[filename], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "siteID":[row["siteID"]],"box_id":[row["box_id"]]})
         return annotation
 
 def generate_crops(gdf, sensor_glob, savedir, client=None, convert_h5=False, rgb_glob=None, HSI_tif_dir=None, replace=True):

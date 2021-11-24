@@ -36,7 +36,7 @@ def config():
 @pytest.fixture(scope="session")
 def dm(config):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)            
-    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=True, data_dir="{}/tests/data".format(ROOT)) 
+    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=True, data_dir="{}/tests/data".format(ROOT), debug=True) 
     dm.setup()    
     
     return dm
@@ -64,5 +64,8 @@ def test_TreeDataset(dm, config,tmpdir):
     annotations = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
     
     assert len(data_loader) == annotations.shape[0]
+<<<<<<< HEAD
     
         
+=======
+>>>>>>> main
