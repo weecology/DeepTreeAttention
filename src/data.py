@@ -362,8 +362,8 @@ class TreeData(LightningDataModule):
                 df = df[df.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])]
 
                 if self.comet_logger:
-                    self.comet_logger.log_parameter("Species before CHM filter",len(df.taxonID.unique()))
-                    self.comet_logger.log_parameter("Samples before CHM filter",df.shape[0])
+                    self.comet_logger.experiment.log_parameter("Species before CHM filter",len(df.taxonID.unique()))
+                    self.comet_logger.experiment.log_parameter("Samples before CHM filter",df.shape[0])
                     
                 #Filter points based on LiDAR height
                 df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
@@ -379,8 +379,8 @@ class TreeData(LightningDataModule):
                 )
                 
                 if self.comet_logger:
-                    self.comet_logger.log_parameter("Species after crown prediction",len(crowns.taxonID.unique()))
-                    self.comet_logger.log_parameter("Samples after crown prediction",crowns.shape[0])
+                    self.comet_logger.experiment.log_parameter("Species after crown prediction",len(crowns.taxonID.unique()))
+                    self.comet_logger.experiment.log_parameter("Samples after crown prediction",crowns.shape[0])
                     
                 crowns.to_file("{}/processed/crowns.shp".format(self.data_dir))
             else:
@@ -397,8 +397,8 @@ class TreeData(LightningDataModule):
                 replace=self.config["replace"])
 
             if self.comet_logger:
-                self.comet_logger.log_parameter("Species after crop generation",len(annotations.taxonID.unique()))
-                self.comet_logger.log_parameter("Samples after crop generation",annotations.shape[0])
+                self.comet_logger.experiment.log_parameter("Species after crop generation",len(annotations.taxonID.unique()))
+                self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
                 
             #Outlier detection
             before_outlier_detection = annotations.groupby("taxonID").filter(lambda x: x.shape[0] > (self.config["min_train_samples"] + self.config["min_test_samples"]))
