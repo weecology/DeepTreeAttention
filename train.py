@@ -92,14 +92,3 @@ comet_logger.experiment.log_table("test_predictions.csv", results)
 site_lists = train.groupby("label").site.unique()
 within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label, site_lists=site_lists)
 comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
-
-#get train features
-train_features = m.get_features(data_module.train_ds)
-comet_logger.experiment.log_table("train_features.csv", train_features)
-
-#Novel species prediction, get scores
-novel.to_csv("data/interim/novel.csv")
-novel_prediction = metrics.novel_prediction(model=m, csv_file="data/interim/novel.csv", config=data_module.config)
-comet_logger.experiment.log_table("novel_prediction.csv", novel_prediction)
-mean_novel_prediction = novel_prediction.softmax_score.mean()
-comet_logger.experiment.log_metric(name="Mean unknown species softmax score", value=mean_novel_prediction)
