@@ -261,15 +261,22 @@ class TreeDataset(Dataset):
         self.train = train
         self.HSI = HSI
         self.metadata = metadata
+        self.config = config 
         
-        if config:
+        if self.config:
             self.image_size = config["image_size"]
         else:
             self.image_size = image_size
         
         #Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=image_size)
-            
+        
+        #Pin data to memory if desired
+        if self.config["preload_images"]:
+            self.image_dict = {}
+            for index, row in self.annotations.iterrows():
+                self.image_dict[index] = load_image(row["image_path"], image_size=image_size)
+        
     def __len__(self):
         #0th based index
         return self.annotations.shape[0]
@@ -279,9 +286,12 @@ class TreeDataset(Dataset):
         image_path = self.annotations.image_path.loc[index]      
         individual = os.path.basename(image_path.split(".tif")[0])
         if self.HSI:
-            image_path = self.annotations.image_path.loc[index]            
-            image = load_image(image_path, image_size=self.image_size)
-            inputs["HSI"] = image
+            if self.config["preload_images"]:
+                inputs["HSI"] = self.image_dict[index]
+            else:
+                image_path = self.annotations.image_path.loc[index]            
+                image = load_image(image_path, image_size=self.image_size)
+                inputs["HSI"] = image
             
         if self.metadata:
             site = self.annotations.site.loc[index]  
@@ -293,8 +303,7 @@ class TreeDataset(Dataset):
             label = torch.tensor(label, dtype=torch.long)
             
             if self.HSI:
-                image = self.transformer(image)
-                inputs["HSI"] = image
+                inputs["HSI"] = self.transformer(inputs["HSI"])
 
             return individual, inputs, label
         else:
@@ -365,6 +374,7 @@ class TreeData(LightningDataModule):
                     self.comet_logger.experiment.log_parameter("Species before CHM filter",len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples before CHM filter",df.shape[0])
                     
+
                 #Filter points based on LiDAR height
                 df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
                 df.to_file("{}/processed/canopy_points.shp".format(self.data_dir))

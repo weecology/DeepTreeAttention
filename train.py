@@ -10,6 +10,8 @@ from src import metrics
 from pytorch_lightning import Trainer, profiler
 import subprocess
 from pytorch_lightning.loggers import CometLogger
+from pytorch_lightning.profiler import AdvancedProfiler
+
 import pandas as pd
 from pandas.util import hash_pandas_object
 
@@ -62,8 +64,7 @@ trainer = Trainer(
     max_epochs=data_module.config["epochs"],
     accelerator=data_module.config["accelerator"],
     checkpoint_callback=False,
-    logger=comet_logger,
-    profiler=profiler.SimpleProfiler(dirpath="results", filename="train_profile"))
+    logger=comet_logger)
 
 trainer.fit(m, datamodule=data_module)
 results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
@@ -92,10 +93,3 @@ site_lists = train.groupby("label").site.unique()
 within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label, site_lists=site_lists)
 comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
 
-#Novel species prediction, get scores
-#novel.to_csv("data/interim/novel.csv")
-#novel_prediction = metrics.novel_prediction(model=m, csv_file="data/interim/novel.csv", config=data_module.config)
-
-#comet_logger.experiment.log_table("novel_prediction.csv", novel_prediction)
-#mean_novel_prediction = novel_prediction.softmax_score.mean()
-#comet_logger.experiment.log_metric(name="Mean unknown species softmax score", value=mean_novel_prediction)
