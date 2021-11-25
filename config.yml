@@ -21,7 +21,7 @@ min_CHM_height: 1
 min_CHM_diff: 4
 
 #Megaplot XY Data
-megaplot_dir:/orange/idtrees-collab/megaplot/
+megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Outlier detection
 include_outliers: True
@@ -48,7 +48,7 @@ crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/year_crops/
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
-preload_images: False
+preload_images: True
 workers: 0
 
 #Network Parameters
