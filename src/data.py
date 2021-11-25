@@ -425,7 +425,7 @@ class TreeData(LightningDataModule):
             outlier_model = outlier_detection.tree_autoencoder(bands=self.config["bands"], classes = len(before_outlier_detection.taxonID.unique()), config=self.config, comet_logger=self.comet_logger)
             before_outlier_detection["label"] = before_outlier_detection.taxonID.astype("category").cat.codes                        
             before_outlier_detection.to_csv("{}/processed/before_outlier_detection.csv".format(self.data_dir))
-            ds = TreeDataset(csv_file="{}/processed/before_outlier_detection.csv".format(self.data_dir), image_size=self.config["image_size"])
+            ds = TreeDataset(csv_file="{}/processed/before_outlier_detection.csv".format(self.data_dir), image_size=self.config["image_size"], config=self.config)
             dataloader = torch.utils.data.DataLoader(
                 ds,
                 batch_size=self.config["batch_size"],
