@@ -64,8 +64,3 @@ def test_TreeDataset(dm, config,tmpdir):
     annotations = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
     
     assert len(data_loader) == annotations.shape[0]
-<<<<<<< HEAD
-    
-        
-=======
->>>>>>> main
