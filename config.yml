@@ -30,14 +30,14 @@ convert_h5: True
 #Overwrite existing crops
 replace: True
 #Use existing plotIDs for train/test split
-new_train_test_split: False
+new_train_test_split: True
 #Directoy to store cropped images from crowns
 crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/year_crops/
 
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
-preload_images: False
+preload_images: True
 workers: 0
 
 #Network Parameters
