@@ -287,7 +287,11 @@ class TreeModel(LightningModule):
             metric_dict: metric -> value
         """
         results = self.predict_dataloader(data_loader=data_loader, plot_n_individuals=self.config["plot_n_individuals"], experiment=experiment)
-
+        
+        #read in crowns data
+        crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
+        crowns = crowns.merge(results, on="individual")
+        
         #Log result by site
         if experiment:
             results["individualID"] = results["individual"]
@@ -303,27 +307,4 @@ class TreeModel(LightningModule):
             site_data_frame = pd.concat(site_data_frame)
             experiment.log_table("site_results.csv", site_data_frame)
         
-        return results
-    
-    def get_features(self, dataset):
-        data_loader = torch.utils.data.DataLoader(
-            dataset,
-            batch_size=self.config["batch_size"],
-            num_workers=self.config["workers"])
-        
-        self.eval()
-        predictions = []
-        individuals = []
-        for batch in data_loader:
-            individual, inputs, targets = batch
-            with torch.no_grad():
-                pred = self.predict(inputs)
-            predictions.append(pred)
-            individuals.append(individual)
-        
-        individuals = np.concatenate(individuals)              
-        features = np.concatenate(predictions)  
-        features = pd.DataFrame(features)
-        features["individual"] = individuals
-        
-        return features
+        return crowns

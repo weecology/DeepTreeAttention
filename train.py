@@ -90,6 +90,7 @@ comet_logger.experiment.log_parameter("spectral_spatial weight", alpha_weight)
 
 #Log prediction
 comet_logger.experiment.log_table("test_predictions.csv", results)
+comet_logger.experiment.log_asset(results, "predictions.shp")
 
 #Within site confusion
 site_lists = train.groupby("label").site.unique()
