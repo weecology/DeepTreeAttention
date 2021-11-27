@@ -57,8 +57,6 @@ m = metadata.MetadataModel(
 
 comet_logger.experiment.log_parameters(m.config)
 
-profiler = AdvancedProfiler(filename="test_profile",dirpath="results")
-
 #Create trainer
 trainer = Trainer(
     gpus=data_module.config["gpus"],
@@ -66,7 +64,6 @@ trainer = Trainer(
     max_epochs=data_module.config["epochs"],
     accelerator=data_module.config["accelerator"],
     checkpoint_callback=False,
-    profiler=profiler,
     logger=comet_logger)
 
 trainer.fit(m, datamodule=data_module)
