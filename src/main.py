@@ -290,7 +290,7 @@ class TreeModel(LightningModule):
         
         #read in crowns data
         crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
-        crowns = crowns.merge(results, on="individual")
+        crowns = crowns.drop(columns="label").merge(results, on="individual")
         
         #Log result by site
         if experiment:
