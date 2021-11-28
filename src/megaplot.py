@@ -4,7 +4,6 @@ import glob
 import os
 import numpy as np
 import pandas as pd
-from src import generate
 from src import CHM
 import shapely
 
@@ -67,7 +66,8 @@ def create_grid(gdf):
             grid_cells.append( shapely.geometry.box(x0, y0, x1, y1)  )
     grid = gpd.GeoDataFrame(grid_cells, columns=['geometry'],crs=crs)
     #give grid cells a plot ID
-    grid["plotID"] = "{}_contrib".format(grid.index)
+    grid["plotID"] = grid.index
+    grid["plotID"] = grid.plotID.apply(lambda x: "{}_contrib".format(x))
     
     return grid
     
