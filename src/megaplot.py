@@ -67,7 +67,7 @@ def create_grid(gdf):
             grid_cells.append( shapely.geometry.box(x0, y0, x1, y1)  )
     grid = gpd.GeoDataFrame(grid_cells, columns=['geometry'],crs=crs)
     #give grid cells a plot ID
-    grid["plotID"] = grid.index
+    grid["plotID"] = "{}_contrib".format(grid.index)
     
     return grid
     
