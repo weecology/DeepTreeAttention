@@ -292,6 +292,7 @@ class TreeModel(LightningModule):
         crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
         crowns = crowns.drop(columns="label").merge(results, on="individual")
         
+        self.neighbors = self.spatial_neighbors(crowns, n=5)
         #Log result by site
         if experiment:
             results["individualID"] = results["individual"]
@@ -308,3 +309,16 @@ class TreeModel(LightningModule):
             experiment.log_table("site_results.csv", site_data_frame)
         
         return crowns
+
+    def spatial_neighbors(self, gdf, n):
+        """    
+        #Get all neighbors within n meters of each point.
+        Args:
+            gdf: a geodataframe
+            n: distance from focal point
+        """
+        
+        neighbors = {}
+        for x in gdf.index:
+            geom = gdf.loc[x].geometry.buffer(buffer=n)
+            geom.intersects(gdf)
