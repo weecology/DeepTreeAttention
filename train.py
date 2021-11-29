@@ -22,9 +22,10 @@ if config["regenerate"]:
     client = start_cluster.start(cpus=50, mem_size="5GB")
 else:
     client = None
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=config["regenerate"], client=client, metadata=True)
+
+comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"],auto_output_logging = "simple")    
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=config["regenerate"], client=client, metadata=True, comet_logger=comet_logger)
 data_module.setup()
-comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=data_module.config["comet_workspace"],auto_output_logging = "simple")
 if client:
     client.close()
 
