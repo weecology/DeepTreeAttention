@@ -536,3 +536,14 @@ class TreeData(LightningDataModule):
         )
         
         return data_loader
+    
+def spatial_neighbors(gdf, n):
+    """    
+    #Get all neighbors within n meters of each point.
+    Args:
+        gdf: a geodataframe
+        n: distance from focal point
+    """
+    neighbors = {}
+    for x in gdf.index:
+        geom = gdf.loc[x].geometry.buffer(buffer=n)
