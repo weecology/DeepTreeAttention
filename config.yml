@@ -10,8 +10,8 @@ HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/
 #NEON data filtering
 min_stem_diameter: 10
 #Minimum number of test samples per class to be included
-min_train_samples: 5
-min_test_samples: 4
+min_train_samples: 4
+min_test_samples: 3
 
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
 iterations: 5000
@@ -47,7 +47,7 @@ bands: 369
 lr: 0.0001
 fast_dev_run: False
 accelerator: dp
-epochs: 130
+epochs: 100
 
 #Evaluation config
 #Top k class recall score
