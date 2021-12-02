@@ -233,11 +233,15 @@ class TreeModel(LightningModule):
         individuals = np.concatenate(individuals)        
         labels = np.concatenate(labels)
         predictions = np.concatenate(predictions)        
-        predictions = np.argmax(predictions, 1)    
+        predictions_top1 = np.argmax(predictions, 1)    
+        predictions_top2 = pd.DataFrame(predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
+        top1_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[0], axis=1)
+        top2_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[1], axis=1)
         
-        #get just the basename
-        df = pd.DataFrame({"pred_label":predictions,"label":labels,"individual":individuals})
-        df["pred_taxa"] = df["pred_label"].apply(lambda x: self.index_to_label[x])        
+        #Construct a df of predictions
+        df = pd.DataFrame({"pred_label_top1":predictions_top1,"pred_label_top2":predictions_top2,"top1_score":top1_score,"top2_score":top2_score,"label":labels,"individual":individuals})
+        df["pred_taxa_top1"] = df["pred_label_top1"].apply(lambda x: self.index_to_label[x]) 
+        df["pred_taxa_top2"] = df["pred_label_top2"].apply(lambda x: self.index_to_label[x])        
         df["true_taxa"] = df["label"].apply(lambda x: self.index_to_label[x])
  
         if experiment:
@@ -270,7 +274,7 @@ class TreeModel(LightningModule):
                 stem.plot(ax=ax)
                 
                 plt.savefig("{}/{}.png".format(self.tmpdir, row["individual"]))
-                experiment.log_image("{}/{}.png".format(self.tmpdir, row["individual"]), name = "crown: {}, True: {}, Predicted {}".format(row["individual"], row.true_taxa,row.pred_taxa))
+                experiment.log_image("{}/{}.png".format(self.tmpdir, row["individual"]), name = "crown: {}, True: {}, Predicted {}".format(row["individual"], row.true_taxa,row.pred_taxa_top1))
                 src.close()
                 plt.close("all")
             plt.ioff()
@@ -300,8 +304,8 @@ class TreeModel(LightningModule):
             results = results.merge(testdf)
             site_data_frame =[]
             for name, group in results.groupby("site"):
-                site_micro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label.values),target=torch.tensor(group.label.values), average="micro")
-                site_macro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label.values),target=torch.tensor(group.label.values), average="macro", num_classes=self.classes)
+                site_micro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label_top1.values),target=torch.tensor(group.label.values), average="micro")
+                site_macro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label_top1.values),target=torch.tensor(group.label.values), average="macro", num_classes=self.classes)
                 row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro.numpy()], "Macro Recall": [site_macro.numpy()]})
                 site_data_frame.append(row)
             site_data_frame = pd.concat(site_data_frame)
