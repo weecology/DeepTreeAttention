@@ -17,24 +17,20 @@ def read_files(directory, config=None):
     sitedf = []
     for index, x in enumerate(sites):
         print(x)
-        formatted_data = format(site=x, gdf=shps[index], directory=directory, config=config)
+        formatted_data = format(site=x, gdf=shps[index], config=config)
         sitedf.append(formatted_data)
 
     sitedf = pd.concat(sitedf)
     
     return sitedf
 
-def format(site, gdf, directory, config):
+def format(site, gdf, config):
     """The goal of this function is to mimic for the format needed to input to generate.points_to_crowns. 
     This requires a plot ID, individual, taxonID and site column. The individual should encode siteID and year
     Args:
         site: siteID
         gdf: site data
     """
-    species_data = pd.read_csv("{}/{}.csv".format(directory, site))
-    species_data = species_data.dropna(subset=["taxonID"])
-    gdf = gdf.merge(species_data[["sp","taxonID"]])
-    
     #give each an individual ID
     gdf["individualID"] = gdf.index.to_series().apply(lambda x: "{}.contrib.{}".format(site,x)) 
     gdf["siteID"] = site
