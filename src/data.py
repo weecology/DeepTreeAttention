@@ -361,7 +361,7 @@ class TreeData(LightningDataModule):
                 #load any megaplot data
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], rgb_pool=self.config["rgb_sensor_pool"], client = self.client, config=self.config)
-                    #megaplot_data = megaplot_data[megaplot_data.taxonID.isin(df.taxonID.unique())]
+                    megaplot_data = megaplot_data[megaplot_data.taxonID.isin(df.taxonID.unique())]
                     df = pd.concat([megaplot_data, df])
                     
                 #Just one site
