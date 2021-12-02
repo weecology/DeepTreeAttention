@@ -99,9 +99,6 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     #split by plot level
     plotIDs = list(shp.plotID.unique())
     
-    #No contrib plots in test
-    #plotIDs = [x for x in plotIDs if not 'contrib' in x]
-    
     #There are a couple NEON plots within the OSBS megaplot, make sure they end up in train
     for x in ["OSBS_026","OSBS_029","OSBS_039","OSBS_027","OSBS_036"]:
         plotIDs.remove(x)
@@ -164,7 +161,6 @@ def train_test_split(shp, config, client = None):
                 ties = []
                 ties.append([train, test])
             elif test.taxonID.nunique() == test_species:
-                print("ties")
                 ties.append([train, test])          
     else:
         for x in np.arange(config["iterations"]):
@@ -178,7 +174,6 @@ def train_test_split(shp, config, client = None):
                 ties = []
                 ties.append([train, test])
             elif test.taxonID.nunique() == test_species:
-                print("ties")
                 ties.append([train, test])
     
     # The size of the datasets
