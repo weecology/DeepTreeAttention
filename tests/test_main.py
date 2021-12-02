@@ -56,7 +56,6 @@ def experiment():
     else:
         return None
 
-
 #Training module
 @pytest.fixture(scope="session")
 def m(config, dm):
@@ -80,6 +79,7 @@ def test_evaluate_crowns(config, experiment, m, dm):
     m.ROOT = "{}/tests".format(ROOT)
     df = m.evaluate_crowns(data_loader = dm.val_dataloader(), experiment=experiment)
     
+    assert all(["top{}_score".format(x) in df.columns for x in [1,2]]) 
     assert len(df) == 4
 
 def test_predict_xy(config, m, dm):
