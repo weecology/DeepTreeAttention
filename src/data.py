@@ -102,6 +102,10 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     #No contrib plots in test
     plotIDs = [x for x in plotIDs if not 'contrib' in x]
     
+    #There are a couple NEON plots within the OSBS megaplot, make sure they end up in train
+    for x in ["OSBS_026","OSBS_029","OSBS_039","OSBS_027","OSBS_036"]:
+        plotIDs.remove(x)
+    
     np.random.shuffle(plotIDs)
     test_species = []
     test_plots = []
@@ -357,8 +361,7 @@ class TreeData(LightningDataModule):
                 #load any megaplot data
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], rgb_pool=self.config["rgb_sensor_pool"], client = self.client, config=self.config)
-                    #don't add species from contrib data (?) https://github.com/weecology/DeepTreeAttention/issues/65
-                    megaplot_data = megaplot_data[megaplot_data.taxonID.isin(df.taxonID.unique())]
+                    #megaplot_data = megaplot_data[megaplot_data.taxonID.isin(df.taxonID.unique())]
                     df = pd.concat([megaplot_data, df])
                     
                 #Just one site
