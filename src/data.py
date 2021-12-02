@@ -97,7 +97,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
         iteration: a dummy parameter to make dask submission unique
     """
     #split by plot level
-    plotIDs = shp.plotID.unique()
+    plotIDs = list(shp.plotID.unique())
     
     #No contrib plots in test
     #plotIDs = [x for x in plotIDs if not 'contrib' in x]
