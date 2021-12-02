@@ -10,7 +10,6 @@ import shapely
 def read_files(directory, config=None):
     """Read shapefiles and return a dict based on site name"""
     shapefiles = glob.glob("{}/*.shp".format(directory))
-    shapefiles = [x for x in shapefiles if not "points" in x]
     shps = [gpd.read_file(x) for x in shapefiles]
     sites = [os.path.splitext(os.path.basename(x))[0] for x in shapefiles]
     
@@ -67,11 +66,10 @@ def create_grid(gdf):
     
     return grid
     
-def load(directory, rgb_pool,client, config):
+def load(directory, config):
     """Load all the megaplot data and generate crown predictions
     Args:
         directory: location of .csv files of megaplot data
-        rgb_pool: glob path location to search for rgb files
         client: optional dask client
     Returns:
         crowndf: a geopandas dataframe of crowns for all sites
