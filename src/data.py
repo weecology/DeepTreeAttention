@@ -100,7 +100,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     plotIDs = shp.plotID.unique()
     
     #No contrib plots in test
-    plotIDs = [x for x in plotIDs if not 'contrib' in x]
+    #plotIDs = [x for x in plotIDs if not 'contrib' in x]
     
     #There are a couple NEON plots within the OSBS megaplot, make sure they end up in train
     for x in ["OSBS_026","OSBS_029","OSBS_039","OSBS_027","OSBS_036"]:
