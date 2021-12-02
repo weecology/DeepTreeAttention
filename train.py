@@ -39,8 +39,7 @@ comet_logger.experiment.add_tag(git_branch)
 #Hash train and test
 train = pd.read_csv("data/processed/train.csv")
 test = pd.read_csv("data/processed/test.csv")
-novel = gpd.read_file("data/processed/novel_species.shp")
-novel = pd.DataFrame(novel)
+novel = pd.read_csv("data/processed/novel_species.csv")
 
 comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(train))
 comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(test))
