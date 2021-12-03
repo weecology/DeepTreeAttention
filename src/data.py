@@ -86,6 +86,9 @@ def filter_data(path, config):
     #Oak Right Lab has no AOP data
     shp = shp[~(shp.siteID.isin(["PUUM","ORNL"]))]
 
+    #There are a couple NEON plots within the OSBS megaplot, make sure they are removed
+    shp = shp[~shp.plotID.isin(["OSBS_026","OSBS_029","OSBS_039","OSBS_027","OSBS_036"])]
+
     return shp
 
 def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
@@ -98,10 +101,6 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     """
     #split by plot level
     plotIDs = list(shp.plotID.unique())
-    
-    #There are a couple NEON plots within the OSBS megaplot, make sure they end up in train
-    for x in ["OSBS_026","OSBS_029","OSBS_039","OSBS_027","OSBS_036"]:
-        plotIDs.remove(x)
     
     np.random.shuffle(plotIDs)
     test_species = []
