@@ -90,5 +90,5 @@ comet_logger.experiment.log_table("test_predictions.csv", results)
 
 #Within site confusion
 site_lists = train.groupby("label").site.unique()
-within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label, site_lists=site_lists)
+within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=site_lists)
 comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
