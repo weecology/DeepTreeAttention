@@ -400,6 +400,7 @@ class TreeData(LightningDataModule):
                 client=self.client,
                 replace=self.config["replace"]
             )
+            annotations.to_csv("{}/processed/annotations.csv".format(self.data_dir))
             
             if self.comet_logger:
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(annotations.taxonID.unique()))
