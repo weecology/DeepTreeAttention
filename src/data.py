@@ -122,7 +122,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
         train = shp[shp.plotID == shp.plotID.unique()[1]]
     
     #remove fixed boxes from test
-    #test = test.loc[~test["box_id"].str.contains("fixed").fillna(False)]
+    test = test.loc[~test["box_id"].str.contains("fixed").fillna(False)]
     
     test = test.groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples)
     train = train.groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
