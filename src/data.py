@@ -101,19 +101,20 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     """
     #split by plot level
     plotIDs = list(shp.plotID.unique())
-    
     np.random.shuffle(plotIDs)
-    test_species = []
-    test_plots = []
-    for plotID in plotIDs:
+    test = shp[shp.plotID == plotIDs[0]]
+    
+    for plotID in plotIDs[1:]:
+        include = False
         selected_plot = shp[shp.plotID == plotID]
-        if not all([x in test_species for x in selected_plot.taxonID.unique()]):
-            test_plots.append(plotID)
-            for x in selected_plot.taxonID.unique():
-                test_species.append(x)
-        
-    test = shp[shp.plotID.isin(test_plots)]
-    train = shp[~shp.plotID.isin(test_plots)]
+        # If any species is missing from min samples, include plot
+        for x in selected_plot.taxonID.unique():
+            if sum(test.taxonID == x) < min_test_samples:
+                include = True
+        if include:
+            test = pd.concat([test,selected_plot])
+            
+    train = shp[~shp.plotID.isin(test.plotID.unique())]
     
     #if debug
     if train.empty:
@@ -121,10 +122,10 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
         train = shp[shp.plotID == shp.plotID.unique()[1]]
     
     #remove fixed boxes from test
-    test = test.loc[~test["box_id"].str.contains("fixed").fillna(False)]
+    #test = test.loc[~test["box_id"].str.contains("fixed").fillna(False)]
     
-    test = test.groupby("taxonID").filter(lambda x: x.shape[0] > min_test_samples)
-    train = train.groupby("taxonID").filter(lambda x: x.shape[0] > min_train_samples)
+    test = test.groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples)
+    train = train.groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
     
     train = train[train.taxonID.isin(test.taxonID)]
     test = test[test.taxonID.isin(train.taxonID)]
@@ -139,8 +140,11 @@ def train_test_split(shp, config, client = None):
     Returns:
         None: train.shp and test.shp are written as side effect
         """    
-    #set seed.
-    print("splitting data into train test. Initial data has {} points from {} species".format(shp.shape[0],shp.taxonID.nunique()))
+    min_sampled = config["min_train_samples"] + config["min_test_samples"]
+    keep = shp.taxonID.value_counts() > (min_sampled)
+    species_to_keep = keep[keep].index
+    shp = shp[shp.taxonID.isin(species_to_keep)]
+    print("splitting data into train test. Initial data has {} points from {} species with a min of {} samples".format(shp.shape[0],shp.taxonID.nunique(),min_sampled))
     test_species = 0
     ties = []
     if client:
