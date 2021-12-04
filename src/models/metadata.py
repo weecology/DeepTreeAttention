@@ -9,10 +9,10 @@ import torch
 class metadata(Module):
     def __init__(self, sites, classes):
         super(metadata,self).__init__()    
-        self.embedding = nn.Embedding(sites, 64)
+        self.embedding = nn.Embedding(sites, 12)
         #self.dropout = nn.Dropout(p=0.7)
-        self.batch_norm = nn.BatchNorm1d(64)   
-        self.mlp = nn.Linear(in_features=64, out_features=classes)
+        self.batch_norm = nn.BatchNorm1d(12)   
+        self.mlp = nn.Linear(in_features=12, out_features=classes)
         
     def forward(self, x):
         x = self.embedding(x)
