@@ -32,7 +32,7 @@ class metadata_sensor_fusion(Module):
         self.sensor_model = Hang2020(bands, classes)
                 
         #Fully connected concat learner
-        self.fc1 = nn.Linear(in_features = classes + 32 , out_features = classes)
+        self.fc1 = nn.Linear(in_features = classes + 16 , out_features = classes)
     
     def forward(self, images, metadata):
         metadata_softmax = self.metadata_model(metadata)
