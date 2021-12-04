@@ -16,9 +16,10 @@ class metadata(Module):
         
     def forward(self, x):
         x = self.embedding(x)
-        x = self.batch_norm(x)        
+        x = self.batch_norm(x)
+        x = self.dropout(x)                   
         x = self.mlp(x)
-        x = self.dropout(x)           
+        x = F.relu(x)
         
         return x
     
