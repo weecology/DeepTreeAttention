@@ -82,7 +82,7 @@ visualize.confusion_matrix(
 )
 
 #Log spectral spatial weight
-alpha_weight = m.model.sensor_model.weighted_average.detach().numpy()
+alpha_weight = m.model.weighted_average.detach().numpy()
 comet_logger.experiment.log_parameter("spectral_spatial weight", alpha_weight)
 
 #Log prediction
