@@ -225,13 +225,14 @@ class TreeModel(LightningModule):
             individual, inputs, targets = batch
             with torch.no_grad():
                 pred = self.predict(inputs)
+                pred = F.softmax(pred, dim=1)
             predictions.append(pred)
             labels.append(targets)
             individuals.append(individual)
         
         individuals = np.concatenate(individuals)        
         labels = np.concatenate(labels)
-        predictions = np.concatenate(predictions)        
+        predictions = np.concatenate(predictions) 
         predictions_top1 = np.argmax(predictions, 1)    
         predictions_top2 = pd.DataFrame(predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
         top1_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[0], axis=1)
