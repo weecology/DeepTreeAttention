@@ -29,7 +29,7 @@ def postprocess_CHM(df, lookup_pool):
     df["CHM_height"] = [x["q99"] for x in draped_boxes]
 
     #if height is null, assign it
-    df.height.fillna(df["CHM_height"], inplace=True)
+    #df.height.fillna(df["CHM_height"], inplace=True)
         
     return df
         
