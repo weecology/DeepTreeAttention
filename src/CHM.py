@@ -85,6 +85,7 @@ def height_rules(df, min_CHM_height=1, max_CHM_diff=4, CHM_height_limit=8):
             keep.append(True)
             
     df["keep"] = keep
+    df = df[df.keep]
     
     return df
 
