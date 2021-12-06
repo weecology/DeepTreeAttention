@@ -71,15 +71,15 @@ results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logge
 
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 
-visualize.confusion_matrix(
-    comet_experiment=comet_logger.experiment,
-    results=results,
-    species_label_dict=data_module.species_label_dict,
-    test_crowns="data/processed/crowns.shp",
-    test_csv="data/processed/test.csv",
-    test_points="data/processed/canopy_points.shp",
-    rgb_pool=rgb_pool
-)
+#visualize.confusion_matrix(
+    #comet_experiment=comet_logger.experiment,
+    #results=results,
+    #species_label_dict=data_module.species_label_dict,
+    #test_crowns="data/processed/crowns.shp",
+    #test_csv="data/processed/test.csv",
+    #test_points="data/processed/canopy_points.shp",
+    #rgb_pool=rgb_pool
+#)
 
 #Log spectral spatial weight
 alpha_weight = m.model.weighted_average.detach().numpy()
@@ -92,3 +92,8 @@ comet_logger.experiment.log_table("test_predictions.csv", results)
 site_lists = train.groupby("label").site.unique()
 within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=site_lists)
 comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
+
+#Within plot confusion
+plot_lists = train.groupby("label").plotID.unique()
+within_plot_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=plot_lists)
+comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)
