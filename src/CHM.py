@@ -22,7 +22,7 @@ def postprocess_CHM(df, lookup_pool):
         raise ValueError("Cannot find CHM path for {} from plot {} in lookup_pool: {}".format(df.total_bounds, df.plotID.unique(),e))
     
     #buffer slightly, CHM model can be patchy
-    geom = df.geometry.buffer(2)
+    geom = df.geometry
     draped_boxes = rasterstats.zonal_stats(geom.__geo_interface__,
                                            CHM_path,
                                            add_stats={'q99': non_zero_99_quantile})
