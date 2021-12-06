@@ -20,7 +20,10 @@ def postprocess_CHM(df, lookup_pool):
         CHM_path = neon_paths.find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds)
     except Exception as e:
         raise ValueError("Cannot find CHM path for {} from plot {} in lookup_pool: {}".format(df.total_bounds, df.plotID.unique(),e))
-    draped_boxes = rasterstats.zonal_stats(df.geometry.__geo_interface__,
+    
+    #buffer slightly, CHM model can be patchy
+    geom = df.geometry.buffer(2)
+    draped_boxes = rasterstats.zonal_stats(geom.__geo_interface__,
                                            CHM_path,
                                            add_stats={'q99': non_zero_99_quantile})
     df["CHM_height"] = [x["q99"] for x in draped_boxes]
@@ -64,7 +67,7 @@ def height_rules(df, min_CHM_height=1, max_CHM_diff=4, CHM_height_limit=8):
     keep = []
     for index, row in df.iterrows():
         if np.isnan(row["height"]) | np.isnan(row["CHM_height"]):
-            keep.append(True)
+            keep.append(False)
         elif row.CHM_height < min_CHM_height:
             keep.append(False)
         elif row.CHM_height > row.height:
@@ -92,7 +95,6 @@ def filter_CHM(shp, CHM_pool, min_CHM_height=1, max_CHM_diff=4, CHM_height_limit
     
     #extract CHM height
     shp = CHM_height(shp, CHM_pool)
-    
     shp = height_rules(df=shp, min_CHM_height=1, max_CHM_diff=4, CHM_height_limit=8)
 
     return shp
