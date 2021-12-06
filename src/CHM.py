@@ -48,21 +48,49 @@ def CHM_height(shp, CHM_pool):
         filtered_shp = gpd.GeoDataFrame(pd.concat(filtered_results,ignore_index=True))
         
         return filtered_shp
+
+def height_rules(df, min_CHM_height=1, max_CHM_diff=4, CHM_height_limit=8):
+    """Which data points should be included based on a comparison of CHM and field heights
+        This is asymmetric, field heights under CHM height are signs of subcanopy, whereas CHM under field height is mismeasurement and growth. 
+        Do not filter NA heights
+    Args:
+        df: a pandas dataframe with CHM_height and height columns
+        min_CHM_height: if CHM is avialble, remove saplings under X meters
+        max_CHM_diff: max allowed difference between CHM and field height if CHM > field height
+        CHM_height_limit: max allowed difference between CHM and field height if CHM < field height
+    Returns:
+       df: filtered dataframe
+    """
+    keep = []
+    for index, row in df.iterrows():
+        if np.isnan(row["height"]):
+            keep.append(True)
+        elif row.CHM_height < min_CHM_height:
+            keep.append(False)
+        elif row.CHM_height > row.height:
+            if (row.CHM_height - row.height) > max_CHM_diff:
+                keep.append(False)
+            else:
+                keep.append(True)
+        elif row.CHM_height <= row.height:
+            if (row.height - row.CHM_height) > CHM_height_limit:
+                keep.append(False)
+            else:
+                keep.append(True)
+    df["keep"] = keep
+    df = df[df.keep]
     
-def filter_CHM(shp, CHM_pool, min_CHM_height=1, min_CHM_diff=4):
-    
+    return df
+
+def filter_CHM(shp, CHM_pool, min_CHM_height=1, max_CHM_diff=4, CHM_height_limit=8):
+    """Filter points by height rules"""
     if min_CHM_height is None:
         return shp
     
     #extract CHM height
     shp = CHM_height(shp, CHM_pool)
     
-    #Remove NULL CHM_heights
-    #shp = shp[~(shp.CHM_height.isnull())]
-    
-    shp = shp[(shp.height.isnull()) | (shp.CHM_height > min_CHM_height)]
-    
-    #remove CHM points under height diff  
-    shp = shp[(shp.height.isnull()) | (abs(shp.height - shp.CHM_height) < min_CHM_diff)]  
-    
+    shp = height_rules(df=shp, min_CHM_height=1, max_CHM_diff=4, CHM_height_limit=8)
+
     return shp
+

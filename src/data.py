@@ -370,7 +370,11 @@ class TreeData(LightningDataModule):
                     self.comet_logger.experiment.log_parameter("Samples before CHM filter",df.shape[0])
                     
                 #Filter points based on LiDAR height
-                df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
+                df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],
+                                    min_CHM_height=self.config["min_CHM_height"], 
+                                    max_CHM_diff=self.config["max_CHM_diff"], 
+                                    CHM_height_limit=self.config["CHM_height_limit"])  
+                
                 df.to_file("{}/processed/canopy_points.shp".format(self.data_dir))
                 
                 if self.comet_logger:

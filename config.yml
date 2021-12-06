@@ -12,15 +12,16 @@ min_stem_diameter: 10
 #Minimum number of test samples per class to be included
 min_train_samples: 7
 min_test_samples: 5
-
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
 iterations: 1000
 #minimum CHM height, leave blank to skip CHM filtering
 min_CHM_height: 1
-#Minimum difference between measured height and CHM height
-min_CHM_diff: 4
+#Max difference between measured height and CHM height if CHM > height
+max_CHM_diff: 4
+#Max difference between measured height and CHM height if CHM < height
+CHM_height_limit: 8
 
-#Megaplot XY Data
+#Megaplot XY Data, these are .shp files saved as the siteID
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
