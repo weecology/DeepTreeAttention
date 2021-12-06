@@ -97,8 +97,3 @@ def test_predict_crown(config, m, dm):
     assert label in dm.species_label_dict.keys()
     assert score > 0 
     
-def test_get_features(config, m, dm):
-    df = pd.read_csv(dm.train_file)
-    features = m.get_features(dm.train_ds)
-    assert df.shape[0] == features.shape[0]
-    
