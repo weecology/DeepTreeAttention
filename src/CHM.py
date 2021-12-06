@@ -68,17 +68,20 @@ def height_rules(df, min_CHM_height=1, max_CHM_diff=4, CHM_height_limit=8):
         elif row.CHM_height < min_CHM_height:
             keep.append(False)
         elif row.CHM_height > row.height:
-            if (row.CHM_height - row.height) > max_CHM_diff:
+            if (row.CHM_height - row.height) >= max_CHM_diff:
                 keep.append(False)
             else:
                 keep.append(True)
         elif row.CHM_height <= row.height:
-            if (row.height - row.CHM_height) > CHM_height_limit:
+            if (row.height - row.CHM_height) >= CHM_height_limit:
                 keep.append(False)
             else:
                 keep.append(True)
+        else:
+            print("No conditions applied to CHM_height {}, height {}".format(row.CHM_height,row.height))
+            keep.append(True)
+            
     df["keep"] = keep
-    df = df[df.keep]
     
     return df
 
