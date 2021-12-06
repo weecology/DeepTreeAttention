@@ -66,7 +66,9 @@ def height_rules(df, min_CHM_height=1, max_CHM_diff=4, CHM_height_limit=8):
     """
     keep = []
     for index, row in df.iterrows():
-        if np.isnan(row["height"]) | np.isnan(row["CHM_height"]):
+        if np.isnan(row["CHM_height"]):
+            keep.append(False)
+        if np.isnan(row["height"]):
             keep.append(True)
         elif row.CHM_height < min_CHM_height:
             keep.append(False)
