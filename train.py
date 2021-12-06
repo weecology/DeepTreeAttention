@@ -71,15 +71,15 @@ results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logge
 
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 
-visualize.confusion_matrix(
-    comet_experiment=comet_logger.experiment,
-    results=results,
-    species_label_dict=data_module.species_label_dict,
-    test_crowns="data/processed/crowns.shp",
-    test_csv="data/processed/test.csv",
-    test_points="data/processed/canopy_points.shp",
-    rgb_pool=rgb_pool
-)
+#visualize.confusion_matrix(
+    #comet_experiment=comet_logger.experiment,
+    #results=results,
+    #species_label_dict=data_module.species_label_dict,
+    #test_crowns="data/processed/crowns.shp",
+    #test_csv="data/processed/test.csv",
+    #test_points="data/processed/canopy_points.shp",
+    #rgb_pool=rgb_pool
+#)
 
 #Log spectral spatial weight
 alpha_weight = m.model.weighted_average.detach().numpy()
