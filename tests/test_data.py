@@ -43,11 +43,11 @@ def test_TreeData_setup(dm, config):
     assert not test.empty
     assert not train.empty
     assert not any([x in train.image_path.unique() for x in test.image_path.unique()])
-    assert all([x in ["image_path","label","site","taxonID","siteID","plotID","individualID","point_id"] for x in train.columns])
+    assert all([x in ["image_path","label","site","taxonID","siteID","plotID","individualID","point_id","box_id"] for x in train.columns])
     
 def test_TreeDataset(dm, config,tmpdir):
     #Train loader
-    data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/train.csv".format(ROOT), config=config)
+    data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/train.csv".format(ROOT), config=config, image_size=config["image_size"])
     individuals, inputs, label = data_loader[0]
     image = inputs["HSI"]
     assert image.shape == (3, config["image_size"], config["image_size"])
