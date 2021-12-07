@@ -11,8 +11,7 @@ from src import metrics
 from pytorch_lightning import Trainer
 import subprocess
 from pytorch_lightning.loggers import CometLogger
-from pytorch_lightning.profiler import AdvancedProfiler
-
+from pytorch_lightning.callbacks import LearningRateMonitor
 import pandas as pd
 from pandas.util import hash_pandas_object
 
@@ -58,12 +57,13 @@ m = main.TreeModel(
 comet_logger.experiment.log_parameters(m.config)
 
 #Create trainer
+lr_monitor = LearningRateMonitor(logging_interval='epoch')
 trainer = Trainer(
     gpus=data_module.config["gpus"],
     fast_dev_run=data_module.config["fast_dev_run"],
     max_epochs=data_module.config["epochs"],
     accelerator=data_module.config["accelerator"],
-    checkpoint_callback=False,
+    checkpoint_callback=[lr_monitor],
     logger=comet_logger)
 
 trainer.fit(m, datamodule=data_module)
