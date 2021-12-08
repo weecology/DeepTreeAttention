@@ -10,33 +10,28 @@ import shapely
 def read_files(directory, config=None):
     """Read shapefiles and return a dict based on site name"""
     shapefiles = glob.glob("{}/*.shp".format(directory))
-    shapefiles = [x for x in shapefiles if not "points" in x]
     shps = [gpd.read_file(x) for x in shapefiles]
     sites = [os.path.splitext(os.path.basename(x))[0] for x in shapefiles]
     
     sitedf = []
     for index, x in enumerate(sites):
         print(x)
-        formatted_data = format(site=x, gdf=shps[index], directory=directory, config=config)
+        formatted_data = format(site=x, gdf=shps[index], config=config)
         sitedf.append(formatted_data)
 
     sitedf = pd.concat(sitedf)
     
     return sitedf
 
-def format(site, gdf, directory, config):
+def format(site, gdf, config):
     """The goal of this function is to mimic for the format needed to input to generate.points_to_crowns. 
     This requires a plot ID, individual, taxonID and site column. The individual should encode siteID and year
     Args:
         site: siteID
         gdf: site data
     """
-    species_data = pd.read_csv("{}/{}.csv".format(directory, site))
-    species_data = species_data.dropna(subset=["taxonID"])
-    gdf = gdf.merge(species_data[["sp","taxonID"]])
-    
     #give each an individual ID
-    gdf["individualID"] = gdf.index.to_series().apply(lambda x: "{}_contrib{}".format(site,x)) 
+    gdf["individualID"] = gdf.index.to_series().apply(lambda x: "{}.contrib.{}".format(site,x)) 
     gdf["siteID"] = site
     
     #PlotID variable to center on correct tile
@@ -71,11 +66,10 @@ def create_grid(gdf):
     
     return grid
     
-def load(directory, rgb_pool,client, config):
+def load(directory, config):
     """Load all the megaplot data and generate crown predictions
     Args:
         directory: location of .csv files of megaplot data
-        rgb_pool: glob path location to search for rgb files
         client: optional dask client
     Returns:
         crowndf: a geopandas dataframe of crowns for all sites
