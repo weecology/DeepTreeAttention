@@ -121,18 +121,10 @@ def run():
             
             #Within site confusion
             site_lists = train.groupby("label").site.unique()
-            within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label, site_lists=site_lists)
+            within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=site_lists)
             comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
             
-            ##Novel species prediction, get scores
-            #novel_prediction = metrics.novel_prediction(model=m.model.sensor_model, csv_file="data/processed/novel_species.csv", config=config)
-            #comet_logger.experiment.log_table("novel_prediction.csv", novel_prediction)
-            #mean_novel_prediction = novel_prediction.softmax_score.mean()
-            #comet_logger.experiment.log_metric(name="Mean unknown species softmax score", value=mean_novel_prediction)
-            
-            #row = pd.DataFrame({"timestamp":[timestamp],"Outliers": [x], "Micro Accuracy":comet_logger.experiment.get_metric("Micro Accuracy"),"Macro Accuracy":comet_logger.experiment.get_metric("Macro Accuracy")})
-            #rows.append(row)
-    
+ 
     #rows = pd.concat(rows)
     #rows.to_csv("results/experiment_{}.csv".format(comet_logger.experiment.get_key()))
     
