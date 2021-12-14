@@ -206,6 +206,9 @@ class TreeModel(LightningModule):
     
     def predict(self,inputs):
         """Given a input dictionary, construct args for prediction"""
+        print("Current device is {}".format(self.device))
+        print("model type is cuda: {}".format(next(self.model.parameters()).is_cuda))
+        print("Data type is {}".format(type(inputs["HSI"])))
         return self.model(inputs["HSI"])
     
     def predict_dataloader(self, data_loader, plot_n_individuals=1, experiment=None):
