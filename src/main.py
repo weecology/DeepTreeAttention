@@ -309,31 +309,6 @@ class TreeModel(LightningModule):
             site_data_frame = pd.concat(site_data_frame)
             experiment.log_table("site_results.csv", site_data_frame)
         
-        return results
-    
-    def get_features(self, dataset):
-        data_loader = torch.utils.data.DataLoader(
-            dataset,
-            batch_size=self.config["batch_size"],
-            num_workers=self.config["workers"])
-        
-        self.eval()
-        predictions = []
-        individuals = []
-        for batch in data_loader:
-            individual, inputs, targets = batch
-            with torch.no_grad():
-                pred = self.predict(inputs)
-            predictions.append(pred)
-            individuals.append(individual)
-        
-        individuals = np.concatenate(individuals)              
-        features = np.concatenate(predictions)  
-        features = pd.DataFrame(features)
-        features["individual"] = individuals
-        
-        return features
-        
-=======
         return crowns
->>>>>>> main
+    
+
