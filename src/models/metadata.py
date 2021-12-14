@@ -9,16 +9,17 @@ import torch
 class metadata(Module):
     def __init__(self, sites, classes):
         super(metadata,self).__init__()    
-        self.embedding = nn.Embedding(sites, 64)
+        self.embedding = nn.Embedding(sites, 16)
+        self.batch_norm = nn.BatchNorm1d(16)   
+        self.mlp = nn.Linear(in_features=16, out_features=classes)
         self.dropout = nn.Dropout(p=0.7)
-        self.batch_norm = nn.BatchNorm1d(64)   
-        self.mlp = nn.Linear(in_features=64, out_features=classes)
         
     def forward(self, x):
         x = self.embedding(x)
-        x = self.batch_norm(x)        
-        x = self.dropout(x)           
+        x = self.batch_norm(x)
+        x = self.dropout(x)                   
         x = self.mlp(x)
+        x = F.relu(x)
         
         return x
     
@@ -31,7 +32,7 @@ class metadata_sensor_fusion(Module):
         self.sensor_model = Hang2020(bands, classes)
                 
         #Fully connected concat learner
-        self.fc1 = nn.Linear(in_features = classes * 2 , out_features = classes)
+        self.fc1 = nn.Linear(in_features = classes *2 , out_features = classes)
     
     def forward(self, images, metadata):
         metadata_softmax = self.metadata_model(metadata)
