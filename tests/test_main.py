@@ -29,6 +29,7 @@ def config():
     config["plot_n_individuals"] = 1
     config["gpus"] = 0
     config["include_outliers"] = True
+    config["megaplot_dir"] = None
     
     return config
 
@@ -37,11 +38,11 @@ def config():
 def dm(config):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)           
     if not "GITHUB_ACTIONS" in os.environ:
-        regen = False
+        regen = True
     else:
         regen = True
     
-    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=regen, data_dir="{}/tests/data".format(ROOT)) 
+    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=regen, data_dir="{}/tests/data".format(ROOT), debug=True) 
     dm.setup()    
     
     return dm

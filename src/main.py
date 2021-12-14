@@ -11,6 +11,7 @@ from pytorch_lightning import LightningModule
 import os
 import pandas as pd
 import rasterio
+from rasterio.plot import show
 from src import data
 from src import generate
 from src import neon_paths
