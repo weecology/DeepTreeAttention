@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch
 from torch import optim
 from src.models.Hang2020 import conv_module
-from src import visualize
 from pytorch_lightning import LightningModule, Trainer
 import pandas as pd
 import torchmetrics
