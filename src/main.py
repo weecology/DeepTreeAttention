@@ -4,22 +4,24 @@ import geopandas as gpd
 import glob as glob
 from deepforest.main import deepforest
 from descartes import PolygonPatch
-import os
 import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib.collections import PatchCollection
 from pytorch_lightning import LightningModule
+import os
 import pandas as pd
-from torch.nn import functional as F
-from torch import optim
-import torch
-from torchvision import transforms
-import torchmetrics
-import tempfile
+import rasterio
 from src import data
 from src import generate
 from src import neon_paths
 from src import patches
 from src import visualize
 from shapely.geometry import Point, box
+import tempfile
+from torch.nn import functional as F
+import torch
+from torchvision import transforms
+import torchmetrics
 
 class TreeModel(LightningModule):
     """A pytorch lightning data module
@@ -80,9 +82,9 @@ class TreeModel(LightningModule):
         return loss
     
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.config["lr"])
         
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                          mode='min',
                                                          factor=0.5,
                                                          patience=10,
