@@ -37,7 +37,7 @@ def spatial_smooth(neighbors, features, alpha=0.2):
         if spatial_features.size == 0:
             smoothed_features.append(focal_features)
         else:
-            smoothed_feature = focal_features + (alpha * np.mean(spatial_features))
+            smoothed_feature = focal_features + (alpha * np.mean(spatial_features, axis=0))
             smoothed_features.append(smoothed_feature)
         
     smoothed_features = np.vstack(smoothed_features)

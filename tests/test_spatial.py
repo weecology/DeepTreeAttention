@@ -20,7 +20,9 @@ def test_spatial_smooth():
     features[0,1] = 0.95
     features[1,1] = 0.75
     
-    spatial_features = spatial.spatial_smooth(neighbors, features)
-    assert spatial_features.shape == features.shape
-    
+    labels, score = spatial.spatial_smooth(neighbors, features)
+    assert score[0] == 0.95 + (0.2 * 0.75)
+    assert score[1] == 0.75 + (0.2 * 0.95)
+    assert labels[0] == 1
+    assert labels[1] == 1    
     
