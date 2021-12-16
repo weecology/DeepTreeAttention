@@ -302,7 +302,7 @@ class TreeModel(LightningModule):
         features = self.predict_dataloader(data_loader=data_loader, return_features=True)
         #read in crowns data
         crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
-        crowns = crowns.drop(columns="label").merge(results, on="individual")
+        crowns = crowns.drop(columns="label").merge(results, on="individual").reset_index(drop=True)
         
         #Spatial function
         neighbors = spatial.spatial_neighbors(crowns, buffer=self.config["neighbor_buffer_size"])
