@@ -26,7 +26,7 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Make new dataset
-regenerate: True
+regenerate: False
 convert_h5: True
 #Overwrite existing crops
 replace: True
