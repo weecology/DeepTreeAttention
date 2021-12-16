@@ -300,11 +300,15 @@ class TreeModel(LightningModule):
         """
         results = self.predict_dataloader(data_loader=data_loader, plot_n_individuals=self.config["plot_n_individuals"], experiment=experiment)
         features = self.predict_dataloader(data_loader=data_loader, return_features=True)
+        
         #read in crowns data
         crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
-        crowns = crowns.drop(columns="label").merge(results, on="individual").reset_index(drop=True)
+        crowns = crowns.drop(columns="label").merge(results, on="individual")
         
         #Spatial function
+        print("Feature shape is {}".format(features.shape))
+        print("crowns shape is {}".format(crowns.shape))
+
         neighbors = spatial.spatial_neighbors(crowns, buffer=self.config["neighbor_buffer_size"])
         labels, scores = spatial.spatial_smooth(neighbors, features, alpha=self.config["neighborhood_strength"])
         crowns["spatial_pred_label"] = labels
