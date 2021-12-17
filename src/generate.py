@@ -60,7 +60,7 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=40):
     return boxes
 
 def choose_box(group, plot_data):
-    """Given a set of overlapping bounding boxes and predictions, just choose a closest to stem box by centroid if there are multiples"""
+    """Given a set of overlapping bounding boxes and predictions, just choose the closest to stem box by centroid if there are multiples"""
     if group.shape[0] == 1:
         return  group
     else:
@@ -135,8 +135,8 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
         if group.shape[0] > 1:
             print("removing {} points for within a deepforest box".format(group.shape[0]-1))
             try:
-                #Take first row in case of ties.
-                cleaned_points.append(group[group.height == group.height.max()].iloc[0])
+                selected_point = group[group.height == group.height.max()].iloc[0]
+                cleaned_points.append(selected_point)
             except:
                 raise ValueError("Multiple points detected and no height or DBH data to differentiate")
         else:

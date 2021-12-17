@@ -31,7 +31,7 @@ convert_h5: True
 #Overwrite existing crops
 replace: True
 #Use existing plotIDs for train/test split
-new_train_test_split: True
+new_train_test_split: False
 #Directoy to store cropped images from crowns
 crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/year_crops/
 

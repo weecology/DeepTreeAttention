@@ -94,6 +94,7 @@ class TreeModel(LightningModule):
                                                          threshold=0.0001,
                                                          threshold_mode='rel',
                                                          cooldown=0,
+                                                         min_lr=0.000001,
                                                          eps=1e-08)
                                                                  
         return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
@@ -205,7 +206,16 @@ class TreeModel(LightningModule):
     
     def predict(self,inputs):
         """Given a input dictionary, construct args for prediction"""
-        return self.model(inputs["HSI"])
+        if "cuda" == self.device.type:
+            images = inputs["HSI"]
+            images = images.cuda()
+            pred = self.model(images)
+            pred = pred.cpu()
+        else:
+            images = inputs["HSI"]
+            pred = self.model(images)
+            
+        return pred
     
     def predict_dataloader(self, data_loader, plot_n_individuals=1, return_features=False, experiment=None):
         """Given a file with paths to image crops, create crown predictions 
