@@ -1,6 +1,5 @@
 #spatial neighbors
 import numpy as np
-import geopandas as gpd
 
 def spatial_neighbors(gdf, buffer):
     """    

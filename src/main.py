@@ -221,7 +221,7 @@ class TreeModel(LightningModule):
             results: if return_features == False, pandas dataframe with columns crown and species label
             features: if return_features == True, samples x classes matrix of softmax features
         """
-        self.eval()
+        self.model.eval()
         predictions = []
         labels = []
         individuals = []
@@ -305,9 +305,12 @@ class TreeModel(LightningModule):
         crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
         results = results.merge(crowns.drop(columns="label"), on="individual")
         results = gpd.GeoDataFrame(results, geometry="geometry")
+        neighbors = spatial.spatial_neighbors(results, buffer=self.config["neighbor_buffer_size"])        
+        print("results.index".format(results.index))
+        print("len(neighbors)".format(len(neighbors)))
+        print("features shape".format(features.shape))
         
         #Spatial function
-        neighbors = spatial.spatial_neighbors(results, buffer=self.config["neighbor_buffer_size"])
         labels, scores = spatial.spatial_smooth(neighbors, features, alpha=self.config["neighborhood_strength"])
         results["spatial_pred_label"] = labels
         results["spatial_score"] = scores
