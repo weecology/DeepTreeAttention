@@ -52,9 +52,9 @@ epochs: 120
 
 #Spatial smooth
 #Distance radius to search
-neighbor_buffer_size: 10
+neighbor_buffer_size: 3
 #degree of neighborhood effect (0-1)
-neighborhood_strength: 0.2
+neighborhood_strength: 0.1
 
 #Evaluation config
 #Top k class recall score
