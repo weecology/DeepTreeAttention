@@ -233,12 +233,12 @@ class TreeModel(LightningModule):
             predictions.append(pred)
             labels.append(targets)
             individuals.append(individual)
-        
+
         individuals = np.concatenate(individuals)        
         labels = np.concatenate(labels)
         predictions = np.concatenate(predictions) 
         
-        if return_features:
+        if return_features:            
             return predictions
         
         predictions_top1 = np.argmax(predictions, 1)    
@@ -303,19 +303,17 @@ class TreeModel(LightningModule):
         
         #read in crowns data
         crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
-        crowns = crowns.drop(columns="label").merge(results, on="individual")
+        results = results.merge(crowns.drop(columns="label"), on="individual")
+        results = gpd.GeoDataFrame(results, geometry="geometry")
         
         #Spatial function
-        print("Feature shape is {}".format(features.shape))
-        print("crowns shape is {}".format(crowns.shape))
-
-        neighbors = spatial.spatial_neighbors(crowns, buffer=self.config["neighbor_buffer_size"])
+        neighbors = spatial.spatial_neighbors(results, buffer=self.config["neighbor_buffer_size"])
         labels, scores = spatial.spatial_smooth(neighbors, features, alpha=self.config["neighborhood_strength"])
-        crowns["spatial_pred_label"] = labels
-        crowns["spatial_score"] = scores
+        results["spatial_pred_label"] = labels
+        results["spatial_score"] = scores
         
-        spatial_micro = torchmetrics.functional.accuracy(preds=torch.tensor(crowns.spatial_pred_label.values),target=torch.tensor(crowns.label.values), average="micro")
-        spatial_macro = torchmetrics.functional.accuracy(preds=torch.tensor(crowns.spatial_pred_label.values),target=torch.tensor(crowns.label.values), average="macro", num_classes=self.classes)
+        spatial_micro = torchmetrics.functional.accuracy(preds=torch.tensor(results.spatial_pred_label.values),target=torch.tensor(results.label.values), average="micro")
+        spatial_macro = torchmetrics.functional.accuracy(preds=torch.tensor(results.spatial_pred_label.values),target=torch.tensor(results.label.values), average="macro", num_classes=self.classes)
         if experiment:
             experiment.log_metric("spatial_micro",spatial_micro)
             experiment.log_metric("spatial_macro",spatial_macro)
@@ -323,7 +321,7 @@ class TreeModel(LightningModule):
         #Log result by site
         if experiment:
             site_data_frame =[]
-            for name, group in crowns.groupby("siteID"):
+            for name, group in results.groupby("siteID"):
                 site_micro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label_top1.values),target=torch.tensor(group.label.values), average="micro")
                 site_macro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label_top1.values),target=torch.tensor(group.label.values), average="macro", num_classes=self.classes)
                 row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro.numpy()], "Macro Recall": [site_macro.numpy()]})
@@ -331,5 +329,5 @@ class TreeModel(LightningModule):
             site_data_frame = pd.concat(site_data_frame)
             experiment.log_table("site_results.csv", site_data_frame)
         
-        return crowns
+        return results
             

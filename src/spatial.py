@@ -1,5 +1,6 @@
 #spatial neighbors
 import numpy as np
+import geopandas as gpd
 
 def spatial_neighbors(gdf, buffer):
     """    
@@ -12,9 +13,8 @@ def spatial_neighbors(gdf, buffer):
     """
     neighbors = {}
     for x in gdf.index:
-        geom = gdf.loc[x].geometry.centroid.buffer(buffer)
-        touches = gdf.intersection(geom)
-        touches = touches[~(touches.geometry.is_empty)]
+        geom = gdf[gdf.index==x].geometry.centroid.buffer(buffer).iloc[0]
+        touches = gdf[gdf.geometry.map(lambda x: x.intersects(geom))]
         neighbors[x] = [i for i in touches.index if not x == i]
     
     return neighbors
@@ -29,15 +29,16 @@ def spatial_smooth(neighbors, features, alpha=0.2):
         scores: confidence score for predicted spatial taxa
     """
     smoothed_features = []
-    for x in neighbors:
-        neighbor_index = neighbors[x]
-        focal_features = features[x,:]
-        spatial_features = features[neighbor_index,:]
+    for x in range(features.shape[0]):
+        spatial_features = [features[i,] for i in neighbors[x]]
+        spatial_features = np.mean(spatial_features, axis=0)
+        focal_features = features[x,]
+        
         #if no neighbors, return itself
         if spatial_features.size == 0:
             smoothed_features.append(focal_features)
         else:
-            smoothed_feature = focal_features + (alpha * np.mean(spatial_features, axis=0))
+            smoothed_feature = focal_features + (alpha * spatial_features)
             smoothed_features.append(smoothed_feature)
         
     smoothed_features = np.vstack(smoothed_features)
