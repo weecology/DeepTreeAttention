@@ -79,3 +79,4 @@ def test_generate_crops(tmpdir):
     
     assert not annotations.empty
     assert all([x in ["image_path","label","site","siteID","plotID","individualID","taxonID","point_id","box_id"] for x in annotations.columns])
+    assert len(annotations.box_id.unique()) == annotations.shape[0]
