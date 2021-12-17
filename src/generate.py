@@ -135,7 +135,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
         if group.shape[0] > 1:
             print("removing {} points for within a deepforest box".format(group.shape[0]-1))
             try:
-                cleaned_points.append(group[group.height == group.height.max()])
+                cleaned_points.append(group[group.height == group.height.max()].iloc[0])
             except:
                 raise ValueError("Multiple points detected and no height or DBH data to differentiate")
         else:

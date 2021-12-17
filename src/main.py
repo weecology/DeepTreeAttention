@@ -306,6 +306,7 @@ class TreeModel(LightningModule):
         results = results.merge(crowns.drop(columns="label"), on="individual")
         results = gpd.GeoDataFrame(results, geometry="geometry")
         neighbors = spatial.spatial_neighbors(results, buffer=self.config["neighbor_buffer_size"])        
+        print("results.index {}".format(results.index))        
         print("results.index {}".format(results.index))
         print("len(neighbors) {}".format(len(neighbors)))
         print("features shape {}".format(features.shape))
