@@ -231,6 +231,10 @@ def points_to_crowns(
                 print("{} failed with {}".format(plot, e))
     results = pd.concat(results)
     
+    #In case any contrib data has the same CHM and height and sitting in the same deepforest box.Should be rare.
+    results = results.groupby(["plotID","box_id"]).apply(lambda x: x.head(1)).reset_index(drop=True)
+    
+    
     return results
 
 def write_crop(row, img_path, savedir, replace=True):
