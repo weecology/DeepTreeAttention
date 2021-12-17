@@ -123,11 +123,12 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     
     #remove fixed boxes from test
     test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]
+    test = test[test.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])]
     
     test = test.groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples)
     train = train.groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
     
-    train = train[train.taxonID.isin(test.taxonID)]
+    train = train[train.taxonID.isin(test.taxonID)]    
     test = test[test.taxonID.isin(train.taxonID)]
     
     return train, test
@@ -361,10 +362,6 @@ class TreeData(LightningDataModule):
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
                     df = pd.concat([megaplot_data, df])
                     
-                #Just one site
-                if not self.debug:
-                    df = df[df.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])]
-                
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter",len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples before CHM filter",df.shape[0])
