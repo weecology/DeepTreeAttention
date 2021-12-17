@@ -52,7 +52,7 @@ epochs: 120
 
 #Spatial smooth
 #Distance radius to search
-neighbor_buffer_size: 3
+neighbor_buffer_size: 10
 #degree of neighborhood effect (0-1)
 neighborhood_strength: 0.2
 
