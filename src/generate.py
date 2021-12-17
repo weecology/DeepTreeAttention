@@ -133,12 +133,11 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     cleaned_points = []
     for value, group in merged_boxes.groupby("box_id"):
         if group.shape[0] > 1:
-            print("removing {} points for within a deepforest box".format(group.shape[0]-1))
-            try:
-                selected_point = group[group.height == group.height.max()].iloc[0]
-                cleaned_points.append(selected_point)
-            except:
-                raise ValueError("Multiple points detected and no height or DBH data to differentiate")
+            print("removing {} points from {} within a deepforest box {}".format(group.shape[0]-1, group.plotID.unique(),group.box_id.unique()))
+            selected_point = group[group.height == group.height.max()]
+            if selected_point.shape[0] > 1:
+                selected_point = selected_point[selected_point.CHM_height == selected_point.CHM_height.max()]
+            cleaned_points.append(selected_point)
         else:
             cleaned_points.append(group)
      
@@ -231,6 +230,9 @@ def points_to_crowns(
             except Exception as e:
                 print("{} failed with {}".format(plot, e))
     results = pd.concat(results)
+    
+    #In case any contrib data has the same CHM and height and sitting in the same deepforest box.Should be rare.
+    results = results.groupby(["plotID","box_id"]).apply(lambda x: x.head(1)).reset_index(drop=True)
     
     return results
 
