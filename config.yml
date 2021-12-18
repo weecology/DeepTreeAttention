@@ -13,7 +13,7 @@ min_stem_diameter: 10
 min_train_samples: 7
 min_test_samples: 5
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
-iterations: 2000
+iterations: 4000
 #minimum CHM height, leave blank to skip CHM filtering
 min_CHM_height: 1
 #Max difference between measured height and CHM height if CHM > height
@@ -33,7 +33,7 @@ autoencoder_loss_scalar: 0
 
 #Outlier detection
 outlier_threshold: 0.96
-distance_threshold: 4
+distance_threshold: 5
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Make new dataset
