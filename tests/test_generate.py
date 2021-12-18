@@ -56,6 +56,7 @@ def test_process_plot():
     
     merged_boxes, boxes = generate.process_plot(plot_data=df, rgb_pool=rgb_pool, deepforest_model=deepforest_model)
     assert df.shape[0] >= merged_boxes.shape[0]
+    assert len(merged_boxes.box_id.unique()) == merged_boxes.shape[0]
     
 def test_run(tmpdir):
     df = gpd.read_file(data_path)
@@ -79,3 +80,4 @@ def test_generate_crops(tmpdir):
     
     assert not annotations.empty
     assert all([x in ["image_path","label","site","siteID","plotID","individualID","taxonID","point_id","box_id"] for x in annotations.columns])
+    assert len(annotations.box_id.unique()) == annotations.shape[0]

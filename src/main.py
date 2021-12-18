@@ -205,7 +205,16 @@ class TreeModel(LightningModule):
     
     def predict(self,inputs):
         """Given a input dictionary, construct args for prediction"""
-        return self.model(inputs["HSI"])
+        if "cuda" == self.device.type:
+            images = inputs["HSI"]
+            images = images.cuda()
+            pred = self.model(images)
+            pred = pred.cpu()
+        else:
+            images = inputs["HSI"]
+            pred = self.model(images)
+            
+        return pred
     
     def predict_dataloader(self, data_loader, plot_n_individuals=1, experiment=None):
         """Given a file with paths to image crops, create crown predictions 
