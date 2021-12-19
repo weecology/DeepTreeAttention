@@ -3,7 +3,8 @@ import comet_ml
 import glob
 from src import data
 from src import start_cluster
-from src.models import metadata
+from src.models import Hang2020
+from src import main
 from src import visualize
 from src import metrics
 import torch
@@ -76,8 +77,8 @@ def run():
             comet_logger.experiment.log_table("test.csv", test)
             comet_logger.experiment.log_table("novel_species.csv", novel)
             
-            model = metadata.metadata_sensor_fusion(sites=data_module.num_sites, classes=data_module.num_classes, bands=data_module.config["bands"])
-            m = metadata.MetadataModel(
+            model = Hang2020.Hang2020(classes=data_module.num_classes, bands=data_module.config["bands"])
+            m = main.TreeModel(
                 model=model, 
                 classes=data_module.num_classes, 
                 label_dict=data_module.species_label_dict, 
