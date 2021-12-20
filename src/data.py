@@ -126,8 +126,8 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     test = test[test.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])]
     
     test = test.groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples)
-    train = train.groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
-    
+    train_keep = train[train.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])].groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
+    train = train[train.taxonID.isin(train_keep)]
     train = train[train.taxonID.isin(test.taxonID)]    
     test = test[test.taxonID.isin(train.taxonID)]
     
