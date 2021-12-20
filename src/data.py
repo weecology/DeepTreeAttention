@@ -101,6 +101,10 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     """
     #split by plot level
     plotIDs = list(shp[shp.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])].plotID.unique())
+    if len(plotIDs) == 0:
+        test = shp[shp.plotID == shp.plotID.unique()[0]]
+        train = shp[shp.plotID == shp.plotID.unique()[1]]
+                
     np.random.shuffle(plotIDs)
     test = shp[shp.plotID == plotIDs[0]]
     
@@ -115,11 +119,6 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
             test = pd.concat([test,selected_plot])
             
     train = shp[~shp.plotID.isin(test.plotID.unique())]
-    
-    #if debug
-    if train.empty:
-        test = shp[shp.plotID == shp.plotID.unique()[0]]
-        train = shp[shp.plotID == shp.plotID.unique()[1]]
     
     #remove fixed boxes from test
     test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]
