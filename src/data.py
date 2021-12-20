@@ -100,7 +100,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
         iteration: a dummy parameter to make dask submission unique
     """
     #split by plot level
-    plotIDs = list(shp.plotID.unique())
+    plotIDs = list(shp[shp.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])].plotID.unique())
     np.random.shuffle(plotIDs)
     test = shp[shp.plotID == plotIDs[0]]
     
