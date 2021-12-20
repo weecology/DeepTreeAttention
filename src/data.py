@@ -356,17 +356,17 @@ class TreeData(LightningDataModule):
                     
                 #Convert raw neon data to x,y tree locatins
                 df = filter_data(self.csv_file, config=self.config)
+                    
+                #load any megaplot data
+                if not self.config["megaplot_dir"] is None:
+                    megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
+                    df = pd.concat([megaplot_data, df])
                 
                 if not self.debug:
                     southeast = df[df.siteID.isin(["OSBS","LENO","TALL","DELA","DSNY","JERC"])]
                     southeast = southeast.taxonID.unique()
                     plotIDs_to_keep = df[df.taxonID.isin(southeast)].plotID.unique()
                     df = df[df.plotID.isin(plotIDs_to_keep)]
-                    
-                #load any megaplot data
-                if not self.config["megaplot_dir"] is None:
-                    megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
-                    df = pd.concat([megaplot_data, df])
                     
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter",len(df.taxonID.unique()))
