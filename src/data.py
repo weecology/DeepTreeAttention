@@ -121,14 +121,12 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     train = shp[~shp.plotID.isin(test.plotID.unique())]
     
     #remove fixed boxes from test
-    test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]
-    test = test[test.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])]
-    
     test = test.groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples)
-    train_keep = train[train.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])].groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
-    train = train[train.taxonID.isin(train_keep)]
+    #train_keep = train[train.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])].groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
+    #train = train[train.taxonID.isin(train_keep)]
     train = train[train.taxonID.isin(test.taxonID)]    
     test = test[test.taxonID.isin(train.taxonID)]
+    test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]
     
     return train, test
     
