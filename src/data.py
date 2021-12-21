@@ -520,7 +520,7 @@ class TreeData(LightningDataModule):
             path, image, targets = self.train_ds[idx]
             label = int(targets.numpy())
             class_freq = class_weights[label]
-            if class_freq < 100:
+            if class_freq > 100:
                 class_freq = 100
             data_weights.append(class_freq)
             
