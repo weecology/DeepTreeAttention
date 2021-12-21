@@ -519,8 +519,10 @@ class TreeData(LightningDataModule):
         for idx in range(len(self.train_ds)):
             path, image, targets = self.train_ds[idx]
             label = int(targets.numpy())
-            image_weight = class_weights[label]
-            data_weights.append(1/image_weight)
+            class_freq = class_weights[label]
+            if class_freq > 100:
+                class_freq = 100
+            data_weights.append(1/class_freq)
             
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights = data_weights, num_samples=len(self.train_ds))
         data_loader = torch.utils.data.DataLoader(
