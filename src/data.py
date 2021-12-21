@@ -520,8 +520,8 @@ class TreeData(LightningDataModule):
             label = int(targets.numpy())
             class_freq = class_weights[label]
             #under sample majority classes
-            if class_freq > 100:
-                class_freq = 100
+            if class_freq > 50:
+                class_freq = 50
             data_weights.append(1/class_freq)
             
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights = data_weights, num_samples=len(self.train_ds))
