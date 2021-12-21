@@ -105,7 +105,11 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
         iteration: a dummy parameter to make dask submission unique
     """
     #split by plot level
-    plotIDs = list(shp.plotID.unique())
+    plotIDs = list(shp[shp.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])].plotID.unique())
+    if len(plotIDs) == 0:
+        test = shp[shp.plotID == shp.plotID.unique()[0]]
+        train = shp[shp.plotID == shp.plotID.unique()[1]]
+                
     np.random.shuffle(plotIDs)
     test = shp[shp.plotID == plotIDs[0]]
     
@@ -121,20 +125,13 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
             
     train = shp[~shp.plotID.isin(test.plotID.unique())]
     
-    #if debug
-    if train.empty:
-        test = shp[shp.plotID == shp.plotID.unique()[0]]
-        train = shp[shp.plotID == shp.plotID.unique()[1]]
-    
     #remove fixed boxes from test
-    test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]
-    test = test[test.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])]
-    
     test = test.groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples)
-    train = train.groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
-    
+    train_keep = train[train.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])].groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
+    train = train[train.taxonID.isin(train_keep.taxonID.unique())]
     train = train[train.taxonID.isin(test.taxonID)]    
     test = test[test.taxonID.isin(train.taxonID)]
+    test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]
     
     return train, test
     
@@ -368,17 +365,17 @@ class TreeData(LightningDataModule):
                     
                 #Convert raw neon data to x,y tree locatins
                 df = filter_data(self.csv_file, config=self.config)
+                    
+                #load any megaplot data
+                if not self.config["megaplot_dir"] is None:
+                    megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
+                    df = pd.concat([megaplot_data, df])
                 
                 if not self.debug:
                     southeast = df[df.siteID.isin(["OSBS","LENO","TALL","DELA","DSNY","JERC"])]
                     southeast = southeast.taxonID.unique()
                     plotIDs_to_keep = df[df.taxonID.isin(southeast)].plotID.unique()
                     df = df[df.plotID.isin(plotIDs_to_keep)]
-                    
-                #load any megaplot data
-                if not self.config["megaplot_dir"] is None:
-                    megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
-                    df = pd.concat([megaplot_data, df])
                     
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter",len(df.taxonID.unique()))
@@ -535,8 +532,7 @@ class TreeData(LightningDataModule):
             self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
             
     def train_dataloader(self):
-        """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""       
-        
+        """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""               
         #get class weights
         self.train_ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata, include_outliers=self.config["include_outliers"])        
         train = pd.read_csv(self.train_file)
@@ -547,8 +543,11 @@ class TreeData(LightningDataModule):
         for idx in range(len(self.train_ds)):
             path, image, targets = self.train_ds[idx]
             label = int(targets.numpy())
-            image_weight = class_weights[label]
-            data_weights.append(1/image_weight)
+            class_freq = class_weights[label]
+            #under sample majority classes
+            if class_freq > 50:
+                class_freq = 50
+            data_weights.append(1/class_freq)
             
         self.train_sampler = torch.utils.data.sampler.WeightedRandomSampler(weights = data_weights, num_samples=len(self.train_ds))
         
