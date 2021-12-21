@@ -508,10 +508,26 @@ class TreeData(LightningDataModule):
             self.val_ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=self.HSI, metadata=self.metadata)            
 
     def train_dataloader(self):
-        """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""       
+        """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""               
+        #get class weights
+        train = pd.read_csv(self.train_file)
+        class_weights = train.label.value_counts().to_dict()     
+            
+        data_weights = []
+        #balance classes
+        for idx in range(len(self.train_ds)):
+            path, image, targets = self.train_ds[idx]
+            label = int(targets.numpy())
+            class_freq = class_weights[label]
+            #under sample majority classes
+            if class_freq > 100:
+                class_freq = 100
+            data_weights.append(1/class_freq)
+            
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights = data_weights, num_samples=len(self.train_ds))
         data_loader = torch.utils.data.DataLoader(
             self.train_ds,
-            shuffle=True,
+            sampler = sampler,
             batch_size=self.config["batch_size"],
             num_workers=self.config["workers"])
         
