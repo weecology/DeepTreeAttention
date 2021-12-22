@@ -81,7 +81,7 @@ class autoencoder(LightningModule):
         self.encoder_block3 = encoder_block(in_channels=32, filters=16, pool=True)
         
         self.classifier = classifier(classes, image_size=config["image_size"])
-        self.alpha = nn.Parameter(torch.tensor(0.5, dtype=float), requires_grad=True)
+        self.alpha = nn.Parameter(torch.tensor(0.5, dtype=float), requires_grad=False)
         
         #Decoder
         self.decoder_block1 = decoder_block(in_channels=16, filters=32)
