@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch
 from torch import optim
 from src.models.Hang2020 import conv_module
-from src import visualize
 from src import center_loss
 from pytorch_lightning import LightningModule, Trainer
 import pandas as pd
@@ -135,6 +134,7 @@ class autoencoder(LightningModule):
         features = self.classifier.vis_activation["classification_bottleneck"]
         step_center_loss = self.closs(features, observed_labels)
         self.log("center loss", step_center_loss,on_epoch=True,on_step=False)
+        self.log("center alpha", self.alpha,on_epoch=True,on_step=False)
         
         classification_loss = classification_loss + self.alpha * step_center_loss
         loss = self.config["autoencoder_loss_scalar"] * autoencoder_loss  + classification_loss * self.config["classification_loss_scalar"]
