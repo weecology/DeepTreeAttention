@@ -7,7 +7,7 @@ from src import start_cluster
 from src.models import Hang2020
 from src import visualize
 from src import metrics
-from pytorch_lightning import Trainer, profiler
+from pytorch_lightning import Trainer
 import subprocess
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
