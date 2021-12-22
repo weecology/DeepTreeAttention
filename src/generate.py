@@ -60,7 +60,7 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=40):
     return boxes
 
 def choose_box(group, plot_data):
-    """Given a set of overlapping bounding boxes and predictions, just choose a closest to stem box by centroid if there are multiples"""
+    """Given a set of overlapping bounding boxes and predictions, just choose the closest to stem box by centroid if there are multiples"""
     if group.shape[0] == 1:
         return  group
     else:
@@ -115,10 +115,9 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     missing_ids = plot_data[~plot_data.individual.isin(merged_boxes.individual)]
     
     if not missing_ids.empty:
-        #created_boxes= create_boxes(missing_ids)
-        #merged_boxes = merged_boxes.append(created_boxes)
-        pass
-    
+        created_boxes= create_boxes(missing_ids)
+        merged_boxes = merged_boxes.append(created_boxes)
+
     #If there are multiple boxes per point, take the center box
     grouped = merged_boxes.groupby("individual")
     
@@ -134,11 +133,11 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     cleaned_points = []
     for value, group in merged_boxes.groupby("box_id"):
         if group.shape[0] > 1:
-            print("removing {} points for within a deepforest box".format(group.shape[0]-1))
-            try:
-                cleaned_points.append(group[group.height == group.height.max()])
-            except:
-                raise ValueError("Multiple points detected and no height or DBH data to differentiate")
+            print("removing {} points from {} within a deepforest box {}".format(group.shape[0]-1, group.plotID.unique(),group.box_id.unique()))
+            selected_point = group[group.height == group.height.max()]
+            if selected_point.shape[0] > 1:
+                selected_point = selected_point[selected_point.CHM_height == selected_point.CHM_height.max()]
+            cleaned_points.append(selected_point)
         else:
             cleaned_points.append(group)
      
@@ -148,7 +147,6 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
 
 def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, deepforest_model=None):
     """wrapper function for dask, see main.py"""
-    
     if deepforest_model is None:
         from deepforest import main
         deepforest_model = main.deepforest()
@@ -232,6 +230,9 @@ def points_to_crowns(
                 print("{} failed with {}".format(plot, e))
     results = pd.concat(results)
     
+    #In case any contrib data has the same CHM and height and sitting in the same deepforest box.Should be rare.
+    results = results.groupby(["plotID","box_id"]).apply(lambda x: x.head(1)).reset_index(drop=True)
+    
     return results
 
 def write_crop(row, img_path, savedir, replace=True):
@@ -246,7 +247,7 @@ def write_crop(row, img_path, savedir, replace=True):
             filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])  
     else:
         filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])
-        annotation = pd.DataFrame({"image_path":[filename], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "siteID":[row["siteID"]]})
+        annotation = pd.DataFrame({"image_path":[filename], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "siteID":[row["siteID"]],"box_id":[row["box_id"]]})
         return annotation
 
 def generate_crops(gdf, sensor_glob, savedir, client=None, convert_h5=False, rgb_glob=None, HSI_tif_dir=None, replace=True):
@@ -314,7 +315,7 @@ def generate_crops(gdf, sensor_glob, savedir, client=None, convert_h5=False, rgb
                 annotation = write_crop(row=row, img_path=img_path, savedir=savedir, replace=replace)
             except Exception as e:
                 print("index {} failed with {}".format(index,e))
-                continue
+                raise
     
             annotations.append(annotation)
     

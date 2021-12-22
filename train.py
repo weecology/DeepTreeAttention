@@ -4,22 +4,25 @@ import glob
 from src import main
 from src import data
 from src import start_cluster
-from src.models import metadata
+from src.models import Hang2020
 from src import visualize
 from src import metrics
-from pytorch_lightning import Trainer
+from pytorch_lightning import Trainer, profiler
 import subprocess
 from pytorch_lightning.loggers import CometLogger
+from pytorch_lightning.callbacks import LearningRateMonitor
 import pandas as pd
 from pandas.util import hash_pandas_object
 
 #Create datamodule
-#client = start_cluster.start(cpus=75, mem_size="5GB")
-client = None
-
 config = data.read_config("config.yml")
-comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"],auto_output_logging = "simple")
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client, metadata=True, comet_logger=comet_logger)
+if config["regenerate"]:
+    client = start_cluster.start(cpus=75, mem_size="5GB")
+else:
+    client = None
+
+comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"],auto_output_logging = "simple")    
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=config["regenerate"], client=client, metadata=True, comet_logger=comet_logger)
 data_module.setup()
 
 if client:
@@ -46,24 +49,25 @@ comet_logger.experiment.log_table("train.csv", train)
 comet_logger.experiment.log_table("test.csv", test)
 comet_logger.experiment.log_table("novel_species.csv", novel)
 
-model = metadata.metadata_sensor_fusion(sites=data_module.num_sites, classes=data_module.num_classes, bands=data_module.config["bands"])
-m = metadata.MetadataModel(
+#model = metadata.metadata_sensor_fusion(sites=data_module.num_sites, classes=data_module.num_classes, bands=data_module.config["bands"])
+model = Hang2020.Hang2020(classes=data_module.num_classes, bands=data_module.config["bands"])
+m = main.TreeModel(
     model=model, 
     classes=data_module.num_classes, 
-    label_dict=data_module.species_label_dict, 
-    config=data_module.config)
+    label_dict=data_module.species_label_dict)
 
 comet_logger.experiment.log_parameters(m.config)
 
 #Create trainer
+lr_monitor = LearningRateMonitor(logging_interval='epoch')
 trainer = Trainer(
     gpus=data_module.config["gpus"],
     fast_dev_run=data_module.config["fast_dev_run"],
     max_epochs=data_module.config["epochs"],
     accelerator=data_module.config["accelerator"],
     checkpoint_callback=False,
-    logger=comet_logger,
-    profiler="simple")
+    callbacks=[lr_monitor],
+    logger=comet_logger)
 
 trainer.fit(m, datamodule=data_module)
 results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
@@ -81,7 +85,7 @@ visualize.confusion_matrix(
 )
 
 #Log spectral spatial weight
-alpha_weight = m.model.sensor_model.weighted_average.detach().numpy()
+alpha_weight = m.model.weighted_average.detach().numpy()
 comet_logger.experiment.log_parameter("spectral_spatial weight", alpha_weight)
 
 #Log prediction
@@ -89,17 +93,10 @@ comet_logger.experiment.log_table("test_predictions.csv", results)
 
 #Within site confusion
 site_lists = train.groupby("label").site.unique()
-within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label, site_lists=site_lists)
+within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=site_lists)
 comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
 
-#get train features
-train_features = m.get_features(data_module.train_ds)
-comet_logger.experiment.log_table("train_features.csv", train_features)
-
-#Novel species prediction, get scores
-novel.to_csv("data/interim/novel.csv")
-novel_prediction = metrics.novel_prediction(model=m, csv_file="data/interim/novel.csv", config=data_module.config)
-
-comet_logger.experiment.log_table("novel_prediction.csv", novel_prediction)
-mean_novel_prediction = novel_prediction.softmax_score.mean()
-comet_logger.experiment.log_metric(name="Mean unknown species softmax score", value=mean_novel_prediction)
+#Within plot confusion
+plot_lists = train.groupby("label").plotID.unique()
+within_plot_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=plot_lists)
+comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)

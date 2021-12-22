@@ -4,22 +4,25 @@ import geopandas as gpd
 import glob as glob
 from deepforest.main import deepforest
 from descartes import PolygonPatch
-import os
 import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib.collections import PatchCollection
 from pytorch_lightning import LightningModule
+import os
 import pandas as pd
-from torch.nn import functional as F
-from torch import optim
-import torch
-from torchvision import transforms
-import torchmetrics
-import tempfile
+import rasterio
+from rasterio.plot import show
 from src import data
 from src import generate
 from src import neon_paths
 from src import patches
 from src import visualize
 from shapely.geometry import Point, box
+import tempfile
+from torch.nn import functional as F
+import torch
+from torchvision import transforms
+import torchmetrics
 
 class TreeModel(LightningModule):
     """A pytorch lightning data module
@@ -80,9 +83,9 @@ class TreeModel(LightningModule):
         return loss
     
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.config["lr"])
         
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                          mode='min',
                                                          factor=0.5,
                                                          patience=10,
@@ -90,8 +93,9 @@ class TreeModel(LightningModule):
                                                          threshold=0.0001,
                                                          threshold_mode='rel',
                                                          cooldown=0,
+                                                         min_lr=0.000001,
                                                          eps=1e-08)
-        
+                                                                 
         return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
     
     def predict_image(self, img_path, return_numeric = False):
@@ -201,7 +205,16 @@ class TreeModel(LightningModule):
     
     def predict(self,inputs):
         """Given a input dictionary, construct args for prediction"""
-        return self.model(inputs["HSI"])
+        if "cuda" == self.device.type:
+            images = inputs["HSI"]
+            images = images.cuda()
+            pred = self.model(images)
+            pred = pred.cpu()
+        else:
+            images = inputs["HSI"]
+            pred = self.model(images)
+            
+        return pred
     
     def predict_dataloader(self, data_loader, plot_n_individuals=1, experiment=None):
         """Given a file with paths to image crops, create crown predictions 
@@ -221,22 +234,60 @@ class TreeModel(LightningModule):
             individual, inputs, targets = batch
             with torch.no_grad():
                 pred = self.predict(inputs)
+                pred = F.softmax(pred, dim=1)
             predictions.append(pred)
             labels.append(targets)
             individuals.append(individual)
         
         individuals = np.concatenate(individuals)        
         labels = np.concatenate(labels)
-        predictions = np.concatenate(predictions)        
-        predictions = np.argmax(predictions, 1)    
+        predictions = np.concatenate(predictions) 
+        predictions_top1 = np.argmax(predictions, 1)    
+        predictions_top2 = pd.DataFrame(predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
+        top1_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[0], axis=1)
+        top2_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[1], axis=1)
         
-        #get just the basename
-        df = pd.DataFrame({"pred_label":predictions,"label":labels,"individual":individuals})
-        df["pred_taxa"] = df["pred_label"].apply(lambda x: self.index_to_label[x])        
+        #Construct a df of predictions
+        df = pd.DataFrame({"pred_label_top1":predictions_top1,"pred_label_top2":predictions_top2,"top1_score":top1_score,"top2_score":top2_score,"label":labels,"individual":individuals})
+        df["pred_taxa_top1"] = df["pred_label_top1"].apply(lambda x: self.index_to_label[x]) 
+        df["pred_taxa_top2"] = df["pred_label_top2"].apply(lambda x: self.index_to_label[x])        
         df["true_taxa"] = df["label"].apply(lambda x: self.index_to_label[x])
  
         if experiment:
             visualize.plot_points_and_crowns(df=df, ROOT=self.ROOT, plot_n_individuals=plot_n_individuals, config=self.config, experiment=experiment)
+            #load image pool and crown predicrions
+            rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
+            test_points = gpd.read_file("{}/data/processed/canopy_points.shp".format(self.ROOT))   
+            test_crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
+            
+            plt.ion()
+            for index, row in df.sample(n=plot_n_individuals).iterrows():
+                fig = plt.figure(0)
+                ax = fig.add_subplot(1, 1, 1)                
+                individual = row["individual"]
+                geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
+                left, bottom, right, top = geom.bounds
+                
+                #Find image
+                img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
+                src = rasterio.open(img_path)
+                img = src.read(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
+                img_transform = src.window_transform(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
+                
+                #Plot crown
+                patches = [PolygonPatch(geom, edgecolor='red', facecolor='none')]
+                show(img, ax=ax, transform=img_transform)                
+                ax.add_collection(PatchCollection(patches, match_original=True))
+                
+                #Plot field coordinate
+                stem = test_points[test_points.individual == individual]
+                stem.plot(ax=ax)
+                
+                plt.savefig("{}/{}.png".format(self.tmpdir, row["individual"]))
+                experiment.log_image("{}/{}.png".format(self.tmpdir, row["individual"]), name = "crown: {}, True: {}, Predicted {}".format(row["individual"], row.true_taxa,row.pred_taxa_top1))
+                src.close()
+                plt.close("all")
+            plt.ioff()
             
         return df
     
@@ -250,7 +301,11 @@ class TreeModel(LightningModule):
             metric_dict: metric -> value
         """
         results = self.predict_dataloader(data_loader=data_loader, plot_n_individuals=self.config["plot_n_individuals"], experiment=experiment)
-
+        
+        #read in crowns data
+        crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
+        crowns = crowns.drop(columns="label").merge(results, on="individual")
+        
         #Log result by site
         if experiment:
             results["individualID"] = results["individual"]
@@ -259,35 +314,13 @@ class TreeModel(LightningModule):
             results = results.merge(testdf)
             site_data_frame =[]
             for name, group in results.groupby("site"):
-                site_micro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label.values),target=torch.tensor(group.label.values), average="micro")
-                site_macro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label.values),target=torch.tensor(group.label.values), average="macro", num_classes=self.classes)
+                site_micro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label_top1.values),target=torch.tensor(group.label.values), average="micro")
+                site_macro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label_top1.values),target=torch.tensor(group.label.values), average="macro", num_classes=self.classes)
                 row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro.numpy()], "Macro Recall": [site_macro.numpy()]})
                 site_data_frame.append(row)
             site_data_frame = pd.concat(site_data_frame)
             experiment.log_table("site_results.csv", site_data_frame)
         
-        return results
+        return crowns
     
-    def get_features(self, dataset):
-        data_loader = torch.utils.data.DataLoader(
-            dataset,
-            batch_size=self.config["batch_size"],
-            num_workers=self.config["workers"])
-        
-        self.eval()
-        predictions = []
-        individuals = []
-        for batch in data_loader:
-            individual, inputs, targets = batch
-            with torch.no_grad():
-                pred = self.predict(inputs)
-            predictions.append(pred)
-            individuals.append(individual)
-        
-        individuals = np.concatenate(individuals)              
-        features = np.concatenate(predictions)  
-        features = pd.DataFrame(features)
-        features["individual"] = individuals
-        
-        return features
-        
+

@@ -10,8 +10,8 @@ import pandas as pd
 import rasterio
 from rasterio.plot import show
 from src import neon_paths
-import tempfile
 from sklearn.decomposition import PCA
+import tempfile
 
 def index_to_example(index, test_csv, test_crowns, test_points, rgb_pool, comet_experiment):
     """Function to plot an RGB image, the NEON field point and the deepforest crown given a test index
@@ -63,21 +63,9 @@ def index_to_example(index, test_csv, test_crowns, test_points, rgb_pool, comet_
 
 def confusion_matrix(comet_experiment, results, species_label_dict, test_csv, test_points, test_crowns, rgb_pool):
     #Confusion matrix
-    #comet_experiment.log_confusion_matrix(
-        #results.label.values,
-        #results.pred_label.values,
-        #labels=list(species_label_dict.keys()),
-        #max_categories=len(species_label_dict.keys()),
-        #index_to_example_function=index_to_example,
-        #test_csv=test_csv,
-        #test_points=test_points,
-        #test_crowns=test_crowns,
-        #rgb_pool=rgb_pool,
-        #comet_experiment=comet_experiment)
-
     comet_experiment.log_confusion_matrix(
         results.label.values,
-        results.pred_label.values,
+        results.pred_label_top1.values,
         labels=list(species_label_dict.keys()),
         max_categories=len(species_label_dict.keys()))
 
@@ -173,4 +161,4 @@ def plot_points_and_crowns(df, ROOT, plot_n_individuals, config, experiment):
         
         src.close()
         plt.close("all")
-    plt.ioff()    
+    plt.ioff()

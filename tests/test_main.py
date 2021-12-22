@@ -20,7 +20,8 @@ def config():
     config["iterations"] = 1
     config["rgb_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
     config["HSI_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
-    config["min_samples"] = 1
+    config["min_train_samples"] = 1
+    config["min_test_samples"] = 1    
     config["crop_dir"] = tempfile.gettempdir()
     config["bands"] = 3
     config["classes"] = 2
@@ -29,6 +30,7 @@ def config():
     config["plot_n_individuals"] = 1
     config["gpus"] = 0
     config["include_outliers"] = True
+    config["megaplot_dir"] = None
     
     return config
 
@@ -37,11 +39,11 @@ def config():
 def dm(config):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)           
     if not "GITHUB_ACTIONS" in os.environ:
-        regen = False
+        regen = True
     else:
         regen = True
     
-    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=regen, data_dir="{}/tests/data".format(ROOT)) 
+    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=regen, data_dir="{}/tests/data".format(ROOT), debug=True) 
     dm.setup()    
     
     return dm
@@ -58,12 +60,11 @@ def experiment():
     else:
         return None
 
-
 #Training module
 @pytest.fixture(scope="session")
 def m(config, dm):
-    model = Hang2020.vanilla_CNN(bands=3, classes=2)
-    m = main.TreeModel(model=model, classes=2, config=config, label_dict=dm.species_label_dict)
+    model = Hang2020.vanilla_CNN(bands=3, classes=3)
+    m = main.TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict)
     m.ROOT = "{}/tests/".format(ROOT)
     
     return m
@@ -83,6 +84,7 @@ def test_evaluate_crowns(config, experiment, m, dm):
     m.ROOT = "{}/tests".format(ROOT)
     df = m.evaluate_crowns(data_loader = dm.val_dataloader(), experiment=experiment)
     
+    assert all(["top{}_score".format(x) in df.columns for x in [1,2]]) 
     assert len(df) == 4
 
 def test_predict_xy(config, m, dm):
@@ -99,9 +101,4 @@ def test_predict_crown(config, m, dm):
     
     assert label in dm.species_label_dict.keys()
     assert score > 0 
-    
-def test_get_features(config, m, dm):
-    df = pd.read_csv(dm.train_file)
-    features = m.get_features(dm.train_ds)
-    assert df.shape[0] == features.shape[0]
     

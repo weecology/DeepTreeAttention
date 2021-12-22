@@ -91,6 +91,9 @@ def filter_data(path, config):
     #Oak Right Lab has no AOP data
     shp = shp[~(shp.siteID.isin(["PUUM","ORNL"]))]
 
+    #There are a couple NEON plots within the OSBS megaplot, make sure they are removed
+    shp = shp[~shp.plotID.isin(["OSBS_026","OSBS_029","OSBS_039","OSBS_027","OSBS_036"])]
+
     return shp
 
 def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
@@ -102,33 +105,33 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
         iteration: a dummy parameter to make dask submission unique
     """
     #split by plot level
-    plotIDs = shp.plotID.unique()
-    
-    #No contrib plots in test
-    plotIDs = [x for x in plotIDs if not 'contrib' in x]
-    np.random.shuffle(plotIDs)
-    test_species = []
-    test_plots = []
-    for plotID in plotIDs:
-        selected_plot = shp[shp.plotID == plotID]
-        if not all([x in test_species for x in selected_plot.taxonID.unique()]):
-            test_plots.append(plotID)
-            for x in selected_plot.taxonID.unique():
-                test_species.append(x)
-        
-    test = shp[shp.plotID.isin(test_plots)]
-    train = shp[~shp.plotID.isin(test_plots)]
-    
-    #if debug
-    if train.empty:
+    plotIDs = list(shp[shp.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])].plotID.unique())
+    if len(plotIDs) == 0:
         test = shp[shp.plotID == shp.plotID.unique()[0]]
         train = shp[shp.plotID == shp.plotID.unique()[1]]
-        
-    test = test.groupby("taxonID").filter(lambda x: x.shape[0] > min_test_samples)
-    train = train.groupby("taxonID").filter(lambda x: x.shape[0] > min_train_samples)
+                
+    np.random.shuffle(plotIDs)
+    test = shp[shp.plotID == plotIDs[0]]
     
-    train = train[train.taxonID.isin(test.taxonID)]
+    for plotID in plotIDs[1:]:
+        include = False
+        selected_plot = shp[shp.plotID == plotID]
+        # If any species is missing from min samples, include plot
+        for x in selected_plot.taxonID.unique():
+            if sum(test.taxonID == x) < min_test_samples:
+                include = True
+        if include:
+            test = pd.concat([test,selected_plot])
+            
+    train = shp[~shp.plotID.isin(test.plotID.unique())]
+    
+    #remove fixed boxes from test
+    test = test.groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples)
+    train_keep = train[train.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])].groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
+    train = train[train.taxonID.isin(train_keep.taxonID.unique())]
+    train = train[train.taxonID.isin(test.taxonID)]    
     test = test[test.taxonID.isin(train.taxonID)]
+    test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]
     
     return train, test
     
@@ -140,8 +143,11 @@ def train_test_split(shp, config, client = None):
     Returns:
         None: train.shp and test.shp are written as side effect
         """    
-    #set seed.
-    print("splitting data into train test. Initial data has {} points from {} species".format(shp.shape[0],shp.taxonID.nunique()))
+    min_sampled = config["min_train_samples"] + config["min_test_samples"]
+    keep = shp.taxonID.value_counts() > (min_sampled)
+    species_to_keep = keep[keep].index
+    shp = shp[shp.taxonID.isin(species_to_keep)]
+    print("splitting data into train test. Initial data has {} points from {} species with a min of {} samples".format(shp.shape[0],shp.taxonID.nunique(),min_sampled))
     test_species = 0
     ties = []
     if client:
@@ -161,7 +167,6 @@ def train_test_split(shp, config, client = None):
                 ties = []
                 ties.append([train, test])
             elif test.taxonID.nunique() == test_species:
-                print("ties")
                 ties.append([train, test])          
     else:
         for x in np.arange(config["iterations"]):
@@ -175,13 +180,12 @@ def train_test_split(shp, config, client = None):
                 ties = []
                 ties.append([train, test])
             elif test.taxonID.nunique() == test_species:
-                print("ties")
                 ties.append([train, test])
     
     # The size of the datasets
     if len(ties) > 1:
         print("The size of tied datasets with {} species is {}".format(test_species, [x[1].shape[0] for x in ties]))        
-        saved_train, saved_test = ties[np.argmin([x[1].shape[0] for x in ties])]
+        saved_train, saved_test = ties[np.argmax([x[1].shape[0] for x in ties])]
         
     train = saved_train
     test = saved_test    
@@ -261,15 +265,22 @@ class TreeDataset(Dataset):
         self.train = train
         self.HSI = HSI
         self.metadata = metadata
+        self.config = config 
         
-        if config:
+        if self.config:
             self.image_size = config["image_size"]
         else:
             self.image_size = image_size
         
         #Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=image_size)
-            
+        
+        #Pin data to memory if desired
+        if self.config["preload_images"]:
+            self.image_dict = {}
+            for index, row in self.annotations.iterrows():
+                self.image_dict[index] = load_image(row["image_path"], image_size=image_size)
+        
     def __len__(self):
         #0th based index
         return self.annotations.shape[0]
@@ -279,9 +290,12 @@ class TreeDataset(Dataset):
         image_path = self.annotations.image_path.loc[index]      
         individual = os.path.basename(image_path.split(".tif")[0])
         if self.HSI:
-            image_path = self.annotations.image_path.loc[index]            
-            image = load_image(image_path, image_size=self.image_size)
-            inputs["HSI"] = image
+            if self.config["preload_images"]:
+                inputs["HSI"] = self.image_dict[index]
+            else:
+                image_path = self.annotations.image_path.loc[index]            
+                image = load_image(image_path, image_size=self.image_size)
+                inputs["HSI"] = image
             
         if self.metadata:
             site = self.annotations.site.loc[index]  
@@ -293,8 +307,7 @@ class TreeDataset(Dataset):
             label = torch.tensor(label, dtype=torch.long)
             
             if self.HSI:
-                image = self.transformer(image)
-                inputs["HSI"] = image
+                inputs["HSI"] = self.transformer(inputs["HSI"])
 
             return individual, inputs, label
         else:
@@ -306,12 +319,13 @@ class TreeData(LightningDataModule):
     The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
     Use regenerate=True to override this behavior in setup()
     """
-    def __init__(self, csv_file, HSI=True, metadata=False, regenerate = False, client = None, config=None, data_dir=None, comet_logger=None):
+    def __init__(self, csv_file, HSI=True, metadata=False, regenerate = False, client = None, config=None, data_dir=None, comet_logger=None, debug=False):
         """
         Args:
             config: optional config file to override
             data_dir: override data location, defaults to ROOT   
             regenerate: Whether to recreate raw data
+            debug: a test mode for small samples
         """
         super().__init__()
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -320,6 +334,7 @@ class TreeData(LightningDataModule):
         self.HSI = HSI
         self.metadata = metadata
         self.comet_logger = comet_logger
+        self.debug = debug 
         
         #default training location
         self.client = client
@@ -350,22 +365,34 @@ class TreeData(LightningDataModule):
                     
                 #Convert raw neon data to x,y tree locatins
                 df = filter_data(self.csv_file, config=self.config)
-                
+                    
                 #load any megaplot data
                 if not self.config["megaplot_dir"] is None:
-                    megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], rgb_pool=self.config["rgb_sensor_pool"], client = self.client, config=self.config)
-                    #don't add species from contrib data (?) https://github.com/weecology/DeepTreeAttention/issues/65
-                    megaplot_data = megaplot_data[megaplot_data.taxonID.isin(df.taxonID.unique())]
+                    megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
                     df = pd.concat([megaplot_data, df])
-                    
-                #DEBUG, just one site
-                df = df[df.siteID=="HARV"]
-
                 
+                if not self.debug:
+                    southeast = df[df.siteID.isin(["OSBS","LENO","TALL","DELA","DSNY","JERC"])]
+                    southeast = southeast.taxonID.unique()
+                    plotIDs_to_keep = df[df.taxonID.isin(southeast)].plotID.unique()
+                    df = df[df.plotID.isin(plotIDs_to_keep)]
+                    
+                if self.comet_logger:
+                    self.comet_logger.experiment.log_parameter("Species before CHM filter",len(df.taxonID.unique()))
+                    self.comet_logger.experiment.log_parameter("Samples before CHM filter",df.shape[0])
+
                 #Filter points based on LiDAR height
-                df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],min_CHM_diff=self.config["min_CHM_diff"], min_CHM_height=self.config["min_CHM_height"])      
+                df = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],
+                                    min_CHM_height=self.config["min_CHM_height"], 
+                                    max_CHM_diff=self.config["max_CHM_diff"], 
+                                    CHM_height_limit=self.config["CHM_height_limit"])  
+                
                 df.to_file("{}/processed/canopy_points.shp".format(self.data_dir))
                 
+                if self.comet_logger:
+                    self.comet_logger.experiment.log_parameter("Species after CHM filter",len(df.taxonID.unique()))
+                    self.comet_logger.experiment.log_parameter("Samples after CHM filter",df.shape[0])
+
                 #Create crown data
                 crowns = generate.points_to_crowns(
                     field_data="{}/processed/canopy_points.shp".format(self.data_dir),
@@ -375,6 +402,10 @@ class TreeData(LightningDataModule):
                     client=self.client
                 )
                 
+                if self.comet_logger:
+                    self.comet_logger.experiment.log_parameter("Species after crown prediction",len(crowns.taxonID.unique()))
+                    self.comet_logger.experiment.log_parameter("Samples after crown prediction",crowns.shape[0])
+
                 crowns.to_file("{}/processed/crowns.shp".format(self.data_dir))
             else:
                 crowns = gpd.read_file("{}/processed/crowns.shp".format(self.data_dir))
@@ -387,20 +418,27 @@ class TreeData(LightningDataModule):
                 rgb_glob=self.config["rgb_sensor_pool"],
                 HSI_tif_dir=self.config["HSI_tif_dir"],
                 client=self.client,
-                replace=self.config["replace"])
-
+                replace=self.config["replace"]
+            )
+            annotations.to_csv("{}/processed/annotations.csv".format(self.data_dir))
+            
+            if self.comet_logger:
+                self.comet_logger.experiment.log_parameter("Species after crop generation",len(annotations.taxonID.unique()))
+                self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
+                
             #Outlier detection
             before_outlier_detection = annotations.groupby("taxonID").filter(lambda x: x.shape[0] > (self.config["min_train_samples"] + self.config["min_test_samples"]))
             outlier_model = outlier_detection.tree_autoencoder(bands=self.config["bands"], classes = len(before_outlier_detection.taxonID.unique()), config=self.config, comet_logger=self.comet_logger)
             before_outlier_detection["label"] = before_outlier_detection.taxonID.astype("category").cat.codes                        
             before_outlier_detection.to_csv("{}/processed/before_outlier_detection.csv".format(self.data_dir))
-            ds = TreeDataset(csv_file="{}/processed/before_outlier_detection.csv".format(self.data_dir), image_size=self.config["image_size"])
+            ds = TreeDataset(csv_file="{}/processed/before_outlier_detection.csv".format(self.data_dir), image_size=self.config["image_size"], config=self.config)
             dataloader = torch.utils.data.DataLoader(
                 ds,
                 batch_size=self.config["batch_size"],
                 num_workers=self.config["workers"],
                 shuffle=False
             )
+            
             outlier_detection.train(outlier_model, dataloader=dataloader, config=self.config, comet_logger=self.comet_logger)            
             after_outlier_detection = outlier.predict_outliers(model=outlier_model, annotations=before_outlier_detection, config=self.config, comet_logger=self.comet_logger)
             predicted_outliers = after_outlier_detection[after_outlier_detection.predicted_outlier == True]
@@ -494,8 +532,7 @@ class TreeData(LightningDataModule):
             self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
             
     def train_dataloader(self):
-        """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""       
-        
+        """Load a training file. The default location is saved during self.setup(), to override this location, set self.train_file before training"""               
         #get class weights
         self.train_ds = TreeDataset(csv_file = self.train_file, config=self.config, HSI=self.HSI, metadata=self.metadata, include_outliers=self.config["include_outliers"])        
         train = pd.read_csv(self.train_file)
@@ -506,10 +543,13 @@ class TreeData(LightningDataModule):
         for idx in range(len(self.train_ds)):
             path, image, targets = self.train_ds[idx]
             label = int(targets.numpy())
-            image_weight = class_weights[label]
-            data_weights.append(1/image_weight)
+            class_freq = class_weights[label]
+            #under sample majority classes
+            if class_freq > 50:
+                class_freq = 50
+            data_weights.append(1/class_freq)
             
-        self.train_sampler = torch.utils.data.sampler.WeightedRandomSampler(weights = data_weights, num_samples=len(self.train_ds), replacement=True)
+        self.train_sampler = torch.utils.data.sampler.WeightedRandomSampler(weights = data_weights, num_samples=len(self.train_ds))
         
         #random seed worker?
         if self.config["set_seeds"]:
@@ -533,7 +573,7 @@ class TreeData(LightningDataModule):
             self.val_ds,
             batch_size=self.config["batch_size"],
             shuffle=False,
-            num_workers=self.config["workers"],
+            num_workers=self.config["workers"]
         )
         
         return data_loader

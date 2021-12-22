@@ -218,7 +218,7 @@ def predict_outliers(model, annotations, config, plot_n_individuals=100, comet_l
     #predict annotations
     with tempfile.TemporaryDirectory() as tmpdir:
         annotations.to_csv("{}/annotations.csv".format(tmpdir))
-        ds = data.TreeDataset(csv_file="{}/annotations.csv".format(tmpdir), image_size=config["image_size"])
+        ds = data.TreeDataset(csv_file="{}/annotations.csv".format(tmpdir), image_size=config["image_size"], config=config)
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=config["batch_size"],

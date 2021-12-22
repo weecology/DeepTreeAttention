@@ -3,7 +3,8 @@ import comet_ml
 import glob
 from src import data
 from src import start_cluster
-from src.models import metadata
+from src.models import Hang2020
+from src import main
 from src import visualize
 from src import metrics
 import torch
@@ -35,15 +36,15 @@ def seed_all(seed):
 def run():
     """Run a tree experiment"""
     #Create datamodule
-    #client = start_cluster.start(cpus=75, mem_size="5GB")
-    client = None
+    client = start_cluster.start(cpus=75, mem_size="5GB")
+    #client = None
     
     now = datetime.now() # current date and time
     timestamp = now.strftime("%H:%M:%S")
     config = data.read_config("config.yml")
     comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"],auto_output_logging = "simple")
     comet_logger.experiment.add_tag("Autoencoder")
-    data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client, metadata=True, comet_logger=comet_logger)
+    data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=True, client=client, metadata=True, comet_logger=comet_logger)
     data_module.setup()
         
     if client:
@@ -53,7 +54,7 @@ def run():
         
     rows = []
     for x in [False, True]:
-        for x in range(2):
+        for i in range(5):
             comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"],auto_output_logging = "simple")        
             comet_logger.experiment.add_tag("Tree Experiment")        
             data_module.config["include_outliers"] = x
@@ -76,8 +77,8 @@ def run():
             comet_logger.experiment.log_table("test.csv", test)
             comet_logger.experiment.log_table("novel_species.csv", novel)
             
-            model = metadata.metadata_sensor_fusion(sites=data_module.num_sites, classes=data_module.num_classes, bands=data_module.config["bands"])
-            m = metadata.MetadataModel(
+            model = Hang2020.Hang2020(classes=data_module.num_classes, bands=data_module.config["bands"])
+            m = main.TreeModel(
                 model=model, 
                 classes=data_module.num_classes, 
                 label_dict=data_module.species_label_dict, 
@@ -113,28 +114,20 @@ def run():
             )
             
             #Log spectral spatial weight
-            alpha_weight = m.model.sensor_model.weighted_average.detach().numpy()
-            comet_logger.experiment.log_parameter("spectral_spatial weight", alpha_weight)
+            #alpha_weight = m.model.sensor_model.weighted_average.detach().numpy()
+            #comet_logger.experiment.log_parameter("spectral_spatial weight", alpha_weight)
             
             #Log prediction
             comet_logger.experiment.log_table("test_predictions.csv", results)
             
             #Within site confusion
             site_lists = train.groupby("label").site.unique()
-            within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label, site_lists=site_lists)
+            within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=site_lists)
             comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
             
-            ##Novel species prediction, get scores
-            #novel_prediction = metrics.novel_prediction(model=m.model.sensor_model, csv_file="data/processed/novel_species.csv", config=config)
-            #comet_logger.experiment.log_table("novel_prediction.csv", novel_prediction)
-            #mean_novel_prediction = novel_prediction.softmax_score.mean()
-            #comet_logger.experiment.log_metric(name="Mean unknown species softmax score", value=mean_novel_prediction)
-            
-            row = pd.DataFrame({"timestamp":[timestamp],"Outliers": [x], "Micro Accuracy":m.metrics["Micro Accuracy"].compute().numpy(),"Macro Accuracy":m.metrics["Macro Accuracy"].compute().numpy()})
-            rows.append(row)
+ 
+    #rows = pd.concat(rows)
+    #rows.to_csv("results/experiment_{}.csv".format(comet_logger.experiment.get_key()))
     
-    rows = pd.concat(rows)
-    rows.to_csv("results/experiment_{}.csv".format(comet_logger.experiment.get_key()))
-    
-for i in range(10):
+for i in range(3):
     run()
