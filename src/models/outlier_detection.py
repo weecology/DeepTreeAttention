@@ -105,7 +105,8 @@ class autoencoder(LightningModule):
         self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall}, prefix="autoencoder_")
         
         #center loss
-        self.closs = center_loss.CenterLoss(num_classes=classes, use_gpu="cuda" in self.device.type)
+        use_gpu = self.config["gpus"] > 0
+        self.closs = center_loss.CenterLoss(num_classes=classes, use_gpu=use_gpu)
         
     def forward(self, x):
         x = self.encoder_block1(x)
