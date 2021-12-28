@@ -3,9 +3,11 @@ import numpy as np
 import geopandas as gpd
 from src.patches import crop
 from src.neon_paths import find_sensor_path
+from src.data import preprocess_image
 import torch
+from torchvision import transforms
 
-def spatial_neighbors(gdf, buffer, data_dir, rgb_pool, model):
+def spatial_neighbors(gdf, buffer, data_dir, rgb_pool, model, image_size):
     """    
     #Get all neighbors within n meters of each point.
     Args:
@@ -13,10 +15,11 @@ def spatial_neighbors(gdf, buffer, data_dir, rgb_pool, model):
         buffer: distance from focal point in m to search for neighbors
         data_dir: directory where the plot boxes are stored
         model: a trained main.TreeModel to predict neighbor box scores
+        image_size: 
     Returns:
         neighbors: dictionary with keys -> index of the gdf, value of index of neighbors
     """
-    model.eval()
+    model.model.eval()
     neighbors = {}
     for x in gdf.index:
         geom = gdf[gdf.index==x].geometry.centroid.buffer(buffer).iloc[0]
@@ -25,17 +28,19 @@ def spatial_neighbors(gdf, buffer, data_dir, rgb_pool, model):
         neighbor_boxes = gpd.read_file("{}/interim/{}_boxes.shp".format(data_dir, plotID))
         #Finding crowns that are within buffer distance
         touches = neighbor_boxes[neighbor_boxes.geometry.map(lambda x: x.intersects(geom))]
-        boxes = [i for i in touches.index if not x == i]
         rgb_path = find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
         scores = []
-        for b in boxes.geometry:
+        for b in touches.geometry:
             #Predict score
-            img_crop = crop(bounds=b, sensor_path=rgb_path)
-            img_crop = torch.tensor(img_crop,device=model.device).unsqueeze(0)
-            score = model(img_crop)
+            img_crop = crop(bounds=b.bounds, sensor_path=rgb_path)
+            img_crop = preprocess_image(img_crop, channel_is_first=True)
+            img_crop = transforms.functional.resize(img_crop, size=(image_size,image_size), interpolation=transforms.InterpolationMode.NEAREST)
+            img_crop = torch.tensor(img_crop,device=model.device, dtype=torch.float32).unsqueeze(0)
+            with torch.no_grad():
+                score = model.model(img_crop)
             scores.append(score)
             
-        neighbors[x] = scores
+        neighbors[x] = np.vstack(scores)
 
     return neighbors
     
@@ -50,7 +55,7 @@ def spatial_smooth(neighbors, features, alpha=0.2):
     """
     smoothed_features = []
     for x in range(features.shape[0]):
-        spatial_features = [features[i,] for i in neighbors[x]]
+        spatial_features = neighbors[x]
         spatial_features = np.mean(spatial_features, axis=0)
         focal_features = features[x,]
         
