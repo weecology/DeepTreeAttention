@@ -22,13 +22,19 @@ def spatial_neighbors(gdf, buffer, data_dir, rgb_pool, model, image_size):
     model.model.eval()
     neighbors = {}
     for x in gdf.index:
+        
         geom = gdf[gdf.index==x].geometry.centroid.buffer(buffer).iloc[0]
         plotID = gdf.plotID.unique()[0]   
         #Read existing box
         neighbor_boxes = gpd.read_file("{}/interim/{}_boxes.shp".format(data_dir, plotID))
         #Finding crowns that are within buffer distance
         touches = neighbor_boxes[neighbor_boxes.geometry.map(lambda x: x.intersects(geom))]
-        rgb_path = find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
+        try:
+            rgb_path = find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
+        except:
+            print("Cannot find path for {}".format(gdf[gdf.index==x]))            
+            neighbors[x] = torch.zeros(1, model.num_classes, device=model.device, dtype=torch.float32).unsqueeze(0)
+
         scores = []
         for b in touches.geometry:
             #Predict score
