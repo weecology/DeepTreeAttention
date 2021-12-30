@@ -319,7 +319,7 @@ class TreeModel(LightningModule):
         neighbors = spatial.spatial_neighbors(
             results,
             buffer=self.config["neighbor_buffer_size"],
-            model = self,data_dir = "data/interim/",
+            model = self,data_dir = "data/",
             image_size=self.config["image_size"],
             rgb_pool=rgb_pool)        
         
