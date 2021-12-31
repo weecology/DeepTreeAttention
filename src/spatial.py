@@ -22,7 +22,7 @@ def spatial_neighbors(gdf, buffer, data_dir, rgb_pool, model, image_size):
     model.model.eval()
     neighbors = {}
     for x in gdf.index:
-        
+        print(x)
         geom = gdf[gdf.index==x].geometry.centroid.buffer(buffer).iloc[0]
         plotID = gdf.plotID.unique()[0]   
         #Read existing box
@@ -34,6 +34,7 @@ def spatial_neighbors(gdf, buffer, data_dir, rgb_pool, model, image_size):
         except:
             print("Cannot find path for {}".format(gdf[gdf.index==x]))            
             neighbors[x] = torch.zeros(1, model.classes, device=model.device, dtype=torch.float32).unsqueeze(0)
+            continue
 
         scores = []
         for b in touches.geometry:
