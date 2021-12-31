@@ -315,13 +315,13 @@ class TreeModel(LightningModule):
         crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
         results = results.merge(crowns.drop(columns="label"), on="individual")
         results = gpd.GeoDataFrame(results, geometry="geometry")
-        rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
+        HSI_pool = glob.glob(self.config["HSI_sensor_pool"], recursive=True)
         neighbors = spatial.spatial_neighbors(
             results,
             buffer=self.config["neighbor_buffer_size"],
             model = self,data_dir = "data/",
             image_size=self.config["image_size"],
-            rgb_pool=rgb_pool)        
+            HSI_pool=HSI_pool)        
         
         #Spatial function
         labels, scores = spatial.spatial_smooth(neighbors, features, alpha=self.config["neighborhood_strength"])

@@ -7,13 +7,14 @@ from src.data import preprocess_image
 import torch
 from torchvision import transforms
 
-def spatial_neighbors(gdf, buffer, data_dir, rgb_pool, model, image_size):
+def spatial_neighbors(gdf, buffer, data_dir, HSI_pool, model, image_size):
     """    
     #Get all neighbors within n meters of each point.
     Args:
         gdf: a geodataframe
         buffer: distance from focal point in m to search for neighbors
         data_dir: directory where the plot boxes are stored
+        HSI_pool: path to search for sensor path
         model: a trained main.TreeModel to predict neighbor box scores
         image_size: 
     Returns:
@@ -30,7 +31,7 @@ def spatial_neighbors(gdf, buffer, data_dir, rgb_pool, model, image_size):
         #Finding crowns that are within buffer distance
         touches = neighbor_boxes[neighbor_boxes.geometry.map(lambda x: x.intersects(geom))]
         try:
-            rgb_path = find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
+            sensor_path = find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
         except:
             print("Cannot find path for {}".format(gdf[gdf.index==x]))            
             neighbors[x] = torch.zeros(1, model.classes, device=model.device, dtype=torch.float32).unsqueeze(0)
@@ -39,7 +40,7 @@ def spatial_neighbors(gdf, buffer, data_dir, rgb_pool, model, image_size):
         scores = []
         for b in touches.geometry:
             #Predict score
-            img_crop = crop(bounds=b.bounds, sensor_path=rgb_path)
+            img_crop = crop(bounds=b.bounds, sensor_path=sensor_path)
             img_crop = preprocess_image(img_crop, channel_is_first=True)
             img_crop = transforms.functional.resize(img_crop, size=(image_size,image_size), interpolation=transforms.InterpolationMode.NEAREST)
             img_crop = torch.tensor(img_crop,device=model.device, dtype=torch.float32).unsqueeze(0)
