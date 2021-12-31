@@ -33,7 +33,7 @@ def spatial_neighbors(gdf, buffer, data_dir, rgb_pool, model, image_size):
             rgb_path = find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
         except:
             print("Cannot find path for {}".format(gdf[gdf.index==x]))            
-            neighbors[x] = torch.zeros(1, model.num_classes, device=model.device, dtype=torch.float32).unsqueeze(0)
+            neighbors[x] = torch.zeros(1, model.classes, device=model.device, dtype=torch.float32).unsqueeze(0)
 
         scores = []
         for b in touches.geometry:
