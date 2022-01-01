@@ -52,7 +52,8 @@ def spatial_neighbors(gdf, buffer, data_dir, HSI_pool, model, image_size):
             neighbors[x] = torch.zeros(1, model.classes, device=model.device, dtype=torch.float32).unsqueeze(0)
         else:            
             neighbors[x] = np.vstack(scores)
-
+    
+    print(neighbors)
     return neighbors
     
 def spatial_smooth(neighbors, features, alpha=0.2):
