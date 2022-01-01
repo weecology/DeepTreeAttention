@@ -25,7 +25,7 @@ def spatial_neighbors(gdf, buffer, data_dir, HSI_pool, model, image_size):
     for x in gdf.index:
         print(x)
         geom = gdf[gdf.index==x].geometry.centroid.buffer(buffer).iloc[0]
-        plotID = gdf.plotID.unique()[0]   
+        plotID = gdf[gdf.index==x].plotID.unique()[0]   
         #Read existing box
         neighbor_boxes = gpd.read_file("{}/interim/{}_boxes.shp".format(data_dir, plotID))
         #Finding crowns that are within buffer distance
