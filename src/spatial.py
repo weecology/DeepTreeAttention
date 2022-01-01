@@ -31,6 +31,7 @@ def spatial_neighbors(gdf, buffer, data_dir, HSI_pool, model, image_size):
         #Finding crowns that are within buffer distance
         touches = neighbor_boxes[neighbor_boxes.geometry.map(lambda x: x.intersects(geom))]
         scores = []
+        print(touches.shape)
         for b in touches.geometry:
             #Predict score
             print(b.bounds)
@@ -38,7 +39,7 @@ def spatial_neighbors(gdf, buffer, data_dir, HSI_pool, model, image_size):
                 sensor_path = find_sensor_path(lookup_pool=HSI_pool, bounds=b.bounds)                
                 img_crop = crop(bounds=b.bounds, sensor_path=sensor_path)
             except Exception as e:
-                print(e)
+                print("failed with {}".format(e))
                 continue
             print(sensor_path)            
             img_crop = preprocess_image(img_crop, channel_is_first=True)
