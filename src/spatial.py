@@ -42,15 +42,21 @@ def spatial_neighbors(gdf, buffer, data_dir, HSI_pool, model, image_size):
             #Predict score
             print(b.bounds)
             print(sensor_path)
-            img_crop = crop(bounds=b.bounds, sensor_path=sensor_path)
+            try:
+                img_crop = crop(bounds=b.bounds, sensor_path=sensor_path)
+            except:
+                continue
             img_crop = preprocess_image(img_crop, channel_is_first=True)
             img_crop = transforms.functional.resize(img_crop, size=(image_size,image_size), interpolation=transforms.InterpolationMode.NEAREST)
             img_crop = torch.tensor(img_crop,device=model.device, dtype=torch.float32).unsqueeze(0)
             with torch.no_grad():
                 score = model.model(img_crop)
             scores.append(score)
-            
-        neighbors[x] = np.vstack(scores)
+        
+        if len(scores) == 0:
+            neighbors[x] = torch.zeros(1, model.classes, device=model.device, dtype=torch.float32).unsqueeze(0)
+        else:            
+            neighbors[x] = np.vstack(scores)
 
     return neighbors
     
