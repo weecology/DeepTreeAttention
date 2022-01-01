@@ -51,7 +51,7 @@ def test_spatial_neighbors(deepforest_boxes, config):
     m = main.TreeModel(model=m, classes=5, config=config, label_dict=species_label_dict)
     m.ROOT = "{}/tests/".format(ROOT)
     rgb_pool = glob.glob("{}/tests/data/*.tif".format(ROOT))            
-    neighbors = spatial.spatial_neighbors(gdf, buffer=4, rgb_pool=rgb_pool, data_dir="{}/tests/data/".format(ROOT), model=m, image_size=11)
+    neighbors = spatial.spatial_neighbors(gdf, buffer=4, HSI_pool=rgb_pool, data_dir="{}/tests/data/".format(ROOT), model=m, image_size=11)
     assert len(neighbors) == gdf.shape[0]
     
 def test_spatial_smooth(deepforest_boxes, config):
@@ -64,7 +64,7 @@ def test_spatial_smooth(deepforest_boxes, config):
     m = main.TreeModel(model=m, classes=5, config=config, label_dict=species_label_dict)
     m.ROOT = "{}/tests/".format(ROOT)
     rgb_pool = glob.glob("{}/tests/data/*.tif".format(ROOT))            
-    neighbors = spatial.spatial_neighbors(gdf, buffer=4, rgb_pool=rgb_pool, data_dir="{}/tests/data/".format(ROOT), model=m, image_size=11)
+    neighbors = spatial.spatial_neighbors(gdf, buffer=4, HSI_pool=rgb_pool, data_dir="{}/tests/data/".format(ROOT), model=m, image_size=11)
     
     #Create a set of features
     features = np.zeros((gdf.shape[0],len(gdf.taxonID.unique())))
