@@ -315,7 +315,7 @@ class TreeModel(LightningModule):
         crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
         results = results.merge(crowns.drop(columns="label"), on="individual")
         results = gpd.GeoDataFrame(results, geometry="geometry")
-        HSI_pool = glob.glob(self.config["HSI_sensor_pool"], recursive=True)
+        HSI_pool = glob.glob(self.config["HSI_tif_dir"])
         neighbors = spatial.spatial_neighbors(
             results,
             buffer=self.config["neighbor_buffer_size"],
