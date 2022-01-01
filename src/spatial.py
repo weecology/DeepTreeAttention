@@ -31,17 +31,16 @@ def spatial_neighbors(gdf, buffer, data_dir, HSI_pool, model, image_size):
         #Finding crowns that are within buffer distance
         touches = neighbor_boxes[neighbor_boxes.geometry.map(lambda x: x.intersects(geom))]
         scores = []
-        print(touches.shape)
         for b in touches.geometry:
             #Predict score
             print(b.bounds)
             try:
-                sensor_path = find_sensor_path(lookup_pool=HSI_pool, bounds=b.bounds)                
+                sensor_path = find_sensor_path(lookup_pool=HSI_pool, bounds=b.bounds)       
+                print(sensor_path)                
                 img_crop = crop(bounds=b.bounds, sensor_path=sensor_path)
             except Exception as e:
                 print("failed with {}".format(e))
                 continue
-            print(sensor_path)            
             img_crop = preprocess_image(img_crop, channel_is_first=True)
             img_crop = transforms.functional.resize(img_crop, size=(image_size,image_size), interpolation=transforms.InterpolationMode.NEAREST)
             img_crop = torch.tensor(img_crop,device=model.device, dtype=torch.float32).unsqueeze(0)
@@ -50,7 +49,7 @@ def spatial_neighbors(gdf, buffer, data_dir, HSI_pool, model, image_size):
             scores.append(score)
         
         if len(scores) == 0:
-            neighbors[x] = torch.zeros(1, model.classes, device=model.device, dtype=torch.float32).unsqueeze(0)
+            neighbors[x] = np.zeros((1, model.classes))
         else:            
             neighbors[x] = np.vstack(scores)
     
