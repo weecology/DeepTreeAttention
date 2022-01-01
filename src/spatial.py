@@ -33,10 +33,8 @@ def spatial_neighbors(gdf, buffer, data_dir, HSI_pool, model, image_size):
         scores = []
         for b in touches.geometry:
             #Predict score
-            print(b.bounds)
             try:
                 sensor_path = find_sensor_path(lookup_pool=HSI_pool, bounds=b.bounds)       
-                print(sensor_path)                
                 img_crop = crop(bounds=b.bounds, sensor_path=sensor_path)
             except Exception as e:
                 print("failed with {}".format(e))
