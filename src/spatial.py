@@ -39,6 +39,8 @@ def spatial_neighbors(gdf, buffer, data_dir, HSI_pool, model, image_size):
             except Exception as e:
                 print("failed with {}".format(e))
                 continue
+            if img_crop.size == 0:
+                continue
             img_crop = preprocess_image(img_crop, channel_is_first=True)
             img_crop = transforms.functional.resize(img_crop, size=(image_size,image_size), interpolation=transforms.InterpolationMode.NEAREST)
             img_crop = torch.tensor(img_crop,device=model.device, dtype=torch.float32).unsqueeze(0)
@@ -51,7 +53,6 @@ def spatial_neighbors(gdf, buffer, data_dir, HSI_pool, model, image_size):
         else:            
             neighbors[x] = np.vstack(scores)
     
-    print(neighbors)
     return neighbors
     
 def spatial_smooth(neighbors, features, alpha=0.2):
