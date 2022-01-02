@@ -386,7 +386,7 @@ class TreeData(LightningDataModule):
                     field_data="{}/processed/canopy_points.shp".format(self.data_dir),
                     rgb_dir=self.config["rgb_sensor_pool"],
                     savedir="{}/interim/".format(self.data_dir),
-                    raw_box_savedir=None, 
+                    raw_box_savedir="{}/interim/".format(self.data_dir), 
                     client=self.client
                 )
                 

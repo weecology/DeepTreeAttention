@@ -4,11 +4,11 @@ import geopandas as gpd
 import glob as glob
 from deepforest.main import deepforest
 from descartes import PolygonPatch
-import os
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.collections import PatchCollection
 from pytorch_lightning import LightningModule
+import os
 import pandas as pd
 from torch.nn import functional as F
 from torch import optim
@@ -22,8 +22,8 @@ from src import data
 from src import generate
 from src import neon_paths
 from src import patches
+from src import spatial
 from shapely.geometry import Point, box
-from sklearn import preprocessing
 
 class TreeModel(LightningModule):
     """A pytorch lightning data module
@@ -217,17 +217,21 @@ class TreeModel(LightningModule):
             
         return pred
     
-    def predict_dataloader(self, data_loader, plot_n_individuals=1, experiment=None):
+    def predict_dataloader(self, data_loader, plot_n_individuals=1, return_features=False, experiment=None):
         """Given a file with paths to image crops, create crown predictions 
         The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
         unique identifier for each crown and counter is 0..n pixel crops that belong to that crown.
         
         Args: 
             csv_file: path to csv file
+            data_loader: data.TreeData loader
+            plot_n_individuals: if experiment, how many plots to create
+            return_features (False): If true, return a samples x classes matrix of softmax features
         Returns:
-            results: pandas dataframe with columns crown and species label
+            results: if return_features == False, pandas dataframe with columns crown and species label
+            features: if return_features == True, samples x classes matrix of softmax features
         """
-        self.eval()
+        self.model.eval()
         predictions = []
         labels = []
         individuals = []
@@ -239,10 +243,14 @@ class TreeModel(LightningModule):
             predictions.append(pred)
             labels.append(targets)
             individuals.append(individual)
-        
+
         individuals = np.concatenate(individuals)        
         labels = np.concatenate(labels)
         predictions = np.concatenate(predictions) 
+        
+        if return_features:            
+            return predictions
+        
         predictions_top1 = np.argmax(predictions, 1)    
         predictions_top2 = pd.DataFrame(predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
         top1_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[0], axis=1)
@@ -301,19 +309,35 @@ class TreeModel(LightningModule):
             metric_dict: metric -> value
         """
         results = self.predict_dataloader(data_loader=data_loader, plot_n_individuals=self.config["plot_n_individuals"], experiment=experiment)
+        features = self.predict_dataloader(data_loader=data_loader, return_features=True)
         
         #read in crowns data
         crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
-        crowns = crowns.drop(columns="label").merge(results, on="individual")
+        results = results.merge(crowns.drop(columns="label"), on="individual")
+        results = gpd.GeoDataFrame(results, geometry="geometry")
+        HSI_pool = glob.glob(self.config["HSI_tif_dir"] +"*.tif")
+        neighbors = spatial.spatial_neighbors(
+            results,
+            buffer=self.config["neighbor_buffer_size"],
+            model = self,data_dir = "data/",
+            image_size=self.config["image_size"],
+            HSI_pool=HSI_pool)        
         
+        #Spatial function
+        labels, scores = spatial.spatial_smooth(neighbors, features, alpha=self.config["neighborhood_strength"])
+        results["spatial_pred_label"] = labels
+        results["spatial_score"] = scores
+        
+        spatial_micro = torchmetrics.functional.accuracy(preds=torch.tensor(results.spatial_pred_label.values),target=torch.tensor(results.label.values), average="micro")
+        spatial_macro = torchmetrics.functional.accuracy(preds=torch.tensor(results.spatial_pred_label.values),target=torch.tensor(results.label.values), average="macro", num_classes=self.classes)
+        if experiment:
+            experiment.log_metric("spatial_micro",spatial_micro)
+            experiment.log_metric("spatial_macro",spatial_macro)
+            
         #Log result by site
         if experiment:
-            results["individualID"] = results["individual"]
-            testdf = pd.read_csv("data/processed/test.csv")
-            testdf = testdf[["individualID","site"]]
-            results = results.merge(testdf)
             site_data_frame =[]
-            for name, group in results.groupby("site"):
+            for name, group in results.groupby("siteID"):
                 site_micro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label_top1.values),target=torch.tensor(group.label.values), average="micro")
                 site_macro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label_top1.values),target=torch.tensor(group.label.values), average="macro", num_classes=self.classes)
                 row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro.numpy()], "Macro Recall": [site_macro.numpy()]})
@@ -321,4 +345,5 @@ class TreeModel(LightningModule):
             site_data_frame = pd.concat(site_data_frame)
             experiment.log_table("site_results.csv", site_data_frame)
         
-        return crowns
+        return results
+            
