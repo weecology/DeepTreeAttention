@@ -41,7 +41,7 @@ class spatial_fusion(LightningModule):
         self.alpha = nn.Parameter(torch.tensor(0, dtype=float), requires_grad=False)
 
     def forward(self, sensor_score, neighbor_score):
-        self.scaled_alpha = torch.sigmoid(self.alpha)        
+        self.scaled_alpha = self.alpha      
         x = sensor_score + self.scaled_alpha * neighbor_score
         
         return x

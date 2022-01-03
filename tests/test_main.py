@@ -46,13 +46,13 @@ def dm(config):
     return dm
 
 @pytest.fixture()
-def experiment():
+def comet_logger():
     if not "GITHUB_ACTIONS" in os.environ:
         from pytorch_lightning.loggers import CometLogger        
         COMET_KEY = os.getenv("COMET_KEY")
         comet_logger = CometLogger(api_key=COMET_KEY,
                                    project_name="DeepTreeAttention", workspace="bw4sz",auto_output_logging = "simple")
-        return comet_logger.experiment
+        return comet_logger
     else:
         return None
 
@@ -69,15 +69,15 @@ def test_fit(config, m, dm):
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m,datamodule=dm)
     
-def test_predict_dataloader(config, m, dm, experiment):
-    df = m.predict_dataloader(dm.val_dataloader(), experiment = experiment)
+def test_predict_dataloader(config, m, dm, comet_logger):
+    df = m.predict_dataloader(dm.val_dataloader(), experiment = comet_logger.experiment)
     input_data = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))    
     
     assert df.shape[0] == len(input_data.image_path.apply(lambda x: os.path.basename(x).split("_")[0]).unique())
 
-def test_evaluate_crowns(config, experiment, m, dm):
+def test_evaluate_crowns(config, comet_logger, m, dm):
     m.ROOT = "{}/tests".format(ROOT)
-    df = m.evaluate_crowns(val_dataloader = dm.val_dataloader(), train_dataloader = dm.train_dataloader(), experiment=experiment)
+    df = m.evaluate_crowns(val_dataloader = dm.val_dataloader(), train_dataloader = dm.train_dataloader(), logger=comet_logger)
     
     assert all(["top{}_score".format(x) in df.columns for x in [1,2]]) 
     
