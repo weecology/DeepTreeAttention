@@ -38,7 +38,7 @@ class spatial_fusion(LightningModule):
         self.val_ds = SpatialDataset(val_sensor_score, val_neighbor_score, val_labels)
         
         #Fully connected concat learner
-        self.alpha = nn.Parameter(torch.tensor(0, dtype=float), requires_grad=False)
+        self.alpha = nn.Parameter(torch.tensor(0, dtype=float), requires_grad=True)
 
     def forward(self, sensor_score, neighbor_score):
         self.scaled_alpha = self.alpha      
