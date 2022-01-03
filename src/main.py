@@ -350,7 +350,7 @@ class TreeModel(LightningModule):
             val_labels=self.val_results.label)
         
         #Train spatial model
-        trainer = Trainer(checkpoint_callback=False, max_epochs=30, logger=logger)
+        trainer = Trainer(checkpoint_callback=False, max_epochs=200, logger=logger)
         if logger:
             with logger.experiment.context_manager("spatial"):
                 trainer.fit(self.spatial_model)
@@ -371,7 +371,7 @@ class TreeModel(LightningModule):
             logger.experiment.log_metric("spatial_macro",spatial_macro)
             
         #Log result by site
-        if experiment:
+        if logger:
             site_data_frame =[]
             for name, group in self.val_results.groupby("siteID"):
                 site_micro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label_top1.values),target=torch.tensor(group.label.values), average="micro")
