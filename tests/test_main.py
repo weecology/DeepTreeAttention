@@ -23,7 +23,7 @@ def config():
     config["min_samples"] = 1
     config["crop_dir"] = tempfile.gettempdir()
     config["bands"] = 3
-    config["classes"] = 2
+    config["classes"] = 5
     config["top_k"] = 1
     config["convert_h5"] = False
     config["plot_n_individuals"] = 1
@@ -59,8 +59,8 @@ def experiment():
 #Training module
 @pytest.fixture(scope="session")
 def m(config, dm):
-    model = Hang2020.vanilla_CNN(bands=3, classes=3)
-    m = main.TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict)
+    model = Hang2020.vanilla_CNN(bands=3, classes=5)
+    m = main.TreeModel(model=model, classes=5, config=config, label_dict=dm.species_label_dict)
     m.ROOT = "{}/tests/".format(ROOT)
     
     return m
