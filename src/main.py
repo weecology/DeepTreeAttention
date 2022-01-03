@@ -358,7 +358,7 @@ class TreeModel(LightningModule):
         scores = np.vstack(scores)
         labels = np.argmax(scores, 1)
         self.val_results["spatial_pred_label"] = labels
-        self.val_results["spatial_score"] = scores[labels,]
+        self.val_results["spatial_score"] = np.max(scores,1)
         
         spatial_micro = torchmetrics.functional.accuracy(preds=torch.tensor(self.val_results.spatial_pred_label.values),target=torch.tensor(results.label.values), average="micro")
         spatial_macro = torchmetrics.functional.accuracy(preds=torch.tensor(self.val_results.spatial_pred_label.values),target=torch.tensor(results.label.values), average="macro", num_classes=self.classes)
