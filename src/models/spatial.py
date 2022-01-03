@@ -41,7 +41,8 @@ class spatial_fusion(LightningModule):
         self.alpha = nn.Parameter(torch.tensor(0.5, dtype=float), requires_grad=True)
 
     def forward(self, sensor_score, neighbor_score):
-        x = sensor_score + self.alpha * neighbor_score
+        self.scaled_alpha = torch.sigmoid(self.alpha)        
+        x = sensor_score + self.scaled_alpha * neighbor_score
         
         return x
     
@@ -49,7 +50,7 @@ class spatial_fusion(LightningModule):
         data_loader = torch.utils.data.DataLoader(
             self.train_ds,
             shuffle=True,
-            batch_size=2,
+            batch_size=32,
             num_workers=0)     
         
         return data_loader
@@ -58,7 +59,7 @@ class spatial_fusion(LightningModule):
         data_loader = torch.utils.data.DataLoader(
             self.val_ds,
             shuffle=False,
-            batch_size=2,
+            batch_size=32,
             num_workers=0)     
         
         return data_loader
@@ -68,7 +69,7 @@ class spatial_fusion(LightningModule):
         data_loader = torch.utils.data.DataLoader(
             self.val_ds,
             shuffle=False,
-            batch_size=2,
+            batch_size=32,
             num_workers=0)     
         
         return data_loader
@@ -91,7 +92,7 @@ class spatial_fusion(LightningModule):
         
         # Log loss and metrics
         self.log("val_loss", loss, on_epoch=True)
-        self.log("spatial_alpha", self.alpha, on_epoch=True)
+        self.log("spatial_alpha", self.scaled_alpha, on_epoch=True)
         if not self.training:
             y_hat = F.softmax(y_hat, dim = 1)
                     
@@ -106,6 +107,6 @@ class spatial_fusion(LightningModule):
         return y_hat
     
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=0.001)
+        optimizer = optim.Adam(self.parameters(), lr=0.01)
         
         return {'optimizer':optimizer}
