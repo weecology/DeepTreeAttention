@@ -298,11 +298,11 @@ class TreeModel(LightningModule):
             
         return df
         
-    def evaluate_crowns(self, train_dataloader, val_dataloader, experiment=None):
+    def evaluate_crowns(self, train_dataloader, val_dataloader, logger=None):
         """Crown level measure of accuracy
         Args:
             data_loader: TreeData dataset
-            experiment: optional comet experiment
+            experiment: optional pytorch comet logger
         Returns:
             df: results dataframe
             metric_dict: metric -> value
@@ -350,7 +350,7 @@ class TreeModel(LightningModule):
             val_labels=self.val_results.label)
         
         #Train spatial model
-        trainer = Trainer(checkpoint_callback=False, max_epochs=30, logger=experiment)
+        trainer = Trainer(checkpoint_callback=False, max_epochs=30, logger=logger)
         trainer.fit(self.spatial_model)
         
         #Evaluate
@@ -362,9 +362,9 @@ class TreeModel(LightningModule):
         
         spatial_micro = torchmetrics.functional.accuracy(preds=torch.tensor(self.val_results.spatial_pred_label.values),target=torch.tensor(self.val_results.label.values), average="micro")
         spatial_macro = torchmetrics.functional.accuracy(preds=torch.tensor(self.val_results.spatial_pred_label.values),target=torch.tensor(self.val_results.label.values), average="macro", num_classes=self.classes)
-        if experiment:
-            experiment.log_metric("spatial_micro",spatial_micro)
-            experiment.log_metric("spatial_macro",spatial_macro)
+        if logger:
+            logger.experiment.log_metric("spatial_micro",spatial_micro)
+            logger.experiment.log_metric("spatial_macro",spatial_macro)
             
         #Log result by site
         if experiment:
@@ -375,7 +375,7 @@ class TreeModel(LightningModule):
                 row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro.numpy()], "Macro Recall": [site_macro.numpy()]})
                 site_data_frame.append(row)
             site_data_frame = pd.concat(site_data_frame)
-            experiment.log_table("site_results.csv", site_data_frame)
+            logger.experiment.log_table("site_results.csv", site_data_frame)
         
         return self.val_results
             
