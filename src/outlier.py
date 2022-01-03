@@ -263,4 +263,11 @@ def predict_outliers(model, annotations, config, plot_n_individuals=100, comet_l
         
     return annotations
     
+def novel_detection(results, features):
+    """Novel individual detection using projection layer features
+    Args:
+        results: result dataframe, see main.predict_dataloader
+        features: array of projection features
+    """
+    pass
     
