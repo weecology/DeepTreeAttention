@@ -415,7 +415,11 @@ class TreeData(LightningDataModule):
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
                         
             if self.config["new_train_test_split"]:
-                train_annotations, test_annotations = train_test_split(annotations,config=self.config, client=self.client)   
+                if not self.debug:                
+                    train_annotations, test_annotations = train_test_split(annotations,config=self.config, client=self.client)   
+                else:
+                    train_annotations = annotations[annotations.plotID == annotations.plotID.unique()[0]]
+                    test_annotations = annotations[~annotations.plotID.isin(train_annotations)]
             else:
                 previous_train = pd.read_csv("{}/processed/train.csv".format(self.data_dir))
                 previous_test = pd.read_csv("{}/processed/test.csv".format(self.data_dir))

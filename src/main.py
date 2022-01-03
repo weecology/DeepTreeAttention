@@ -7,7 +7,7 @@ from descartes import PolygonPatch
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.collections import PatchCollection
-from pytorch_lightning import LightningModule
+from pytorch_lightning import LightningModule, Trainer
 import os
 import pandas as pd
 from torch.nn import functional as F
@@ -23,6 +23,7 @@ from src import generate
 from src import neon_paths
 from src import patches
 from src import spatial
+from src.models import spatial as sp_model
 from shapely.geometry import Point, box
 
 class TreeModel(LightningModule):
@@ -114,7 +115,6 @@ class TreeModel(LightningModule):
             return self.index_to_label[index]
                 
     def predict_xy(self, coordinates, fixed_box=True):
-        #TODO update for metadata model
         """Given an x,y location, find sensor data and predict tree crown class. If no predicted crown within 5m an error will be raised (fixed_box=False) or a 1m fixed box will created (fixed_box=True)
         Args:
             coordinates (tuple): x,y tuple in utm coordinates
@@ -171,7 +171,6 @@ class TreeModel(LightningModule):
         return label, score
     
     def predict_crown(self, geom, sensor_path):
-        #TODO UPDATE for metadata model
         """Given a geometry object of a tree crown, predict label
         Args:
             geom: a shapely geometry object, for example from a geodataframe (gdf) -> gdf.geometry[0]
@@ -298,8 +297,8 @@ class TreeModel(LightningModule):
             plt.ioff()
             
         return df
-    
-    def evaluate_crowns(self, data_loader, experiment=None):
+        
+    def evaluate_crowns(self, train_dataloader, val_dataloader, experiment=None):
         """Crown level measure of accuracy
         Args:
             data_loader: TreeData dataset
@@ -308,28 +307,61 @@ class TreeModel(LightningModule):
             df: results dataframe
             metric_dict: metric -> value
         """
-        results = self.predict_dataloader(data_loader=data_loader, plot_n_individuals=self.config["plot_n_individuals"], experiment=experiment)
-        features = self.predict_dataloader(data_loader=data_loader, return_features=True)
+        #Read in crown data and predict train and val dataloaders
+        crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))           
+        self.train_results = self.predict_dataloader(data_loader=train_dataloader, plot_n_individuals=self.config["plot_n_individuals"], experiment=None)        
+        train_features = self.predict_dataloader(data_loader=train_dataloader, plot_n_individuals=self.config["plot_n_individuals"], experiment=None, return_features=True)        
         
-        #read in crowns data
-        crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
-        results = results.merge(crowns.drop(columns="label"), on="individual")
-        results = gpd.GeoDataFrame(results, geometry="geometry")
+        self.train_results = self.train_results.merge(crowns.drop(columns="label"), on="individual")
+        self.train_results = gpd.GeoDataFrame(self.train_results, geometry="geometry")
+        
+        self.val_results = self.predict_dataloader(data_loader=val_dataloader, plot_n_individuals=self.config["plot_n_individuals"], experiment=None)        
+        val_features = self.predict_dataloader(data_loader=val_dataloader, plot_n_individuals=self.config["plot_n_individuals"], experiment=None, return_features=True)                
+        self.val_results = self.val_results.merge(crowns.drop(columns="label"), on="individual")
+        self.val_results = gpd.GeoDataFrame(self.val_results, geometry="geometry")
+        
+        #Compute spatial neighbors
         HSI_pool = glob.glob(self.config["HSI_tif_dir"] +"*.tif")
-        neighbors = spatial.spatial_neighbors(
-            results,
+        train_neighbors = spatial.spatial_neighbors(
+            self.train_results,
             buffer=self.config["neighbor_buffer_size"],
-            model = self,data_dir = "data/",
+            model = self,
+            data_dir = "data/",
             image_size=self.config["image_size"],
-            HSI_pool=HSI_pool)        
+            HSI_pool=HSI_pool)   
         
-        #Spatial function
-        labels, scores = spatial.spatial_smooth(neighbors, features, alpha=self.config["neighborhood_strength"])
-        results["spatial_pred_label"] = labels
-        results["spatial_score"] = scores
+        val_neighbors = spatial.spatial_neighbors(
+            self.val_results,
+            buffer=self.config["neighbor_buffer_size"],
+            model = self,
+            data_dir = "data/",
+            image_size=self.config["image_size"],
+            HSI_pool=HSI_pool)   
         
-        spatial_micro = torchmetrics.functional.accuracy(preds=torch.tensor(results.spatial_pred_label.values),target=torch.tensor(results.label.values), average="micro")
-        spatial_macro = torchmetrics.functional.accuracy(preds=torch.tensor(results.spatial_pred_label.values),target=torch.tensor(results.label.values), average="macro", num_classes=self.classes)
+        train_neighbors = np.vstack([train_neighbors[key] for key in train_neighbors])
+        val_neighbors = np.vstack([val_neighbors[key] for key in val_neighbors])
+        
+        self.spatial_model = sp_model.spatial_fusion(
+            train_sensor_score = train_features,
+            train_neighbor_score = train_neighbors,
+            val_sensor_score=val_features,
+            val_neighbor_score = val_neighbors,
+            train_labels=self.train_results.label,
+            val_labels=self.val_results.label)
+        
+        #Train spatial model
+        trainer = Trainer(checkpoint_callback=False, max_epochs=20)
+        trainer.fit(self.spatial_model)
+        
+        #Evaluate
+        scores = trainer.predict(self.spatial_model)
+        scores = np.vstack(scores)
+        labels = np.argmax(scores, 1)
+        self.val_results["spatial_pred_label"] = labels
+        self.val_results["spatial_score"] = scores[labels,]
+        
+        spatial_micro = torchmetrics.functional.accuracy(preds=torch.tensor(self.val_results.spatial_pred_label.values),target=torch.tensor(results.label.values), average="micro")
+        spatial_macro = torchmetrics.functional.accuracy(preds=torch.tensor(self.val_results.spatial_pred_label.values),target=torch.tensor(results.label.values), average="macro", num_classes=self.classes)
         if experiment:
             experiment.log_metric("spatial_micro",spatial_micro)
             experiment.log_metric("spatial_macro",spatial_macro)
@@ -337,7 +369,7 @@ class TreeModel(LightningModule):
         #Log result by site
         if experiment:
             site_data_frame =[]
-            for name, group in results.groupby("siteID"):
+            for name, group in self.val_results.groupby("siteID"):
                 site_micro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label_top1.values),target=torch.tensor(group.label.values), average="micro")
                 site_macro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label_top1.values),target=torch.tensor(group.label.values), average="macro", num_classes=self.classes)
                 row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro.numpy()], "Macro Recall": [site_macro.numpy()]})
@@ -345,5 +377,5 @@ class TreeModel(LightningModule):
             site_data_frame = pd.concat(site_data_frame)
             experiment.log_table("site_results.csv", site_data_frame)
         
-        return results
+        return self.val_results
             

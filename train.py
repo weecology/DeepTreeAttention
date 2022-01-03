@@ -67,7 +67,11 @@ trainer = Trainer(
     callbacks=[lr_monitor],
     logger=comet_logger)
 
+#Train sensor model
 trainer.fit(m, datamodule=data_module)
+
+#Train spatial model
+m.train_spatial_model()
 results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
 
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
