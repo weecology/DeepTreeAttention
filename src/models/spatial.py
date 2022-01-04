@@ -42,7 +42,7 @@ class spatial_fusion(LightningModule):
 
     def forward(self, sensor_score, neighbor_score):
         self.scaled_alpha = self.alpha      
-        x = sensor_score + self.scaled_alpha * neighbor_score
+        x = sensor_score + (self.scaled_alpha * neighbor_score)
         
         return x
     
@@ -107,6 +107,6 @@ class spatial_fusion(LightningModule):
         return y_hat
     
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=0.01)
+        optimizer = optim.Adam(self.parameters(), lr=0.00001)
         
         return {'optimizer':optimizer}
