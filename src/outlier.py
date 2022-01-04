@@ -8,7 +8,7 @@ import scipy
 import tempfile
 import torch
 import os
-import sklearn
+from sklearn.neighbors import LocalOutlierFactor
 
 def autoencoder_outliers(results, outlier_threshold, experiment):
     """Given a set of predictions, label outliers"""
@@ -254,10 +254,9 @@ def novel_detection(results, features):
         results: result dataframe, see main.predict_dataloader
         features: array of projection features
     """
-    lof = sklearn.neighbors.LocalOutlierFactor()
+    lof = LocalOutlierFactor()
     y_pred = lof.fit_predict(features)    
     results["predicted_novel"] =  y_pred==-1
-    
     novel = results[results["outlier"] == "novel"]
     
     #Recall
