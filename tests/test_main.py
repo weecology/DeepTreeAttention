@@ -29,6 +29,9 @@ def config():
     config["plot_n_individuals"] = 1
     config["megaplot_dir"] = None
     
+    #To mimic HSI conversion, use RGB dir
+    config["HSI_tif_dir"] = "{}/tests/data/".format(ROOT)
+    
     return config
 
 #Data module

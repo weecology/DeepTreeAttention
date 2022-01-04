@@ -338,8 +338,8 @@ class TreeModel(LightningModule):
             image_size=self.config["image_size"],
             HSI_pool=HSI_pool)   
         
-        train_neighbors = np.vstack([train_neighbors[key] for key in train_neighbors])
-        val_neighbors = np.vstack([val_neighbors[key] for key in val_neighbors])
+        train_neighbors = np.vstack([np.mean(train_neighbors[key], axis=0) for key in train_neighbors])
+        val_neighbors = np.vstack([np.mean(val_neighbors[key], axis=0) for key in val_neighbors])
         
         self.spatial_model = sp_model.spatial_fusion(
             train_sensor_score = train_features,
@@ -350,12 +350,12 @@ class TreeModel(LightningModule):
             val_labels=self.val_results.label)
         
         ##Train spatial model
-        trainer = Trainer(checkpoint_callback=False, max_epochs=200, logger=logger)
-        #if logger:
-            #with logger.experiment.context_manager("spatial"):
-                #trainer.fit(self.spatial_model)
-        #else:
-            #trainer.fit(self.spatial_model)
+        trainer = Trainer(checkpoint_callback=False, max_epochs=100, logger=logger)
+        if logger:
+            with logger.experiment.context_manager("spatial"):
+                trainer.fit(self.spatial_model)
+        else:
+            trainer.fit(self.spatial_model)
             
         #Evaluate
         scores = trainer.predict(self.spatial_model)
