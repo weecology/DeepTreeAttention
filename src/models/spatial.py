@@ -5,6 +5,8 @@ from torch.nn import functional as F
 from torch import nn
 import torch
 from torch import optim
+import torchmetrics
+import numpy as np
 
 #Dataset class
 class SpatialDataset(Dataset):
@@ -39,6 +41,9 @@ class spatial_fusion(LightningModule):
         
         #Fully connected concat learner
         self.alpha = nn.Parameter(torch.tensor(0, dtype=float), requires_grad=True)
+        micro_recall = torchmetrics.Accuracy(average="micro")
+        macro_recall = torchmetrics.Accuracy(average="macro", num_classes=len(np.unique(val_labels)))
+        self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall,"Macro Accuracy":macro_recall})
 
     def forward(self, sensor_score, neighbor_score):
         self.scaled_alpha = self.alpha      
@@ -93,8 +98,10 @@ class spatial_fusion(LightningModule):
         # Log loss and metrics
         self.log("val_loss", loss, on_epoch=True)
         self.log("spatial_alpha", self.scaled_alpha, on_epoch=True)
-        if not self.training:
-            y_hat = F.softmax(y_hat, dim = 1)
+        
+        softmax_prob = F.softmax(y_hat, dim =1)
+        output = self.metrics(softmax_prob, y) 
+        self.log_dict(output)        
                     
         return loss
     
