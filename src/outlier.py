@@ -248,7 +248,7 @@ def predict_outliers(model, annotations, config, plot_n_individuals=100, comet_l
         
     return annotations
     
-def novel_detection(results, features):
+def novel_detection(results, features, experiment):
     """Novel individual detection using projection layer features
     Args:
         results: result dataframe, see main.predict_dataloader
@@ -265,5 +265,8 @@ def novel_detection(results, features):
     #Precision
     novel_precision = np.sum(novel["predicted_novel"])/np.sum(results["predicted_novel"])
     
-    return pd.DataFrame({"novel_recall": [novel_recall], "novel_precision": [novel_precision]})
+    if experiment:
+        experiment.log_metric("Novel Recall", novel_recall)
+        experiment.log_metric("Novel Precision", novel_precision)
     
+    return pd.DataFrame({"novel_recall": [novel_recall], "novel_precision": [novel_precision]})
