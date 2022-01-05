@@ -78,7 +78,7 @@ class autoencoder(LightningModule):
         self.encoder_block2 = encoder_block(in_channels=64, filters=32, pool=True)
         self.encoder_block3 = encoder_block(in_channels=32, filters=16, pool=True)
         
-        self.classifier = classifier(classes, image_size=config["image_size"])
+        self.classifier = classifier(classes, image_size=config["image_size"], embedding_size=config["embedding_size"])
         
         #Decoder
         self.decoder_block1 = decoder_block(in_channels=16, filters=32)
