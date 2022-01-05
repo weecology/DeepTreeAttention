@@ -41,9 +41,9 @@ class classifier(nn.Module):
     def __init__(self, classes, image_size = 28, embedding_size = 2):
         super(classifier, self).__init__()
         self.image_size = image_size
-        self.feature_length = 32 * self.image_size * image_size
+        self.feature_length = 2 * self.image_size * image_size
         #Classification layer
-        self.vis_conv1= encoder_block(in_channels=16, filters=32) 
+        self.vis_conv1= encoder_block(in_channels=16, filters=2) 
         self.classfication_bottleneck = nn.Linear(in_features=self.feature_length, out_features=embedding_size)        
         self.classfication_layer = nn.Linear(in_features=embedding_size, out_features=classes)
         
@@ -104,7 +104,7 @@ class autoencoder(LightningModule):
         
         #center loss
         use_gpu = self.config["gpus"] > 0
-        self.closs = center_loss.CenterLoss(num_classes=classes, use_gpu=use_gpu)
+        self.closs = center_loss.CenterLoss(num_classes=classes, use_gpu=use_gpu, feat_dim=self.config["embedding_size"])
         
     def forward(self, x):
         x = self.encoder_block1(x)
