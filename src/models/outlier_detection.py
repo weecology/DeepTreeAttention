@@ -79,7 +79,7 @@ class autoencoder(LightningModule):
         self.encoder_block2 = encoder_block(in_channels=64, filters=32, pool=True)
         self.encoder_block3 = encoder_block(in_channels=32, filters=16, pool=True)
         
-        self.alpha = nn.Parameter(torch.tensor(0.5, dtype=float), requires_grad=False)
+        self.alpha = nn.Parameter(torch.tensor(0.1, dtype=float), requires_grad=False)
         self.classifier = classifier(classes, image_size=config["image_size"], embedding_size=config["embedding_size"])
         
         #Decoder
@@ -165,7 +165,11 @@ class autoencoder(LightningModule):
         self.log_dict(output, on_epoch=True, on_step=False)
         
         return loss
-            
+    def on_after_backward(self):
+        """Using a single optimizer, remove the effect of alpha on updating parameters"""
+        for param in self.closs.parameters():
+            param.grad.data *= (1./self.alpha)        
+        
     def configure_optimizers(self):
         optimizer = optim.Adam(list(self.parameters()) + list(self.closs.parameters()), lr=self.config["lr"])
 
