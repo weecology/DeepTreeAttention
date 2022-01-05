@@ -41,12 +41,7 @@ class classifier(nn.Module):
     def __init__(self, classes, image_size = 28, embedding_size = 2):
         super(classifier, self).__init__()
         self.image_size = image_size
-<<<<<<< HEAD
-        self.feature_length = 2 * self.image_size * image_size
-        
-=======
-        self.feature_length = 32 * self.image_size * image_size
->>>>>>> simulation
+        self.feature_length = embedding_size * self.image_size * image_size
         #Classification layer
         self.vis_conv1= encoder_block(in_channels=16, filters=32) 
         self.classfication_bottleneck = nn.Linear(in_features=self.feature_length, out_features=embedding_size)        
