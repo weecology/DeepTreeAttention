@@ -8,6 +8,7 @@ import scipy
 import tempfile
 import torch
 import os
+from sklearn.neighbors import LocalOutlierFactor
 
 def autoencoder_outliers(results, outlier_threshold, experiment):
     """Given a set of predictions, label outliers"""
@@ -53,13 +54,6 @@ def autoencoder_outliers(results, outlier_threshold, experiment):
         corruption_precision = sum(corrupted_data.predicted_outlier)/sum(results.predicted_outlier)
 
     true_outliers = results[~(results.label == results.observed_label)]
-    
-    #inset data does not have class 8 ir 9
-    novel = true_outliers[true_outliers.label.isin([8,9])]
-    if novel.empty:
-        novel_accuracy = None
-    else:
-        novel_accuracy = sum(novel.predicted_outlier)/novel.shape[0]
         
     if true_outliers.empty:
         return pd.DataFrame({"autoencoder_label_switching_accuracy": [None], "autoencoder_label_switching_precision": [None], "classification_accuracy": [mean_accuracy]})
@@ -70,7 +64,6 @@ def autoencoder_outliers(results, outlier_threshold, experiment):
         outlier_precision = sum(inset.predicted_outlier)/sum(results[~results.label.isin([8,9])].predicted_outlier)
         
         if experiment:
-            experiment.log_metric("autoencoder_novel_accuracy", novel_accuracy)            
             experiment.log_metric("autoencoder_label_switching_accuracy", outlier_accuracy)
             experiment.log_metric("autoencoder_label_switching_precision", outlier_precision)
             experiment.log_metric("autoencoder_image_corruption_accuracy", corruption_accuracy)
@@ -99,13 +92,6 @@ def distance_outliers(results, features, labels, threshold, experiment):
     
     if true_outliers.empty:
         return pd.DataFrame({"distance_outlier_accuracy": [None], "distance_outlier_precision": [None]})
-    
-    #inset data does not have class 8 ir 9
-    novel = true_outliers[true_outliers.label.isin([8,9])]
-    if novel.empty:
-        novel_accuracy = None
-    else:
-        novel_accuracy = sum(novel.distance_outlier)/novel.shape[0]
     
     #Label switching
     true_outliers = results[~(results.label == results.observed_label)]
@@ -154,13 +140,12 @@ def distance_outliers(results, features, labels, threshold, experiment):
             plt.title("Class {} true outliers".format(x))
             experiment.log_figure("class {} true outliers".format(x))      
             
-        experiment.log_metric("distance_novel_accuracy", novel_accuracy)
         experiment.log_metric("distance_label_switching_accuracy", outlier_accuracy)
         experiment.log_metric("distance_label_switching_precision", outlier_precision)
         experiment.log_metric("distance_corruption_accuracy", corruption_accuracy)
         experiment.log_metric("distance_corruption_precision", corruption_precision)
         
-    return pd.DataFrame({"distance_label_switching_accuracy": [outlier_accuracy], "distance_label_switching_precision": [outlier_precision], "novel_accuracy":[novel_accuracy]})
+    return pd.DataFrame({"distance_label_switching_accuracy": [outlier_accuracy], "distance_label_switching_precision": [outlier_precision]})
     
 def calculate_centroids(features, labels):
     """calculate class centroids in a multidim feature space
@@ -263,4 +248,25 @@ def predict_outliers(model, annotations, config, plot_n_individuals=100, comet_l
         
     return annotations
     
+def novel_detection(results, features, experiment):
+    """Novel individual detection using projection layer features
+    Args:
+        results: result dataframe, see main.predict_dataloader
+        features: array of projection features
+    """
+    lof = LocalOutlierFactor()
+    y_pred = lof.fit_predict(features)    
+    results["predicted_novel"] =  y_pred==-1
+    novel = results[results["outlier"] == "novel"]
     
+    #Recall
+    novel_recall = np.sum(novel["predicted_novel"])/novel.shape[0]
+    
+    #Precision
+    novel_precision = np.sum(novel["predicted_novel"])/np.sum(results["predicted_novel"])
+    
+    if experiment:
+        experiment.log_metric("Novel Recall", novel_recall)
+        experiment.log_metric("Novel Precision", novel_precision)
+    
+    return pd.DataFrame({"novel_recall": [novel_recall], "novel_precision": [novel_precision]})

@@ -283,7 +283,8 @@ class simulator():
         results["image_corrupt"] = results.test_index.apply(lambda x: self.data_module.test.iloc[x].image_corrupt)        
         outlier_detection_loss = outlier.autoencoder_outliers(results, outlier_threshold=self.config["outlier_threshold"], experiment=self.comet_experiment.experiment)
         outlier_detection_distance = outlier.distance_outliers(results, self.classification_bottleneck, labels=results.observed_label, threshold=self.config["distance_threshold"], experiment=self.comet_experiment.experiment)
-        results = pd.concat([outlier_detection_loss, outlier_detection_distance])
+        novel_detection = outlier.novel_detection(results, self.classification_bottleneck, experiment=self.comet_experiment.experiment)
+        results = pd.concat([outlier_detection_loss, outlier_detection_distance, novel_detection])
         
         return results
 
