@@ -104,7 +104,7 @@ class autoencoder(LightningModule):
         
         #center loss
         use_gpu = self.config["gpus"] > 0
-        self.closs = center_loss.CenterLoss(num_classes=classes, use_gpu=use_gpu, feat_dim=self.config["embedding_size"])
+        self.closs = center_loss.CenterLoss(num_classes=classes, use_gpu=use_gpu)
         
     def forward(self, x):
         x = self.encoder_block1(x)
