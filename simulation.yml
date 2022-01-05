@@ -11,7 +11,8 @@ proportion_image_corrupt: 0.1
 comet_workspace: bw4sz
 
 #Projection embedding depth
-embedding_size: 16
+center_loss_weight: 0.1
+embedding_size: 32
 
 #Training
 gpus: 1
