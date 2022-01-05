@@ -96,7 +96,7 @@ def plot_2d_layer(features, labels=None, use_pca=False, set_color_seed=True, siz
     if use_pca:
         pca = PCA(2)
         #flatten features
-        features = np.reshape(features, (features.shape[0], features.shape[1] * features.shape[2] *features.shape[3]))
+        features = np.reshape(features, (features.shape[0], np.product(features.shape[1:])))
         pca_proj = pca.fit_transform(features)     
         fig, ax = plt.subplots(figsize=(8,8))
         for index, lab in enumerate(np.unique(labels)):
