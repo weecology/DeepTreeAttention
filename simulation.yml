@@ -11,7 +11,7 @@ proportion_image_corrupt: 0.1
 comet_workspace: bw4sz
 
 #Projection embedding depth
-embedding_size: 2
+embedding_size: 32
 
 #Training
 gpus: 1
@@ -26,4 +26,4 @@ autoencoder_loss_scalar: 0
 
 #Outlier detection
 outlier_threshold: 0.98
-distance_threshold: 4
+distance_threshold: 10
