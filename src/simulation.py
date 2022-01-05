@@ -260,10 +260,10 @@ class simulator():
         outlier_class = self.data_module.test.outlier.iloc[sample_ids].astype('category').cat.codes.astype(int).values
         
         #plot different sets
-        layerplot_vis = visualize.plot_2d_layer(features=self.classification_bottleneck, labels=observed_y, use_pca=False)
+        layerplot_vis = visualize.plot_2d_layer(features=self.classification_bottleneck, labels=observed_y, use_pca=True)
         self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_labels", step=self.model.current_epoch)        
         
-        layerplot_vis = visualize.plot_2d_layer(features=self.classification_bottleneck, labels=outlier_class, use_pca=False, size_weights=outlier_class+1)        
+        layerplot_vis = visualize.plot_2d_layer(features=self.classification_bottleneck, labels=outlier_class, use_pca=True, size_weights=outlier_class+1)        
         self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_outliers", step=self.model.current_epoch)
 
         layerplot_encoder = visualize.plot_2d_layer(self.encoder_activations, observed_y, use_pca=True)
