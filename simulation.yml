@@ -11,15 +11,15 @@ proportion_image_corrupt: 0.1
 comet_workspace: bw4sz
 
 #Projection embedding depth
-embedding_size: 32
+embedding_size: 16
 
 #Training
 gpus: 1
 fast_dev_run: False
 accelerator:
-classifier_epochs: 10
+classifier_epochs: 30
 autoencoder_epochs: 25
-lr: 0.01
+lr: 0.001
 
 classification_loss_scalar: 1
 autoencoder_loss_scalar: 0
