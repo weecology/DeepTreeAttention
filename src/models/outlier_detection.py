@@ -156,7 +156,7 @@ class autoencoder(LightningModule):
         classification_loss = F.cross_entropy(classification_yhat, observed_labels, ignore_index=-1)
         features = self.classifier.vis_activation["classification_bottleneck"]        
         step_center_loss = self.closs(features, observed_labels)
-        classification_loss = classification_loss + self.alpha * step_center_loss        
+        self.log("val_center_loss", step_center_loss, on_epoch=True, on_step=False)
         loss = self.config["autoencoder_loss_scalar"] * autoencoder_loss + classification_loss * self.config["classification_loss_scalar"]
         
         softmax_prob = F.softmax(classification_yhat, dim=1)
