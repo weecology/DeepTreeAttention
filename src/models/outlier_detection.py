@@ -174,19 +174,19 @@ class autoencoder(LightningModule):
             param.grad.data *= (1./self.alpha*self.optimizer.param_groups[0]["lr"])        
         
     def configure_optimizers(self):
-        optimizer = optim.Adam(list(self.parameters()) + list(self.closs.parameters()), lr=self.config["lr"])
+        self.optimizer = optim.Adam(list(self.parameters()) + list(self.closs.parameters()), lr=self.config["lr"])
 
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,
                                                          mode='min',
                                                          factor=0.5,
-                                                         patience=5,
+                                                         patience=10,
                                                          verbose=True,
                                                          threshold=0.0001,
                                                          threshold_mode='rel',
                                                          cooldown=0,
                                                          eps=1e-08)
         
-        return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
+        return {'optimizer':self.optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
             
     def predict(self, dataloader):
         """Generate labels and predictions for a data_loader"""
