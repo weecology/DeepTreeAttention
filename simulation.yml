@@ -13,6 +13,7 @@ comet_workspace: bw4sz
 #Projection embedding depth
 center_loss_weight: 0.1
 embedding_size: 32
+center_loss_lr: 0.5
 
 #Training
 gpus: 1
