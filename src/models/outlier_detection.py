@@ -171,14 +171,14 @@ class autoencoder(LightningModule):
     def on_after_backward(self):
         """Using a single optimizer, remove the effect of alpha on updating parameters"""
         for param in self.closs.parameters():
-            param.grad.data *= (self.config["center_loss_lr"]/self.alpha*self.optimizer.param_groups[0]["lr"] + 0.00000001)        
+            param.grad.data *= (self.config["center_loss_lr"]/self.alpha*self.optimizer.param_groups[0]["lr"])        
         
     def configure_optimizers(self):
         self.optimizer = optim.Adam(list(self.parameters()) + list(self.closs.parameters()), lr=self.config["lr"])
 
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,
                                                          mode='min',
-                                                         factor=0.5,
+                                                         factor=0.2,
                                                          patience=10,
                                                          verbose=True,
                                                          threshold=0.0001,
