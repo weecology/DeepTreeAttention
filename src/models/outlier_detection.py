@@ -63,6 +63,7 @@ class classifier(nn.Module):
         y = self.vis_conv1(x)
         y = y.view(-1, self.feature_length)        
         y = self.classfication_bottleneck(y)
+        y = F.sigmoid(y)
         y = self.classfication_layer(y)
         
         return y
