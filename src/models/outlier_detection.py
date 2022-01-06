@@ -41,9 +41,9 @@ class classifier(nn.Module):
     def __init__(self, classes, image_size = 28, embedding_size = 2):
         super(classifier, self).__init__()
         self.image_size = image_size
-        self.feature_length = 2 * self.image_size * image_size
+        self.feature_length = 32 * self.image_size * image_size
         #Classification layer
-        self.vis_conv1= encoder_block(in_channels=16, filters=2) 
+        self.vis_conv1= encoder_block(in_channels=16, filters=32) 
         self.classfication_bottleneck = nn.Linear(in_features=self.feature_length, out_features=embedding_size)        
         self.classfication_layer = nn.Linear(in_features=embedding_size, out_features=classes)
         
@@ -167,10 +167,11 @@ class autoencoder(LightningModule):
         self.log_dict(output, on_epoch=True, on_step=False)
         
         return loss
-    #def on_after_backward(self):
-        #"""Using a single optimizer, remove the effect of alpha on updating parameters"""
-        #for param in self.closs.parameters():
-            #param.grad.data *= (1./self.alpha*self.optimizer.param_groups[0]["lr"])        
+
+    def on_after_backward(self):
+        """Using a single optimizer, remove the effect of alpha on updating parameters"""
+        for param in self.closs.parameters():
+            param.grad.data *= (1./self.alpha*self.optimizer.param_groups[0]["lr"])        
         
     def configure_optimizers(self):
         optimizer = optim.Adam(list(self.parameters()) + list(self.closs.parameters()), lr=self.config["lr"])
