@@ -4,15 +4,15 @@ image_size: 28
 workers: 1
 novel_class_examples: 20
 samples: 5000
-proportion_switch: 0.1
-proportion_image_corrupt: 0.1
+proportion_switch: 0.001
+proportion_image_corrupt: 0.001
 
 #Comet dashboard
 comet_workspace: bw4sz
 
 #Projection embedding depth
 center_loss_weight: 0.1
-embedding_size: 32
+embedding_size: 8
 center_loss_lr: 0.5
 
 #Training
@@ -21,7 +21,7 @@ fast_dev_run: False
 accelerator:
 classifier_epochs: 30
 autoencoder_epochs: 25
-lr: 0.001
+lr: 0.01
 
 classification_loss_scalar: 1
 autoencoder_loss_scalar: 0
