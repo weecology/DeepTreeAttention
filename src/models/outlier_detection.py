@@ -71,6 +71,7 @@ class autoencoder(LightningModule):
     def __init__(self, bands, classes, config, comet_logger):
         super(autoencoder, self).__init__()    
         
+        self.automatic_optimization = False        
         self.config = config
         self.comet_logger = comet_logger
         
@@ -123,6 +124,7 @@ class autoencoder(LightningModule):
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
         """
+        
         #allow for empty data if data augmentation is generated
         index, images, observed_labels, true_labels = batch 
         autoencoder_yhat, classification_yhat = self.forward(images) 
@@ -130,14 +132,29 @@ class autoencoder(LightningModule):
         #Calculate losses
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
         classification_loss = F.cross_entropy(classification_yhat, observed_labels)
-        features = self.classifier.vis_activation["classification_bottleneck"]
-        step_center_loss = self.closs(features, observed_labels)
-        self.log("center loss", step_center_loss,on_epoch=True,on_step=False)
-        self.log("center alpha", self.alpha,on_epoch=True,on_step=False)
         
+        features = self.classifier.vis_activation["classification_bottleneck"]            
+        step_center_loss = self.closs(features, observed_labels)
         classification_loss = classification_loss + self.alpha * step_center_loss
         loss = self.config["autoencoder_loss_scalar"] * autoencoder_loss  + classification_loss * self.config["classification_loss_scalar"]
 
+        ##Manual optimization
+        opt_classifier, opt_center = self.optimizers()
+        opt_classifier.zero_grad()
+        opt_center.zero_grad()
+
+        self.manual_backward(loss)
+        opt_classifier.step()
+        
+        #Adjust center weights
+        for param in self.closs.parameters():
+            param.grad.data *= (1. / self.alpha)
+        opt_center.step()
+        
+        ##Log
+        self.log("center loss", step_center_loss,on_epoch=True,on_step=False)
+        self.log("center alpha", self.alpha,on_epoch=True,on_step=False)
+        
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -167,16 +184,11 @@ class autoencoder(LightningModule):
         self.log_dict(output, on_epoch=True, on_step=False)
         
         return loss
-
-    #def on_after_backward(self):
-        #"""Using a single optimizer, remove the effect of alpha on updating parameters"""
-        #for param in self.closs.parameters():
-            #param.grad.data *= (self.config["center_loss_lr"]/self.alpha)        
         
     def configure_optimizers(self):
-        self.optimizer = optim.Adam(list(self.parameters()) + list(self.closs.parameters()), lr=self.config["lr"])
-
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,
+        classification_optimizer = optim.SGD(self.parameters(), lr=self.config["lr"], weight_decay=5e-04, momentum=0.9)
+        center_loss_optimizer = optim.SGD(self.closs.parameters(), lr=self.config["center_loss_lr"])
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(classification_optimizer,
                                                          mode='min',
                                                          factor=0.2,
                                                          patience=10,
@@ -186,8 +198,8 @@ class autoencoder(LightningModule):
                                                          cooldown=0,
                                                          eps=1e-08)
         
-        return {'optimizer':self.optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
-            
+        return [classification_optimizer, center_loss_optimizer], [{"scheduler":scheduler,"monitor":'val_loss'}]
+        
     def predict(self, dataloader):
         """Generate labels and predictions for a data_loader"""
         observed_y = []
