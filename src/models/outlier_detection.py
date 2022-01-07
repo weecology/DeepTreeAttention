@@ -152,7 +152,7 @@ class autoencoder(LightningModule):
         opt_center.step()
         
         ##Log
-        self.log("center loss", step_center_loss,on_epoch=True,on_step=False)
+        self.log("center loss", step_center_loss,on_epoch=True,on_step=True)
         self.log("center alpha", self.alpha,on_epoch=True,on_step=False)
         
         return loss
