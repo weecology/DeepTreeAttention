@@ -16,6 +16,7 @@ import pandas as pd
 
 from torch.utils.data import Dataset
 from torch.nn import functional as F
+from torchvision.transforms import *
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -24,7 +25,10 @@ class mnist_dataset(Dataset):
     """Yield an MNIST instance"""
     def __init__(self, df):
         self.annotations = df
-        
+        self.transforms = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+        ])
     def __len__(self):
         return self.annotations.shape[0]
         
@@ -32,7 +36,7 @@ class mnist_dataset(Dataset):
         image_path = self.annotations.image_path.iloc[index]    
         image = Image.open(image_path)
         image = np.array(image)
-        image = torch.tensor(image).unsqueeze(0).float()
+        image = self.transforms(image)
         observed_label = self.annotations.observed_label.iloc[index]      
         label = self.annotations.label.iloc[index]      
         
@@ -56,6 +60,7 @@ class simulation_data(LightningDataModule):
         self.tmpdir = tempfile.TemporaryDirectory()
         
     def download_mnist(self):
+        
         self.raw_ds = torchvision.datasets.MNIST('{}/data/simulation/'.format(ROOT), train=True, download=True)                            
         
         #Grab examples and write pngs and class labels
