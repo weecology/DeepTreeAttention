@@ -1,7 +1,7 @@
 #simulation config
 batch_size: 128
 image_size: 28
-workers: 1
+workers: 0
 novel_class_examples: 20
 samples: 5000
 proportion_switch: 0.000001
@@ -16,7 +16,7 @@ embedding_size: 2
 center_loss_lr: 0.001
 
 #Training
-gpus: 1
+gpus: 0
 fast_dev_run: False
 accelerator:
 classifier_epochs: 50

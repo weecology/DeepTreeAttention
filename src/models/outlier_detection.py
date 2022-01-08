@@ -62,10 +62,10 @@ class classifier(nn.Module):
     def forward(self, x):
         y = self.vis_conv1(x)
         y = y.view(-1, self.feature_length)        
-        y = self.classfication_bottleneck(y)
-        y = self.classfication_layer(y)
+        features = self.classfication_bottleneck(y)
+        y = self.classfication_layer(features)
         
-        return y
+        return features, y
     
 class autoencoder(LightningModule):
     def __init__(self, bands, classes, config, comet_logger):
@@ -113,27 +113,25 @@ class autoencoder(LightningModule):
         x = self.encoder_block3(x)
         
         #classification layer projection
-        y = self.classifier(x)
+        features, y = self.classifier(x)
 
         x = self.decoder_block1(x)
         x = self.decoder_block2(x)
         x = self.decoder_block3(x)
 
-        return x, y
+        return x, y, features
 
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
         """
-        
         #allow for empty data if data augmentation is generated
         index, images, observed_labels, true_labels = batch 
-        autoencoder_yhat, classification_yhat = self.forward(images) 
+        autoencoder_yhat, classification_yhat, features = self.forward(images) 
         
         #Calculate losses
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)    
         classification_loss = F.cross_entropy(classification_yhat, observed_labels)
         
-        features = self.classifier.vis_activation["classification_bottleneck"]            
         step_center_loss = self.closs(features, observed_labels)
         classification_loss = classification_loss + self.alpha * step_center_loss
         loss = self.config["autoencoder_loss_scalar"] * autoencoder_loss  + classification_loss * self.config["classification_loss_scalar"]
@@ -162,7 +160,7 @@ class autoencoder(LightningModule):
         """
         #allow for empty data if data augmentation is generated
         index, images, observed_labels, true_labels = batch 
-        autoencoder_yhat, classification_yhat = self.forward(images) 
+        autoencoder_yhat, classification_yhat, features = self.forward(images) 
         
         autoencoder_loss = F.mse_loss(autoencoder_yhat, images)  
         
@@ -171,7 +169,6 @@ class autoencoder(LightningModule):
         observed_labels[observed_labels==9] = -1
         
         classification_loss = F.cross_entropy(classification_yhat, observed_labels, ignore_index=-1)
-        features = self.classifier.vis_activation["classification_bottleneck"]        
         step_center_loss = self.closs(features, observed_labels)
         self.log("val_center_loss", step_center_loss, on_epoch=True, on_step=False)
         loss = self.config["autoencoder_loss_scalar"] * autoencoder_loss + classification_loss * self.config["classification_loss_scalar"]
