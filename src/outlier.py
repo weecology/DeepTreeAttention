@@ -47,7 +47,7 @@ def autoencoder_outliers(results, outlier_threshold, experiment):
         corruption_precision = None
     else:     
         corruption_accuracy = sum(corrupted_data.predicted_outlier)/corrupted_data.shape[0]
-        corruption_precision = sum(corrupted_data.predicted_outlier)/sum(inset.predicted_outlier)
+        corruption_precision = sum(corrupted_data.predicted_outlier)/(sum(inset.predicted_outlier) + sum(corrupted_data.predicted_outlier))
 
         if experiment:
             experiment.log_metric("autoencoder_image_corruption_accuracy", corruption_accuracy)
@@ -236,7 +236,7 @@ def novel_detection(results, features, experiment):
     novel_recall = np.sum(novel["predicted_novel"])/novel.shape[0]
     
     #Precision
-    novel_precision = np.sum(novel["predicted_novel"])/np.sum(inlier["predicted_novel"])
+    novel_precision = np.sum(novel["predicted_novel"])/(np.sum(inlier["predicted_novel"]) + np.sum(novel["predicted_novel"]))
     
     if experiment:
         experiment.log_metric("Novel Recall", novel_recall)
