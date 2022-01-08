@@ -31,8 +31,8 @@ def autoencoder_outliers(results, outlier_threshold, experiment):
     
     if experiment:
         experiment.log_figure(figure_name="outlier_boxplots")
+        experiment.log_parameter("Autoencoder quantile", threshold)
     
-    print("Reconstruction threshold is {}".format(threshold))
     results["predicted_outlier"] = results.autoencoder_loss > threshold
     
     if experiment:
@@ -68,7 +68,8 @@ def distance_outliers(results, features, labels, threshold, experiment):
     centroids = calculate_centroids(features, labels)
     cov = calculate_covariance(features, labels)
     results["centroid_distance"] = distance_from_centroids(features, centroids, labels, cov)
-    results["distance_outlier"] = results["centroid_distance"] > threshold
+    distance_quantile = results.centroid_distance.quantile(threshold)
+    results["distance_outlier"] = results["centroid_distance"] > distance_quantile
     
     label_swap = results[results.outlier == "label_swap"]
     inset = results[results.outlier == "inlier"]
@@ -84,6 +85,7 @@ def distance_outliers(results, features, labels, threshold, experiment):
         outlier_precision = None
     
     if experiment:        
+        experiment.log_parameter("distance_quantile",distance_quantile)
         #Distance by outlier type
         box = results.boxplot("distance_outlier", by="outlier", return_type='axes')
         box[0].set_ylabel("Distance from class centroid")
@@ -163,62 +165,6 @@ def distance_from_centroids(features, centroids, labels, cov):
         distances.append(mahal_dist)
     
     return distances
-    
-def predict_outliers(model, annotations, config, plot_n_individuals=100, comet_logger=None):
-    """Predict outliers and append a column to annotations based on a given model. Model object must contain a predict method"""
-    
-    #predict annotations
-    with tempfile.TemporaryDirectory() as tmpdir:
-        annotations.to_csv("{}/annotations.csv".format(tmpdir))
-        ds = data.TreeDataset(csv_file="{}/annotations.csv".format(tmpdir), image_size=config["image_size"], config=config)
-        data_loader = torch.utils.data.DataLoader(
-            ds,
-            batch_size=config["batch_size"],
-            num_workers=config["workers"],
-            shuffle=False
-        )
-        
-        results = model.predict(data_loader)
-    features = model.classification_bottleneck
-
-    # distance outlier
-    centroids = calculate_centroids(features, results.observed_label)
-    cov = calculate_covariance(features, results.observed_label)
-    results["centroid_distance"] = distance_from_centroids(features, centroids, results.observed_label, cov)
-    
-    #loss outlier
-    autoencoder_threshold = results.autoencoder_loss.quantile(config["outlier_threshold"])  
-    distance_threshold = results.autoencoder_loss.quantile(config["distance_threshold"])    
-    
-    distance_outliers = results["centroid_distance"] > distance_threshold
-    loss_outliers = results.autoencoder_loss > autoencoder_threshold
-    results["predicted_outlier"] = distance_outliers | loss_outliers
-    annotations["predicted_outlier"] = results["predicted_outlier"].values
-    
-    #Plot outliers
-    #plot historgram
-    if comet_logger:
-        fig = plt.figure()
-        ax = fig.add_subplot()
-        ax.hist(results.autoencoder_loss, bins=20, color='c', edgecolor='k', alpha=0.65)
-        ax.axvline(autoencoder_threshold, color='k', linestyle='dashed', linewidth=1)    
-        comet_logger.experiment.log_figure(figure_name="autoencoder_loss")        
-        
-        #plot encoder set
-        layerplot_vis = visualize.plot_2d_layer(features=features, labels=results.observed_label, use_pca=False)
-        comet_logger.experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_labels")        
-        
-        comet_logger.experiment.log_parameter("Autoencoder threshold", autoencoder_threshold)
-        comet_logger.experiment.log_parameter("Distance quantile", distance_threshold)
-        
-        comet_logger.experiment.log_metric("Distance outliers", sum(distance_outliers))
-        comet_logger.experiment.log_metric("Loss outliers", sum(loss_outliers))
-        
-        #plot outliers
-        ROOT = os.path.dirname(os.path.dirname(__file__))
-        visualize.plot_points_and_crowns(df=results[results.predicted_outlier==True], ROOT=ROOT, plot_n_individuals=plot_n_individuals, config=config, experiment=comet_logger.experiment)
-        
-    return annotations
     
 def novel_detection(results, features, experiment):
     """Novel individual detection using projection layer features
