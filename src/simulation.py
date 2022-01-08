@@ -241,7 +241,7 @@ class simulator():
                 images = images.cuda()
             with torch.no_grad():
                 for image in images:
-                    image_yhat, classification_yhat = self.model(image.unsqueeze(0))
+                    image_yhat, classification_yhat, features = self.model(image.unsqueeze(0))
                     yhat.append(classification_yhat)
                     loss = F.mse_loss(image_yhat, image)    
                     autoencoder_loss.append(loss.numpy())
@@ -307,4 +307,3 @@ def run(ID, config):
     sim.data_module.tmpdir.cleanup()
     
     return results
-    
