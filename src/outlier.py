@@ -234,12 +234,15 @@ def predict_outliers(model, annotations, config, plot_n_individuals=100, comet_l
         fig = plt.figure()
         ax = fig.add_subplot()
         ax.hist(results.autoencoder_loss, bins=20, color='c', edgecolor='k', alpha=0.65)
-        ax.axvline(threshold, color='k', linestyle='dashed', linewidth=1)    
+        ax.axvline(autoencoder_threshold, color='k', linestyle='dashed', linewidth=1)    
         comet_logger.experiment.log_figure(figure_name="autoencoder_loss")        
         
         #plot encoder set
         layerplot_vis = visualize.plot_2d_layer(features=features, labels=results.observed_label, use_pca=False)
         comet_logger.experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_labels")        
+        
+        comet_logger.experiment.log_parameter("Autoencoder threshold", autoencoder_threshold)
+        comet_logger.experiment.log_parameter("Distance quantile", distance_threshold)
         
         comet_logger.experiment.log_metric("Distance outliers", sum(distance_outliers))
         comet_logger.experiment.log_metric("Loss outliers", sum(loss_outliers))
