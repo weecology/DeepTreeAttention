@@ -4,23 +4,23 @@ image_size: 28
 workers: 0
 novel_class_examples: 20
 samples: 5000
-proportion_switch: 0.000001
-proportion_image_corrupt: 0.000001
+proportion_switch: 0.05
+proportion_image_corrupt: 0.05
 
 #Comet dashboard
 comet_workspace: bw4sz
 
 #Projection embedding depth
-center_loss_weight: 10
-embedding_size: 2
+center_loss_weight: 0.1
+embedding_size: 64
 center_loss_lr: 0.001
 
 #Training
 gpus: 0
 fast_dev_run: False
 accelerator:
-classifier_epochs: 50
-autoencoder_epochs: 1
+classifier_epochs: 20
+autoencoder_epochs: 30
 lr: 0.01
 
 classification_loss_scalar: 1
@@ -28,4 +28,4 @@ autoencoder_loss_scalar: 0
 
 #Outlier detection
 outlier_threshold: 0.95
-distance_threshold: 5
+distance_threshold: 0.95

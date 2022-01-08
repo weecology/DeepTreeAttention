@@ -220,9 +220,11 @@ def predict_outliers(model, annotations, config, plot_n_individuals=100, comet_l
     results["centroid_distance"] = distance_from_centroids(features, centroids, results.observed_label, cov)
     
     #loss outlier
-    threshold = results.autoencoder_loss.quantile(config["outlier_threshold"])    
-    distance_outliers = results["centroid_distance"] > config["distance_threshold"]
-    loss_outliers = results.autoencoder_loss > threshold
+    autoencoder_threshold = results.autoencoder_loss.quantile(config["outlier_threshold"])  
+    distance_threshold = results.autoencoder_loss.quantile(config["distance_threshold"])    
+    
+    distance_outliers = results["centroid_distance"] > distance_threshold
+    loss_outliers = results.autoencoder_loss > autoencoder_threshold
     results["predicted_outlier"] = distance_outliers | loss_outliers
     annotations["predicted_outlier"] = results["predicted_outlier"].values
     
