@@ -4,8 +4,8 @@ image_size: 28
 workers: 0
 novel_class_examples: 20
 samples: 5000
-proportion_switch: 0.001
-proportion_image_corrupt: 0.001
+proportion_switch: 0.05
+proportion_image_corrupt: 0.05
 
 #Comet dashboard
 comet_workspace: bw4sz
@@ -27,5 +27,5 @@ classification_loss_scalar: 1
 autoencoder_loss_scalar: 0
 
 #Outlier detection
-outlier_threshold: 0.98
-distance_threshold: 10
+outlier_threshold: 0.95
+distance_threshold: 0.95
