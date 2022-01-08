@@ -204,8 +204,6 @@ class autoencoder(LightningModule):
         yhat = []
         autoencoder_loss = []
         sample_ids = []
-        vis_epoch_activations = []
-        encoder_epoch_activations = []
         classification_bottleneck = []
         
         self.eval()
@@ -220,13 +218,11 @@ class autoencoder(LightningModule):
                 images = images.cuda()
             with torch.no_grad():
                 for image in images:
-                    image_yhat, classification_yhat = self(image.unsqueeze(0))
+                    image_yhat, classification_yhat, features = self(image.unsqueeze(0))
                     yhat.append(classification_yhat)
                     loss = F.mse_loss(image_yhat, image)    
                     autoencoder_loss.append(loss.numpy())
-                    vis_epoch_activations.append(self.classifier.vis_activation["vis_conv1"].cpu().numpy())
-                    encoder_epoch_activations.append(self.vis_activation["encoder_block3"].cpu().numpy())
-                    classification_bottleneck.append(self.classifier.vis_activation["classification_bottleneck"].cpu().numpy())                    
+                    classification_bottleneck.append(features.cpu().numpy())                    
            
         yhat = np.concatenate(yhat)
         yhat = np.argmax(yhat, 1)
@@ -235,8 +231,6 @@ class autoencoder(LightningModule):
         autoencoder_loss = np.asarray(autoencoder_loss)
         
         #Create a single array
-        self.classification_conv_activations = np.concatenate(vis_epoch_activations)
-        self.encoder_activations = np.concatenate(encoder_epoch_activations)
         self.classification_bottleneck = np.concatenate(classification_bottleneck)
         
         results = pd.DataFrame({"individual":sample_ids,"observed_label": observed_y,"predicted_label":yhat,"autoencoder_loss": autoencoder_loss})        
@@ -256,19 +250,7 @@ class tree_classifier(nn.Module):
         self.vis_conv2= encoder_block(in_channels=8, filters=2)         
         self.classfication_bottleneck = nn.Linear(in_features=self.feature_length, out_features=2)        
         self.classfication_layer = nn.Linear(in_features=2, out_features=classes)
-        
-        #Visualization
-        # a dict to store the activations        
-        self.vis_activation = {}
-        def getActivation(name):
-            # the hook signature
-            def hook(model, input, output):
-                self.vis_activation[name] = output.detach()
-            return hook
-        
-        self.vis_conv1.register_forward_hook(getActivation("vis_conv1"))    
-        self.classfication_bottleneck.register_forward_hook(getActivation("classification_bottleneck"))   
-        
+                
     def forward(self, x):
         y = self.vis_conv1(x)
         y = self.vis_conv2(y)        
