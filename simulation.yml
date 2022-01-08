@@ -11,12 +11,12 @@ proportion_image_corrupt: 0.05
 comet_workspace: bw4sz
 
 #Projection embedding depth
-center_loss_weight: 0.1
+center_loss_weight: 0.000000001
 embedding_size: 64
 center_loss_lr: 0.001
 
 #Training
-gpus: 0
+gpus: 1
 fast_dev_run: False
 accelerator:
 classifier_epochs: 20
