@@ -225,8 +225,6 @@ class simulator():
         y = []
         autoencoder_loss = []
         sample_ids = []
-        vis_epoch_activations = []
-        encoder_epoch_activations = []
         classification_bottleneck = []
         
         self.model.eval()
@@ -236,7 +234,6 @@ class simulator():
             observed_y.append(observed_labels.numpy())
             y.append(labels)
             sample_ids.append(index)
-            #trigger activation hook
             if next(self.model.parameters()).is_cuda:
                 images = images.cuda()
             with torch.no_grad():
@@ -245,9 +242,7 @@ class simulator():
                     yhat.append(classification_yhat)
                     loss = F.mse_loss(image_yhat, image)    
                     autoencoder_loss.append(loss.numpy())
-                    vis_epoch_activations.append(self.model.classifier.vis_activation["vis_conv1"].cpu().numpy())
-                    encoder_epoch_activations.append(self.model.vis_activation["encoder_block3"].cpu().numpy())
-                    classification_bottleneck.append(self.model.classifier.vis_activation["classification_bottleneck"].cpu().numpy())                    
+                    classification_bottleneck.append(features.cpu().numpy())                    
            
         yhat = np.concatenate(yhat)
         yhat = np.argmax(yhat, 1)
@@ -257,8 +252,6 @@ class simulator():
         autoencoder_loss = np.asarray(autoencoder_loss)
         
         #Create a single array
-        self.classification_conv_activations = np.concatenate(vis_epoch_activations)
-        self.encoder_activations = np.concatenate(encoder_epoch_activations)
         self.classification_bottleneck = np.concatenate(classification_bottleneck)
         
         #look up sample ids
@@ -271,12 +264,6 @@ class simulator():
         layerplot_vis = visualize.plot_2d_layer(features=self.classification_bottleneck, labels=outlier_class, use_pca=True, size_weights=outlier_class+1)        
         self.comet_experiment.experiment.log_figure(figure=layerplot_vis, figure_name="classification_bottleneck_outliers", step=self.model.current_epoch)
 
-        layerplot_encoder = visualize.plot_2d_layer(self.encoder_activations, observed_y, use_pca=True)
-        self.comet_experiment.experiment.log_figure(figure=layerplot_encoder, figure_name="PCA_encoder_projection_labels", step=self.model.current_epoch)
-        
-        layerplot_encoder = visualize.plot_2d_layer(self.encoder_activations, outlier_class, use_pca=True, size_weights=outlier_class+1)
-        self.comet_experiment.experiment.log_figure(figure=layerplot_encoder, figure_name="PCA_encoder_projection_outliers", step=self.model.current_epoch)
-            
         results = pd.DataFrame({"test_index":sample_ids,"label":y,"observed_label": observed_y,"predicted_label":yhat, "autoencoder_loss": autoencoder_loss})        
     
         return results
