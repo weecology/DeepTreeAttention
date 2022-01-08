@@ -195,17 +195,8 @@ class autoencoder(LightningModule):
                                                          cooldown=0,
                                                          eps=1e-08)
         
-        center_scheduler = optim.lr_scheduler.ReduceLROnPlateau(classification_optimizer,
-                                                         mode='min',
-                                                         factor=0.2,
-                                                         patience=10,
-                                                         verbose=True,
-                                                         threshold=0.0001,
-                                                         threshold_mode='rel',
-                                                         cooldown=0,
-                                                         eps=1e-08)
         
-        return [classification_optimizer, center_loss_optimizer], [{"scheduler":scheduler,"monitor":'val_loss'}, {"scheduler":center_scheduler, "monitor":"val_center_loss"}]
+        return [classification_optimizer, center_loss_optimizer], [{"scheduler":scheduler,"monitor":'val_loss'}]
         
     def predict(self, dataloader):
         """Generate labels and predictions for a data_loader"""
