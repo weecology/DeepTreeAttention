@@ -166,13 +166,14 @@ def distance_from_centroids(features, centroids, labels, cov):
     
     return distances
     
-def novel_detection(results, features, experiment):
+def novel_detection(results, features, experiment, n_neighbors=20):
     """Novel individual detection using projection layer features
     Args:
         results: result dataframe, see main.predict_dataloader
         features: array of projection features
+        n_neighbors: number of n neighbors for local outlier factor
     """
-    lof = LocalOutlierFactor()
+    lof = LocalOutlierFactor(n_neighbors=n_neighbors)
     y_pred = lof.fit_predict(features)    
     results["predicted_novel"] =  y_pred==-1
     novel = results[results["outlier"] == "novel"]

@@ -29,3 +29,6 @@ autoencoder_loss_scalar: 0
 #Outlier detection
 outlier_threshold: 0.95
 distance_threshold: 0.95
+
+#Novel detector
+n_neighbors: 10
