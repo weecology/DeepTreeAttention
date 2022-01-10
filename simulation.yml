@@ -30,5 +30,6 @@ autoencoder_loss_scalar: 0
 outlier_threshold: 0.95
 distance_threshold: 0.95
 
-#Novel detector
+#Novel detector, local outlier factor. see sklearn.neighbors.LocalOutlierFactor
 n_neighbors: 10
+contamination: auto

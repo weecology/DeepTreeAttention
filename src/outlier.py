@@ -175,8 +175,8 @@ def distance_from_centroids(features, centroids, labels, cov):
     
     return distances
 
-def train_novel_detector(train_features,  n_neighbors=20):
-    lof = LocalOutlierFactor(n_neighbors=n_neighbors, novelty=True)
+def train_novel_detector(train_features,  n_neighbors=20, contamination="auto"):
+    lof = LocalOutlierFactor(n_neighbors=n_neighbors, novelty=True, contamination=contamination)
     lof.fit(train_features)
     
     return lof
