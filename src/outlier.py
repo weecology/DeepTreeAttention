@@ -114,6 +114,15 @@ def distance_outliers(results, features, labels, threshold, experiment):
         experiment.log_metric("distance_label_switching_accuracy", outlier_accuracy)
         experiment.log_metric("distance_label_switching_precision", outlier_precision)
         
+        fig = plt.figure()
+        ax = fig.add_subplot()        
+        props = dict(boxes="Gray", whiskers="Orange", medians="Blue", caps="Gray")        
+        box = results.boxplot("centroid_distance", by="outlier", patch_artist=True, color=props, ax=ax)
+        ax.axhline(distance_quantile, color='k', linestyle='dashed', linewidth=1)        
+        
+        if experiment:
+            experiment.log_figure(figure_name="outlier_boxplots")
+            
     return pd.DataFrame({"distance_label_switching_accuracy": [outlier_accuracy], "distance_label_switching_precision": [outlier_precision]})
     
 def calculate_centroids(features, labels):
@@ -165,16 +174,22 @@ def distance_from_centroids(features, centroids, labels, cov):
         distances.append(mahal_dist)
     
     return distances
+
+def train_novel_detector(train_features,  n_neighbors=20):
+    lof = LocalOutlierFactor(n_neighbors=n_neighbors, novelty=True)
+    lof.fit(train_features)
     
-def novel_detection(results, features, experiment, n_neighbors=20):
+    return lof
+    
+def novel_detection(lof, results, predict_features, experiment):
     """Novel individual detection using projection layer features
     Args:
+        lof: trained sklearn.neighbors.localoutlierfactor model 
         results: result dataframe, see main.predict_dataloader
         features: array of projection features
         n_neighbors: number of n neighbors for local outlier factor
     """
-    lof = LocalOutlierFactor(n_neighbors=n_neighbors)
-    y_pred = lof.fit_predict(features)    
+    y_pred = lof.predict(predict_features)    
     results["predicted_novel"] =  y_pred==-1
     novel = results[results["outlier"] == "novel"]
     inlier = results[results["outlier"] == "inlier"]

@@ -133,6 +133,19 @@ class simulation_data(LightningDataModule):
         self.train_ds = mnist_dataset(self.train)
         self.val_ds = mnist_dataset(self.test)
         self.num_classes = len(np.unique(self.train.label))
+    
+    def clean_train_dataloader(self):
+        self.train_ds = mnist_dataset(self.train)
+        clean_train = self.train[self.train.outlier=="inlier"]
+        ds = mnist_dataset(clean_train)
+        data_loader = torch.utils.data.DataLoader(
+            ds,
+            batch_size=self.config["batch_size"],
+            shuffle=True,
+            num_workers=self.config["workers"],
+        )
+        
+        return data_loader
         
     def train_dataloader(self):
         data_loader = torch.utils.data.DataLoader(
@@ -268,14 +281,31 @@ class simulator():
     
         return results
     
+    def get_clean_train_features(self):
+        train_features = []
+        self.model.eval()
+        for batch in self.data_module.clean_train_dataloader():
+            index, images, observed_labels, labels = batch
+            if next(self.model.parameters()).is_cuda:
+                images = images.cuda()
+            with torch.no_grad():
+                image_yhat, classification_yhat, features = self.model(images)
+                train_features.append(features.cpu().numpy())       
+        train_features = np.vstack(train_features)
+                    
+        return train_features
+    
     def evaluate(self):
         """Generate evaluation statistics for outlier detection"""
         results = self.predict_validation()
         results["outlier"] = results.test_index.apply(lambda x: self.data_module.test.iloc[x].outlier)
         results["image_corrupt"] = results.test_index.apply(lambda x: self.data_module.test.iloc[x].image_corrupt)        
+        
         outlier_detection_loss = outlier.autoencoder_outliers(results, outlier_threshold=self.config["outlier_threshold"], experiment=self.comet_experiment.experiment)
         outlier_detection_distance = outlier.distance_outliers(results, self.classification_bottleneck, labels=results.observed_label, threshold=self.config["distance_threshold"], experiment=self.comet_experiment.experiment)
-        novel_detection = outlier.novel_detection(results, self.classification_bottleneck, experiment=self.comet_experiment.experiment, n_neighbors=self.config["n_neighbors"])
+        train_features = self.get_clean_train_features()
+        lof = outlier.train_novel_detector(train_features, n_neighbors=self.config["n_neighbors"])
+        novel_detection = outlier.novel_detection(lof=lof, results=results, predict_features=self.classification_bottleneck, experiment=self.comet_experiment.experiment)
         results = pd.concat([outlier_detection_loss, outlier_detection_distance, novel_detection])
         
         return results
