@@ -11,9 +11,9 @@ proportion_image_corrupt: 0.05
 comet_workspace: bw4sz
 
 #Projection embedding depth
-center_loss_weight: 0.000000001
-embedding_size: 64
-center_loss_lr: 0.001
+center_loss_weight: 0.1
+embedding_size: 2
+center_loss_lr: 0.01
 
 #Training
 gpus: 1
@@ -31,5 +31,5 @@ outlier_threshold: 0.95
 distance_threshold: 0.95
 
 #Novel detector, local outlier factor. see sklearn.neighbors.LocalOutlierFactor
-n_neighbors: 10
+n_neighbors: 20
 contamination: auto
