@@ -5,8 +5,6 @@ import pandas as pd
 from src import visualize
 from src import data
 import scipy
-import tempfile
-import torch
 import os
 from sklearn.neighbors import LocalOutlierFactor
 
@@ -193,6 +191,10 @@ def novel_detection(lof, results, predict_features, experiment):
     results["predicted_novel"] =  y_pred==-1
     novel = results[results["outlier"] == "novel"]
     inlier = results[results["outlier"] == "inlier"]
+    
+    layerplot_vis = visualize.plot_2d_layer(features=predict_features, labels=results["predicted_novel"], use_pca=True, size_weights=results["predicted_novel"]+2)        
+    experiment.log_figure(figure=layerplot_vis, figure_name="novel_prediction")
+
     
     #Recall
     novel_recall = np.sum(novel["predicted_novel"])/novel.shape[0]
