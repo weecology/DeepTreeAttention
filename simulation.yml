@@ -31,5 +31,5 @@ outlier_threshold: 0.95
 distance_threshold: 0.95
 
 #Novel detector, local outlier factor. see sklearn.neighbors.LocalOutlierFactor
-n_neighbors: 20
+n_neighbors: 100
 contamination: auto
