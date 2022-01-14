@@ -53,7 +53,9 @@ def model_path(config, dm):
     m = TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict)
     m.ROOT = "{}/tests/".format(ROOT)
     filepath = "{}/model.pl".format(tempfile.gettempdir())
-    Trainer.save_checkpoint(m, filepath)
+    trainer = Trainer(fast_dev_run=True)
+    trainer.fit(m, dm)
+    trainer.save_checkpoint(filepath)
     
     return filepath
 

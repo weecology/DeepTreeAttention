@@ -12,7 +12,7 @@ import torch
 def predict_tile(PATH, model_path, config):
     crowns = predict_crowns(PATH)
     crops = create_crops(crowns, config=config)
-    trees = predict_species(crops, model_path)
+    trees = predict_species(crops, model_path=model_path, config=config)
     chosen_trees = choose_trees(trees)
     
     return chosen_trees
@@ -33,7 +33,9 @@ def predict_crowns(PATH):
     gdf["siteID"] = None #TODO
     gdf["box_id"] = None
     gdf["plotID"] = None
-
+    gdf["taxonID"] = None
+    gdf["tile"] = PATH
+    
     return gdf
 
 def predict_species(crops, model_path, config):
