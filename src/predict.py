@@ -9,11 +9,13 @@ import os
 from tempfile import gettempdir
 import torch
 
-def predict_tile(PATH, model_path, config):
+def predict_tile(PATH, model_path, config, min_score, taxonIDs):
     crowns = predict_crowns(PATH)
     crops = create_crops(crowns, config=config)
+    crops["tile"] = PATH
+    
     trees = predict_species(crops, model_path=model_path, config=config)
-    chosen_trees = choose_trees(trees)
+    chosen_trees = choose_trees(trees, min_score=min_score, taxonIDs=taxonIDs)
     
     return chosen_trees
 
@@ -28,15 +30,26 @@ def predict_crowns(PATH):
     gdf = annotations_to_shapefile(boxes, transform=transform, crs=crs)
     
     #Dummy variables for schema
-    gdf["individual"] = None
+    gdf["individual"] = range(gdf.shape[0])
     gdf["plotID"] = None
     gdf["siteID"] = None #TODO
     gdf["box_id"] = None
     gdf["plotID"] = None
     gdf["taxonID"] = None
-    gdf["tile"] = PATH
     
     return gdf
+
+def create_crops(crowns, config):
+    crops = generate.generate_crops(gdf=crowns,
+                                    sensor_glob=config["HSI_sensor_pool"],
+                                    rgb_glob = config["rgb_sensor_pool"],
+                                    convert_h5=config["convert_h5"],
+                                    HSI_tif_dir=["HSI_tif_dir"],
+                                    savedir=config["crop_dir"])
+    crops["individual"] = crops["individualID"]
+    crops = crops.merge(crowns[["individual","geometry"]], on="individual")
+    
+    return crops
 
 def predict_species(crops, model_path, config):
     m = TreeModel.load_from_checkpoint(model_path)
@@ -51,23 +64,14 @@ def predict_species(crops, model_path, config):
         shuffle=False,
         num_workers=config["workers"]
     )
-    df = m.predict_dataloader(data_loader)
+    df = m.predict_dataloader(data_loader, train=False)
+    df["individual"] = df.individual.astype(int)
+    df = df.merge(crops[["individual","geometry"]], on="individual")
     
     return df
-    
 
-def create_crops(crowns, config):
-    crops = generate.generate_crops(gdf=crowns,
-                                    sensor_glob=config["HSI_sensor_pool"],
-                                    rgb_glob = config["rgb_sensor_pool"],
-                                    convert_h5=config["convert_h5"],
-                                    HSI_tif_dir=["HSI_tif_dir"],
-                                    savedir=config["crop_dir"])
-    
-    return crops
-
-def choose_trees(trees):
-    trees = trees[trees.score > 0.7]
-    trees = trees[trees.pred_taxa_top1.isin(["PICL","MAGNO","CAGL8"])]
+def choose_trees(trees, min_score, taxonIDs):
+    trees = trees[trees.top1_score > min_score]
+    trees = trees[trees.pred_taxa_top1.isin(taxonIDs)]
     
     return trees

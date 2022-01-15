@@ -195,7 +195,6 @@ def train_test_split(shp, config, client = None):
         
 def read_config(config_path):
     """Read config yaml file"""
-    
     #Allow command line to override 
     parser = argparse.ArgumentParser("DeepTreeAttention config")
     parser.add_argument('-d', '--my-dict', type=json.loads, default=None)
