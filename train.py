@@ -100,4 +100,4 @@ within_plot_confusion = metrics.site_confusion(y_true = results.label, y_pred = 
 comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)
 
 #Save model checkpoint
-trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(CometLogger.experiment.id))
+trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
