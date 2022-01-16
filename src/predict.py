@@ -53,7 +53,7 @@ def create_crops(crowns, config):
                                     sensor_glob=config["HSI_sensor_pool"],
                                     rgb_glob = config["rgb_sensor_pool"],
                                     convert_h5=config["convert_h5"],
-                                    HSI_tif_dir=["HSI_tif_dir"],
+                                    HSI_tif_dir=config["HSI_tif_dir"],
                                     savedir=config["crop_dir"])
     crops["individual"] = crops["individualID"]
     crops = crops.merge(crowns[["individual","geometry"]], on="individual")
