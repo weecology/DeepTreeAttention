@@ -12,7 +12,7 @@ def find_files(site, config):
     return tiles
 
 config = data.read_config("config.yml")
-model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/additional_oasis_1838.pl"
+model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9545b1fc496b45eeb6267f7ea7575f4d.pl"
 
 predictions = []
 tiles = find_files(site="OSBS", config=config)
