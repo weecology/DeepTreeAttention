@@ -2,9 +2,11 @@
 from src import predict
 from src import data
 from glob import glob
+import pandas as pd
+import geopandas as gpd
 
 def find_files(site, config):
-    tiles = glob(config["HSI_tif_dir"])
+    tiles = glob(config["HSI_tif_dir"] + "*.tif")
     tiles = [x for x in tiles if site in x]
     
     return tiles
@@ -19,4 +21,6 @@ for x in tiles:
     if not trees.empty:
         predictions.append(trees)
 
+predictions = pd.concat(predictions)
+predictions = gpd.GeoDataFrame(predictions, geometry="geometry")
 predictions.to_file("results/OSBS_predictions.shp")

@@ -1,6 +1,7 @@
 #Predict
 from deepforest import main
 from deepforest.utilities import annotations_to_shapefile
+import glob
 import rasterio
 from src import generate
 from src.main import TreeModel
@@ -10,7 +11,15 @@ from tempfile import gettempdir
 import torch
 
 def predict_tile(PATH, model_path, config, min_score, taxonIDs):
-    crowns = predict_crowns(PATH)
+    #get rgb from HSI path
+    HSI_basename = os.path.basename(PATH)
+    if "hyperspectral" in HSI_basename:
+        rgb_name = "{}.tif".format(HSI_basename.split("_hyperspectral")[0])    
+    else:
+        rgb_name = HSI_basename           
+    rgb_pool = glob.glob(config["rgb_sensor_pool"], recursive=True)
+    rgb_path = [x for x in rgb_pool if rgb_name in x][0]
+    crowns = predict_crowns(rgb_path)
     crops = create_crops(crowns, config=config)
     crops["tile"] = PATH
     
