@@ -109,7 +109,7 @@ def array2raster(newRaster, reflBandArray, reflArray_metadata, extent, ras_dir):
     transform = Affine.translation(originX, originY) * Affine.scale(res, -res)
     reflBandArray = np.moveaxis(reflBandArray,2,0)  
     with rasterio.open(
-        ras_dir+newRaster,
+        "{}/{}".format(ras_dir,newRaster),
          'w',
          driver='GTiff',
          height=rows,
