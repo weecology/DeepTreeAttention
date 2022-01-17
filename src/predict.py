@@ -11,7 +11,7 @@ import os
 from tempfile import gettempdir
 import torch
 
-def predict_tile(PATH, model_path, config, min_score, taxonIDs):
+def predict_tile(PATH, model_path, config, min_score, taxonIDs, client = None):
     #get rgb from HSI path
     HSI_basename = os.path.basename(PATH)
     if "hyperspectral" in HSI_basename:
@@ -21,7 +21,7 @@ def predict_tile(PATH, model_path, config, min_score, taxonIDs):
     rgb_pool = glob.glob(config["rgb_sensor_pool"], recursive=True)
     rgb_path = [x for x in rgb_pool if rgb_name in x][0]
     crowns = predict_crowns(rgb_path)
-    crops = create_crops(crowns, config=config)
+    crops = create_crops(crowns, config=config, client=client)
     crops["tile"] = PATH
     
     trees = predict_species(crops, model_path=model_path, config=config)
@@ -31,16 +31,18 @@ def predict_tile(PATH, model_path, config, min_score, taxonIDs):
 
 def predict_crowns(PATH):
     m = main.deepforest()
+    if torch.cuda.is_available():
+        m.config["gpus"] = 1
     m.use_release(check_release=False)
     boxes = m.predict_tile(PATH)
     r = rasterio.open(PATH)
     transform = r.transform     
     crs = r.crs
-    annotations_to_shapefile(boxes, transform, crs)
     gdf = annotations_to_shapefile(boxes, transform=transform, crs=crs)
     
     #Dummy variables for schema
-    individual = ["{}_{}".format(x, PATH) for x in range(gdf.shape[0])]
+    basename = os.path.splitext(os.path.basename(PATH))[0]
+    individual = ["{}_{}".format(x, basename) for x in range(gdf.shape[0])]
     gdf["individual"] = individual
     gdf["plotID"] = None
     gdf["siteID"] = None #TODO
@@ -50,8 +52,7 @@ def predict_crowns(PATH):
     
     return gdf
 
-def create_crops(crowns, config):
-    client = start_cluster.start(cpus=20)
+def create_crops(crowns, config, client = None):
     crops = generate.generate_crops(gdf=crowns,
                                     sensor_glob=config["HSI_sensor_pool"],
                                     rgb_glob = config["rgb_sensor_pool"],
@@ -78,7 +79,6 @@ def predict_species(crops, model_path, config):
         num_workers=config["workers"]
     )
     df = m.predict_dataloader(data_loader, train=False)
-    df["individual"] = df.individual.astype(int)
     df = df.merge(crops[["individual","geometry"]], on="individual")
     
     return df
