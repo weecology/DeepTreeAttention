@@ -50,24 +50,24 @@ for x in tif_futures:
     except:
         pass
 cpu_client.close()
-gpu_client = start(gpus=5, mem_size="50GB")
+#gpu_client = start(gpus=5, mem_size="50GB")
 
 futures =  []
 for x in hsi_tifs:
-    future = gpu_client.submit(predict.predict_tile, x, model_path=model_path, config=config, min_score=0.7, taxonIDs=["PICL","MAGNO","CAGL8"])
+    future = predict.predict_tile(x, model_path=model_path, config=config, min_score=0.7, taxonIDs=["PICL","MAGNO","CAGL8"])
     futures.append(future)
 
-wait(futures)
+#wait(futures)
 
-predictions = []
-for future in futures:
-    try:
-        trees = future.result()
-        if not trees.empty:
-            predictions.append(trees)        
-    except:
-        pass
+#predictions = []
+#for future in futures:
+    #try:
+        #trees = future.result()
+        #if not trees.empty:
+            #predictions.append(trees)        
+    #except:
+        #pass
 
-predictions = pd.concat(predictions)
+predictions = pd.concat(futures)
 predictions = gpd.GeoDataFrame(predictions, geometry="geometry")
 predictions.to_file("results/OSBS_predictions.shp")
