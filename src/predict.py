@@ -6,6 +6,7 @@ import rasterio
 from src import generate
 from src.main import TreeModel
 from src.data import TreeDataset
+from src import start_cluster
 import os
 from tempfile import gettempdir
 import torch
@@ -49,12 +50,14 @@ def predict_crowns(PATH):
     return gdf
 
 def create_crops(crowns, config):
+    client = start_cluster.start(cpus=20)
     crops = generate.generate_crops(gdf=crowns,
                                     sensor_glob=config["HSI_sensor_pool"],
                                     rgb_glob = config["rgb_sensor_pool"],
                                     convert_h5=config["convert_h5"],
                                     HSI_tif_dir=config["HSI_tif_dir"],
-                                    savedir=config["crop_dir"])
+                                    savedir=config["crop_dir"],
+                                    client=client)
     crops["individual"] = crops["individualID"]
     crops = crops.merge(crowns[["individual","geometry"]], on="individual")
     
