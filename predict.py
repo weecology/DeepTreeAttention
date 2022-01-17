@@ -27,7 +27,8 @@ def convert(rgb_path, hyperspectral_pool, year, savedir):
     tif_path = "{}/{}".format(savedir, tif_basename)
     if not os.path.exists(tif_path):
         tif_path = neon_paths.convert_h5(hyperspectral_h5_path, rgb_path, savedir)
-        
+    
+    return tif_path
 config = data.read_config("config.yml")
 tiles = find_rgb_files(site="OSBS", config=config, year="2019")
 
@@ -41,12 +42,18 @@ model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9545b1fc496b4
 
 tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"], year="2019")
 wait(tif_futures)
-cpu_client.close()
 
+hsi_tifs = []
+for x in tif_futures:
+    try:
+        hsi_tifs.append(x.result())
+    except:
+        pass
+cpu_client.close()
 gpu_client = start(gpus=5, mem_size="50GB")
 
 futures =  []
-for x in tiles:
+for x in hsi_tifs:
     future = gpu_client.submit(predict.predict_tile, x, model_path=model_path, config=config, min_score=0.7, taxonIDs=["PICL","MAGNO","CAGL8"])
     futures.append(future)
 
