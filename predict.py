@@ -22,8 +22,8 @@ predictions = []
 tiles = find_files(site="OSBS", config=config, year="2019")
 
 #generate HSI_tif data if needed.
-hyperspectral_pool = glob.glob(config["HSI_sensor_pool"])
-rgb_pool = glob.glob(config["rgb_sensor_pool"])
+hyperspectral_pool = glob(config["HSI_sensor_pool"])
+rgb_pool = glob(config["rgb_sensor_pool"])
 
 cpu_client = start(cpus=50)
 gpu_client = start(gpus=5, mem_size="50GB")
