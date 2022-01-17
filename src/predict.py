@@ -40,7 +40,8 @@ def predict_crowns(PATH):
     gdf = annotations_to_shapefile(boxes, transform=transform, crs=crs)
     
     #Dummy variables for schema
-    gdf["individual"] = range(gdf.shape[0])
+    individual = ["{}_{}".format(x, PATH) for x in range(gdf.shape[0])]
+    gdf["individual"] = individual
     gdf["plotID"] = None
     gdf["siteID"] = None #TODO
     gdf["box_id"] = None
