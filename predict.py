@@ -19,7 +19,7 @@ config = data.read_config("config.yml")
 model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9545b1fc496b45eeb6267f7ea7575f4d.pl"
 
 predictions = []
-tiles = find_files(site="OSBS", config=config)
+tiles = find_files(site="OSBS", config=config, year="2019")
 
 #generate HSI_tif data if needed.
 hyperspectral_pool = glob.glob(config["HSI_sensor_pool"])
