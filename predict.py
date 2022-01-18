@@ -56,7 +56,7 @@ model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9545b1fc496b4
 
 tiles = glob(config["HSI_tif_dir"]+"*.tif")
 tiles = [x for x in tiles if "OSBS" in x]
-hsi_tifs = [x for x in tiles if "/{}/".format("2019") in x]
+hsi_tifs = [x for x in tiles if "2019" in x]
 
 futures =  []
 for x in hsi_tifs[:2]:
