@@ -51,7 +51,7 @@ def my_collate(batch):
     batch = [x for x in batch if x[1] is not None]
     return default_collate(batch)
     
-def predict_tile(PATH, model_path, config, min_score, taxonIDs, client = None):
+def predict_tile(PATH, model_path, config, min_score, taxonIDs):
     #get rgb from HSI path
     HSI_basename = os.path.basename(PATH)
     if "hyperspectral" in HSI_basename:
