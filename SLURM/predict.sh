@@ -18,4 +18,4 @@ source activate DeepTreeAttention
 
 cd ~/DeepTreeAttention/
 module load git gcc
-python -m cProfile -o output.pstats predict.py
+python -m cProfile -o without_client.pstats predict.py
