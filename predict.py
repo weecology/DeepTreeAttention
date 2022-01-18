@@ -55,7 +55,7 @@ gpu_client = start(gpus=5, mem_size="50GB")
 
 futures =  []
 for x in hsi_tifs[:5]:
-    future = gpu_client.submit(predict.predict_tile, x,model_path=model_path, config=config, min_score=0.7, taxonIDs=["PICL","MAGNO","CAGL8"])
+    future = gpu_client.submit(predict.predict_tile, x,model_path=model_path, config=config, min_score=0.7, taxonIDs=["PICL","MAGNO","CAGL8","NYBI","NYSY"])
     futures.append(future)
 
 wait(futures)
@@ -65,9 +65,10 @@ for future in futures:
     try:
         trees = future.result()
         if not trees.empty:
+            print("No predicted trees in tile")
             predictions.append(trees)        
-    except:
-        pass
+    except Exception as e:
+        print(e)
 
 predictions = pd.concat(predictions)
 predictions = gpd.GeoDataFrame(predictions, geometry="geometry")
