@@ -6,12 +6,11 @@ import rasterio
 from src.main import TreeModel
 from src import data 
 from torch.utils.data import Dataset
-from src import neon_paths
 import os
 from torchvision import transforms
 from torch.nn import functional as F
 import torch
-import numpy as np
+from torch.utils.data.dataloader import default_collate
 
 class on_the_fly_Dataset(Dataset):
     """A csv file with a path to image crop and label
@@ -35,6 +34,9 @@ class on_the_fly_Dataset(Dataset):
         left, bottom, right, top = geom.bounds
         crop = self.src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=self.src.transform)) 
         
+        if crop.size == 0:
+            return individual, None
+            
         #preprocess and batch
         image = data.preprocess_image(crop, channel_is_first=True)
         image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
@@ -44,7 +46,11 @@ class on_the_fly_Dataset(Dataset):
     
         return individual, inputs
         
-            
+
+def my_collate(batch):
+    batch = [x for x in batch if x[1] is not None]
+    return default_collate(batch)
+    
 def predict_tile(PATH, model_path, config, min_score, taxonIDs, client = None):
     #get rgb from HSI path
     HSI_basename = os.path.basename(PATH)
@@ -92,6 +98,7 @@ def predict_species(crowns, HSI_path, model_path, config):
         batch_size=config["batch_size"],
         shuffle=False,
         num_workers=config["workers"],
+        collate_fn=my_collate
     )
     df = m.predict_dataloader(data_loader, train=False)
     df = df.merge(crowns[["individual","geometry"]], on="individual")
