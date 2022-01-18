@@ -29,6 +29,7 @@ def config():
     config["gpus"] = 0
     config["include_outliers"] = True
     config["megaplot_dir"] = None
+    config["workers"] = 0
     
     return config
 

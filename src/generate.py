@@ -292,6 +292,7 @@ def generate_crops(gdf, sensor_glob, savedir, client=None, convert_h5=False, rgb
                 img_path = find_sensor_path(lookup_pool = img_pool, geo_index = geo_index)  
         except:
             print("{} failed to find sensor path with traceback {}".format(geo_index, traceback.print_exc()))
+            continue
         tile_to_path[geo_index] = img_path
             
     if client:

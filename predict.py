@@ -59,7 +59,7 @@ tiles = [x for x in tiles if "OSBS" in x]
 hsi_tifs = [x for x in tiles if "2019" in x]
 
 futures =  []
-for x in hsi_tifs[:2]:
+for x in hsi_tifs[0]:
     future = predict.predict_tile(x, model_path=model_path, config=config, min_score=0.7, taxonIDs=["PICL","MAGNO","CAGL8"], client=None)
     futures.append(future)
 
