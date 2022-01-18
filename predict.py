@@ -53,13 +53,13 @@ model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9545b1fc496b4
 #cpu_client.close()
 #gpu_client = start(gpus=5, mem_size="50GB")
 
-
 tiles = glob(config["HSI_tif_dir"]+"*.tif")
 tiles = [x for x in tiles if "OSBS" in x]
 hsi_tifs = [x for x in tiles if "2019" in x]
 
 futures =  []
-for x in hsi_tifs[0]:
+for x in hsi_tifs[:1]:
+    print(x)
     future = predict.predict_tile(x, model_path=model_path, config=config, min_score=0.7, taxonIDs=["PICL","MAGNO","CAGL8"], client=None)
     futures.append(future)
 

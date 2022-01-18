@@ -39,11 +39,11 @@ def format(site, gdf, config):
     gdf = gpd.sjoin(gdf, grid)
     
     #Make sure any points sitting on the line are assigned only to one grid. Rare edge case
-    gdf = gdf.groupby("individualID").apply(lambda x: x.head(1))
+    gdf = gdf.groupby("individualID").apply(lambda x: x.head(1)).reset_index(drop=True)
     
     if "height" in gdf.columns: 
         #Height filter 
-        gdf = CHM.filter_CHM(gdf, CHM_pool=config["CHM_pool"],min_CHM_diff=config["min_CHM_diff"], min_CHM_height=config["min_CHM_height"])      
+        gdf = CHM.filter_CHM(gdf, CHM_pool=config["CHM_pool"],max_CHM_diff=config["max_CHM_diff"], min_CHM_height=config["min_CHM_height"], CHM_height_limit=config["CHM_height_limit"])      
         
     return gdf
 
