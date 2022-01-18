@@ -29,32 +29,38 @@ def convert(rgb_path, hyperspectral_pool, year, savedir):
         tif_path = neon_paths.convert_h5(hyperspectral_h5_path, rgb_path, savedir)
     
     return tif_path
+
 config = data.read_config("config.yml")
 tiles = find_rgb_files(site="OSBS", config=config, year="2019")
 
-#generate HSI_tif data if needed.
-hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
-rgb_pool = glob(config["rgb_sensor_pool"], recursive=True)
+##generate HSI_tif data if needed.
+#hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
+#rgb_pool = glob(config["rgb_sensor_pool"], recursive=True)
 
-cpu_client = start(cpus=50)
+#cpu_client = start(cpus=50)
+
+#tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"], year="2019")
+#wait(tif_futures)
 
 model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9545b1fc496b45eeb6267f7ea7575f4d.pl"
 
-tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"], year="2019")
-wait(tif_futures)
-
-hsi_tifs = []
-for x in tif_futures:
-    try:
-        hsi_tifs.append(x.result())
-    except:
-        pass
+#hsi_tifs = []
+#for x in tif_futures:
+    #try:
+        #hsi_tifs.append(x.result())
+    #except:
+        #pass
 #cpu_client.close()
 #gpu_client = start(gpus=5, mem_size="50GB")
 
+
+tiles = glob(config["HSI_tif_dir"]+"*.tif")
+tiles = [x for x in tiles if "OSBS" in x]
+hsi_tifs = [x for x in tiles if "/{}/".format("2019") in x]
+
 futures =  []
 for x in hsi_tifs[:2]:
-    future = predict.predict_tile(x, model_path=model_path, config=config, min_score=0.7, taxonIDs=["PICL","MAGNO","CAGL8"], client=cpu_client)
+    future = predict.predict_tile(x, model_path=model_path, config=config, min_score=0.7, taxonIDs=["PICL","MAGNO","CAGL8"], client=None)
     futures.append(future)
 
 #wait(futures)
