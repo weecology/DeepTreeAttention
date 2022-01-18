@@ -75,6 +75,10 @@ def predict_species(crowns, HSI_path, model_path, config):
     for geom in crowns.geometry:
         left, bottom, right, top = geom.bounds
         crop = src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform)) 
+        if crop.size == 0:
+            preds.append(None)
+            scores.append(None)
+            
         #preprocess and batch
         image = data.preprocess_image(crop, channel_is_first=True)
         image = transforms.functional.resize(image, size=(config["image_size"],config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
