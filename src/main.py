@@ -55,6 +55,8 @@ class TreeModel(LightningModule):
         top_k_recall = torchmetrics.Accuracy(average="micro",top_k=self.config["top_k"])
         self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall,"Macro Accuracy":macro_recall,"Top {} Accuracy".format(self.config["top_k"]): top_k_recall})
         
+        self.save_hyperparameters()
+        
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
         """
@@ -171,7 +173,6 @@ class TreeModel(LightningModule):
         return label, score
     
     def predict_crown(self, geom, sensor_path):
-        #TODO UPDATE for metadata model
         """Given a geometry object of a tree crown, predict label
         Args:
             geom: a shapely geometry object, for example from a geodataframe (gdf) -> gdf.geometry[0]
@@ -217,7 +218,7 @@ class TreeModel(LightningModule):
             
         return pred
     
-    def predict_dataloader(self, data_loader, plot_n_individuals=1, return_features=False, experiment=None):
+    def predict_dataloader(self, data_loader, plot_n_individuals=1, return_features=False, experiment=None, train=True):
         """Given a file with paths to image crops, create crown predictions 
         The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
         unique identifier for each crown and counter is 0..n pixel crops that belong to that crown.
@@ -236,18 +237,24 @@ class TreeModel(LightningModule):
         labels = []
         individuals = []
         for batch in data_loader:
-            individual, inputs, targets = batch
+            if train:
+                individual, inputs, targets = batch
+            else:
+                individual, inputs = batch
             with torch.no_grad():
                 pred = self.predict(inputs)
                 pred = F.softmax(pred, dim=1)
             predictions.append(pred)
-            labels.append(targets)
             individuals.append(individual)
+            if train:
+                labels.append(targets)                
 
         individuals = np.concatenate(individuals)        
-        labels = np.concatenate(labels)
         predictions = np.concatenate(predictions) 
         
+        if train:
+            labels = np.concatenate(labels)
+            
         if return_features:            
             return predictions
         
@@ -257,11 +264,13 @@ class TreeModel(LightningModule):
         top2_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[1], axis=1)
         
         #Construct a df of predictions
-        df = pd.DataFrame({"pred_label_top1":predictions_top1,"pred_label_top2":predictions_top2,"top1_score":top1_score,"top2_score":top2_score,"label":labels,"individual":individuals})
+        df = pd.DataFrame({"pred_label_top1":predictions_top1,"pred_label_top2":predictions_top2,"top1_score":top1_score,"top2_score":top2_score,"individual":individuals})
         df["pred_taxa_top1"] = df["pred_label_top1"].apply(lambda x: self.index_to_label[x]) 
         df["pred_taxa_top2"] = df["pred_label_top2"].apply(lambda x: self.index_to_label[x])        
-        df["true_taxa"] = df["label"].apply(lambda x: self.index_to_label[x])
- 
+        if train:
+            df["label"] = labels
+            df["true_taxa"] = df["label"].apply(lambda x: self.index_to_label[x])            
+            
         if experiment:
             #load image pool and crown predicrions
             rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)

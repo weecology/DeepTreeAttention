@@ -20,7 +20,7 @@ def config():
     config["min_samples"] = 1
     config["crop_dir"] = tempfile.gettempdir()
     config["bands"] = 3
-    config["classes"] = 2
+    config["classes"] = 5
     config["top_k"] = 1
     config["convert_h5"] = False
     
@@ -55,7 +55,7 @@ def test_metadata_sensor_fusion():
     assert prediction.shape == (20,10)
 
 def test_MetadataModel(config, dm):
-    model = metadata.metadata_sensor_fusion(sites=1, classes=2, bands=3)
-    m = metadata.MetadataModel(model=model, classes=2, label_dict=dm.species_label_dict, config=config)
+    model = metadata.metadata_sensor_fusion(sites=1, classes=5, bands=3)
+    m = metadata.MetadataModel(model=model, classes=5, label_dict=dm.species_label_dict, config=config)
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m,datamodule=dm)    

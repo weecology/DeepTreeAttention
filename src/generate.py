@@ -6,7 +6,7 @@ import numpy as np
 import shapely
 import os
 import pandas as pd
-from src.neon_paths import find_sensor_path, lookup_and_convert
+from src.neon_paths import find_sensor_path, lookup_and_convert, bounds_to_geoindex
 from src import patches
 from distributed import wait   
 from deepforest import main    
@@ -136,7 +136,10 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
             print("removing {} points from {} within a deepforest box {}".format(group.shape[0]-1, group.plotID.unique(),group.box_id.unique()))
             selected_point = group[group.height == group.height.max()]
             if selected_point.shape[0] > 1:
-                selected_point = selected_point[selected_point.CHM_height == selected_point.CHM_height.max()]
+                try:
+                    selected_point = selected_point[selected_point.CHM_height == selected_point.CHM_height.max()]
+                except:
+                    selected_point.head(1)
             cleaned_points.append(selected_point)
         else:
             cleaned_points.append(group)
@@ -273,21 +276,35 @@ def generate_crops(gdf, sensor_glob, savedir, client=None, convert_h5=False, rgb
     #There were erroneous point cloud .tif
     img_pool = [x for x in img_pool if not "point_cloud" in x]
     rgb_pool = [x for x in rgb_pool if not "point_cloud" in x]
-                        
+     
+    
+    #Looking up the rgb -> HSI tile naming is expensive and repetitive. Create a dictionary first.
+    gdf["geo_index"] = gdf.geometry.apply(lambda x: bounds_to_geoindex(x.bounds))
+    tiles = gdf["geo_index"].unique()
+    
+    tile_to_path = {}
+    for geo_index in tiles:
+        try:
+            #Check if h5 -> tif conversion is complete
+            if convert_h5:
+                if rgb_glob is None:
+                    raise ValueError("rgb_glob is None, but convert_h5 is True, please supply glob to search for rgb images")
+                else:
+                    img_path = lookup_and_convert(rgb_pool=rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir,  geo_index = geo_index)
+            else:
+                img_path = find_sensor_path(lookup_pool = img_pool, geo_index = geo_index)  
+        except:
+            print("{} failed to find sensor path with traceback {}".format(geo_index, traceback.print_exc()))
+            continue
+        tile_to_path[geo_index] = img_path
+            
     if client:
         futures = []
         for index, row in gdf.iterrows():
             try:
-                #Check if h5 -> tif conversion is complete
-                if convert_h5:
-                    if rgb_glob is None:
-                        raise ValueError("rgb_glob is None, but convert_h5 is True, please supply glob to search for rgb images")
-                    else:
-                        img_path = lookup_and_convert(rgb_pool=rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir, bounds=row.geometry.bounds)
-                else:
-                    img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
+                img_path = tile_to_path[row["geo_index"]]
             except:
-                print("{} failed to find sensor path with traceback {}".format(row.geometry.bounds, traceback.print_exc()))
+                continue
             future = client.submit(write_crop,row=row,img_path=img_path, savedir=savedir, replace=replace)
             futures.append(future)
             
@@ -301,16 +318,8 @@ def generate_crops(gdf, sensor_glob, savedir, client=None, convert_h5=False, rgb
     else:
         for index, row in gdf.iterrows():
             try:
-                #Check if h5 -> tif conversion is complete
-                if convert_h5:
-                    if rgb_glob is None:
-                        raise ValueError("rgb_glob is None, but convert_h5 is True, please supply glob to search for rgb images")
-                    else:
-                        img_path = lookup_and_convert(rgb_pool=rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir, bounds=row.geometry.bounds)
-                else:
-                    img_path = find_sensor_path(lookup_pool = img_pool, bounds = row.geometry.bounds)  
+                img_path = tile_to_path[row["geo_index"]]
             except:
-                print("{} failed to find sensor path with traceback".format(row.geometry.bounds, traceback.print_exc()))
                 continue
             try:
                 annotation = write_crop(row=row, img_path=img_path, savedir=savedir, replace=replace)

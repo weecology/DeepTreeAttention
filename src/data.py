@@ -104,6 +104,8 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     if len(plotIDs) == 0:
         test = shp[shp.plotID == shp.plotID.unique()[0]]
         train = shp[shp.plotID == shp.plotID.unique()[1]]
+        
+        return train, test
                 
     np.random.shuffle(plotIDs)
     test = shp[shp.plotID == plotIDs[0]]
@@ -193,7 +195,6 @@ def train_test_split(shp, config, client = None):
         
 def read_config(config_path):
     """Read config yaml file"""
-    
     #Allow command line to override 
     parser = argparse.ArgumentParser("DeepTreeAttention config")
     parser.add_argument('-d', '--my-dict', type=json.loads, default=None)
