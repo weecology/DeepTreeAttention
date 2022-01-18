@@ -69,6 +69,6 @@ for future in futures:
     except:
         pass
 
-predictions = pd.concat(futures)
+predictions = pd.concat(predictions)
 predictions = gpd.GeoDataFrame(predictions, geometry="geometry")
 predictions.to_file("results/OSBS_predictions.shp")
