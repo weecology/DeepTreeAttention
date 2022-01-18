@@ -173,7 +173,6 @@ class TreeModel(LightningModule):
         return label, score
     
     def predict_crown(self, geom, sensor_path):
-        #TODO UPDATE for metadata model
         """Given a geometry object of a tree crown, predict label
         Args:
             geom: a shapely geometry object, for example from a geodataframe (gdf) -> gdf.geometry[0]
