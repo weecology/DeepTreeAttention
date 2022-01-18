@@ -78,6 +78,7 @@ def predict_species(crowns, HSI_path, model_path, config):
         if crop.size == 0:
             preds.append(None)
             scores.append(None)
+            continue
             
         #preprocess and batch
         image = data.preprocess_image(crop, channel_is_first=True)
