@@ -22,7 +22,7 @@ def bounds_to_geoindex(bounds):
 
     return geoindex
 
-def find_sensor_path(lookup_pool, shapefile=None, bounds=None):
+def find_sensor_path(lookup_pool, shapefile=None, bounds=None, geo_index=None):
     """Find a hyperspec path based on the shapefile using NEONs schema
     Args:
         bounds: Optional: list of top, left, bottom, right bounds, usually from geopandas.total_bounds. Instead of providing a shapefile
@@ -30,7 +30,15 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None):
     Returns:
         year_match: full path to sensor tile
     """
-    if shapefile is None:
+    if geo_index:
+        match = [x for x in lookup_pool if geo_index in x]
+        match.sort()
+        match = match[::-1]
+        try:
+            year_match = match[0]
+        except Exception as e:
+            raise ValueError("No matches for geoindex {} in sensor pool".format(geo_index))        
+    elif shapefile is None:
         geo_index = bounds_to_geoindex(bounds=bounds)
         match = [x for x in lookup_pool if geo_index in x]
         match.sort()
