@@ -136,7 +136,10 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
             print("removing {} points from {} within a deepforest box {}".format(group.shape[0]-1, group.plotID.unique(),group.box_id.unique()))
             selected_point = group[group.height == group.height.max()]
             if selected_point.shape[0] > 1:
-                selected_point = selected_point[selected_point.CHM_height == selected_point.CHM_height.max()]
+                try:
+                    selected_point = selected_point[selected_point.CHM_height == selected_point.CHM_height.max()]
+                except:
+                    selected_point.head(1)
             cleaned_points.append(selected_point)
         else:
             cleaned_points.append(group)
