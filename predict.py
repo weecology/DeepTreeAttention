@@ -51,10 +51,10 @@ for x in tif_futures:
     except:
         pass
 cpu_client.close()
-gpu_client = start(gpus=5, mem_size="50GB")
+gpu_client = start(gpus=10, mem_size="50GB")
 
 futures =  []
-for x in hsi_tifs[:5]:
+for x in hsi_tifs:
     future = gpu_client.submit(predict.predict_tile, x,model_path=model_path, config=config, min_score=0.7, taxonIDs=["PICL","MAGNO","CAGL8","NYBI","NYSY"])
     futures.append(future)
 
