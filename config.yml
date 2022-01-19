@@ -39,11 +39,11 @@ crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/year_crops/
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
 preload_images: True
-workers: 30
+workers: 0
 
 #Network Parameters
 gpus: 1
-batch_size: 32
+batch_size: 1024
 bands: 369
 lr: 0.00005
 fast_dev_run: False
