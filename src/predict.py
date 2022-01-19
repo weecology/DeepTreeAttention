@@ -63,9 +63,8 @@ def predict_tile(PATH, model_path, config, min_score, taxonIDs):
     crowns = predict_crowns(rgb_path)
     crowns["tile"] = PATH
     trees = predict_species(HSI_path=PATH, crowns=crowns, model_path=model_path, config=config)
-    chosen_trees = choose_trees(trees, min_score=min_score, taxonIDs=taxonIDs)
     
-    return chosen_trees
+    return trees
 
 def predict_crowns(PATH):
     m = main.deepforest()
@@ -101,12 +100,12 @@ def predict_species(crowns, HSI_path, model_path, config):
         collate_fn=my_collate
     )
     df = m.predict_dataloader(data_loader, train=False)
-    df = df.merge(crowns[["individual","geometry"]], on="individual")
+    crowns["bbox_score"] = crowns["score"]
+    
+    #If CHM exists
+    try:
+        df = df.merge(crowns[["individual","geometry","bbox_score","tile","CHM_height"]], on="individual")
+    except:
+        df = df.merge(crowns[["individual","geometry","bbox_score","tile"]], on="individual")
     
     return df
-
-def choose_trees(trees, min_score, taxonIDs):
-    trees = trees[trees.top1_score > min_score]
-    trees = trees[trees.pred_taxa_top1.isin(taxonIDs)]
-    
-    return trees
