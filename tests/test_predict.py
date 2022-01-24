@@ -62,5 +62,5 @@ def model_path(config, dm):
 
 def test_predict_tile(model_path, config):
     PATH =  "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop.tif".format(ROOT)
-    trees = predict.predict_tile(PATH, model_path=model_path, config=config, min_score=0.5, taxonIDs=["PICL"])
+    trees = predict.predict_tile(PATH, model_path=model_path, config=config)
     assert all([x in trees.columns for x in ["pred_taxa_top1","geometry","top1_score"]])

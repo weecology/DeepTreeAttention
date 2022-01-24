@@ -254,9 +254,6 @@ class TreeModel(LightningModule):
         
         if train:
             labels = np.concatenate(labels)
-            
-        if return_features:            
-            return predictions
         
         predictions_top1 = np.argmax(predictions, 1)    
         predictions_top2 = pd.DataFrame(predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
@@ -305,8 +302,11 @@ class TreeModel(LightningModule):
                 src.close()
                 plt.close("all")
             plt.ioff()
-            
-        return df
+    
+        if return_features:            
+            return df, predictions        
+        else:
+            return df
     
     def evaluate_crowns(self, data_loader, experiment=None):
         """Crown level measure of accuracy
