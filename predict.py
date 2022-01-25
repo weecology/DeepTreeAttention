@@ -42,7 +42,7 @@ cpu_client = start(cpus=50)
 tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"], year="2019")
 wait(tif_futures)
 
-model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9545b1fc496b45eeb6267f7ea7575f4d.pl"
+model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0abd4a52fcb2453da44ae59740b4a9c8.pl"
 
 hsi_tifs = []
 for x in tif_futures[:2]:
