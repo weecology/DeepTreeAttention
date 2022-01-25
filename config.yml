@@ -43,7 +43,7 @@ workers: 0
 
 #Network Parameters
 gpus: 1
-batch_size: 1024
+batch_size: 32
 bands: 369
 lr: 0.00005
 fast_dev_run: False
@@ -61,6 +61,9 @@ neighborhood_strength: 0.1
 top_k: 4
 #Number of individuals to plot in comet graphics tab
 plot_n_individuals: 10
+
+#Predict
+predict_batch_size: 1024
 
 #Comet dashboard
 comet_workspace: bw4sz

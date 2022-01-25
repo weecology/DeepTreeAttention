@@ -2,11 +2,13 @@
 from deepforest import main
 from deepforest.utilities import annotations_to_shapefile
 import glob
+import geopandas as gpd
 import rasterio
 from src.main import TreeModel
 from src import data 
 from torch.utils.data import Dataset
 import os
+import numpy as np
 from torchvision import transforms
 from torch.nn import functional as F
 import torch
@@ -51,7 +53,7 @@ def my_collate(batch):
     batch = [x for x in batch if x[1] is not None]
     return default_collate(batch)
     
-def predict_tile(PATH, model_path, config, min_score, taxonIDs):
+def predict_tile(PATH, model_path, config):
     #get rgb from HSI path
     HSI_basename = os.path.basename(PATH)
     if "hyperspectral" in HSI_basename:
@@ -62,7 +64,15 @@ def predict_tile(PATH, model_path, config, min_score, taxonIDs):
     rgb_path = [x for x in rgb_pool if rgb_name in x][0]
     crowns = predict_crowns(rgb_path)
     crowns["tile"] = PATH
-    trees = predict_species(HSI_path=PATH, crowns=crowns, model_path=model_path, config=config)
+    
+    #Load species model
+    m = TreeModel.load_from_checkpoint(model_path)
+    trees, features = predict_species(HSI_path=PATH, crowns=crowns, m=m, config=config)
+    
+    #Spatial smooth
+    trees = smooth(trees=trees, features=features, size=config["neighbor_buffer_size"], alpha=config["neighborhood_strength"])
+    trees["spatial_taxonID"] = trees["spatial_label"]
+    trees["spatial_taxonID"] = trees["spatial_label"].apply(lambda x: m.index_to_label[x]) 
     
     return trees
 
@@ -89,17 +99,16 @@ def predict_crowns(PATH):
     
     return gdf
 
-def predict_species(crowns, HSI_path, model_path, config):
-    m = TreeModel.load_from_checkpoint(model_path)
+def predict_species(crowns, HSI_path, m, config):
     ds = on_the_fly_Dataset(crowns, HSI_path, config)
     data_loader = torch.utils.data.DataLoader(
         ds,
-        batch_size=config["batch_size"],
+        batch_size=config["predict_batch_size"],
         shuffle=False,
         num_workers=config["workers"],
         collate_fn=my_collate
     )
-    df = m.predict_dataloader(data_loader, train=False)
+    df, features = m.predict_dataloader(data_loader, train=False, return_features=True)
     crowns["bbox_score"] = crowns["score"]
     
     #If CHM exists
@@ -108,4 +117,25 @@ def predict_species(crowns, HSI_path, model_path, config):
     except:
         df = df.merge(crowns[["individual","geometry","bbox_score","tile"]], on="individual")
     
-    return df
+    return df, features
+
+def smooth(trees, features, size, alpha):
+    """Given the results dataframe and feature labels, spatially smooth based on alpha value"""
+    trees = gpd.GeoDataFrame(trees, geometry="geometry")    
+    sindex = trees.sindex
+    tree_buffer = trees.buffer(size)
+    smoothed_features = []
+    for index, geom in enumerate(tree_buffer):
+        intersects = sindex.query(geom)
+        focal_feature = features[index,]
+        neighbor_features = np.mean(features[intersects,], axis=0)
+        smoothed_feature = focal_feature + alpha * neighbor_features
+        smoothed_features.append(smoothed_feature)
+    smoothed_features = np.vstack(smoothed_features)
+    spatial_label = np.argmax(smoothed_features, axis=1)
+    spatial_score = np.max(smoothed_features, axis=1)
+    trees["spatial_label"] = spatial_label
+    trees["spatial_score"] = spatial_score
+    
+    return trees
+    

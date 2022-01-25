@@ -45,19 +45,19 @@ wait(tif_futures)
 model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9545b1fc496b45eeb6267f7ea7575f4d.pl"
 
 hsi_tifs = []
-for x in tif_futures:
+for x in tif_futures[:2]:
     try:
         hsi_tifs.append(x.result())
     except:
         pass
 cpu_client.close()
-gpu_client = start(gpus=15, mem_size="50GB")
+gpu_client = start(gpus=2, mem_size="50GB")
 
 #No daemonic dask children
 config["workers"] = 0
 futures =  []
 for x in hsi_tifs:
-    future = gpu_client.submit(predict.predict_tile, x,model_path=model_path, config=config, min_score=0.7, taxonIDs=["PICL","MAGNO","CAGL8","NYBI","NYSY"])
+    future = gpu_client.submit(predict.predict_tile, x,model_path=model_path, config=config)
     futures.append(future)
 
 wait(futures)
