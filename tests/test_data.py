@@ -8,7 +8,7 @@ import numpy as np
 import os
 ROOT = os.path.dirname(os.path.dirname(data.__file__))
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
-imp
+
 @pytest.fixture(scope="module")
 def config():
     #Turn off CHM filtering for the moment
@@ -26,7 +26,7 @@ def config():
 
 
 #Data module
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def dm(config):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)            
     dm = data.TreeData(config=config, csv_file=csv_file, regenerate=True, data_dir="{}/tests/data".format(ROOT), debug=True) 
