@@ -52,4 +52,4 @@ jobs:
           use-only-tar-bz2: true
 
       - name: "Run tests"
-        run: "pytest -v"
+        run: "pytest -v -k test_patches"
