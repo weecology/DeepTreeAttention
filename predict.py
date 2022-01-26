@@ -45,13 +45,13 @@ wait(tif_futures)
 model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0abd4a52fcb2453da44ae59740b4a9c8.pl"
 
 hsi_tifs = []
-for x in tif_futures[:2]:
+for x in tif_futures:
     try:
         hsi_tifs.append(x.result())
     except:
         pass
 cpu_client.close()
-gpu_client = start(gpus=2, mem_size="50GB")
+gpu_client = start(gpus=10, mem_size="50GB")
 
 #No daemonic dask children
 config["workers"] = 0
