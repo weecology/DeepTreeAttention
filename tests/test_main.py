@@ -12,7 +12,7 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(data.__file__))
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def config():
     #Turn of CHM filtering for the moment
     config = data.read_config(config_path="{}/config.yml".format(ROOT))
@@ -31,7 +31,7 @@ def config():
     return config
 
 #Data module
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def dm(config):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)           
     if not "GITHUB_ACTIONS" in os.environ:
@@ -57,7 +57,7 @@ def experiment():
         return None
 
 #Training module
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def m(config, dm):
     model = Hang2020.vanilla_CNN(bands=3, classes=3)
     m = main.TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict)

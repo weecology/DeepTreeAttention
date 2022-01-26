@@ -21,7 +21,7 @@ def experiment():
     else:
         return None
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def config():
     #Turn of CHM filtering for the moment
     config = data.read_config(config_path="{}/config.yml".format(ROOT))
@@ -38,7 +38,7 @@ def config():
     
     return config
 #Data module
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def dm(config):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)           
     if not "GITHUB_ACTIONS" in os.environ:
@@ -52,7 +52,7 @@ def dm(config):
     return dm
 
 #Training module
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def m(config, dm):
     model = Hang2020.vanilla_CNN(bands=3, classes=5)
     m = main.TreeModel(model=model, classes=5, config=config, label_dict=dm.species_label_dict)
