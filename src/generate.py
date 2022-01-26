@@ -154,10 +154,7 @@ def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, dee
     if deepforest_model is None:
         from deepforest import main
         deepforest_model = main.deepforest()
-        try:
-            deepforest_model.use_release()
-        except:
-            deepforest_model.use_release(check_release=False)        
+        deepforest_model.use_release(check_release=False)
 
     #Filter data and process
     plot_data = df[df.plotID == plot]
