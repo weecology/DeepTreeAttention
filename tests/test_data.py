@@ -9,7 +9,7 @@ import os
 ROOT = os.path.dirname(os.path.dirname(data.__file__))
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def config():
     #Turn off CHM filtering for the moment
     config = data.read_config(config_path="{}/config.yml".format(ROOT))
