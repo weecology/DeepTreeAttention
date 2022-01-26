@@ -54,8 +54,8 @@ def dm(config):
 #Training module
 @pytest.fixture(scope="module")
 def m(config, dm):
-    model = Hang2020.vanilla_CNN(bands=3, classes=5)
-    m = main.TreeModel(model=model, classes=5, config=config, label_dict=dm.species_label_dict)
+    model = Hang2020.vanilla_CNN(bands=3, classes=3)
+    m = main.TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict)
     m.ROOT = "{}/tests/".format(ROOT)
     
     return m
