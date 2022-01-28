@@ -98,7 +98,7 @@ def predict_tile(PATH, dead_model_path, species_model_path, config):
     crowns["tile"] = PATH
     
     #Load Alive/Dead model
-    crowns = predict_dead(crowns=crowns, dead_model_path=dead_model_path, rgb_tile=PATH, config=config)
+    crowns = predict_dead(crowns=crowns, dead_model_path=dead_model_path, rgb_tile=rgb_path, config=config)
     
     #Load species model
     m = TreeModel.load_from_checkpoint(species_model_path)
