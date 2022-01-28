@@ -60,12 +60,13 @@ class on_the_fly_dataset(Dataset):
         #preprocess and batch
         if self.data_type =="HSI":
             crop = self.HSI_src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=self.HSI_src.transform))             
-            image = data.preprocess_image(crop, channel_is_first=True)
-            image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
         
             if crop.size == 0:
                 return individual, None
             
+            image = data.preprocess_image(crop, channel_is_first=True)
+            image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
+
             inputs[self.data_type] = image
             
             return individual, inputs
