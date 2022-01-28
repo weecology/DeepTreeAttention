@@ -76,11 +76,13 @@ class on_the_fly_dataset(Dataset):
             #Channels last
             box = np.rollaxis(box,0,3)
             image = self.transform(box)
+            image = image.float()
             
             return image
         
 def my_collate(batch):
     batch = [x for x in batch if x[1] is not None]
+    
     return default_collate(batch)
     
 def predict_tile(PATH, dead_model_path, species_model_path, config):
