@@ -9,6 +9,7 @@ from src.start_cluster import start
 from distributed import wait
 import os
 import re
+import traceback
 
 def find_rgb_files(site, year, config):
     tiles = glob(config["rgb_sensor_pool"], recursive=True)
@@ -71,6 +72,7 @@ for future in futures:
             predictions.append(trees)        
     except Exception as e:
         print(e)
+        print(traceback.print_exc())
 
 predictions = pd.concat(predictions)
 predictions = gpd.GeoDataFrame(predictions, geometry="geometry")
