@@ -75,7 +75,7 @@ class on_the_fly_dataset(Dataset):
             box = self.RGB_src.read(window=rasterio.windows.from_bounds(left-1, bottom-1, right+1, top+1, transform=self.RGB_src.transform))             
             #Channels last
             box = np.rollaxis(box,0,3)
-            image = self.transform(box.astype(float))
+            image = self.transform(box.astype(np.float32))
             image = image
             
             return image
