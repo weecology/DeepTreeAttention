@@ -68,7 +68,6 @@ for future in futures:
     try:
         trees = future.result()
         if not trees.empty:
-            print("No predicted trees in tile")
             predictions.append(trees)        
     except Exception as e:
         print(e)

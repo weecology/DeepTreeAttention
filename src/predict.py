@@ -99,7 +99,7 @@ def predict_tile(PATH, dead_model_path, species_model_path, config):
     crowns["tile"] = PATH
     
     #Load Alive/Dead model
-    crowns = predict_dead(crowns=crowns, dead_model_path=dead_model_path, rgb_tile=rgb_path, config=config)
+    dead_label, dead_score = predict_dead(crowns=crowns, dead_model_path=dead_model_path, rgb_tile=rgb_path, config=config)
     
     #Load species model
     m = TreeModel.load_from_checkpoint(species_model_path)
@@ -109,6 +109,13 @@ def predict_tile(PATH, dead_model_path, species_model_path, config):
     trees = smooth(trees=trees, features=features, size=config["neighbor_buffer_size"], alpha=config["neighborhood_strength"])
     trees["spatial_taxonID"] = trees["spatial_label"]
     trees["spatial_taxonID"] = trees["spatial_label"].apply(lambda x: m.index_to_label[x]) 
+    
+    #Remove predictions for dead trees
+    trees["dead_label"] = dead_label
+    trees["dead_score"] = dead_score
+    trees.loc[trees.dead_label==1,"spatial_taxonID"] = "DEAD"
+    trees.loc[trees.dead_label==1,"spatial_label"] = None
+    trees.loc[trees.dead_label==1,"spatial_score"] = None
     
     return trees
 
@@ -179,9 +186,10 @@ def predict_dead(crowns, rgb_tile, dead_model_path, config):
         gather_predictions.append(predictions.cpu())
 
     gather_predictions = np.concatenate(gather_predictions)
-    crowns["Dead"] = np.argmax(gather_predictions,1)
+    label = np.argmax(gather_predictions,1)
+    score = np.max(gather_predictions, 1)
     
-    return crowns
+    return label, score
     
 def smooth(trees, features, size, alpha):
     """Given the results dataframe and feature labels, spatially smooth based on alpha value"""
