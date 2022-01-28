@@ -42,8 +42,8 @@ cpu_client = start(cpus=50)
 tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"], year="2019")
 wait(tif_futures)
 
-model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0abd4a52fcb2453da44ae59740b4a9c8.pl"
-
+species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0abd4a52fcb2453da44ae59740b4a9c8.pl"
+dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/f4f3664646684a4d9eeff616415960a2.pl"
 hsi_tifs = []
 for x in tif_futures:
     try:
@@ -51,13 +51,13 @@ for x in tif_futures:
     except:
         pass
 cpu_client.close()
-gpu_client = start(gpus=10, mem_size="50GB")
+gpu_client = start(gpus=1, mem_size="50GB")
 
 #No daemonic dask children
 config["workers"] = 0
 futures =  []
-for x in hsi_tifs:
-    future = gpu_client.submit(predict.predict_tile, x,model_path=model_path, config=config)
+for x in hsi_tifs[:2]:
+    future = gpu_client.submit(predict.predict_tile, x, dead_model_path = dead_model_path, species_model_path=species_model_path, config=config)
     futures.append(future)
 
 wait(futures)

@@ -5,6 +5,7 @@ import glob
 import geopandas as gpd
 import rasterio
 from src.main import TreeModel
+from src.models import dead
 from src import data 
 from torch.utils.data import Dataset
 import os
@@ -14,46 +15,75 @@ from torch.nn import functional as F
 import torch
 from torch.utils.data.dataloader import default_collate
 
-class on_the_fly_Dataset(Dataset):
+def RGB_transform(augment):
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
+    data_transforms = []
+    data_transforms.append(transforms.ToTensor())
+    data_transforms.append(normalize)
+    data_transforms.append(transforms.Resize([224,224]))
+    if augment:
+        data_transforms.append(transforms.RandomHorizontalFlip(0.5))
+    return transforms.Compose(data_transforms)
+
+class on_the_fly_dataset(Dataset):
     """A csv file with a path to image crop and label
     Args:
        crowns: geodataframe of crown locations from a single rasterio src
        image_path: .tif file location
     """
-    def __init__(self, crowns, image_path, config=None):
+    def __init__(self, crowns, image_path, data_type="HSI", config=None):
         self.config = config 
         self.crowns = crowns
         self.image_size = config["image_size"]
-        self.src = rasterio.open(image_path)
+        self.data_type = data_type
+        
+        if data_type == "HSI":
+            self.HSI_src = rasterio.open(image_path)
+        elif data_type == "RGB":
+            self.RGB_src = rasterio.open(image_path)
+            self.transform = RGB_transform(augment=False)
+        else:
+            raise ValueError("data_type is {}, only HSI and RGB data types are currently allowed".format(data_type))
         
     def __len__(self):
         #0th based index
         return self.crowns.shape[0]
         
     def __getitem__(self, index):
+        inputs = {}
+        #Load crown and crop
         geom = self.crowns.iloc[index].geometry
         individual = self.crowns.iloc[index].individual
         left, bottom, right, top = geom.bounds
-        crop = self.src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=self.src.transform)) 
-        
-        if crop.size == 0:
-            return individual, None
             
         #preprocess and batch
-        image = data.preprocess_image(crop, channel_is_first=True)
-        image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
+        if self.data_type =="HSI":
+            crop = self.HSI_src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=self.HSI_src.transform))             
+            image = data.preprocess_image(crop, channel_is_first=True)
+            image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
         
-        inputs = {}
-        inputs["HSI"] = image
-    
-        return individual, inputs
+            if crop.size == 0:
+                return individual, None
+            
+            inputs[self.data_type] = image
+            
+            return individual, inputs
         
-
+        elif self.data_type=="RGB":
+            #Expand RGB
+            box = self.RGB_src.read(window=rasterio.windows.from_bounds(left-1, bottom-1, right+1, top+1, transform=self.RGB_src.transform))             
+            #Channels last
+            box = np.rollaxis(box,0,3)
+            image = self.transform(box)
+            
+            return image
+        
 def my_collate(batch):
     batch = [x for x in batch if x[1] is not None]
     return default_collate(batch)
     
-def predict_tile(PATH, model_path, config):
+def predict_tile(PATH, dead_model_path, species_model_path, config):
     #get rgb from HSI path
     HSI_basename = os.path.basename(PATH)
     if "hyperspectral" in HSI_basename:
@@ -65,8 +95,11 @@ def predict_tile(PATH, model_path, config):
     crowns = predict_crowns(rgb_path)
     crowns["tile"] = PATH
     
+    #Load Alive/Dead model
+    crowns = predict_dead(crowns=crowns, dead_model_path=dead_model_path, rgb_tile=PATH, config=config)
+    
     #Load species model
-    m = TreeModel.load_from_checkpoint(model_path)
+    m = TreeModel.load_from_checkpoint(species_model_path)
     trees, features = predict_species(HSI_path=PATH, crowns=crowns, m=m, config=config)
     
     #Spatial smooth
@@ -77,6 +110,7 @@ def predict_tile(PATH, model_path, config):
     return trees
 
 def predict_crowns(PATH):
+    """Predict a set of tree crowns from RGB data"""
     m = main.deepforest()
     if torch.cuda.is_available():
         m.config["gpus"] = 1
@@ -100,7 +134,7 @@ def predict_crowns(PATH):
     return gdf
 
 def predict_species(crowns, HSI_path, m, config):
-    ds = on_the_fly_Dataset(crowns, HSI_path, config)
+    ds = on_the_fly_dataset(crowns=crowns, image_path=HSI_path, config=config)
     data_loader = torch.utils.data.DataLoader(
         ds,
         batch_size=config["predict_batch_size"],
@@ -119,6 +153,33 @@ def predict_species(crowns, HSI_path, m, config):
     
     return df, features
 
+def predict_dead(crowns, rgb_tile, dead_model_path, config):
+    """Given a set of bounding boxes and an RGB tile, predict Alive/Dead binary model"""
+    dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path)
+    ds = on_the_fly_dataset(crowns=crowns, image_path=rgb_tile, config=config,data_type="RGB")
+    data_loader = torch.utils.data.DataLoader(
+        ds,
+        batch_size=config["predict_batch_size"],
+        shuffle=False,
+        num_workers=config["workers"],
+    )
+    if torch.cuda.is_available():
+        dead_model = dead_model.to("cuda")
+        dead_model.eval()
+    
+    gather_predictions = []
+    for batch in data_loader:
+        if torch.cuda.is_available():
+            batch = batch.to("cuda")        
+        with torch.no_grad():
+            predictions = dead_model(batch)
+        gather_predictions.append(predictions.cpu())
+
+    gather_predictions = np.concatenate(gather_predictions)
+    crowns["Dead"] = np.argmax(gather_predictions,1)
+    
+    return crowns
+    
 def smooth(trees, features, size, alpha):
     """Given the results dataframe and feature labels, spatially smooth based on alpha value"""
     trees = gpd.GeoDataFrame(trees, geometry="geometry")    
