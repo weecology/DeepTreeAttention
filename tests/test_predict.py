@@ -103,4 +103,4 @@ def dead_model_path():
 def test_predict_tile(species_model_path, dead_model_path, config):
     PATH =  "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop.tif".format(ROOT)
     trees = predict.predict_tile(PATH, dead_model_path = dead_model_path, species_model_path=species_model_path, config=config)
-    assert all([x in trees.columns for x in ["pred_taxa_top1","geometry","top1_score"]])
+    assert all([x in trees.columns for x in ["pred_taxa_top1","geometry","top1_score","dead_label"]])
