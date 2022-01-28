@@ -101,6 +101,9 @@ def predict_tile(PATH, dead_model_path, species_model_path, config):
     #Load Alive/Dead model
     dead_label, dead_score = predict_dead(crowns=crowns, dead_model_path=dead_model_path, rgb_tile=rgb_path, config=config)
     
+    crowns["dead_label"] = dead_label
+    crowns["dead_score"] = dead_score
+    
     #Load species model
     m = TreeModel.load_from_checkpoint(species_model_path)
     trees, features = predict_species(HSI_path=PATH, crowns=crowns, m=m, config=config)
@@ -111,8 +114,6 @@ def predict_tile(PATH, dead_model_path, species_model_path, config):
     trees["spatial_taxonID"] = trees["spatial_label"].apply(lambda x: m.index_to_label[x]) 
     
     #Remove predictions for dead trees
-    trees["dead_label"] = dead_label
-    trees["dead_score"] = dead_score
     trees.loc[trees.dead_label==1,"spatial_taxonID"] = "DEAD"
     trees.loc[trees.dead_label==1,"spatial_label"] = None
     trees.loc[trees.dead_label==1,"spatial_score"] = None
@@ -157,7 +158,7 @@ def predict_species(crowns, HSI_path, m, config):
     
     #If CHM exists
     try:
-        df = df.merge(crowns[["individual","geometry","bbox_score","tile","CHM_height"]], on="individual")
+        df = df.merge(crowns[["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score"]], on="individual")
     except:
         df = df.merge(crowns[["individual","geometry","bbox_score","tile"]], on="individual")
     
