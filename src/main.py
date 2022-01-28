@@ -344,8 +344,8 @@ class TreeModel(LightningModule):
             experiment.log_metric("spatial_macro",spatial_macro)
     
         #Log results by species
-        taxon_accuracy = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label_top1.values),target=torch.tensor(group.label.values), average="none", num_classes=self.classes)
-        taxon_precision = torchmetrics.functional.precision(preds=torch.tensor(group.pred_label_top1.values),target=torch.tensor(group.label.values), average="none", num_classes=self.classes)
+        taxon_accuracy = torchmetrics.functional.accuracy(preds=torch.tensor(results.spatial_pred_label.values),target=torch.tensor(results.label.values), average="none", num_classes=self.classes)
+        taxon_precision = torchmetrics.functional.precision(preds=torch.tensor(results.spatial_pred_label.values),target=torch.tensor(results.label.values), average="none", num_classes=self.classes)
         species_table = pd.DataFrame({"taxonID":self.label_to_index.keys(), "accuracy":taxon_accuracy,"precision":taxon_precision})
         
         if experiment:
@@ -356,8 +356,8 @@ class TreeModel(LightningModule):
         if experiment:
             site_data_frame =[]
             for name, group in results.groupby("siteID"):
-                site_micro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label_top1.values),target=torch.tensor(group.label.values), average="micro")
-                site_macro = torchmetrics.functional.accuracy(preds=torch.tensor(group.pred_label_top1.values),target=torch.tensor(group.label.values), average="macro", num_classes=self.classes)
+                site_micro = torchmetrics.functional.accuracy(preds=torch.tensor(group.spatial_pred_label.values),target=torch.tensor(group.label.values), average="micro")
+                site_macro = torchmetrics.functional.accuracy(preds=torch.tensor(group.spatial_pred_label.values),target=torch.tensor(group.label.values), average="macro", num_classes=self.classes)
                 row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro.numpy()], "Macro Recall": [site_macro.numpy()]})
                 site_data_frame.append(row)
             site_data_frame = pd.concat(site_data_frame)
