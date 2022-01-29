@@ -8,11 +8,13 @@ from src.predict import on_the_fly_dataset
 import rasterio as rio
 import torch
 from pytorch_lightning import Trainer
+import numpy as np
 import os
 import tempfile
 import pytest
 import pandas as pd
 import geopandas as gpd
+from skimage import io
 
 ROOT = os.path.dirname(os.path.dirname(data.__file__))        
 
@@ -100,7 +102,30 @@ def dead_model_path():
     
     return filepath
 
+def test_dead_tree_model(dead_model_path):
+    dead_model_path = "/Users/benweinstein/Downloads/f4f3664646684a4d9eeff616415960a2.pl"
+    m = dead.AliveDead.load_from_checkpoint(dead_model_path)
+    m.eval()
+    dead_tree = io.imread("{}/tests/data/dead_tree.png".format(ROOT))
+    transform = dead.get_transform(augment=False)
+    dead_tree_transformed = transform(dead_tree)
+    score = m(dead_tree_transformed.unsqueeze(0)).detach()
+    assert np.argmax(score) == 1
+    
+    dead_tree = io.imread("{}/tests/data/dead_tree2.png".format(ROOT))
+    transform = dead.get_transform(augment=False)
+    dead_tree_transformed = transform(dead_tree)
+    score = m(dead_tree_transformed.unsqueeze(0)).detach()
+    assert np.argmax(score) == 1
+    
+    alive_tree = io.imread("{}/tests/data/alive_tree.png".format(ROOT))
+    alive_tree = transform(alive_tree)
+    score = m(alive_tree.unsqueeze(0)).detach()
+    assert np.argmax(score) == 0
+    
 def test_predict_tile(species_model_path, dead_model_path, config):
     PATH =  "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop.tif".format(ROOT)
+    #HOTFIX
+    dead_model_path = "/Users/benweinstein/Downloads/f4f3664646684a4d9eeff616415960a2.pl"
     trees = predict.predict_tile(PATH, dead_model_path = dead_model_path, species_model_path=species_model_path, config=config)
     assert all([x in trees.columns for x in ["pred_taxa_top1","geometry","top1_score","dead_label"]])
