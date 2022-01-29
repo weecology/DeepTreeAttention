@@ -86,9 +86,8 @@ class AliveDead(pl.LightningModule):
         
     def forward(self, x):
         output = self.model(x)
-        pred = F.softmax(output)
         
-        return pred
+        return output
     
     def training_step(self, batch, batch_idx):
         x,y = batch
@@ -102,11 +101,15 @@ class AliveDead(pl.LightningModule):
         x,y = batch
         outputs = self(x)
         loss = F.cross_entropy(outputs,y)
+        softmax_prob = F.softmax(outputs, dim =1)
+        
         self.log("val_loss",loss)        
         
-        self.accuracy(outputs, y)
-        self.total_accuracy(outputs, y)
-        self.precision_metric(outputs, y)
+        self.accuracy(softmax_prob, y)
+        self.total_accuracy(softmax_prob, y)
+        self.precision_metric(softmax_prob, y)
+        
+        return softmax_prob
  
     def validation_epoch_end(self, outputs):
         alive_accuracy, dead_accuracy = self.accuracy.compute()

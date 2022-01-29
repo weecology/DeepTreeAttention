@@ -185,6 +185,7 @@ def predict_dead(crowns, rgb_tile, dead_model_path, config):
         gather_predictions.append(predictions.cpu())
 
     gather_predictions = np.concatenate(gather_predictions)
+    
     label = np.argmax(gather_predictions,1)
     score = np.max(gather_predictions, 1)
     
