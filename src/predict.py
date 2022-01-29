@@ -156,11 +156,9 @@ def predict_species(crowns, HSI_path, m, config):
     df, features = m.predict_dataloader(data_loader, train=False, return_features=True)
     crowns["bbox_score"] = crowns["score"]
     
-    #If CHM exists
-    try:
-        df = df.merge(crowns[["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score"]], on="individual")
-    except:
-        df = df.merge(crowns[["individual","geometry","bbox_score","tile"]], on="individual")
+    #If CHM exists TODO
+    crowns = crowns.loc[:,crowns.columns.isin(["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score"])]
+    df = df.merge(crowns, on="individual")
     
     return df, features
 
