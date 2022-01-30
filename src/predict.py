@@ -182,6 +182,7 @@ def predict_dead(crowns, rgb_tile, dead_model_path, config):
             batch = batch.to("cuda")        
         with torch.no_grad():
             predictions = dead_model(batch)
+            predictions = F.softmax(predictions, dim =1)
         gather_predictions.append(predictions.cpu())
 
     gather_predictions = np.concatenate(gather_predictions)
