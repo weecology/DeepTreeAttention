@@ -57,7 +57,7 @@ gpu_client = start(gpus=1, mem_size="50GB")
 #No daemonic dask children
 config["workers"] = 0
 futures =  []
-for x in hsi_tifs[:2]:
+for x in hsi_tifs:
     future = gpu_client.submit(predict.predict_tile, x, dead_model_path = dead_model_path, species_model_path=species_model_path, config=config)
     futures.append(future)
 
