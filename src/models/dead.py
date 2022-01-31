@@ -150,6 +150,31 @@ class AliveDead(pl.LightningModule):
         predicted_class = np.concatenate(predicted_class)
 
         return true_class, predicted_class
-    
 
+def predict_dead_dataloader(dead_model, dataset, config):
+    """Given a set of bounding boxes and an RGB tile, predict Alive/Dead binary model"""
+    data_loader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=config["predict_batch_size"],
+        shuffle=False,
+        num_workers=config["workers"],
+    )
+    if torch.cuda.is_available():
+        dead_model = dead_model.to("cuda")
+        dead_model.eval()
     
+    gather_predictions = []
+    for batch in data_loader:
+        if torch.cuda.is_available():
+            batch = batch.to("cuda")        
+        with torch.no_grad():
+            predictions = dead_model(batch)
+            predictions = F.softmax(predictions, dim =1)
+        gather_predictions.append(predictions.cpu())
+
+    gather_predictions = np.concatenate(gather_predictions)
+    
+    label = np.argmax(gather_predictions,1)
+    score = np.max(gather_predictions, 1)
+    
+    return label, score
