@@ -247,11 +247,11 @@ class TreeDataset(Dataset):
         else:
             return individual, inputs
 
-def filter_dead_annotations(csv_file, crop_dir, config):
+def filter_dead_annotations(crowns, config):
     """Given a set of annotations, predict whether RGB is dead
     Args:
         annotations: must contain xmin, xmax, ymin, ymax and image path fields"""
-    ds = dead.AliveDeadDataset(csv_file=csv_file, root_dir=crop_dir)
+    ds = dead.utm_dataset(crowns, config=config)
     dead_model = dead.AliveDead.load_from_checkpoint(config["dead_model"])    
     label, score = dead.predict_dead_dataloader(dead_model=dead_model, dataset=ds, config=config)
     
@@ -263,7 +263,7 @@ class TreeData(LightningDataModule):
     The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
     Use regenerate=True to override this behavior in setup()
     """
-    def __init__(self, csv_file, HSI=True, metadata=False, regenerate = False, client = None, config=None, data_dir=None, comet_logger=None, debug=False):
+    def __init__(self, csv_file, HSI=True, metadata=False, client = None, config=None, data_dir=None, comet_logger=None, debug=False):
         """
         Args:
             config: optional config file to override
@@ -273,7 +273,6 @@ class TreeData(LightningDataModule):
         """
         super().__init__()
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
-        self.regenerate=regenerate
         self.csv_file = csv_file
         self.HSI = HSI
         self.metadata = metadata
@@ -296,7 +295,7 @@ class TreeData(LightningDataModule):
                 
     def setup(self,stage=None):
         #Clean data from raw csv, regenerate from scratch or check for progress and complete
-        if self.regenerate:
+        if self.config["regenerate"]:
             if self.config["replace"]:#remove any previous runs
                 try:
                     os.remove("{}/processed/canopy_points.shp".format(self.data_dir))
@@ -371,11 +370,11 @@ class TreeData(LightningDataModule):
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
             
             #Dead filter
-            rgb_annotations = generate.generate_crops(gdf=crowns, rgb_glob =self.config["rgb_sensor_pool"], sensor_glob=self.config["rgb_sensor_pool"], savedir=self.config["RGB_crop_dir"])
-            rgb_annotations.to_csv("{}/data/processed/rgb_annotations.csv".format(self.ROOT))            
-            dead_label, dead_score = filter_dead_annotations("{}/data/processed/rgb_annotations.csv".format(self.ROOT), crop_dir=self.config["RGB_crop_dir"], config=self.config)
-            individuals_to_keep = rgb_annotations[(dead_label == 1) & (dead_score < self.config["dead_threshold"])].individual
-            annotations = annotations[annotations.individual.isin(individuals_to_keep)]
+            dead_label, dead_score = filter_dead_annotations(crowns, config=self.config)
+            crowns["dead_label"] = dead_label
+            crowns["dead_score"] = dead_score
+            individuals_to_keep = crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))].individual
+            annotations = annotations[annotations.individualID.isin(individuals_to_keep)]
             
             if self.config["new_train_test_split"]:
                 train_annotations, test_annotations = train_test_split(annotations,config=self.config, client=self.client)   
@@ -441,6 +440,7 @@ class TreeData(LightningDataModule):
             self.val_ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=self.HSI, metadata=self.metadata)
              
         else:
+            print("Loading previous run")
             train_annotations = pd.read_csv("{}/processed/train.csv".format(self.data_dir))
             test_annotations = pd.read_csv("{}/processed/test.csv".format(self.data_dir))
             

@@ -1,7 +1,7 @@
-image_path,taxonID,plotID,individualID,siteID,box_id,point_id,label,site
-/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01659.tif,ACRU,HARV_010,NEON.PLA.D01.HARV.01659,HARV,1,0,0,0
-/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01397.tif,PIST,HARV_010,NEON.PLA.D01.HARV.01397,HARV,3,0,1,0
-/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01660.tif,QURU,HARV_010,NEON.PLA.D01.HARV.01660,HARV,25,0,2,0
-/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01866.tif,PIST,HARV_010,NEON.PLA.D01.HARV.01866,HARV,35,0,1,0
-/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01865.tif,QURU,HARV_010,NEON.PLA.D01.HARV.01865,HARV,fixed_box_13,0,2,0
-/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01619.tif,ACRU,HARV_010,NEON.PLA.D01.HARV.01619,HARV,fixed_box_9,0,0,0
+image_path,taxonID,plotID,individualID,RGB_tile,siteID,box_id,point_id,label,site
+/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01659.tif,ACRU,HARV_010,NEON.PLA.D01.HARV.01659,/Users/benweinstein/Documents/DeepTreeAttention/tests/data/2019_HARV_6_725000_4700000_image.tif,HARV,1,0,0,0
+/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01397.tif,PIST,HARV_010,NEON.PLA.D01.HARV.01397,/Users/benweinstein/Documents/DeepTreeAttention/tests/data/2019_HARV_6_725000_4700000_image.tif,HARV,3,0,1,0
+/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01660.tif,QURU,HARV_010,NEON.PLA.D01.HARV.01660,/Users/benweinstein/Documents/DeepTreeAttention/tests/data/2019_HARV_6_725000_4700000_image.tif,HARV,25,0,2,0
+/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01866.tif,PIST,HARV_010,NEON.PLA.D01.HARV.01866,/Users/benweinstein/Documents/DeepTreeAttention/tests/data/2019_HARV_6_725000_4700000_image.tif,HARV,35,0,1,0
+/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01865.tif,QURU,HARV_010,NEON.PLA.D01.HARV.01865,/Users/benweinstein/Documents/DeepTreeAttention/tests/data/2019_HARV_6_725000_4700000_image.tif,HARV,fixed_box_13,0,2,0
+/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01619.tif,ACRU,HARV_010,NEON.PLA.D01.HARV.01619,/Users/benweinstein/Documents/DeepTreeAttention/tests/data/2019_HARV_6_725000_4700000_image.tif,HARV,fixed_box_9,0,0,0

@@ -170,7 +170,6 @@ def predict_dead(crowns, dead_model_path, rgb_tile, config):
     return label, score
 
 
-    
 def smooth(trees, features, size, alpha):
     """Given the results dataframe and feature labels, spatially smooth based on alpha value"""
     trees = gpd.GeoDataFrame(trees, geometry="geometry")    

@@ -2,16 +2,20 @@
 from src import data
 import pandas as pd
 
-def test_TreeData_setup(dm, config, ROOT):
+def test_TreeData_setup(config, ROOT):
     #One site's worth of data
-    dm.setup()
+    config["regenerate"] = True 
+    csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)               
+    dm = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data".format(ROOT), debug=True) 
+    dm.setup()  
+    
     test = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
     train = pd.read_csv("{}/tests/data/processed/train.csv".format(ROOT))
     
     assert not test.empty
     assert not train.empty
     assert not any([x in train.image_path.unique() for x in test.image_path.unique()])
-    assert all([x in ["image_path","label","site","taxonID","siteID","plotID","individualID","point_id","box_id"] for x in train.columns])
+    assert all([x in ["image_path","label","site","taxonID","siteID","plotID","individualID","point_id","box_id","RGB_tile"] for x in train.columns])
     
 def test_TreeDataset(dm, config,tmpdir, ROOT):
     #Train loader

@@ -54,8 +54,42 @@ def plot_data(ROOT, sample_crowns):
     
     return plot_data
 
+#Training module
 @pytest.fixture(scope="session")
-def config(ROOT):
+def dead_model_path(ROOT):
+    m = dead.AliveDead()
+    shp = gpd.read_file("{}/tests/data/processed/crowns.shp".format(ROOT))
+    shp["label"] = "Alive"
+    shp.loc[0,"label"] = "Dead"
+    shp["image_path"] = "{}/tests/data/2019_HARV_6_725000_4700000_image.tif".format(ROOT)
+    tile_bounds = rio.open("{}/tests/data/2019_HARV_6_725000_4700000_image.tif".format(ROOT)).bounds 
+    coords = shp.geometry.bounds
+    coords = coords.rename(columns = {"minx":"xmin","miny":"ymin","maxx":"xmax","maxy":"ymax"})
+    coords["xmin"] = (coords["xmin"] - tile_bounds.left) * 10
+    coords["xmax"] = (coords["xmax"] - tile_bounds.left) * 10
+    coords["ymin"] = (tile_bounds.top - coords["ymax"]) * 10
+    coords["ymax"] = (tile_bounds.top - coords["ymin"] ) * 10
+    
+    csv = pd.concat([shp[["image_path","label"]],coords], axis=1)
+    csv_file = "{}/dead.csv".format(tempfile.gettempdir())
+    csv.to_csv(csv_file)
+    ds = dead.AliveDeadDataset(csv_file, root_dir=ROOT)
+    train_loader = torch.utils.data.DataLoader(
+        ds,
+        batch_size=1,
+        shuffle=False,
+        num_workers=0
+    )     
+    
+    trainer = Trainer(fast_dev_run=True)
+    trainer.fit(m, train_loader, train_loader)    
+    filepath = "{}/dead_model.pl".format(tempfile.gettempdir())
+    trainer.save_checkpoint(filepath)
+    
+    return filepath
+
+@pytest.fixture(scope="session")
+def config(ROOT, dead_model_path):
     print("Creating global config")
     #Turn of CHM filtering for the moment
     config = utils.read_config(config_path="{}/config.yml".format(ROOT))
@@ -63,7 +97,8 @@ def config(ROOT):
     config["iterations"] = 1
     config["rgb_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
     config["HSI_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
-    config["min_samples"] = 1
+    config["min_train_samples"] = 1
+    config["min_test_samples"] = 1
     config["crop_dir"] = tempfile.gettempdir()
     config["bands"] = 3
     config["classes"] = 3
@@ -71,6 +106,9 @@ def config(ROOT):
     config["convert_h5"] = False
     config["plot_n_individuals"] = 1
     config["min_CHM_diff"] = None    
+    config["dead_model"] = dead_model_path
+    config["megaplot_dir"] = None
+    config["RGB_crop_dir"] = tempfile.gettempdir()
     
     return config
 
@@ -79,11 +117,11 @@ def config(ROOT):
 def dm(config, ROOT):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)           
     if not "GITHUB_ACTIONS" in os.environ:
-        regen = False
+        config["regenerate"] = False
     else:
-        regen = True
+        config["regenerate"] = True
     
-    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=regen, data_dir="{}/tests/data".format(ROOT)) 
+    dm = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data".format(ROOT), debug=True) 
     dm.setup()    
     
     return dm
@@ -117,40 +155,6 @@ def species_model_path(config, dm):
     filepath = "{}/model.pl".format(tempfile.gettempdir())
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m, dm)
-    trainer.save_checkpoint(filepath)
-    
-    return filepath
-
-#Training module
-@pytest.fixture(scope="session")
-def dead_model_path(ROOT):
-    m = dead.AliveDead()
-    shp = gpd.read_file("{}/tests/data/processed/crowns.shp".format(ROOT))
-    shp["label"] = "Alive"
-    shp.loc[0,"label"] = "Dead"
-    shp["image_path"] = "{}/tests/data/2019_HARV_6_725000_4700000_image.tif".format(ROOT)
-    tile_bounds = rio.open("{}/tests/data/2019_HARV_6_725000_4700000_image.tif".format(ROOT)).bounds 
-    coords = shp.geometry.bounds
-    coords = coords.rename(columns = {"minx":"xmin","miny":"ymin","maxx":"xmax","maxy":"ymax"})
-    coords["xmin"] = (coords["xmin"] - tile_bounds.left) * 10
-    coords["xmax"] = (coords["xmax"] - tile_bounds.left) * 10
-    coords["ymin"] = (tile_bounds.top - coords["ymax"]) * 10
-    coords["ymax"] = (tile_bounds.top - coords["ymin"] ) * 10
-    
-    csv = pd.concat([shp[["image_path","label"]],coords], axis=1)
-    csv_file = "{}/dead.csv".format(tempfile.gettempdir())
-    csv.to_csv(csv_file)
-    ds = dead.AliveDeadDataset(csv_file, root_dir=ROOT)
-    train_loader = torch.utils.data.DataLoader(
-        ds,
-        batch_size=1,
-        shuffle=False,
-        num_workers=0
-    )     
-    
-    trainer = Trainer(fast_dev_run=True)
-    trainer.fit(m, train_loader, train_loader)    
-    filepath = "{}/dead_model.pl".format(tempfile.gettempdir())
     trainer.save_checkpoint(filepath)
     
     return filepath
