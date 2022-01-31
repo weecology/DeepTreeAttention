@@ -107,8 +107,10 @@ def config(ROOT, dead_model_path):
     config["plot_n_individuals"] = 1
     config["min_CHM_diff"] = None    
     config["dead_model"] = dead_model_path
+    config["dead_threshold"] = 1
     config["megaplot_dir"] = None
     config["RGB_crop_dir"] = tempfile.gettempdir()
+    
     
     return config
 
