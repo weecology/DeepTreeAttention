@@ -9,9 +9,9 @@ import rasterio
 from src.main import TreeModel
 from src.models import dead
 from src.utils import preprocess_image
+from src.CHM import postprocess_CHM
 from torch.utils.data import Dataset
 from torchvision import transforms
-from torch.nn import functional as F
 import torch
 from torch.utils.data.dataloader import default_collate
 
@@ -85,7 +85,7 @@ def my_collate(batch):
     batch = [x for x in batch if x[1] is not None]
     
     return default_collate(batch)
-    
+
 def predict_tile(PATH, dead_model_path, species_model_path, config):
     #get rgb from HSI path
     HSI_basename = os.path.basename(PATH)
@@ -97,6 +97,13 @@ def predict_tile(PATH, dead_model_path, species_model_path, config):
     rgb_path = [x for x in rgb_pool if rgb_name in x][0]
     crowns = predict_crowns(rgb_path)
     crowns["tile"] = PATH
+    
+    #CHM filter
+    if config["CHM_pool"]:
+        CHM_pool = glob.glob(config["CHM_pool"], recursive=True)
+        crowns = postprocess_CHM(crowns, CHM_pool)
+        #Rename column
+        crowns = crowns[crowns.height > 3]
     
     #Load Alive/Dead model
     dead_label, dead_score = predict_dead(crowns=crowns, dead_model_path=dead_model_path, rgb_tile=rgb_path, config=config)
@@ -118,6 +125,9 @@ def predict_tile(PATH, dead_model_path, species_model_path, config):
     trees.loc[trees.dead_label==1,"spatial_label"] = None
     trees.loc[trees.dead_label==1,"spatial_score"] = None
     
+    #Calculate crown area
+    trees["crown_area"] = crowns.geometry.area
+        
     return trees
 
 def predict_crowns(PATH):
