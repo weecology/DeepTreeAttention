@@ -4,6 +4,7 @@ import comet_ml
 import numpy as np
 import os
 import pytorch_lightning as pl
+import rasterio
 from skimage import io
 import torch
 import torch.nn as nn
@@ -150,6 +151,61 @@ class AliveDead(pl.LightningModule):
         predicted_class = np.concatenate(predicted_class)
 
         return true_class, predicted_class
-    
 
+class utm_dataset(Dataset):
+    """A csv file with a path to image crop and label
+    Args:
+       crowns: geodataframe of crown locations from a single rasterio src
+       image_path: .tif file location
+    """
+    def __init__(self, crowns, config=None):
+        self.config = config 
+        self.crowns = crowns
+        self.image_size = config["image_size"]
+        self.transform = get_transform(augment=False)
+ 
+    def __len__(self):
+        #0th based index
+        return self.crowns.shape[0]
+        
+    def __getitem__(self, index):
+        #Load crown and crop RGB
+        geom = self.crowns.iloc[index].geometry
+        left, bottom, right, top = geom.bounds
+        image_path = self.crowns.RGB_tile.iloc[index]
+        RGB_src = rasterio.open(image_path)
+        box = RGB_src.read(window=rasterio.windows.from_bounds(left-1, bottom-1, right+1, top+1, transform=RGB_src.transform))             
+        #Channels last
+        box = np.rollaxis(box,0,3)
+        #Preprocess
+        image = self.transform(box.astype(np.float32))
+            
+        return image
+        
+def predict_dead_dataloader(dead_model, dataset, config):
+    """Given a set of bounding boxes and an RGB tile, predict Alive/Dead binary model"""
+    data_loader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=config["predict_batch_size"],
+        shuffle=False,
+        num_workers=config["workers"],
+    )
+    if torch.cuda.is_available():
+        dead_model = dead_model.to("cuda")
+        dead_model.eval()
     
+    gather_predictions = []
+    for batch in data_loader:
+        if torch.cuda.is_available():
+            batch = batch.to("cuda")        
+        with torch.no_grad():
+            predictions = dead_model(batch)
+            predictions = F.softmax(predictions, dim =1)
+        gather_predictions.append(predictions.cpu())
+
+    gather_predictions = np.concatenate(gather_predictions)
+    
+    label = np.argmax(gather_predictions,1)
+    score = np.max(gather_predictions, 1)
+    
+    return label, score

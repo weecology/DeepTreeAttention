@@ -3,13 +3,13 @@ from deepforest import main
 from deepforest.utilities import annotations_to_shapefile
 import glob
 import geopandas as gpd
+import numpy as np
+import os
 import rasterio
 from src.main import TreeModel
 from src.models import dead
-from src import data 
+from src.utils import preprocess_image
 from torch.utils.data import Dataset
-import os
-import numpy as np
 from torchvision import transforms
 from torch.nn import functional as F
 import torch
@@ -64,7 +64,7 @@ class on_the_fly_dataset(Dataset):
             if crop.size == 0:
                 return individual, None
             
-            image = data.preprocess_image(crop, channel_is_first=True)
+            image = preprocess_image(crop, channel_is_first=True)
             image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
 
             inputs[self.data_type] = image
@@ -162,36 +162,14 @@ def predict_species(crowns, HSI_path, m, config):
     
     return df, features
 
-def predict_dead(crowns, rgb_tile, dead_model_path, config):
-    """Given a set of bounding boxes and an RGB tile, predict Alive/Dead binary model"""
+def predict_dead(crowns, dead_model_path, rgb_tile, config):
     dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path)
     ds = on_the_fly_dataset(crowns=crowns, image_path=rgb_tile, config=config,data_type="RGB")
-    data_loader = torch.utils.data.DataLoader(
-        ds,
-        batch_size=config["predict_batch_size"],
-        shuffle=False,
-        num_workers=config["workers"],
-    )
-    if torch.cuda.is_available():
-        dead_model = dead_model.to("cuda")
-        dead_model.eval()
-    
-    gather_predictions = []
-    for batch in data_loader:
-        if torch.cuda.is_available():
-            batch = batch.to("cuda")        
-        with torch.no_grad():
-            predictions = dead_model(batch)
-            predictions = F.softmax(predictions, dim =1)
-        gather_predictions.append(predictions.cpu())
-
-    gather_predictions = np.concatenate(gather_predictions)
-    
-    label = np.argmax(gather_predictions,1)
-    score = np.max(gather_predictions, 1)
+    label, score = dead.predict_dead_dataloader(dead_model, ds, config)
     
     return label, score
-    
+
+
 def smooth(trees, features, size, alpha):
     """Given the results dataframe and feature labels, spatially smooth based on alpha value"""
     trees = gpd.GeoDataFrame(trees, geometry="geometry")    

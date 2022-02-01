@@ -1,6 +1,6 @@
-image_path,taxonID,plotID,individualID,siteID,box_id,point_id,label,site
-/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01066.tif,PIST,HARV_001,NEON.PLA.D01.HARV.01066,HARV,1,0,1,0
-/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01091.tif,QURU,HARV_001,NEON.PLA.D01.HARV.01091,HARV,7,0,2,0
-/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01031.tif,PIST,HARV_001,NEON.PLA.D01.HARV.01031,HARV,12,0,1,0
-/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01059.tif,ACRU,HARV_001,NEON.PLA.D01.HARV.01059,HARV,29,0,0,0
-/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01058.tif,QURU,HARV_001,NEON.PLA.D01.HARV.01058,HARV,30,0,2,0
+image_path,taxonID,plotID,individualID,RGB_tile,siteID,box_id,point_id,label,site
+/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01066.tif,PIST,HARV_001,NEON.PLA.D01.HARV.01066,/Users/benweinstein/Documents/DeepTreeAttention/tests/data/2019_HARV_6_725000_4700000_image.tif,HARV,1,0,1,0
+/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01091.tif,QURU,HARV_001,NEON.PLA.D01.HARV.01091,/Users/benweinstein/Documents/DeepTreeAttention/tests/data/2019_HARV_6_725000_4700000_image.tif,HARV,7,0,2,0
+/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01031.tif,PIST,HARV_001,NEON.PLA.D01.HARV.01031,/Users/benweinstein/Documents/DeepTreeAttention/tests/data/2019_HARV_6_725000_4700000_image.tif,HARV,12,0,1,0
+/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01059.tif,ACRU,HARV_001,NEON.PLA.D01.HARV.01059,/Users/benweinstein/Documents/DeepTreeAttention/tests/data/2019_HARV_6_725000_4700000_image.tif,HARV,29,0,0,0
+/var/folders/5m/dmt63fq959jf1lgc58kz9w0h0000gn/T/NEON.PLA.D01.HARV.01058.tif,QURU,HARV_001,NEON.PLA.D01.HARV.01058,/Users/benweinstein/Documents/DeepTreeAttention/tests/data/2019_HARV_6_725000_4700000_image.tif,HARV,30,0,2,0

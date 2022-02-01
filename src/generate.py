@@ -104,7 +104,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
         raise ValueError("cannot find RGB sensor for {}".format(plot_data.plotID.unique()))
     
     boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
-
+    
     if boxes is None:
         raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
     
@@ -145,7 +145,11 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
             cleaned_points.append(group)
      
     merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_points),crs=merged_boxes.crs)
-        
+    
+    #Add tile information
+    boxes["RGB_tile"] = rgb_sensor_path
+    merged_boxes["RGB_tile"] = rgb_sensor_path
+
     return merged_boxes, boxes 
 
 def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, deepforest_model=None):
@@ -222,7 +226,6 @@ def points_to_crowns(
         #IMPORTS at runtime due to dask pickling, kinda ugly.
         deepforest_model = main.deepforest()  
         deepforest_model.use_release(check_release=False)
-        
         for plot in plot_names:
             try:
                 result = run(plot=plot, df=df, savedir=savedir, raw_box_savedir=raw_box_savedir, rgb_pool=rgb_pool, deepforest_model=deepforest_model)
@@ -248,10 +251,10 @@ def write_crop(row, img_path, savedir, replace=True):
             filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])  
     else:
         filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])
-        annotation = pd.DataFrame({"image_path":[filename], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "siteID":[row["siteID"]],"box_id":[row["box_id"]]})
+        annotation = pd.DataFrame({"image_path":[filename], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "RGB_tile":[row["RGB_tile"]], "siteID":[row["siteID"]],"box_id":[row["box_id"]]})
         return annotation
 
-def generate_crops(gdf, sensor_glob, savedir, client=None, convert_h5=False, rgb_glob=None, HSI_tif_dir=None, replace=True):
+def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=False, HSI_tif_dir=None, replace=True):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:

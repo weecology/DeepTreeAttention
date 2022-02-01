@@ -21,6 +21,10 @@ max_CHM_diff: 4
 #Max difference between measured height and CHM height if CHM < height
 CHM_height_limit: 8
 
+#Dead model filter
+dead_model: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/9192d967fa324eecb8cf2107e4673a00.pl
+dead_threshold: 0.75
+
 #Megaplot XY Data, these are .shp files saved as the siteID
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
@@ -34,6 +38,7 @@ replace: True
 new_train_test_split: True
 #Directoy to store cropped images from crowns
 crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/crops/
+RGB_crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/rgb_crops/
 
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
