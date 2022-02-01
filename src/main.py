@@ -23,6 +23,7 @@ from src import generate
 from src import neon_paths
 from src import patches
 from src import spatial
+from src import utils
 from shapely.geometry import Point, box
 
 class TreeModel(LightningModule):
@@ -36,7 +37,7 @@ class TreeModel(LightningModule):
         self.ROOT = os.path.dirname(os.path.dirname(__file__))    
         self.tmpdir = tempfile.gettempdir()
         if config is None:
-            self.config = data.read_config("{}/config.yml".format(self.ROOT))   
+            self.config = utils.read_config("{}/config.yml".format(self.ROOT))   
         else:
             self.config = config
         
