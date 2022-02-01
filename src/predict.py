@@ -103,21 +103,21 @@ def predict_tile(PATH, dead_model_path, species_model_path, config):
         CHM_pool = glob.glob(config["CHM_pool"], recursive=True)
         crowns = postprocess_CHM(crowns, CHM_pool)
         #Rename column
-        crowns = crowns[crowns.CHM_height > 3]
+        filtered_crowns = crowns[crowns.CHM_height > 3]
     
     #Load Alive/Dead model
-    print(crowns.head())
-    if crowns.empty:
-        raise ValueError("No crowns left after CHM filter")
+    print(filtered_crowns.head())
+    if filtered_crowns.empty:
+        raise ValueError("No crowns left after CHM filter. {}".format(crowns.head(n=10)))
     
-    dead_label, dead_score = predict_dead(crowns=crowns, dead_model_path=dead_model_path, rgb_tile=rgb_path, config=config)
+    dead_label, dead_score = predict_dead(crowns=filtered_crowns, dead_model_path=dead_model_path, rgb_tile=rgb_path, config=config)
     
-    crowns["dead_label"] = dead_label
-    crowns["dead_score"] = dead_score
+    filtered_crowns["dead_label"] = dead_label
+    filtered_crowns["dead_score"] = dead_score
     
     #Load species model
     m = TreeModel.load_from_checkpoint(species_model_path)
-    trees, features = predict_species(HSI_path=PATH, crowns=crowns, m=m, config=config)
+    trees, features = predict_species(HSI_path=PATH, crowns=filtered_crowns, m=m, config=config)
     
     #Spatial smooth
     trees = smooth(trees=trees, features=features, size=config["neighbor_buffer_size"], alpha=config["neighborhood_strength"])

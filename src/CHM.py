@@ -23,7 +23,7 @@ def postprocess_CHM(df, lookup_pool):
     
     #buffer slightly, CHM model can be patchy
     geom = df.geometry
-    draped_boxes = rasterstats.zonal_stats(geom.__geo_interface__,
+    draped_boxes = rasterstats.zonal_stats(vector=geom,
                                            CHM_path,
                                            add_stats={'q99': non_zero_99_quantile})
     df["CHM_height"] = [x["q99"] for x in draped_boxes]
@@ -33,7 +33,7 @@ def postprocess_CHM(df, lookup_pool):
         df.height.fillna(df["CHM_height"], inplace=True)
     except:
         print("No height column detected")  
-        
+    
     return df
         
 def CHM_height(shp, CHM_pool):
