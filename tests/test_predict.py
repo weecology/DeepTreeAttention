@@ -25,7 +25,6 @@ def test_dead_tree_model(dead_model_path, ROOT):
     
 def test_predict_tile(species_model_path, dead_model_path, config, ROOT):
     PATH =  "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop.tif".format(ROOT)
-    #HOTFIX
-    dead_model_path = "/Users/benweinstein/Downloads/f4f3664646684a4d9eeff616415960a2.pl"
+    config["CHM_pool"] = None
     trees = predict.predict_tile(PATH, dead_model_path = dead_model_path, species_model_path=species_model_path, config=config)
     assert all([x in trees.columns for x in ["pred_taxa_top1","geometry","top1_score","dead_label"]])
