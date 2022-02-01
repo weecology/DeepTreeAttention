@@ -15,9 +15,9 @@ def non_zero_99_quantile(x):
 
 def postprocess_CHM(df, lookup_pool):
     """Field measured height must be within min_diff meters of canopy model"""
-    #Extract zonal stats
+    #Extract zonal stats, add a small offset, the min box can go to next tile.
     try:
-        CHM_path = neon_paths.find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds)
+        CHM_path = neon_paths.find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds+ 100)
     except Exception as e:
         raise ValueError("Cannot find CHM path for {} from plot {} in lookup_pool: {}".format(df.total_bounds, df.plotID.unique(),e))
     
