@@ -123,7 +123,7 @@ def dm(config, ROOT):
     else:
         config["regenerate"] = True
     
-    dm = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data".format(ROOT), debug=True) 
+    dm = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data".format(ROOT), debug=True, metadata=True) 
     dm.setup()    
     
     return dm

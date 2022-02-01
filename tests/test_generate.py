@@ -63,13 +63,14 @@ def test_run(tmpdir, sample_crowns, rgb_pool):
     
     assert len(glob.glob("{}/*.shp".format(tmpdir))) > 0
 
-def test_generate_crops(tmpdir, ROOT):
+def test_generate_crops(tmpdir, ROOT, rgb_path):
     data_path = "{}/tests/data/crown.shp".format(ROOT)
     gdf = gpd.read_file(data_path)
+    gdf["RGB_tile"] = rgb_path
     annotations = generate.generate_crops(
         gdf=gdf, rgb_glob="{}/tests/data/*.tif".format(ROOT),
         convert_h5=False, sensor_glob="{}/tests/data/*.tif".format(ROOT), savedir=tmpdir)
     
     assert not annotations.empty
-    assert all([x in ["image_path","label","site","siteID","plotID","individualID","taxonID","point_id","box_id"] for x in annotations.columns])
+    assert all([x in ["image_path","label","site","siteID","plotID","individualID","taxonID","point_id","box_id","RGB_tile"] for x in annotations.columns])
     assert len(annotations.box_id.unique()) == annotations.shape[0]

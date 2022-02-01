@@ -3,43 +3,10 @@ from src.models import metadata
 from src import data
 from src import utils
 import torch
-import tempfile
 import os
-import pytest
 from pytorch_lightning import Trainer
 
-ROOT = os.path.dirname(os.path.dirname(data.__file__))
-
-@pytest.fixture(scope="session")
-def config():
-    #Turn of CHM filtering for the moment
-    config = utils.read_config(config_path="{}/config.yml".format(ROOT))
-    config["min_CHM_height"] = None
-    config["iterations"] = 1
-    config["rgb_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
-    config["HSI_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
-    config["min_samples"] = 1
-    config["crop_dir"] = tempfile.gettempdir()
-    config["bands"] = 3
-    config["classes"] = 5
-    config["top_k"] = 1
-    config["convert_h5"] = False
-    
-    return config
-
-#Data module
-@pytest.fixture(scope="session")
-def dm(config):
-    csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)           
-    if not "GITHUB_ACTIONS" in os.environ:
-        regen = False
-    else:
-        regen = True
-    
-    dm = data.TreeData(config=config, csv_file=csv_file, regenerate=regen, data_dir="{}/tests/data".format(ROOT), metadata=True) 
-    dm.setup()    
-    
-    return dm
+ROOT = os.path.dirname(os.path.dirname(data.__file__)) 
 
 def test_metadata():
     m = metadata.metadata(sites = 1, classes=10)
@@ -56,7 +23,7 @@ def test_metadata_sensor_fusion():
     assert prediction.shape == (20,10)
 
 def test_MetadataModel(config, dm):
-    model = metadata.metadata_sensor_fusion(sites=1, classes=5, bands=3)
-    m = metadata.MetadataModel(model=model, classes=5, label_dict=dm.species_label_dict, config=config)
+    model = metadata.metadata_sensor_fusion(sites=1, classes=3, bands=3)
+    m = metadata.MetadataModel(model=model, classes=3, label_dict=dm.species_label_dict, config=config)
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m,datamodule=dm)    

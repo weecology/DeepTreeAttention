@@ -104,6 +104,8 @@ def predict_tile(PATH, dead_model_path, species_model_path, config):
         crowns = postprocess_CHM(crowns, CHM_pool)
         #Rename column
         filtered_crowns = crowns[crowns.CHM_height > 3]
+    else:
+        filtered_crowns = crowns
     
     #Load Alive/Dead model
     print(filtered_crowns.head())
