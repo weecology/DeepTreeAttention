@@ -103,7 +103,7 @@ def predict_tile(PATH, dead_model_path, species_model_path, config):
         CHM_pool = glob.glob(config["CHM_pool"], recursive=True)
         crowns = postprocess_CHM(crowns, CHM_pool)
         #Rename column
-        crowns = crowns[crowns.height > 3]
+        crowns = crowns[crowns.CHM_height > 3]
     
     #Load Alive/Dead model
     dead_label, dead_score = predict_dead(crowns=crowns, dead_model_path=dead_model_path, rgb_tile=rgb_path, config=config)
