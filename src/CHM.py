@@ -23,7 +23,7 @@ def postprocess_CHM(df, lookup_pool):
     
     #buffer slightly, CHM model can be patchy
     geom = df.geometry
-    draped_boxes = rasterstats.zonal_stats(vector=geom,
+    draped_boxes = rasterstats.zonal_stats(geom,
                                            CHM_path,
                                            add_stats={'q99': non_zero_99_quantile})
     df["CHM_height"] = [x["q99"] for x in draped_boxes]
