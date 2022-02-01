@@ -9,6 +9,7 @@ from src.start_cluster import start
 from distributed import wait
 import os
 import re
+import traceback
 
 def find_rgb_files(site, year, config):
     tiles = glob(config["rgb_sensor_pool"], recursive=True)
@@ -42,8 +43,8 @@ cpu_client = start(cpus=50)
 tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"], year="2019")
 wait(tif_futures)
 
-model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0abd4a52fcb2453da44ae59740b4a9c8.pl"
-
+species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0abd4a52fcb2453da44ae59740b4a9c8.pl"
+dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/9192d967fa324eecb8cf2107e4673a00.pl"
 hsi_tifs = []
 for x in tif_futures:
     try:
@@ -51,13 +52,13 @@ for x in tif_futures:
     except:
         pass
 cpu_client.close()
-gpu_client = start(gpus=10, mem_size="50GB")
+gpu_client = start(gpus=1, mem_size="50GB")
 
 #No daemonic dask children
 config["workers"] = 0
 futures =  []
 for x in hsi_tifs:
-    future = gpu_client.submit(predict.predict_tile, x,model_path=model_path, config=config)
+    future = gpu_client.submit(predict.predict_tile, x, dead_model_path = dead_model_path, species_model_path=species_model_path, config=config)
     futures.append(future)
 
 wait(futures)
@@ -67,10 +68,10 @@ for future in futures:
     try:
         trees = future.result()
         if not trees.empty:
-            print("No predicted trees in tile")
             predictions.append(trees)        
     except Exception as e:
         print(e)
+        print(traceback.print_exc())
 
 predictions = pd.concat(predictions)
 predictions = gpd.GeoDataFrame(predictions, geometry="geometry")

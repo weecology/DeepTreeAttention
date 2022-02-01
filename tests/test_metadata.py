@@ -1,6 +1,7 @@
 #Test metadata model
 from src.models import metadata
 from src import data
+from src import utils
 import torch
 import tempfile
 import os
@@ -12,7 +13,7 @@ ROOT = os.path.dirname(os.path.dirname(data.__file__))
 @pytest.fixture(scope="session")
 def config():
     #Turn of CHM filtering for the moment
-    config = data.read_config(config_path="{}/config.yml".format(ROOT))
+    config = utils.read_config(config_path="{}/config.yml".format(ROOT))
     config["min_CHM_height"] = None
     config["iterations"] = 1
     config["rgb_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)

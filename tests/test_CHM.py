@@ -1,7 +1,6 @@
 #Test CHM height rules
-import os
 import pandas as pd
-from src import CHM, data
+from src import CHM
 
 def test_height_rules():   
     df = pd.DataFrame({"CHM_height":[11,20,5, 0.5, 10, None],"height":[6, 19, 7, 5, None, 10]})
