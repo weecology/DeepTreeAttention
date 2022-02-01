@@ -106,6 +106,10 @@ def predict_tile(PATH, dead_model_path, species_model_path, config):
         crowns = crowns[crowns.CHM_height > 3]
     
     #Load Alive/Dead model
+    print(crowns.head())
+    if crowns.empty:
+        raise ValueError("No crowns left after CHM filter")
+    
     dead_label, dead_score = predict_dead(crowns=crowns, dead_model_path=dead_model_path, rgb_tile=rgb_path, config=config)
     
     crowns["dead_label"] = dead_label
