@@ -32,7 +32,7 @@ def postprocess_CHM(df, lookup_pool):
     try:
         df.height.fillna(df["CHM_height"], inplace=True)
     except:
-        print("No height column detected")
+        print("No height column detected")  
         
     return df
         
