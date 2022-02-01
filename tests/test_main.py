@@ -1,7 +1,6 @@
 import geopandas as gpd
 import os
 import pandas as pd
-from src import main
 from pytorch_lightning import Trainer
 
 def test_fit(config, m, dm):
