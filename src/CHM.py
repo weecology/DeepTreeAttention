@@ -28,8 +28,11 @@ def postprocess_CHM(df, lookup_pool):
                                            add_stats={'q99': non_zero_99_quantile})
     df["CHM_height"] = [x["q99"] for x in draped_boxes]
 
-    #if height is null, assign it
-    df.height.fillna(df["CHM_height"], inplace=True)
+    #if height is null, try to assign it
+    try:
+        df.height.fillna(df["CHM_height"], inplace=True)
+    except:
+        print("No height column detected")
         
     return df
         
