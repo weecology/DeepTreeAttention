@@ -117,12 +117,7 @@ def config(ROOT, dead_model_path):
 #Data module
 @pytest.fixture(scope="session")
 def dm(config, ROOT):
-    csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)           
-    if not "GITHUB_ACTIONS" in os.environ:
-        config["regenerate"] = False
-    else:
-        config["regenerate"] = True
-    
+    csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)               
     dm = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data".format(ROOT), debug=True, metadata=True) 
     dm.setup()    
     
