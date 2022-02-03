@@ -91,5 +91,7 @@ if crop_sensor:
     predictions["plotID"] = None
     predictions["box_id"] = None
     predictions["siteID"] = None
-    annotations = generate.generate_crops(predictions.head(), sensor_glob=config["HSI_sensor_pool"], savedir="/orange/idtrees-collab/DeepTreeAttention/prediction_crops/", rgb_glob=config["rgb_sensor_pool"], client=None, convert_h5=True, HSI_tif_dir=config["HSI_tif_dir"])
+    annotations = generate.generate_crops(predictions, sensor_glob=config["HSI_sensor_pool"], savedir="/orange/idtrees-collab/DeepTreeAttention/prediction_crops/HSI/", rgb_glob=config["rgb_sensor_pool"], client=None, convert_h5=True, HSI_tif_dir=config["HSI_tif_dir"])
+    generate.generate_crops(predictions, sensor_glob=config["rgb_sensor_pool"], savedir="/orange/idtrees-collab/DeepTreeAttention/prediction_crops/RGB/", rgb_glob=config["rgb_sensor_pool"], client=client)
+    generate.generate_crops(predictions, sensor_glob=config["CHM_pool"], savedir="/orange/idtrees-collab/DeepTreeAttention/prediction_crops/CHM/", rgb_glob=config["rgb_sensor_pool"], client=client)
     
