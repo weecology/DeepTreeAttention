@@ -60,12 +60,12 @@ if crop_sensor:
 else:
     cpu_client.close()
     
-gpu_client = start(gpus=10, mem_size="50GB")
+gpu_client = start(gpus=1, mem_size="50GB")
 
 #No daemonic dask children
 config["workers"] = 0
 futures =  []
-for x in hsi_tifs[:2]:
+for x in hsi_tifs[:1]:
     future = gpu_client.submit(predict.predict_tile, x, dead_model_path = dead_model_path, species_model_path=species_model_path, config=config)
     futures.append(future)
 
@@ -86,6 +86,5 @@ predictions = gpd.GeoDataFrame(predictions, geometry="geometry")
 predictions.to_file("results/OSBS_predictions.shp")
 
 if crop_sensor:
-    client = None
-    predictions
-    annotations = generate.generate_crops(predictions, sensor_glob=config["HSI_sensor_pool"], savedir="/orange/idtrees-collab/DeepTreeAttention/prediction_crops/", rgb_glob=config["rgb_sensor_pool"], client=client, convert_h5=True, HSI_tif_dir=config["HSI_tif_dir"])
+    annotations = generate.generate_crops(predictions.head(), sensor_glob=config["HSI_sensor_pool"], savedir="/orange/idtrees-collab/DeepTreeAttention/prediction_crops/", rgb_glob=config["rgb_sensor_pool"], client=None, convert_h5=True, HSI_tif_dir=config["HSI_tif_dir"])
+    
