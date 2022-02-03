@@ -86,5 +86,10 @@ predictions = gpd.GeoDataFrame(predictions, geometry="geometry")
 predictions.to_file("results/OSBS_predictions.shp")
 
 if crop_sensor:
+    #format for generate crops
+    predictions["taxonID"] = predictions["spatial_taxonID"]
+    predictions["plotID"] = None
+    predictions["boxID"] = None
+    predictions["siteID"] = None
     annotations = generate.generate_crops(predictions.head(), sensor_glob=config["HSI_sensor_pool"], savedir="/orange/idtrees-collab/DeepTreeAttention/prediction_crops/", rgb_glob=config["rgb_sensor_pool"], client=None, convert_h5=True, HSI_tif_dir=config["HSI_tif_dir"])
     
