@@ -88,4 +88,4 @@ predictions.to_file("results/OSBS_predictions.shp")
 if crop_sensor:
     client = None
     predictions
-    annotations = generate.generate_crops(predictions, sensor_glob=config["HSI_sensor_pool"], savedir="/orange/idtress-collab/DeepTreeAttention/prediction_crops/", rgb_glob=config["rgb_sensor_pool"], client=client, convert_h5=True, HSI_tif_dir=config["HSI_tif_dir"])
+    annotations = generate.generate_crops(predictions, sensor_glob=config["HSI_sensor_pool"], savedir="/orange/idtrees-collab/DeepTreeAttention/prediction_crops/", rgb_glob=config["rgb_sensor_pool"], client=client, convert_h5=True, HSI_tif_dir=config["HSI_tif_dir"])
