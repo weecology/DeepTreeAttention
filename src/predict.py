@@ -157,6 +157,7 @@ def predict_crowns(PATH):
     gdf["box_id"] = None
     gdf["plotID"] = None
     gdf["taxonID"] = None
+    gdf["RGB_tile"] = PATH
     
     return gdf
 
@@ -173,7 +174,7 @@ def predict_species(crowns, HSI_path, m, config):
     crowns["bbox_score"] = crowns["score"]
     
     #If CHM exists TODO
-    crowns = crowns.loc[:,crowns.columns.isin(["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score"])]
+    crowns = crowns.loc[:,crowns.columns.isin(["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score","RGB_tile"])]
     df = df.merge(crowns, on="individual")
     
     return df, features

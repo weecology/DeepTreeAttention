@@ -6,10 +6,13 @@ from glob import glob
 import pandas as pd
 import geopandas as gpd
 from src.start_cluster import start
+from src import generate
 from distributed import wait
 import os
 import re
 import traceback
+
+crop_sensor = False
 
 def find_rgb_files(site, year, config):
     tiles = glob(config["rgb_sensor_pool"], recursive=True)
@@ -51,13 +54,18 @@ for x in tif_futures:
         hsi_tifs.append(x.result())
     except:
         pass
-cpu_client.close()
+
+if crop_sensor:
+    pass
+else:
+    cpu_client.close()
+    
 gpu_client = start(gpus=10, mem_size="50GB")
 
 #No daemonic dask children
 config["workers"] = 0
 futures =  []
-for x in hsi_tifs:
+for x in hsi_tifs[:2]:
     future = gpu_client.submit(predict.predict_tile, x, dead_model_path = dead_model_path, species_model_path=species_model_path, config=config)
     futures.append(future)
 
@@ -76,3 +84,8 @@ for future in futures:
 predictions = pd.concat(predictions)
 predictions = gpd.GeoDataFrame(predictions, geometry="geometry")
 predictions.to_file("results/OSBS_predictions.shp")
+
+if crop_sensor:
+    client = None
+    predictions
+    annotations = generate.generate_crops(predictions, sensor_glob=config["HSI_sensor_pool"], savedir="/orange/idtress-collab/DeepTreeAttention/prediction_crops/", rgb_glob=config["rgb_sensor_pool"], client=client, convert_h5=True, HSI_tif_dir=config["HSI_tif_dir"])
