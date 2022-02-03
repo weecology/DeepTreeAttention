@@ -12,7 +12,7 @@ import os
 import re
 import traceback
 
-crop_sensor = False
+crop_sensor = True
 
 def find_rgb_files(site, year, config):
     tiles = glob(config["rgb_sensor_pool"], recursive=True)

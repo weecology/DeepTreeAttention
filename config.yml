@@ -13,7 +13,7 @@ min_stem_diameter: 10
 min_train_samples: 7
 min_test_samples: 5
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
-iterations: 2000
+iterations: 4000
 #minimum CHM height, leave blank to skip CHM filtering
 min_CHM_height: 1
 #Max difference between measured height and CHM height if CHM > height
@@ -23,14 +23,14 @@ CHM_height_limit: 8
 
 #Dead model filter
 dead_model: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/9192d967fa324eecb8cf2107e4673a00.pl
-dead_threshold: 0.75
+dead_threshold: 0.95
 
 #Megaplot XY Data, these are .shp files saved as the siteID
-megaplot_dir: /orange/idtrees-collab/megaplot/
+megaplot_dir:
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Make new dataset
-regenerate: False
+regenerate: True
 convert_h5: True
 #Overwrite existing crops
 replace: True
