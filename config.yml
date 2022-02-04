@@ -26,7 +26,7 @@ dead_model: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/9192d967fa32
 dead_threshold: 0.95
 
 #Megaplot XY Data, these are .shp files saved as the siteID
-megaplot_dir:
+megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Make new dataset
