@@ -371,15 +371,15 @@ class TreeData(LightningDataModule):
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
             
             #Dead filter
-            dead_label, dead_score = filter_dead_annotations(crowns, config=self.config)
-            crowns["dead_label"] = dead_label
-            crowns["dead_score"] = dead_score
-            individuals_to_keep = crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))].individual
-            annotations = annotations[annotations.individualID.isin(individuals_to_keep)]
+            #dead_label, dead_score = filter_dead_annotations(crowns, config=self.config)
+            #crowns["dead_label"] = dead_label
+            #crowns["dead_score"] = dead_score
+            #individuals_to_keep = crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))].individual
+            #annotations = annotations[annotations.individualID.isin(individuals_to_keep)]
             
-            if self.comet_logger:
-                self.comet_logger.experiment.log_parameter("Species after dead filtering",len(annotations.taxonID.unique()))
-                self.comet_logger.experiment.log_parameter("Samples after dead filtering",annotations.shape[0])
+            #if self.comet_logger:
+                #self.comet_logger.experiment.log_parameter("Species after dead filtering",len(annotations.taxonID.unique()))
+                #self.comet_logger.experiment.log_parameter("Samples after dead filtering",annotations.shape[0])
                         
             if self.config["new_train_test_split"]:
                 train_annotations, test_annotations = train_test_split(annotations,config=self.config, client=self.client)   
