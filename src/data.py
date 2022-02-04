@@ -23,7 +23,7 @@ def filter_data(path, config):
         config: DeepTreeAttention config dict, see config.yml
     """
     field = pd.read_csv(path)
-    field = field[~field.elevation.isnull()]
+    field = field[~field.itcEasting.isnull()]
     field = field[~field.growthForm.isin(["liana","small shrub"])]
     field = field[~field.growthForm.isnull()]
     field = field[~field.plantStatus.isnull()]        
