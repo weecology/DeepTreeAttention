@@ -13,8 +13,8 @@ def bounds_to_geoindex(bounds):
     Return:
         geoindex: str {easting}_{northing}
     """
-    easting = int(np.mean(bounds[0], bounds[2]))
-    northing = int(np.mean(bounds[1], bounds[3]))
+    easting = int(np.mean([bounds[0], bounds[2]]))
+    northing = int(np.mean([bounds[1], bounds[3]]))
 
     easting = math.floor(easting / 1000) * 1000
     northing = math.floor(northing / 1000) * 1000
