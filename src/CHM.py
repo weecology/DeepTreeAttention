@@ -19,7 +19,7 @@ def postprocess_CHM(df, lookup_pool):
     try:
         CHM_path = neon_paths.find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds)
     except Exception as e:
-        raise ValueError("Cannot find CHM path for {} from plot {} in lookup_pool: {}".format(df.total_bounds, df.plotID.unique(),e))
+        raise ValueError("Cannot find CHM path for {} from plot {} in lookup_pool: {}".format(df.bounds, df.plotID.unique(),e))
     
     #buffer slightly, CHM model can be patchy
     geom = df.geometry

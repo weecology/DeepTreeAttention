@@ -3,6 +3,7 @@ import os
 import math
 import re
 import h5py
+import numpy as np
 from src import Hyperspectral
 
 def bounds_to_geoindex(bounds):
@@ -12,8 +13,8 @@ def bounds_to_geoindex(bounds):
     Return:
         geoindex: str {easting}_{northing}
     """
-    easting = min(bounds[0], bounds[2])
-    northing = min(bounds[1], bounds[3])
+    easting = np.mean(bounds[0], bounds[2])
+    northing = np.mean(bounds[1], bounds[3])
 
     easting = math.floor(easting / 1000) * 1000
     northing = math.floor(northing / 1000) * 1000
