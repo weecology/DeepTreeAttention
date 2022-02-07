@@ -62,7 +62,7 @@ epochs: 120
 #Spatial smooth
 #Distance radius to search
 neighbor_buffer_size: 3
-spatial_epochs: 75
+spatial_epochs: 100
 
 #Evaluation config
 #Top k class recall score
