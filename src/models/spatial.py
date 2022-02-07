@@ -99,7 +99,7 @@ class spatial_fusion(LightningModule):
         self.log("val_loss", loss, on_epoch=True)
         self.log("spatial_alpha", self.scaled_alpha, on_epoch=True)
         
-        softmax_prob = F.softmax(y_hat, dim=0)
+        softmax_prob = F.softmax(y_hat, dim=1)
         output = self.metrics(softmax_prob, y) 
         self.log_dict(output)        
                     
