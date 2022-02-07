@@ -50,8 +50,9 @@ class spatial_fusion(LightningModule):
         concat_features = torch.cat([neighbor_score, sensor_score], dim=1)
         concat_features = self.fc1(concat_features)
         concat_features = F.relu(concat_features)
+        skip_features = concat_features + sensor_score
         
-        return concat_features
+        return skip_features
     
     def train_dataloader(self):
         data_loader = torch.utils.data.DataLoader(
