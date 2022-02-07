@@ -358,7 +358,7 @@ class TreeModel(LightningModule):
             val_labels=self.val_results.label)
         
         ##Train spatial model
-        trainer = Trainer(checkpoint_callback=False, max_epochs=100, logger=logger)
+        trainer = Trainer(checkpoint_callback=False, max_epochs=self.config["spatial_epochs"], logger=logger)
         if logger:
             with logger.experiment.context_manager("spatial"):
                 trainer.fit(self.spatial_model)
