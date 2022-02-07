@@ -359,11 +359,11 @@ class TreeModel(LightningModule):
         
         ##Train spatial model
         trainer = Trainer(checkpoint_callback=False, max_epochs=self.config["spatial_epochs"], logger=logger)
-        if logger:
-            with logger.experiment.context_manager("spatial"):
-                trainer.fit(self.spatial_model)
-        else:
-            trainer.fit(self.spatial_model)
+        #if logger:
+            #with logger.experiment.context_manager("spatial"):
+                #trainer.fit(self.spatial_model)
+        #else:
+            #trainer.fit(self.spatial_model)
             
         #Evaluate
         scores = trainer.predict(self.spatial_model)

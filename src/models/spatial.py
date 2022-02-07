@@ -40,16 +40,16 @@ class spatial_fusion(LightningModule):
         self.val_ds = SpatialDataset(val_sensor_score, val_neighbor_score, val_labels)
         
         #Fully connected concat learner
-        self.alpha = nn.Parameter(torch.tensor(0, dtype=float), requires_grad=True)
+        self.alpha = nn.Parameter(torch.tensor(0.1, dtype=float), requires_grad=False)
         micro_recall = torchmetrics.Accuracy(average="micro")
         macro_recall = torchmetrics.Accuracy(average="macro", num_classes=len(np.unique(val_labels)))
         self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall,"Macro Accuracy":macro_recall})
 
     def forward(self, sensor_score, neighbor_score):
         self.scaled_alpha = self.alpha      
-        #x = sensor_score + (self.scaled_alpha * neighbor_score)
+        x = sensor_score + (self.scaled_alpha * neighbor_score)
         
-        return sensor_score
+        return x
     
     def train_dataloader(self):
         data_loader = torch.utils.data.DataLoader(
