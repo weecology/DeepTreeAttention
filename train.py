@@ -17,6 +17,7 @@ from pandas.util import hash_pandas_object
 
 #Create datamodule
 config = data.read_config("config.yml")
+
 if config["regenerate"]:
     client = start_cluster.start(cpus=75, mem_size="5GB")
 else:
@@ -47,14 +48,6 @@ comet_logger.experiment.log_table("train.csv", train)
 comet_logger.experiment.log_table("test.csv", test)
 comet_logger.experiment.log_table("novel_species.csv", novel)
 
-#model = metadata.metadata_sensor_fusion(sites=data_module.num_sites, classes=data_module.num_classes, bands=data_module.config["bands"])
-model = Hang2020.Hang2020(classes=data_module.num_classes, bands=data_module.config["bands"])
-m = main.TreeModel(
-    model=model, 
-    classes=data_module.num_classes, 
-    label_dict=data_module.species_label_dict)
-
-comet_logger.experiment.log_parameters(m.config)
 
 #Create trainer
 lr_monitor = LearningRateMonitor(logging_interval='epoch')
@@ -68,7 +61,18 @@ trainer = Trainer(
     logger=comet_logger)
 
 #Train sensor model
-trainer.fit(m, datamodule=data_module)
+if config["checkpoint"] is None:
+    #model = metadata.metadata_sensor_fusion(sites=data_module.num_sites, classes=data_module.num_classes, bands=data_module.config["bands"])
+    model = Hang2020.Hang2020(classes=data_module.num_classes, bands=data_module.config["bands"])
+    m = main.TreeModel(
+        model=model, 
+        classes=data_module.num_classes, 
+        label_dict=data_module.species_label_dict)
+    
+    comet_logger.experiment.log_parameters(m.config)    
+    trainer.fit(m, datamodule=data_module)
+else:
+    m = main.TreeModel.load_from_checkpoint(config["checkpoint"])
 
 #Train spatial model
 results = m.evaluate_crowns(train_dataloader=data_module.train_dataloader(), val_dataloader=data_module.val_dataloader(), logger=comet_logger)
