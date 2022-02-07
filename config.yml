@@ -47,6 +47,10 @@ preload_images: True
 workers: 0
 
 #Network Parameters
+#skip training and load from checkpoint
+checkpoint: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9b12795bd17b48159046597ab511e8dc.pl
+
+#Training
 gpus: 1
 batch_size: 32
 bands: 369
