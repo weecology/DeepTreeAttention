@@ -99,8 +99,7 @@ class spatial_fusion(LightningModule):
         self.log("val_loss", loss, on_epoch=True)
         self.log("spatial_alpha", self.scaled_alpha, on_epoch=True)
         
-        softmax_prob = F.softmax(y_hat, dim=1)
-        output = self.metrics(softmax_prob, y) 
+        output = self.metrics(y_hat, y) 
         self.log_dict(output)        
                     
         return loss
@@ -114,6 +113,6 @@ class spatial_fusion(LightningModule):
         return y_hat
     
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=0.0001)
+        optimizer = optim.Adam(self.parameters(), lr=0.00001)
         
         return {'optimizer':optimizer}
