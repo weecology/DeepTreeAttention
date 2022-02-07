@@ -120,4 +120,15 @@ class spatial_fusion(LightningModule):
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=0.001)
         
-        return {'optimizer':optimizer}
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                         mode='min',
+                                                         factor=0.5,
+                                                         patience=10,
+                                                         verbose=True,
+                                                         threshold=0.0001,
+                                                         threshold_mode='rel',
+                                                         cooldown=0,
+                                                         min_lr=0.000001,
+                                                         eps=1e-08)
+                                                                 
+        return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
