@@ -40,16 +40,17 @@ class spatial_fusion(LightningModule):
         self.val_ds = SpatialDataset(val_sensor_score, val_neighbor_score, val_labels)
         
         #Fully connected concat learner
-        self.alpha = nn.Parameter(torch.tensor(0.1, dtype=float), requires_grad=True)
+        num_classes = len(np.unique(val_labels))
         micro_recall = torchmetrics.Accuracy(average="micro")
         macro_recall = torchmetrics.Accuracy(average="macro", num_classes=len(np.unique(val_labels)))
         self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall,"Macro Accuracy":macro_recall})
-
+        self.fc1 = nn.Linear(in_features=num_classes*2,out_features=num_classes)
     def forward(self, sensor_score, neighbor_score):
-        self.scaled_alpha = self.alpha      
-        x = sensor_score + (self.scaled_alpha * neighbor_score)
+        concat_features = torch.cat([neighbor_score, sensor_score], dim=1)
+        concat_features = self.fc1(concat_features)
+        concat_features = F.relu(concat_features)
         
-        return x
+        return concat_features
     
     def train_dataloader(self):
         data_loader = torch.utils.data.DataLoader(
@@ -97,7 +98,6 @@ class spatial_fusion(LightningModule):
         
         # Log loss and metrics
         self.log("val_loss", loss, on_epoch=True)
-        self.log("spatial_alpha", self.scaled_alpha, on_epoch=True)
         
         output = self.metrics(y_hat, y) 
         self.log_dict(output)        
