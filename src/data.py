@@ -1,26 +1,21 @@
 #Ligthning data module
-import argparse
 from . import __file__
 from distributed import wait
 import glob
 import geopandas as gpd
-import json
 import numpy as np
 import os
 import pandas as pd
 from pytorch_lightning import LightningDataModule
-import rasterio as rio
-from sklearn import preprocessing
 from src import generate
 from src import CHM
 from src import augmentation
 from src import megaplot
+from src.models import dead
+from src.utils import *
 from shapely.geometry import Point
 import torch
 from torch.utils.data import Dataset
-from torchvision import transforms
-import yaml
-import warnings
         
 def filter_data(path, config):
     """Transform raw NEON data into clean shapefile   
@@ -28,7 +23,7 @@ def filter_data(path, config):
         config: DeepTreeAttention config dict, see config.yml
     """
     field = pd.read_csv(path)
-    field = field[~field.elevation.isnull()]
+    field = field[~field.itcEasting.isnull()]
     field = field[~field.growthForm.isin(["liana","small shrub"])]
     field = field[~field.growthForm.isnull()]
     field = field[~field.plantStatus.isnull()]        
@@ -104,6 +99,8 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     if len(plotIDs) == 0:
         test = shp[shp.plotID == shp.plotID.unique()[0]]
         train = shp[shp.plotID == shp.plotID.unique()[1]]
+        
+        return train, test
                 
     np.random.shuffle(plotIDs)
     test = shp[shp.plotID == plotIDs[0]]
@@ -190,57 +187,6 @@ def train_test_split(shp, config, client = None):
     train["point_id"] = train.index.values
     
     return train, test
-        
-def read_config(config_path):
-    """Read config yaml file"""
-    
-    #Allow command line to override 
-    parser = argparse.ArgumentParser("DeepTreeAttention config")
-    parser.add_argument('-d', '--my-dict', type=json.loads, default=None)
-    args = parser.parse_known_args()
-    try:
-        with open(config_path, 'r') as f:
-            config = yaml.load(f, Loader=yaml.FullLoader)
-
-    except Exception as e:
-        raise FileNotFoundError("There is no config at {}, yields {}".format(
-            config_path, e))
-    
-    #Update anything in argparse to have higher priority
-    if args[0].my_dict:
-        for key, value in args[0].my_dict:
-            config[key] = value
-        
-    return config
-
-def preprocess_image(image, channel_is_first=False):
-    """Preprocess a loaded image, if already C*H*W set channel_is_first=True"""
-    img = np.asarray(image, dtype='float32')
-    data = img.reshape(img.shape[0], np.prod(img.shape[1:]))
-    
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', UserWarning)    
-        data  = preprocessing.scale(data)
-    img = data.reshape(img.shape)
-    
-    if not channel_is_first:
-        img = np.rollaxis(img, 2,0)
-        
-    normalized = torch.from_numpy(img)
-    
-    return normalized
-
-def load_image(img_path, image_size):
-    """Load and preprocess an image for training/prediction"""
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', rio.errors.NotGeoreferencedWarning)
-        image = rio.open(img_path).read()       
-    image = preprocess_image(image, channel_is_first=True)
-    
-    #resize image
-    image = transforms.functional.resize(image, size=(image_size,image_size), interpolation=transforms.InterpolationMode.NEAREST)
-    
-    return image
 
 #Dataset class
 class TreeDataset(Dataset):
@@ -301,13 +247,23 @@ class TreeDataset(Dataset):
         else:
             return individual, inputs
 
+def filter_dead_annotations(crowns, config):
+    """Given a set of annotations, predict whether RGB is dead
+    Args:
+        annotations: must contain xmin, xmax, ymin, ymax and image path fields"""
+    ds = dead.utm_dataset(crowns, config=config)
+    dead_model = dead.AliveDead.load_from_checkpoint(config["dead_model"])    
+    label, score = dead.predict_dead_dataloader(dead_model=dead_model, dataset=ds, config=config)
+    
+    return label, score
+    
 class TreeData(LightningDataModule):
     """
     Lightning data module to convert raw NEON data into HSI pixel crops based on the config.yml file. 
     The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
     Use regenerate=True to override this behavior in setup()
     """
-    def __init__(self, csv_file, HSI=True, metadata=False, regenerate = False, client = None, config=None, data_dir=None, comet_logger=None, debug=False):
+    def __init__(self, csv_file, HSI=True, metadata=False, client = None, config=None, data_dir=None, comet_logger=None, debug=False):
         """
         Args:
             config: optional config file to override
@@ -317,7 +273,6 @@ class TreeData(LightningDataModule):
         """
         super().__init__()
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
-        self.regenerate=regenerate
         self.csv_file = csv_file
         self.HSI = HSI
         self.metadata = metadata
@@ -340,7 +295,7 @@ class TreeData(LightningDataModule):
                 
     def setup(self,stage=None):
         #Clean data from raw csv, regenerate from scratch or check for progress and complete
-        if self.regenerate:
+        if self.config["regenerate"]:
             if self.config["replace"]:#remove any previous runs
                 try:
                     os.remove("{}/processed/canopy_points.shp".format(self.data_dir))
@@ -357,6 +312,7 @@ class TreeData(LightningDataModule):
                 #load any megaplot data
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
+                    megaplot_data = megaplot_data[megaplot_data.siteID=="OSBS"]
                     df = pd.concat([megaplot_data, df])
                 
                 if not self.debug:
@@ -413,6 +369,17 @@ class TreeData(LightningDataModule):
             if self.comet_logger:
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(annotations.taxonID.unique()))
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
+            
+            #Dead filter
+            #dead_label, dead_score = filter_dead_annotations(crowns, config=self.config)
+            #crowns["dead_label"] = dead_label
+            #crowns["dead_score"] = dead_score
+            #individuals_to_keep = crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))].individual
+            #annotations = annotations[annotations.individualID.isin(individuals_to_keep)]
+            
+            #if self.comet_logger:
+                #self.comet_logger.experiment.log_parameter("Species after dead filtering",len(annotations.taxonID.unique()))
+                #self.comet_logger.experiment.log_parameter("Samples after dead filtering",annotations.shape[0])
                         
             if self.config["new_train_test_split"]:
                 if not self.debug:                
@@ -482,6 +449,7 @@ class TreeData(LightningDataModule):
             self.val_ds = TreeDataset(csv_file = "{}/processed/test.csv".format(self.data_dir), config=self.config, HSI=self.HSI, metadata=self.metadata)
              
         else:
+            print("Loading previous run")
             train_annotations = pd.read_csv("{}/processed/train.csv".format(self.data_dir))
             test_annotations = pd.read_csv("{}/processed/test.csv".format(self.data_dir))
             

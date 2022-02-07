@@ -3,6 +3,7 @@ import os
 import math
 import re
 import h5py
+import numpy as np
 from src import Hyperspectral
 
 def bounds_to_geoindex(bounds):
@@ -12,8 +13,8 @@ def bounds_to_geoindex(bounds):
     Return:
         geoindex: str {easting}_{northing}
     """
-    easting = min(bounds[0], bounds[2])
-    northing = min(bounds[1], bounds[3])
+    easting = int(np.mean([bounds[0], bounds[2]]))
+    northing = int(np.mean([bounds[1], bounds[3]]))
 
     easting = math.floor(easting / 1000) * 1000
     northing = math.floor(northing / 1000) * 1000
@@ -22,7 +23,7 @@ def bounds_to_geoindex(bounds):
 
     return geoindex
 
-def find_sensor_path(lookup_pool, shapefile=None, bounds=None):
+def find_sensor_path(lookup_pool, shapefile=None, bounds=None, geo_index=None):
     """Find a hyperspec path based on the shapefile using NEONs schema
     Args:
         bounds: Optional: list of top, left, bottom, right bounds, usually from geopandas.total_bounds. Instead of providing a shapefile
@@ -30,7 +31,15 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None):
     Returns:
         year_match: full path to sensor tile
     """
-    if shapefile is None:
+    if geo_index:
+        match = [x for x in lookup_pool if geo_index in x]
+        match.sort()
+        match = match[::-1]
+        try:
+            year_match = match[0]
+        except Exception as e:
+            raise ValueError("No matches for geoindex {} in sensor pool".format(geo_index))        
+    elif shapefile is None:
         geo_index = bounds_to_geoindex(bounds=bounds)
         match = [x for x in lookup_pool if geo_index in x]
         match.sort()
@@ -66,9 +75,9 @@ def convert_h5(hyperspectral_h5_path, rgb_path, savedir):
     return tif_path
 
 
-def lookup_and_convert(rgb_pool, hyperspectral_pool, savedir, bounds = None, shapefile=None):
-    hyperspectral_h5_path = find_sensor_path(shapefile=shapefile,lookup_pool=hyperspectral_pool, bounds=bounds)
-    rgb_path = find_sensor_path(shapefile=shapefile, lookup_pool=rgb_pool, bounds=bounds)
+def lookup_and_convert(rgb_pool, hyperspectral_pool, savedir, bounds = None, shapefile=None, geo_index=None):
+    hyperspectral_h5_path = find_sensor_path(shapefile=shapefile,lookup_pool=hyperspectral_pool, bounds=bounds, geo_index=geo_index)
+    rgb_path = find_sensor_path(shapefile=shapefile, lookup_pool=rgb_pool, bounds=bounds, geo_index=geo_index)
 
     #convert .h5 hyperspec tile if needed
     tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"

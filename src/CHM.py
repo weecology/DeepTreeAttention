@@ -15,7 +15,7 @@ def non_zero_99_quantile(x):
 
 def postprocess_CHM(df, lookup_pool):
     """Field measured height must be within min_diff meters of canopy model"""
-    #Extract zonal stats
+    #Extract zonal stats, add a small offset, the min box can go to next tile.
     try:
         CHM_path = neon_paths.find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds)
     except Exception as e:
@@ -23,14 +23,17 @@ def postprocess_CHM(df, lookup_pool):
     
     #buffer slightly, CHM model can be patchy
     geom = df.geometry
-    draped_boxes = rasterstats.zonal_stats(geom.__geo_interface__,
+    draped_boxes = rasterstats.zonal_stats(geom,
                                            CHM_path,
                                            add_stats={'q99': non_zero_99_quantile})
     df["CHM_height"] = [x["q99"] for x in draped_boxes]
 
-    #if height is null, assign it
-    df.height.fillna(df["CHM_height"], inplace=True)
-        
+    #if height is null, try to assign it
+    try:
+        df.height.fillna(df["CHM_height"], inplace=True)
+    except:
+        print("No height column detected")  
+    
     return df
         
 def CHM_height(shp, CHM_pool):
@@ -101,4 +104,3 @@ def filter_CHM(shp, CHM_pool, min_CHM_height=1, max_CHM_diff=4, CHM_height_limit
     shp = height_rules(df=shp, min_CHM_height=1, max_CHM_diff=4, CHM_height_limit=8)
 
     return shp
-

@@ -4,22 +4,14 @@ import glob
 import geopandas as gpd
 import pandas as pd
 from deepforest import main
-import os
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-ROOT = os.path.dirname(os.path.dirname(generate.__file__))
-rgb_pool = glob.glob("{}/tests/data/*.tif".format(ROOT))
-rgb_path = "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop.tif".format(ROOT)
-data_path = "{}/tests/data/sample.shp".format(ROOT)
-plot_data = gpd.read_file(data_path)        
-
-def test_predict_trees():
+def test_predict_trees(rgb_path, plot_data):
     m = main.deepforest()
     m.use_release(check_release=False)
     boxes = generate.predict_trees(deepforest_model=m, rgb_path=rgb_path, bounds=plot_data.total_bounds)
     assert not boxes.empty 
 
-def test_empty_plot():
+def test_empty_plot(rgb_path, plot_data):
     #DeepForest prediction
     deepforest_model = main.deepforest()
     deepforest_model.use_release(check_release=False)
@@ -49,8 +41,8 @@ def test_empty_plot():
     
     assert not merged_boxes.empty
     
-def test_process_plot():
-    df = gpd.read_file(data_path)
+def test_process_plot(rgb_pool, sample_crowns):
+    df = gpd.read_file(sample_crowns)
     deepforest_model = main.deepforest()
     deepforest_model.use_release(check_release=False)
     
@@ -58,8 +50,8 @@ def test_process_plot():
     assert df.shape[0] >= merged_boxes.shape[0]
     assert len(merged_boxes.box_id.unique()) == merged_boxes.shape[0]
     
-def test_run(tmpdir):
-    df = gpd.read_file(data_path)
+def test_run(tmpdir, sample_crowns, rgb_pool):
+    df = gpd.read_file(sample_crowns)
     plot = df.plotID.unique()[0]
     generate.run(
         plot=plot,
@@ -71,13 +63,14 @@ def test_run(tmpdir):
     
     assert len(glob.glob("{}/*.shp".format(tmpdir))) > 0
 
-def test_generate_crops(tmpdir):
+def test_generate_crops(tmpdir, ROOT, rgb_path):
     data_path = "{}/tests/data/crown.shp".format(ROOT)
     gdf = gpd.read_file(data_path)
+    gdf["RGB_tile"] = rgb_path
     annotations = generate.generate_crops(
         gdf=gdf, rgb_glob="{}/tests/data/*.tif".format(ROOT),
         convert_h5=False, sensor_glob="{}/tests/data/*.tif".format(ROOT), savedir=tmpdir)
     
     assert not annotations.empty
-    assert all([x in ["image_path","label","site","siteID","plotID","individualID","taxonID","point_id","box_id"] for x in annotations.columns])
+    assert all([x in ["image_path","label","site","siteID","plotID","individualID","taxonID","point_id","box_id","RGB_tile"] for x in annotations.columns])
     assert len(annotations.box_id.unique()) == annotations.shape[0]

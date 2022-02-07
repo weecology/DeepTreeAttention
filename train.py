@@ -23,7 +23,7 @@ else:
     client = None
 
 comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"],auto_output_logging = "simple")    
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=config["regenerate"], client=client, metadata=True, comet_logger=comet_logger)
+data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2022.csv", client=client, metadata=True, comet_logger=comet_logger)
 data_module.setup()
 if client:
     client.close()
@@ -73,8 +73,10 @@ trainer.fit(m, datamodule=data_module)
 #Train spatial model
 results = m.evaluate_crowns(train_dataloader=data_module.train_dataloader(), val_dataloader=data_module.val_dataloader(), logger=comet_logger)
 
-rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
+#Save model checkpoint
+trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
 
+rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
     results=results,
@@ -101,3 +103,4 @@ comet_logger.experiment.log_metric("within_site_confusion", within_site_confusio
 plot_lists = train.groupby("label").plotID.unique()
 within_plot_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=plot_lists)
 comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)
+

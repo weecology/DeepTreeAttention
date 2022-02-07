@@ -1,30 +1,31 @@
 #Lightning Data Module
 from . import __file__
-import geopandas as gpd
-import glob as glob
 from deepforest.main import deepforest
 from descartes import PolygonPatch
+import geopandas as gpd
+import glob as glob
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.collections import PatchCollection
-from pytorch_lightning import LightningModule, Trainer
 import os
 import pandas as pd
-from torch.nn import functional as F
-from torch import optim
-import torch
-from torchvision import transforms
-import torchmetrics
-import tempfile
+from pytorch_lightning import LightningModule, Trainer
 import rasterio
 from rasterio.plot import show
+from shapely.geometry import Point, box
 from src import data
 from src import generate
 from src import neon_paths
 from src import patches
 from src import spatial
 from src.models import spatial as sp_model
-from shapely.geometry import Point, box
+from src import utils
+from torch.nn import functional as F
+from torch import optim
+import torch
+from torchvision import transforms
+import torchmetrics
+import tempfile
 
 class TreeModel(LightningModule):
     """A pytorch lightning data module
@@ -37,7 +38,7 @@ class TreeModel(LightningModule):
         self.ROOT = os.path.dirname(os.path.dirname(__file__))    
         self.tmpdir = tempfile.gettempdir()
         if config is None:
-            self.config = data.read_config("{}/config.yml".format(self.ROOT))   
+            self.config = utils.read_config("{}/config.yml".format(self.ROOT))   
         else:
             self.config = config
         
@@ -55,6 +56,8 @@ class TreeModel(LightningModule):
         macro_recall = torchmetrics.Accuracy(average="macro", num_classes=classes)
         top_k_recall = torchmetrics.Accuracy(average="micro",top_k=self.config["top_k"])
         self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall,"Macro Accuracy":macro_recall,"Top {} Accuracy".format(self.config["top_k"]): top_k_recall})
+        
+        self.save_hyperparameters()
         
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
@@ -216,7 +219,7 @@ class TreeModel(LightningModule):
             
         return pred
     
-    def predict_dataloader(self, data_loader, plot_n_individuals=1, return_features=False, experiment=None):
+    def predict_dataloader(self, data_loader, plot_n_individuals=1, return_features=False, experiment=None, train=True):
         """Given a file with paths to image crops, create crown predictions 
         The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
         unique identifier for each crown and counter is 0..n pixel crops that belong to that crown.
@@ -235,20 +238,23 @@ class TreeModel(LightningModule):
         labels = []
         individuals = []
         for batch in data_loader:
-            individual, inputs, targets = batch
+            if train:
+                individual, inputs, targets = batch
+            else:
+                individual, inputs = batch
             with torch.no_grad():
                 pred = self.predict(inputs)
                 pred = F.softmax(pred, dim=1)
             predictions.append(pred)
-            labels.append(targets)
             individuals.append(individual)
+            if train:
+                labels.append(targets)                
 
         individuals = np.concatenate(individuals)        
-        labels = np.concatenate(labels)
         predictions = np.concatenate(predictions) 
         
-        if return_features:            
-            return predictions
+        if train:
+            labels = np.concatenate(labels)
         
         predictions_top1 = np.argmax(predictions, 1)    
         predictions_top2 = pd.DataFrame(predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
@@ -256,11 +262,13 @@ class TreeModel(LightningModule):
         top2_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[1], axis=1)
         
         #Construct a df of predictions
-        df = pd.DataFrame({"pred_label_top1":predictions_top1,"pred_label_top2":predictions_top2,"top1_score":top1_score,"top2_score":top2_score,"label":labels,"individual":individuals})
+        df = pd.DataFrame({"pred_label_top1":predictions_top1,"pred_label_top2":predictions_top2,"top1_score":top1_score,"top2_score":top2_score,"individual":individuals})
         df["pred_taxa_top1"] = df["pred_label_top1"].apply(lambda x: self.index_to_label[x]) 
         df["pred_taxa_top2"] = df["pred_label_top2"].apply(lambda x: self.index_to_label[x])        
-        df["true_taxa"] = df["label"].apply(lambda x: self.index_to_label[x])
- 
+        if train:
+            df["label"] = labels
+            df["true_taxa"] = df["label"].apply(lambda x: self.index_to_label[x])            
+            
         if experiment:
             #load image pool and crown predicrions
             rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
@@ -296,9 +304,12 @@ class TreeModel(LightningModule):
                 plt.close("all")
             plt.ioff()
             
-        return df
-        
-    def evaluate_crowns(self, train_dataloader, val_dataloader, logger=None):
+        if return_features:            
+            return df, predictions        
+        else:
+            return df
+    
+    def evaluate_crowns(self, train_dataloader,val_dataloader, logger=None):
         """Crown level measure of accuracy
         Args:
             data_loader: TreeData dataset
@@ -309,14 +320,11 @@ class TreeModel(LightningModule):
         """
         #Read in crown data and predict train and val dataloaders
         crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))           
-        self.train_results = self.predict_dataloader(data_loader=train_dataloader, plot_n_individuals=self.config["plot_n_individuals"], experiment=None)        
-        train_features = self.predict_dataloader(data_loader=train_dataloader, plot_n_individuals=self.config["plot_n_individuals"], experiment=None, return_features=True)        
-        
+        self.train_results, train_features  = self.predict_dataloader(data_loader=train_dataloader, plot_n_individuals=self.config["plot_n_individuals"], experiment=None, return_features=True)                
         self.train_results = self.train_results.merge(crowns.drop(columns="label"), on="individual")
         self.train_results = gpd.GeoDataFrame(self.train_results, geometry="geometry")
         
-        self.val_results = self.predict_dataloader(data_loader=val_dataloader, plot_n_individuals=self.config["plot_n_individuals"], experiment=None)        
-        val_features = self.predict_dataloader(data_loader=val_dataloader, plot_n_individuals=self.config["plot_n_individuals"], experiment=None, return_features=True)                
+        self.val_results, val_features= self.predict_dataloader(data_loader=val_dataloader, plot_n_individuals=self.config["plot_n_individuals"], experiment=None, return_features=True)        
         self.val_results = self.val_results.merge(crowns.drop(columns="label"), on="individual")
         self.val_results = gpd.GeoDataFrame(self.val_results, geometry="geometry")
         
@@ -326,7 +334,7 @@ class TreeModel(LightningModule):
             self.train_results,
             buffer=self.config["neighbor_buffer_size"],
             model = self,
-            data_dir = "data/",
+            data_dir = "{}/data/".format(self.ROOT),
             image_size=self.config["image_size"],
             HSI_pool=HSI_pool)   
         
@@ -369,7 +377,16 @@ class TreeModel(LightningModule):
         if logger:
             logger.experiment.log_metric("spatial_micro",spatial_micro)
             logger.experiment.log_metric("spatial_macro",spatial_macro)
-            
+    
+        #Log results by species
+        taxon_accuracy = torchmetrics.functional.accuracy(preds=torch.tensor(self.val_results.spatial_pred_label.values),target=torch.tensor(self.val_results.label.values), average="none", num_classes=self.classes)
+        taxon_precision = torchmetrics.functional.precision(preds=torch.tensor(self.val_results.spatial_pred_label.values),target=torch.tensor(self.val_results.label.values), average="none", num_classes=self.classes)
+        species_table = pd.DataFrame({"taxonID":self.label_to_index.keys(), "accuracy":taxon_accuracy,"precision":taxon_precision})
+        
+        if logger:
+            logger.experiment.log_metrics(species_table.set_index("taxonID").accuracy.to_dict(),prefix="accuracy")
+            logger.experiment.log_metrics(species_table.set_index("taxonID").precision.to_dict(),prefix="precision")
+                
         #Log result by site
         if logger:
             site_data_frame =[]
