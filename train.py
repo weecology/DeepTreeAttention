@@ -73,6 +73,7 @@ if config["checkpoint"] is None:
     trainer.fit(m, datamodule=data_module)
 else:
     m = main.TreeModel.load_from_checkpoint(config["checkpoint"])
+    comet_logger.experiment.log_parameters(m.config)        
 
 #Train spatial model
 results = m.evaluate_crowns(train_dataloader=data_module.train_dataloader(), val_dataloader=data_module.val_dataloader(), logger=comet_logger)
