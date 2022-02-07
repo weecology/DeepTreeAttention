@@ -44,15 +44,16 @@ class spatial_fusion(LightningModule):
         micro_recall = torchmetrics.Accuracy(average="micro")
         macro_recall = torchmetrics.Accuracy(average="macro", num_classes=len(np.unique(val_labels)))
         self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall,"Macro Accuracy":macro_recall})
-        self.fc1 = nn.Linear(in_features=num_classes*2,out_features=num_classes)
+        self.fc1 = nn.Linear(in_features=num_classes,out_features=num_classes)
         self.batch1 = nn.BatchNorm1d(num_classes)
+        self.batch2 = nn.BatchNorm1d(num_classes)
         
     def forward(self, sensor_score, neighbor_score):
-        concat_features = torch.cat([neighbor_score, sensor_score], dim=1)
-        concat_features = self.fc1(concat_features)
-        concat_features = F.relu(concat_features)
-        concat_features = self.batch1(concat_features)
-        skip_features = concat_features + sensor_score
+        neighbor_score = self.batch1(neighbor_score)        
+        neighbor_score = self.fc1(neighbor_score)
+        neighbor_score = F.relu(neighbor_score)
+        neighbor_score = self.batch2(neighbor_score)
+        skip_features = neighbor_score + sensor_score
         
         return skip_features
     
@@ -117,6 +118,6 @@ class spatial_fusion(LightningModule):
         return y_hat
     
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=0.0001)
+        optimizer = optim.Adam(self.parameters(), lr=0.00001)
         
         return {'optimizer':optimizer}
