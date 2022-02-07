@@ -111,7 +111,7 @@ def config(ROOT, dead_model_path):
     config["megaplot_dir"] = None
     config["batch_size"] = 2
     config["RGB_crop_dir"] = tempfile.gettempdir()
-    
+    config["spatial_epochs"] = 2
     
     return config
 

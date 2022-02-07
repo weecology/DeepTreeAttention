@@ -244,7 +244,6 @@ class TreeModel(LightningModule):
                 individual, inputs = batch
             with torch.no_grad():
                 pred = self.predict(inputs)
-                pred = F.softmax(pred, dim=1)
             predictions.append(pred)
             individuals.append(individual)
             if train:
@@ -256,7 +255,8 @@ class TreeModel(LightningModule):
         if train:
             labels = np.concatenate(labels)
         
-        predictions_top1 = np.argmax(predictions, 1)    
+        softmax_predictions = F.softmax(torch.tensor(predictions), dim=1)  
+        predictions_top1 = np.argmax(softmax_predictions, 1)    
         predictions_top2 = pd.DataFrame(predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
         top1_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[0], axis=1)
         top2_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[1], axis=1)

@@ -45,12 +45,13 @@ def spatial_neighbors(gdf, buffer, data_dir, HSI_pool, model, image_size):
             img_crop = torch.tensor(img_crop,device=model.device, dtype=torch.float32).unsqueeze(0)
             with torch.no_grad():
                 score = model.model(img_crop)
+                score = score.astype(np.float32)
             scores.append(score)
         
         if len(scores) == 0:
-            neighbors[x] = np.zeros((1, model.classes))
+            neighbors[x] = np.zeros((1, model.classes)).astype(np.float32)
         else:            
-            neighbors[x] = np.vstack(scores)
+            neighbors[x] = np.vstack(scores).astype(np.float32)
     
     return neighbors
     

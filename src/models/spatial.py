@@ -45,6 +45,7 @@ class spatial_fusion(LightningModule):
         macro_recall = torchmetrics.Accuracy(average="macro", num_classes=len(np.unique(val_labels)))
         self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall,"Macro Accuracy":macro_recall})
         self.fc1 = nn.Linear(in_features=num_classes*2,out_features=num_classes)
+        
     def forward(self, sensor_score, neighbor_score):
         concat_features = torch.cat([neighbor_score, sensor_score], dim=1)
         concat_features = self.fc1(concat_features)
