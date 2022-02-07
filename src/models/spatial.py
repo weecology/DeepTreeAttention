@@ -46,7 +46,7 @@ class spatial_fusion(LightningModule):
         self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall,"Macro Accuracy":macro_recall})
 
     def forward(self, sensor_score, neighbor_score):
-        #self.scaled_alpha = self.alpha      
+        self.scaled_alpha = self.alpha      
         #x = sensor_score + (self.scaled_alpha * neighbor_score)
         
         return sensor_score
