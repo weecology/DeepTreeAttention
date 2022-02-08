@@ -67,8 +67,8 @@ class TreeModel(LightningModule):
         #allow for empty data if data augmentation is generated
         individual, inputs, y = batch
         images = inputs["HSI"]
-        images = self.autoencoder_model(images)
-        y_hat = self.model.forward(images)
+        reconstruction, bottleneck = self.autoencoder_model(images)        
+        y_hat = self.model.forward(bottleneck)
         loss = F.cross_entropy(y_hat, y)    
         
         return loss
@@ -79,8 +79,8 @@ class TreeModel(LightningModule):
         #allow for empty data if data augmentation is generated
         individual, inputs, y = batch
         images = inputs["HSI"] 
-        images = self.autoencoder_model(images)        
-        y_hat = self.model.forward(images)
+        reconstruction, bottleneck = self.autoencoder_model(images)        
+        y_hat = self.model.forward(bottleneck)
         loss = F.cross_entropy(y_hat, y)        
         
         # Log loss and metrics
@@ -113,8 +113,8 @@ class TreeModel(LightningModule):
         image = data.load_image(img_path, image_size=self.config["image_size"])
         image = torch.unsqueeze(image, dim=0)
         with torch.no_grad():
-            image = self.autoencoder_model(image)            
-            y = self.model(image)  
+            reconstruction, bottleneck = self.autoencoder_model(images)        
+            y = self.model(bottleneck)  
         index = np.argmax(y, 1).numpy()[0]
         
         if return_numeric:
@@ -168,8 +168,8 @@ class TreeModel(LightningModule):
         #Classify pixel crops
         self.model.eval() 
         with torch.no_grad():
-            image = self.autoencoder_model(image)                        
-            class_probs = self.model(image)
+            reconstruction, bottleneck = self.autoencoder_model(image)                        
+            class_probs = self.model(bottleneck)
             class_probs = F.softmax(class_probs)
         class_probs = class_probs.numpy()
         index = np.argmax(class_probs)
@@ -202,8 +202,8 @@ class TreeModel(LightningModule):
         #Classify pixel crops
         self.model.eval() 
         with torch.no_grad():
-            image = self.autoencoder_model(image)                        
-            class_probs = self.model(image) 
+            reconstruction, bottleneck = self.autoencoder_model(image)                        
+            class_probs = self.model(bottleneck) 
             class_probs = F.softmax(class_probs, 1)
         class_probs = class_probs.detach().numpy()
         index = np.argmax(class_probs)
@@ -219,13 +219,13 @@ class TreeModel(LightningModule):
         if "cuda" == self.device.type:
             images = inputs["HSI"]
             images = images.cuda()
-            images = self.autoencoder_model(images)                        
-            pred = self.model(images)
+            reconstruction, bottleneck = self.autoencoder_model(images)                        
+            pred = self.model(bottleneck)
             pred = pred.cpu()
         else:
             images = inputs["HSI"]
-            images = self.autoencoder_model(images)                                    
-            pred = self.model(images)
+            reconstruction, bottleneck = self.autoencoder_model(images)                        
+            pred = self.model(bottleneck)
             
         return pred
     

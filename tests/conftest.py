@@ -138,7 +138,7 @@ def experiment():
 #Training module
 @pytest.fixture(scope="session")
 def m(config, dm, ROOT):
-    model = Hang2020.vanilla_CNN(bands=3, classes=3)
+    model = Hang2020.vanilla_CNN(bands=config["autoencoder_depth"], classes=3)
     test = pd.read_csv("{}/processed/test.csv".format(dm.data_dir))
     train = pd.read_csv("{}/processed/train.csv".format(dm.data_dir))
     autoencoder_model = autoencoder.autoencoder(train_df=train, val_df=test, classes=3, config=config, comet_logger=None)
