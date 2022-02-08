@@ -86,14 +86,14 @@ class autoencoder(LightningModule):
         self.comet_logger = comet_logger
         
         #Encoder
-        self.encoder_block1 = encoder_block(in_channels=config["bands"], filters=64, pool=True)
-        self.encoder_block2 = encoder_block(in_channels=64, filters=32, pool=True)
-        self.encoder_block3 = encoder_block(in_channels=32, filters=16, pool=True)
+        self.encoder_block1 = encoder_block(in_channels=config["bands"], filters=config["autoencoder_depth"]*3, pool=True)
+        self.encoder_block2 = encoder_block(in_channels=config["autoencoder_depth"]*3, filters=config["autoencoder_depth"]*2, pool=True)
+        self.encoder_block3 = encoder_block(in_channels=config["autoencoder_depth"]*2, filters=config["autoencoder_depth"], pool=True)
                 
         #Decoder
-        self.decoder_block1 = decoder_block(in_channels=16, filters=32)
-        self.decoder_block2 = decoder_block(in_channels=32, filters=64)
-        self.decoder_block3 = decoder_block(in_channels=64, filters=config["bands"])
+        self.decoder_block1 = decoder_block(in_channels=config["autoencoder_depth"], filters=config["autoencoder_depth"]*2)
+        self.decoder_block2 = decoder_block(in_channels=config["autoencoder_depth"]*2, filters=config["autoencoder_depth"]*3)
+        self.decoder_block3 = decoder_block(in_channels=config["autoencoder_depth"]*3, filters=config["bands"])
         
         #Metrics
         mse = torchmetrics.MeanSquaredError()
@@ -106,7 +106,7 @@ class autoencoder(LightningModule):
         data_loader = torch.utils.data.DataLoader(
             self.train_ds,
             shuffle=True,
-            batch_size=32,
+            batch_size=self.config["autoencoder_batch_size"],
             num_workers=0)     
 
         return data_loader
@@ -132,19 +132,19 @@ class autoencoder(LightningModule):
     def forward(self, x):
         x = self.encoder_block1(x)
         x = self.encoder_block2(x)
-        x = self.encoder_block3(x)
+        bottleneck = self.encoder_block3(x)
         
-        x = self.decoder_block1(x)
+        x = self.decoder_block1(bottleneck)
         x = self.decoder_block2(x)
         x = self.decoder_block3(x)
 
-        return x
+        return x, bottleneck
 
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
         """
         images = batch 
-        image_yhat = self.forward(images) 
+        image_yhat, bottleneck = self.forward(images) 
         
         #Calculate losses
         loss = F.mse_loss(image_yhat, images)    
@@ -155,7 +155,7 @@ class autoencoder(LightningModule):
         """Train on a loaded dataset
         """
         images = batch 
-        image_yhat = self.forward(images) 
+        image_yhat, bottleneck = self.forward(images) 
         
         #Calculate losses
         loss = F.mse_loss(image_yhat, images)    

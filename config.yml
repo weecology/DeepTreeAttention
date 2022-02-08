@@ -49,6 +49,7 @@ workers: 0
 #Autoencoder
 autoencoder_batch_size: 32
 autoencoder_epochs: 100
+autoencoder_depth: 16
 
 #Network Parameters
 gpus: 1
