@@ -1,12 +1,12 @@
 #Train
 import comet_ml
 import glob
-import geopandas as gpd
 from src import main
 from src import data
 from src import start_cluster
 from src.models import Hang2020
 from src import visualize
+from src.models import autoencoder
 from src import metrics
 from pytorch_lightning import Trainer
 import subprocess
@@ -47,12 +47,25 @@ comet_logger.experiment.log_table("train.csv", train)
 comet_logger.experiment.log_table("test.csv", test)
 comet_logger.experiment.log_table("novel_species.csv", novel)
 
-#model = metadata.metadata_sensor_fusion(sites=data_module.num_sites, classes=data_module.num_classes, bands=data_module.config["bands"])
+#Autoencoder for dimensionality reduction
+autoencoder_model = autoencoder.autoencoder(train_df=train, val_df=test, classes=data_module.num_classes, config=config, comet_logger=comet_logger)
+trainer = Trainer(
+    gpus=data_module.config["gpus"],
+    fast_dev_run=data_module.config["fast_dev_run"],
+    max_epochs=data_module.config["autoencoder_epochs"],
+    accelerator=data_module.config["accelerator"],
+    checkpoint_callback=False,
+    logger=comet_logger)
+
+trainer.fit(autoencoder_model)
+
 model = Hang2020.Hang2020(classes=data_module.num_classes, bands=data_module.config["bands"])
 m = main.TreeModel(
     model=model, 
     classes=data_module.num_classes, 
-    label_dict=data_module.species_label_dict)
+    label_dict=data_module.species_label_dict,
+    autoencoder_model = autoencoder_model
+)
 
 comet_logger.experiment.log_parameters(m.config)
 

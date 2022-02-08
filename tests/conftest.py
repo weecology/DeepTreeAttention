@@ -10,6 +10,7 @@ from src.models import Hang2020
 from src.models import dead
 from src import main
 from src import utils
+from src.models import autoencoder
 import tempfile
 import torch
 from pytorch_lightning import Trainer
@@ -110,7 +111,7 @@ def config(ROOT, dead_model_path):
     config["dead_threshold"] = 1
     config["megaplot_dir"] = None
     config["RGB_crop_dir"] = tempfile.gettempdir()
-    
+    config["autoencoder_epochs"] = 50
     
     return config
 
@@ -138,7 +139,10 @@ def experiment():
 @pytest.fixture(scope="session")
 def m(config, dm, ROOT):
     model = Hang2020.vanilla_CNN(bands=3, classes=3)
-    m = main.TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict)
+    test = pd.read_csv("{}/processed/test.csv".format(dm.data_dir))
+    train = pd.read_csv("{}/processed/train.csv".format(dm.data_dir))
+    autoencoder_model = autoencoder.autoencoder(train_df=train, val_df=test, classes=3, config=config, comet_logger=None)
+    m = main.TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict, autoencoder_model=autoencoder_model)
     m.ROOT = "{}/tests/".format(ROOT)
     
     return m

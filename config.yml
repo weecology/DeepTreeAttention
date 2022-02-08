@@ -46,6 +46,10 @@ image_size: 11
 preload_images: True
 workers: 0
 
+#Autoencoder
+autoencoder_batch_size: 32
+autoencoder_epochs: 100
+
 #Network Parameters
 gpus: 1
 batch_size: 32

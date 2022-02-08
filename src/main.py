@@ -31,7 +31,7 @@ class TreeModel(LightningModule):
     Args:
         model (str): Model to use. See the models/ directory. The name is the filename, each model should take in the same data loader
     """
-    def __init__(self,model, classes, label_dict, config=None, *args, **kwargs):
+    def __init__(self,model, classes, label_dict, autoencoder_model=None, config=None, *args, **kwargs):
         super().__init__()
     
         self.ROOT = os.path.dirname(os.path.dirname(__file__))    
@@ -50,6 +50,9 @@ class TreeModel(LightningModule):
         #Create model 
         self.model = model
         
+        #Dimensionality reduction
+        self.autoencoder_model = autoencoder_model
+        
         #Metrics
         micro_recall = torchmetrics.Accuracy(average="micro")
         macro_recall = torchmetrics.Accuracy(average="macro", num_classes=classes)
@@ -64,6 +67,7 @@ class TreeModel(LightningModule):
         #allow for empty data if data augmentation is generated
         individual, inputs, y = batch
         images = inputs["HSI"]
+        images = self.autoencoder_model(images)
         y_hat = self.model.forward(images)
         loss = F.cross_entropy(y_hat, y)    
         
@@ -74,7 +78,8 @@ class TreeModel(LightningModule):
         """
         #allow for empty data if data augmentation is generated
         individual, inputs, y = batch
-        images = inputs["HSI"]        
+        images = inputs["HSI"] 
+        images = self.autoencoder_model(images)        
         y_hat = self.model.forward(images)
         loss = F.cross_entropy(y_hat, y)        
         
@@ -106,9 +111,10 @@ class TreeModel(LightningModule):
         """Given an image path, load image and predict"""
         self.model.eval()        
         image = data.load_image(img_path, image_size=self.config["image_size"])
-        batch = torch.unsqueeze(image, dim=0)
+        image = torch.unsqueeze(image, dim=0)
         with torch.no_grad():
-            y = self.model(batch)  
+            image = self.autoencoder_model(image)            
+            y = self.model(image)  
         index = np.argmax(y, 1).numpy()[0]
         
         if return_numeric:
@@ -162,6 +168,7 @@ class TreeModel(LightningModule):
         #Classify pixel crops
         self.model.eval() 
         with torch.no_grad():
+            image = self.autoencoder_model(image)                        
             class_probs = self.model(image)
             class_probs = F.softmax(class_probs)
         class_probs = class_probs.numpy()
@@ -195,6 +202,7 @@ class TreeModel(LightningModule):
         #Classify pixel crops
         self.model.eval() 
         with torch.no_grad():
+            image = self.autoencoder_model(image)                        
             class_probs = self.model(image) 
             class_probs = F.softmax(class_probs, 1)
         class_probs = class_probs.detach().numpy()
@@ -211,10 +219,12 @@ class TreeModel(LightningModule):
         if "cuda" == self.device.type:
             images = inputs["HSI"]
             images = images.cuda()
+            images = self.autoencoder_model(images)                        
             pred = self.model(images)
             pred = pred.cpu()
         else:
             images = inputs["HSI"]
+            images = self.autoencoder_model(images)                                    
             pred = self.model(images)
             
         return pred
@@ -244,7 +254,6 @@ class TreeModel(LightningModule):
                 individual, inputs = batch
             with torch.no_grad():
                 pred = self.predict(inputs)
-                pred = F.softmax(pred, dim=1)
             predictions.append(pred)
             individuals.append(individual)
             if train:
@@ -256,10 +265,11 @@ class TreeModel(LightningModule):
         if train:
             labels = np.concatenate(labels)
         
-        predictions_top1 = np.argmax(predictions, 1)    
-        predictions_top2 = pd.DataFrame(predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
-        top1_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[0], axis=1)
-        top2_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[1], axis=1)
+        softmax_predictions = F.softmax(torch.tensor(predictions), dim=1)
+        predictions_top1 = np.argmax(softmax_predictions, 1)    
+        predictions_top2 = pd.DataFrame(softmax_predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
+        top1_score = pd.DataFrame(softmax_predictions).apply(lambda x: x.sort_values(ascending=False).values[0], axis=1)
+        top2_score = pd.DataFrame(softmax_predictions).apply(lambda x: x.sort_values(ascending=False).values[1], axis=1)
         
         #Construct a df of predictions
         df = pd.DataFrame({"pred_label_top1":predictions_top1,"pred_label_top2":predictions_top2,"top1_score":top1_score,"top2_score":top2_score,"individual":individuals})
