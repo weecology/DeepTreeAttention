@@ -81,7 +81,6 @@ class autoencoder(LightningModule):
     def __init__(self, train_df, val_df, classes, config, comet_logger):
         super(autoencoder, self).__init__()    
         
-        self.automatic_optimization = False        
         self.config = config
         self.comet_logger = comet_logger
         
@@ -148,6 +147,7 @@ class autoencoder(LightningModule):
         
         #Calculate losses
         loss = F.mse_loss(image_yhat, images)    
+        self.log("train_loss", loss, on_epoch=True)
         
         return loss
 
