@@ -36,7 +36,7 @@ convert_h5: True
 replace: True
 #Use existing plotIDs for train/test split
 new_train_test_split: True
-#Directoy to store cropped images from crowns
+#Directory to store cropped images from crowns
 crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/crops/
 RGB_crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/rgb_crops/
 
