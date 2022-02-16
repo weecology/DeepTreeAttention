@@ -38,7 +38,6 @@ replace: True
 new_train_test_split: True
 #Directory to store cropped images from crowns
 crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/crops/
-RGB_crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/rgb_crops/
 
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
