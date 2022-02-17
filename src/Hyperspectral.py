@@ -149,7 +149,7 @@ def calc_clip_index(clipExtent, h5Extent, xscale=1, yscale=1):
     return ind_ext
 
 
-def generate_raster(h5_path, save_dir, rgb_filename=None, bands="no_water", bounds = False):
+def generate_raster(h5_path, save_dir, rgb_filename=None, bands="no_water", bounds = False, suffix=None):
     """
     h5_path: input path to h5 file on disk
     bands: "all" bands or "false color", "no_water" bands
@@ -158,7 +158,10 @@ def generate_raster(h5_path, save_dir, rgb_filename=None, bands="no_water", boun
     
     returns: True if saved file exists
     """
-
+    if suffix:
+        suffix = "_{}".format(suffix)
+    else:
+        suffix = ""
     #Get numpy array and metadata
     metadata, refl = h5refl2array(h5_path)
     
