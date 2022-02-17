@@ -72,8 +72,8 @@ def convert_h5(hyperspectral_h5_path, rgb_path, savedir, year=None):
 
 def lookup_and_convert(rgb_pool, hyperspectral_pool, savedir, bounds = None, geo_index=None, shapefile=None, all_years=False):
     """For a given geo_index bounds, lookup the h5 tile and convert to .tif"""
-    hyperspectral_h5_path = find_sensor_path(shapefile=shapefile,lookup_pool=hyperspectral_pool, bounds=bounds, geoindex=geo_index, all_years=all_years)
-    rgb_path = find_sensor_path(shapefile=shapefile, lookup_pool=rgb_pool, bounds=bounds, geoindex=geo_index)
+    hyperspectral_h5_path = find_sensor_path(shapefile=shapefile,lookup_pool=hyperspectral_pool, bounds=bounds, geo_index=geo_index, all_years=all_years)
+    rgb_path = find_sensor_path(shapefile=shapefile, lookup_pool=rgb_pool, bounds=bounds, geo_index=geo_index)
 
     if type(hyperspectral_h5_path) == list:
         tif_paths = []
