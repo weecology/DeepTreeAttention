@@ -200,7 +200,7 @@ class TreeDataset(Dataset):
         self.HSI = HSI
         self.metadata = metadata
         self.config = config 
-        
+
         if self.config:
             self.image_size = config["image_size"]
         else:
@@ -222,13 +222,16 @@ class TreeDataset(Dataset):
     def __getitem__(self, index):
         inputs = {}
         image_path = self.annotations.image_path.loc[index]      
-        individual = os.path.basename(image_path.split(".tif")[0])
+        individual = os.path.basename(image_path.split("_image.tif")[0])
+        year = self.annotations.tile_year.loc[index]
+        
         if self.HSI:
             if self.config["preload_images"]:
                 inputs["HSI"] = self.image_dict[index]
             else:
-                image_path = self.annotations.image_path.loc[index]            
-                image = load_image(image_path, image_size=self.image_size)
+                image_path = self.annotations.image_path.loc[index]  
+                year_model = self.year_model_dict[year]
+                image = load_image(image_path, image_size=self.image_size, year_model=year_model)
                 inputs["HSI"] = image
             
         if self.metadata:

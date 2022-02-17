@@ -54,30 +54,51 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None, geo_index=None, a
         return match[0]
 
 
-def convert_h5(hyperspectral_h5_path, rgb_path, savedir):
-    tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"
+def convert_h5(hyperspectral_h5_path, rgb_path, savedir, year=None):
+    if year:
+        tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral_{}.tif".format(year)
+    else:
+        tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"
     tif_path = "{}/{}".format(savedir, tif_basename)
 
     Hyperspectral.generate_raster(h5_path=hyperspectral_h5_path,
                                   rgb_filename=rgb_path,
+                                  suffix=year,
                                   bands="no_water",
                                   save_dir=savedir)
 
     return tif_path
 
 
-def lookup_and_convert(rgb_pool, hyperspectral_pool, savedir, bounds = None, shapefile=None, geo_index=None):
-    hyperspectral_h5_path = find_sensor_path(shapefile=shapefile,lookup_pool=hyperspectral_pool, bounds=bounds, geo_index=geo_index)
-    rgb_path = find_sensor_path(shapefile=shapefile, lookup_pool=rgb_pool, bounds=bounds, geo_index=geo_index)
+def lookup_and_convert(rgb_pool, hyperspectral_pool, savedir, bounds = None, shapefile=None, multi_year=False):
+    """For a given geo_index bounds, lookup the h5 tile and convert to .tif"""
+    hyperspectral_h5_path = find_sensor_path(shapefile=shapefile,lookup_pool=hyperspectral_pool, bounds=bounds, multi_year=multi_year)
+    rgb_path = find_sensor_path(shapefile=shapefile, lookup_pool=rgb_pool, bounds=bounds)
 
-    #convert .h5 hyperspec tile if needed
-    tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"
-    tif_path = "{}/{}".format(savedir, tif_basename)
+    if type(hyperspectral_h5_path) == list:
+        tif_paths = []
+        for x in hyperspectral_h5_path:
+            #convert .h5 hyperspec tile if needed
+            year = year_from_tile(x)
+            tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral_{}.tif".format(year)
+            tif_path = "{}/{}".format(savedir, tif_basename)
+            if not os.path.exists(tif_path):
+                tif_path = convert_h5(x, rgb_path, savedir, year=year)  
+            tif_paths.append(tif_path)
+                
+        return tif_paths
+    else:
+        #convert .h5 hyperspec tile if needed
+        tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"
+        tif_path = "{}/{}".format(savedir, tif_basename)
+    
+        if not os.path.exists(tif_path):
+            tif_path = convert_h5(hyperspectral_h5_path, rgb_path, savedir)
+    
+        return tif_path
 
-    if not os.path.exists(tif_path):
-        tif_path = convert_h5(hyperspectral_h5_path, rgb_path, savedir)
-
-    return tif_path
+def year_from_tile(path):
+    return path.split("/")[6]
 
 def site_from_path(path):
     basename = os.path.splitext(os.path.basename(path))[0]

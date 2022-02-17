@@ -73,7 +73,7 @@ def test_generate_crops(tmpdir, ROOT, rgb_path):
         convert_h5=False, sensor_glob="{}/tests/data/*.tif".format(ROOT), savedir=tmpdir)
     
     assert not annotations.empty
-    assert all([x in ["image_path","label","site","siteID","plotID","individualID","taxonID","point_id","box_id","RGB_tile"] for x in annotations.columns])
+    assert all([x in ["image_path","label","site","siteID","plotID","individualID","taxonID","point_id","box_id","RGB_tile","tile_year"] for x in annotations.columns])
     assert len(annotations.box_id.unique()) == annotations.shape[0]
     
     #make sure the correct resolution, should be a large image > 50 pixels

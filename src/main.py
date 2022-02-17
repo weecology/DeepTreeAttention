@@ -117,7 +117,6 @@ class TreeModel(LightningModule):
             return self.index_to_label[index]
                 
     def predict_xy(self, coordinates, fixed_box=True):
-        #TODO update for metadata model
         """Given an x,y location, find sensor data and predict tree crown class. If no predicted crown within 5m an error will be raised (fixed_box=False) or a 1m fixed box will created (fixed_box=True)
         Args:
             coordinates (tuple): x,y tuple in utm coordinates
@@ -256,13 +255,41 @@ class TreeModel(LightningModule):
         if train:
             labels = np.concatenate(labels)
         
+        temporal_individuals = []
+        temporal_predictions = []
+        for i in np.unique(individuals):
+            temporal_prediction = np.mean(predictions[np.where(individuals == i),], axis=1)
+            temporal_individuals.append(i)
+            temporal_predictions.append(temporal_prediction)
+        
+        temporal_predictions = np.concatenate(temporal_predictions) 
+        
+        temporal_predictions_top1 = np.argmax(temporal_predictions, 1)    
+        temporal_predictions_top1_score = np.max(temporal_predictions, 1)    
+        
         predictions_top1 = np.argmax(predictions, 1)    
         predictions_top2 = pd.DataFrame(predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
         top1_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[0], axis=1)
         top2_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[1], axis=1)
         
+        #Construct a temporal prediction frame
+        temporal_df = pd.DataFrame({
+            "temporal_pred_label_top1":temporal_predictions_top1,
+            "temporal_top1_score":temporal_predictions_top1_score,
+            "individual": temporal_individuals
+        })
+        
         #Construct a df of predictions
-        df = pd.DataFrame({"pred_label_top1":predictions_top1,"pred_label_top2":predictions_top2,"top1_score":top1_score,"top2_score":top2_score,"individual":individuals})
+        df = pd.DataFrame({
+            "pred_label_top1":predictions_top1,
+            "pred_label_top2":predictions_top2,
+            "top1_score":top1_score,
+            "top2_score":top2_score,
+            "individual":individuals
+        })
+        
+        df = temporal_df.merge(df, on="individual")
+        df["temporal_taxa_top1"] = df["temporal_pred_label_top1"].apply(lambda x: self.index_to_label[x]) 
         df["pred_taxa_top1"] = df["pred_label_top1"].apply(lambda x: self.index_to_label[x]) 
         df["pred_taxa_top2"] = df["pred_label_top2"].apply(lambda x: self.index_to_label[x])        
         if train:
@@ -333,6 +360,14 @@ class TreeModel(LightningModule):
             image_size=self.config["image_size"],
             HSI_pool=HSI_pool)        
         
+        #Temporal function
+        temporal_micro = torchmetrics.functional.accuracy(preds=torch.tensor(results.temporal_pred_label_top1.values),target=torch.tensor(results.label.values), average="none", num_classes=self.classes)
+        temporal_macro = torchmetrics.functional.precision(preds=torch.tensor(results.temporal_pred_label_top1.values),target=torch.tensor(results.label.values), average="none", num_classes=self.classes)
+        
+        if experiment:
+            experiment.log_metric("temporal_micro",temporal_micro)
+            experiment.log_metric("temporal_macro",temporal_macro)
+            
         #Spatial function
         labels, scores = spatial.spatial_smooth(neighbors, features, alpha=self.config["neighborhood_strength"])
         results["spatial_pred_label"] = labels

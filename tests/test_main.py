@@ -11,7 +11,7 @@ def test_predict_dataloader(config, m, dm, experiment, ROOT):
     df = m.predict_dataloader(dm.val_dataloader(), experiment = experiment)
     input_data = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))    
     
-    assert df.shape[0] == len(input_data.image_path.apply(lambda x: os.path.basename(x).split("_")[0]).unique())
+    assert df.shape[0] == len(input_data.image_path.apply(lambda x: os.path.basename(x).split("_")[0]))
     
 def test_evaluate_crowns(config, experiment, m, dm, ROOT):
     m.ROOT = "{}/tests".format(ROOT)
