@@ -27,20 +27,16 @@ class year_dataset(Dataset):
     
     def __getitem__(self, index):
         individual = self.individuals[index]
-        images = self.annotations.loc[self.annotations.individualID == individual, "image_path"]
-        target_image = [x for x in images if str(self.target_year) in x] 
-        input_image = [x for x in images if str(self.year) in x] 
+        target_image = self.annotations[(self.annotations.individualID == individual) &  (self.annotations.tile_year == self.target_year)].image_path.values[0]
+        input_image = self.annotations[(self.annotations.individualID == individual) &  (self.annotations.tile_year == self.year)].image_path.values[0]
         
         input_data = rio.open(input_image).read()
-        input_data = input_data[self.band,:,:]
+        input_data = input_data[self.band,:,:].flatten()
         target_data = rio.open(target_image).read()
-        target_data = target_data[self.band,:,:]
+        target_data = target_data[self.band,:,:].flatten()
+                
+        return target_data, input_data
         
-        pixel_pairs = zip(target_data, input_data)
-        
-        return pixel_pairs
-        
-    
 class year_converter(LightningModule):
     def __init__(self, csv_file, band, year, config):
         super(year_converter, self).__init__()
