@@ -223,7 +223,7 @@ def points_to_crowns(
             except:
                 continue
     else:
-        #IMPORTS at runtime due to dask pickling, kinda ugly.
+        #IMPORTS at runtime due to dask pickling
         deepforest_model = main.deepforest()  
         deepforest_model.use_release(check_release=False)
         for plot in plot_names:
@@ -245,13 +245,30 @@ def write_crop(row, img_path, savedir, replace=True):
         filename = "{}/{}.tif".format(savedir, row["individual"])
         file_exists = os.path.exists(filename)
         if file_exists:
-            annotation = pd.DataFrame({"image_path":[filename], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "RGB_tile":[row["RGB_tile"]], "siteID":[row["siteID"]],"box_id":[row["box_id"]]})
+            annotation = pd.DataFrame(
+                {"image_path":[os.path.basename(filename)],
+                 "taxonID":[row["taxonID"]],
+                 "plotID":[row["plotID"]],
+                 "individualID":[row["individual"]],
+                 "RGB_tile":[row["RGB_tile"]],
+                 "siteID":[row["siteID"]],
+                 "box_id":[row["box_id"]]})
+            
             return annotation            
         else:
             filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])  
     else:
         filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])
-        annotation = pd.DataFrame({"image_path":[filename], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "RGB_tile":[row["RGB_tile"]], "siteID":[row["siteID"]],"box_id":[row["box_id"]]})
+        
+        annotation = pd.DataFrame(
+            {"image_path":[os.path.basename(filename)],
+             "taxonID":[row["taxonID"]],
+             "plotID":[row["plotID"]],
+             "individualID":[row["individual"]],
+             "RGB_tile":[row["RGB_tile"]],
+             "siteID":[row["siteID"]],
+             "box_id":[row["box_id"]]})
+        
         return annotation
 
 def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=False, HSI_tif_dir=None, replace=True):
@@ -277,7 +294,6 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
     img_pool = [x for x in img_pool if not "point_cloud" in x]
     rgb_pool = [x for x in rgb_pool if not "point_cloud" in x]
      
-    
     #Looking up the rgb -> HSI tile naming is expensive and repetitive. Create a dictionary first.
     gdf["geo_index"] = gdf.geometry.apply(lambda x: bounds_to_geoindex(x.bounds))
     tiles = gdf["geo_index"].unique()
@@ -292,7 +308,7 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
                 else:
                     img_path = lookup_and_convert(rgb_pool=rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir,  geo_index = geo_index)
             else:
-                img_path = find_sensor_path(lookup_pool = img_pool, geo_index = geo_index)  
+                img_path = find_sensor_path(lookup_pool=img_pool, geo_index=geo_index)  
         except:
             print("{} failed to find sensor path with traceback {}".format(geo_index, traceback.print_exc()))
             continue
@@ -305,7 +321,7 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
                 img_path = tile_to_path[row["geo_index"]]
             except:
                 continue
-            future = client.submit(write_crop,row=row,img_path=img_path, savedir=savedir, replace=replace)
+            future = client.submit(write_crop, row=row, img_path=img_path, savedir=savedir, replace=replace)
             futures.append(future)
             
         wait(futures)

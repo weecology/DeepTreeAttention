@@ -213,7 +213,8 @@ class TreeDataset(Dataset):
         if self.config["preload_images"]:
             self.image_dict = {}
             for index, row in self.annotations.iterrows():
-                self.image_dict[index] = load_image(row["image_path"], image_size=image_size)
+                image_path = os.path.join(self.config["crop_dir"],row["image_path"])                
+                self.image_dict[index] = load_image(image_path, image_size=image_size)
         
     def __len__(self):
         #0th based index
@@ -227,7 +228,8 @@ class TreeDataset(Dataset):
             if self.config["preload_images"]:
                 inputs["HSI"] = self.image_dict[index]
             else:
-                image_path = self.annotations.image_path.loc[index]            
+                image_path = self.annotations.image_path.loc[index]
+                image_path = os.path.join(self.config["crop_dir"],image_path)
                 image = load_image(image_path, image_size=self.image_size)
                 inputs["HSI"] = image
             
