@@ -77,4 +77,5 @@ def test_generate_crops(tmpdir, ROOT, rgb_path):
     assert len(annotations.box_id.unique()) == annotations.shape[0]
     
     #make sure the correct resolution, should be a large image > 50 pixels
-    assert rasterio.open(annotations.image_path.iloc[0]).read().shape[1] > 50
+    filepath = "{}/{}".format(tmpdir,annotations.image_path.iloc[0])
+    assert rasterio.open(filepath).read().shape[1] > 50
