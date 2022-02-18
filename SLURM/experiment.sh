@@ -22,6 +22,6 @@ source activate DeepTreeAttention
 
 cd ~/DeepTreeAttention/
 module load git gcc
-python train.py $1
+python -m cProfile -o profile.pstats train.py
 EOT
 
