@@ -42,7 +42,27 @@ def filter_data(path, config):
     field = field[~(field.individualID.isin(shaded_ids))]
     field = field[(field.height > 3) | (field.height.isnull())]
     field = field[field.stemDiameter > config["min_stem_diameter"]]
+    
+    #Subspecies filter
     field.loc[field.taxonID=="PSMEM","taxonID"] = "PSME"
+    field.loc[field.taxonID=="BEPAP","taxonID"] = "BEPA"
+    field.loc[field.taxonID=="ACNEN","taxonID"] = "ACNE2"
+    field.loc[field.taxonID=="ACRUR","taxonID"] = "ACRU"
+    field.loc[field.taxonID=="PICOL","taxonID"] = "PICO"
+    field.loc[field.taxonID=="ABLAL","taxonID"] = "ABLA"
+    field.loc[field.taxonID=="ACSA3","taxonID"] = "ACSAS"
+    field.loc[field.taxonID=="CECAC","taxonID"] = "CECA4"
+    field.loc[field.taxonID=="PRSES","taxonID"] = "PRSE2"
+    field.loc[field.taxonID=="PIPOS","taxonID"] = "PIPO"
+    field.loc[field.taxonID=="BEPAC2","taxonID"] = "BEPA"
+    field.loc[field.taxonID=="JUVIV","taxonID"] = "JUVI"
+    field.loc[field.taxonID=="PRPEP","taxonID"] = "PRPE2"
+    field.loc[field.taxonID=="COCOC","taxonID"] = "COCO6"
+    
+    
+    
+    
+    
     
     field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
     field = field[~(field.eventID.str.contains("2014"))]
