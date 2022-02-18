@@ -147,7 +147,7 @@ def train_test_split(shp, config, client = None):
         for x in np.arange(config["iterations"]):
             future = client.submit(sample_plots, shp=shp, min_train_samples=config["min_train_samples"], iteration=x, min_test_samples=config["min_test_samples"])
             futures.append(future)
-        
+
         wait(futures)
         for x in futures:
             train, test = x.result()
