@@ -1,4 +1,6 @@
-#Convert NEON field sample points into bounding boxes of cropped image data for model training
+# Convert NEON field sample points into bounding boxes of 
+# cropped image data for model training
+
 import glob
 import geopandas as gpd
 import rasterio
@@ -8,10 +10,11 @@ import os
 import pandas as pd
 from src.neon_paths import find_sensor_path, lookup_and_convert, bounds_to_geoindex
 from src import patches
-from distributed import wait   
+from distributed import wait
 from deepforest import main    
 import traceback
 import warnings
+
 warnings.filterwarnings('ignore')
 
 def predict_trees(deepforest_model, rgb_path, bounds, expand=40):
@@ -31,16 +34,15 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=40):
     expand_height = (expand - (top - bottom))/2 
     bottom = bottom - expand_height
     top = top + expand_height 
-    
     src = rasterio.open(rgb_path)
     pixelSizeX, pixelSizeY  = src.res    
     img = src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform))
     src.close()
-    
+
     #roll to channels last
     img = np.rollaxis(img, 0,3)
     boxes = deepforest_model.predict_image(image = img, return_plot=False)
-    
+
     if boxes is None:
         return boxes
 
@@ -53,10 +55,10 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=40):
     # combine column to a shapely Box() object, save shapefile
     boxes['geometry'] = boxes.apply(lambda x: shapely.geometry.box(x.xmin,x.ymin,x.xmax,x.ymax), axis=1)
     boxes = gpd.GeoDataFrame(boxes, geometry='geometry')    
-        
+
     #Give an id field
     boxes["box_id"] = np.arange(boxes.shape[0])
-    
+
     return boxes
 
 def choose_box(group, plot_data):
@@ -73,9 +75,8 @@ def choose_box(group, plot_data):
 def create_boxes(plot_data, size=1):
     """If there are no deepforest boxes, fall back on selecting a fixed area around stem point"""
     fixed_boxes = plot_data.buffer(size).envelope
-    
     fixed_boxes = gpd.GeoDataFrame(geometry=fixed_boxes)
-    
+
     #Mimic the existing structure
     fixed_boxes = gpd.sjoin(fixed_boxes, plot_data)
     fixed_boxes["score"] = None
@@ -101,24 +102,24 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     try:
         rgb_sensor_path = find_sensor_path(bounds=plot_data.total_bounds, lookup_pool=rgb_pool)
     except Exception as e:
-        raise ValueError("cannot find RGB sensor for {}".format(plot_data.plotID.unique()))
+        raise ValueError("cannot find RGB sensor for {} with {}".format(plot_data.plotID.unique(), e))
     
     boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
     
     if boxes is None:
         raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
     
-    #Merge results with field data, buffer on edge 
+    # Merge results with field data, buffer on edge 
     merged_boxes = gpd.sjoin(boxes, plot_data)
     
-    ##If no remaining boxes just take a box around center
+    # If no remaining boxes just take a box around center
     missing_ids = plot_data[~plot_data.individual.isin(merged_boxes.individual)]
     
     if not missing_ids.empty:
         created_boxes= create_boxes(missing_ids)
         merged_boxes = merged_boxes.append(created_boxes)
     
-    #If there are multiple boxes per point, take the center box
+    # If there are multiple boxes per point, take the center box
     grouped = merged_boxes.groupby("individual")
     
     cleaned_boxes = []
@@ -129,7 +130,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_boxes),crs=merged_boxes.crs)
     merged_boxes = merged_boxes.drop(columns=["xmin","xmax","ymin","ymax"])
     
-    ##if there are multiple points per box, take the tallest point.
+    # If there are multiple points per box, take the tallest point.
     cleaned_points = []
     for value, group in merged_boxes.groupby("box_id"):
         if group.shape[0] > 1:
@@ -143,24 +144,22 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
             cleaned_points.append(selected_point)
         else:
             cleaned_points.append(group)
-     
     merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_points),crs=merged_boxes.crs)
     
-    #Add tile information
+    # Add tile information
     boxes["RGB_tile"] = rgb_sensor_path
     merged_boxes["RGB_tile"] = rgb_sensor_path
 
     return merged_boxes, boxes 
 
-def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, deepforest_model=None):
+def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, deepforest_model=None):
     """wrapper function for dask, see main.py"""
-    
     if deepforest_model is None:
         from deepforest import main
         deepforest_model = main.deepforest()
         deepforest_model.use_release(check_release=False)
 
-    #Filter data and process
+    # Filter data and process
     plot_data = df[df.plotID == plot]
     try:
         predicted_trees, raw_boxes = process_plot(plot_data, rgb_pool, deepforest_model)
@@ -171,7 +170,7 @@ def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, dee
     if predicted_trees.empty:
         return None
     
-    #Write merged boxes to file as an interim piece of data to inspect.
+    # Write merged boxes to file as an interim piece of data to inspect.
     if savedir is not None:
         predicted_trees.to_file("{}/{}_boxes.shp".format(savedir, plot))
     
@@ -223,7 +222,7 @@ def points_to_crowns(
             except:
                 continue
     else:
-        #IMPORTS at runtime due to dask pickling
+        # Imports at runtime due to dask pickling
         deepforest_model = main.deepforest()  
         deepforest_model.use_release(check_release=False)
         for plot in plot_names:
@@ -234,7 +233,7 @@ def points_to_crowns(
                 print("{} failed with {}".format(plot, e))
     results = pd.concat(results)
     
-    #In case any contrib data has the same CHM and height and sitting in the same deepforest box.Should be rare.
+    # In case any contrib data has the same CHM and height and sitting in the same deepforest box.Should be rare.
     results = results.groupby(["plotID","box_id"]).apply(lambda x: x.head(1)).reset_index(drop=True)
     
     return results
@@ -290,30 +289,29 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
     img_pool = glob.glob(sensor_glob, recursive=True)
     rgb_pool = glob.glob(rgb_glob, recursive=True)
     
-    #There were erroneous point cloud .tif
+    # There were erroneous point cloud .tif
     img_pool = [x for x in img_pool if not "point_cloud" in x]
     rgb_pool = [x for x in rgb_pool if not "point_cloud" in x]
      
-    #Looking up the rgb -> HSI tile naming is expensive and repetitive. Create a dictionary first.
+    # Looking up the rgb -> HSI tile naming is expensive and repetitive. Create a dictionary first.
     gdf["geo_index"] = gdf.geometry.apply(lambda x: bounds_to_geoindex(x.bounds))
     tiles = gdf["geo_index"].unique()
-    
+
     tile_to_path = {}
     for geo_index in tiles:
         try:
-            #Check if h5 -> tif conversion is complete
+            # Check if h5 -> tif conversion is complete
             if convert_h5:
                 if rgb_glob is None:
                     raise ValueError("rgb_glob is None, but convert_h5 is True, please supply glob to search for rgb images")
                 else:
-                    img_path = lookup_and_convert(rgb_pool=rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir,  geo_index = geo_index)
+                    img_path = lookup_and_convert(rgb_pool=rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir,  geo_index=geo_index)
             else:
                 img_path = find_sensor_path(lookup_pool=img_pool, geo_index=geo_index)  
         except:
             print("{} failed to find sensor path with traceback {}".format(geo_index, traceback.print_exc()))
             continue
         tile_to_path[geo_index] = img_path
-            
     if client:
         futures = []
         for index, row in gdf.iterrows():
@@ -323,7 +321,7 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
                 continue
             future = client.submit(write_crop, row=row, img_path=img_path, savedir=savedir, replace=replace)
             futures.append(future)
-            
+
         wait(futures)
         for x in futures:
             try:
@@ -342,10 +340,10 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
             except Exception as e:
                 print("index {} failed with {}".format(index,e))
                 continue
-    
+
             annotations.append(annotation)
-    
+
     annotations = pd.concat(annotations)
-        
+
     return annotations
         
