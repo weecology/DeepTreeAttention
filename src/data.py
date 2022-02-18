@@ -119,7 +119,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
         counts = shp[~shp.plotID.isin(test_plots)].taxonID.value_counts()
         species_to_sample = counts[counts < min_test_samples].index.tolist()
 
-    test = shp[~shp.plotID.isin(test_plots)]
+    test = shp[shp.plotID.isin(test_plots)]
     train = shp[~shp.plotID.isin(test.plotID.unique())]
 
     # Remove fixed boxes from test
@@ -300,8 +300,9 @@ class TreeData(LightningDataModule):
     def setup(self,stage=None):
         # Clean data from raw csv, regenerate from scratch or check for progress and complete
         if self.config["regenerate"]:
-            if self.config["replace"]:#remove any previous runs
+            if self.config["replace"]: 
                 try:
+                    # Remove any previous runs
                     os.remove("{}/processed/canopy_points.shp".format(self.data_dir))
                     os.remove(" ".format(self.data_dir))
                     os.remove("{}/processed/crowns.shp".format(self.data_dir))
@@ -310,10 +311,10 @@ class TreeData(LightningDataModule):
                 except:
                     pass
                     
-                #Convert raw neon data to x,y tree locatins
+                # Convert raw neon data to x,y tree locatins
                 df = filter_data(self.csv_file, config=self.config)
                     
-                #load any megaplot data
+                # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
                     megaplot_data = megaplot_data[megaplot_data.siteID=="OSBS"]
@@ -337,8 +338,8 @@ class TreeData(LightningDataModule):
                 df.to_file("{}/processed/canopy_points.shp".format(self.data_dir))
 
                 if self.comet_logger:
-                    self.comet_logger.experiment.log_parameter("Species after CHM filter",len(df.taxonID.unique()))
-                    self.comet_logger.experiment.log_parameter("Samples after CHM filter",df.shape[0])
+                    self.comet_logger.experiment.log_parameter("Species after CHM filter", len(df.taxonID.unique()))
+                    self.comet_logger.experiment.log_parameter("Samples after CHM filter", df.shape[0])
             
                 # Create crown data
                 crowns = generate.points_to_crowns(
@@ -350,13 +351,13 @@ class TreeData(LightningDataModule):
                 )
 
                 if self.comet_logger:
-                    self.comet_logger.experiment.log_parameter("Species after crown prediction",len(crowns.taxonID.unique()))
-                    self.comet_logger.experiment.log_parameter("Samples after crown prediction",crowns.shape[0])
-                                
+                    self.comet_logger.experiment.log_parameter("Species after crown prediction", len(crowns.taxonID.unique()))
+                    self.comet_logger.experiment.log_parameter("Samples after crown prediction", crowns.shape[0])
+
                 crowns.to_file("{}/processed/crowns.shp".format(self.data_dir))
             else:
                 crowns = gpd.read_file("{}/processed/crowns.shp".format(self.data_dir))
-            
+
             annotations = generate.generate_crops(
                 crowns,
                 savedir=self.config["crop_dir"],
@@ -494,8 +495,8 @@ class TreeData(LightningDataModule):
         #get class weights
         train = pd.read_csv(self.train_file)
         class_weights = train.label.value_counts().to_dict()     
-
         data_weights = []
+        
         #balance classes
         for idx in range(len(self.train_ds)):
             path, image, targets = self.train_ds[idx]
