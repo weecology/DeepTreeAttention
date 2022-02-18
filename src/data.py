@@ -318,7 +318,9 @@ class TreeData(LightningDataModule):
                     megaplot_data = megaplot_data[megaplot_data.siteID=="OSBS"]
                     df = pd.concat([megaplot_data, df])
                 
-                if not self.debug:
+                if self.debug:
+                    df = df[df.siteID=="HARV"]
+                else:
                     southeast = df[df.siteID.isin(["OSBS","LENO","TALL","DELA","DSNY","JERC"])]
                     southeast = southeast.taxonID.unique()
                     plotIDs_to_keep = df[df.taxonID.isin(southeast)].plotID.unique()
