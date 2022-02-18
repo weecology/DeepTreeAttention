@@ -22,6 +22,6 @@ source activate DeepTreeAttention
 
 cd ~/DeepTreeAttention/
 module load git gcc
-python -m cProfile -o profile.pstats train.py
+python -m cProfile -o cross_time_profile.pstats train.py
 EOT
 
