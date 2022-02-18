@@ -103,18 +103,21 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
         return train, test
                 
     np.random.shuffle(plotIDs)
-    test = shp[shp.plotID == plotIDs[0]]
-    
-    for plotID in plotIDs[1:]:
-        include = False
+    species_to_sample = shp.taxonID.unique()
+    test_plots = []
+    for plotID in plotIDs:
         selected_plot = shp[shp.plotID == plotID]
         # If any species is missing from min samples, include plot
         for x in selected_plot.taxonID.unique():
-            if sum(test.taxonID == x) < min_test_samples:
-                include = True
-        if include:
-            test = pd.concat([test,selected_plot])
+            if x in species_to_sample:
+                test_plots.append(plotID)
+                break
+        
+        #update species list
+        counts = shp[~shp.plotID.isin(test_plots)].taxonID.value_counts()
+        species_to_sample = counts[counts < min_test_samples].index.tolist()
             
+    test = shp[~shp.plotID.isin(test_plots)]
     train = shp[~shp.plotID.isin(test.plotID.unique())]
     
     #remove fixed boxes from test
@@ -369,17 +372,6 @@ class TreeData(LightningDataModule):
             if self.comet_logger:
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(annotations.taxonID.unique()))
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
-            
-            #Dead filter
-            #dead_label, dead_score = filter_dead_annotations(crowns, config=self.config)
-            #crowns["dead_label"] = dead_label
-            #crowns["dead_score"] = dead_score
-            #individuals_to_keep = crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))].individual
-            #annotations = annotations[annotations.individualID.isin(individuals_to_keep)]
-            
-            #if self.comet_logger:
-                #self.comet_logger.experiment.log_parameter("Species after dead filtering",len(annotations.taxonID.unique()))
-                #self.comet_logger.experiment.log_parameter("Samples after dead filtering",annotations.shape[0])
                         
             if self.config["new_train_test_split"]:
                 train_annotations, test_annotations = train_test_split(annotations,config=self.config, client=self.client)   
