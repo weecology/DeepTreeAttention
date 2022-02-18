@@ -15,7 +15,7 @@ def test_TreeData_setup(config, ROOT):
     assert not test.empty
     assert not train.empty
     assert not any([x in train.image_path.unique() for x in test.image_path.unique()])
-    assert all([x in ["image_path","label","site","taxonID","siteID","plotID","individualID","point_id","box_id","RGB_tile"] for x in train.columns])
+    assert all([x in ["image_path","label","site","taxonID","siteID","plotID","individualID","point_id","box_id","RGB_tile","tile_year"] for x in train.columns])
     
 def test_TreeDataset(dm, config,tmpdir, ROOT):
     #Train loader
