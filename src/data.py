@@ -265,7 +265,8 @@ class TreeDataset(Dataset):
             label = torch.tensor(label, dtype=torch.long)
 
             if self.HSI:
-                inputs["HSI"] = self.transformer(inputs["HSI"])
+                if not inputs["HSI"] is None:
+                    inputs["HSI"] = self.transformer(inputs["HSI"])
 
             return individual, inputs, label
         else:
