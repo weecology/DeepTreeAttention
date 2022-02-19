@@ -315,7 +315,6 @@ class TreeData(LightningDataModule):
                 # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
-                    megaplot_data = megaplot_data[megaplot_data.siteID=="OSBS"]
                     df = pd.concat([megaplot_data, df])
                 
                 if not self.debug:

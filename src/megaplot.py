@@ -32,7 +32,7 @@ def format(site, gdf, config):
     """
     #give each an individual ID
     gdf["individualID"] = gdf.index.to_series().apply(lambda x: "{}.contrib.{}".format(site,x)) 
-    gdf["siteID"] = site
+    gdf["siteID"] = site.split("_")[0]
     
     #PlotID variable to center on correct tile
     grid = create_grid(gdf)
