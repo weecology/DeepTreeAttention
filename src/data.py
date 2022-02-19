@@ -114,7 +114,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
             if x in species_to_sample:
                 test_plots.append(plotID)
                 # Update species list                
-                counts = shp[~shp.plotID.isin(test_plots)].taxonID.value_counts()                
+                counts = shp[shp.plotID.isin(test_plots)].taxonID.value_counts()                
                 species_to_sample = counts[counts < min_test_samples].index.tolist()                
 
     test = shp[shp.plotID.isin(test_plots)]
