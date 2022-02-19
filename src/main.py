@@ -307,7 +307,12 @@ class TreeModel(LightningModule):
                 fig = plt.figure(0)
                 ax = fig.add_subplot(1, 1, 1)                
                 individual = row["individual"]
-                geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
+                try:
+                    geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
+                except Exception as e:
+                    print("Cannot find individual {} in crowns.shp with schema {}".format(individual, test_crowns.head()))
+                    break
+                    
                 left, bottom, right, top = geom.bounds
                 
                 #Find image
