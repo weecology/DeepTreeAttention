@@ -58,3 +58,9 @@ def load_image(img_path, image_size):
     image = transforms.functional.resize(image, size=(image_size,image_size), interpolation=transforms.InterpolationMode.NEAREST)
     
     return image
+
+def my_collate(batch):
+    """Drop empty batches"""
+    batch = filter (lambda x:x[1]["HSI"] is not None, batch)
+    
+    return torch.utils.data.dataloader.default_collate(batch)

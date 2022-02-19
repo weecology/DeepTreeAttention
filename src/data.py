@@ -58,12 +58,7 @@ def filter_data(path, config):
     field.loc[field.taxonID=="BEPAC2","taxonID"] = "BEPA"
     field.loc[field.taxonID=="JUVIV","taxonID"] = "JUVI"
     field.loc[field.taxonID=="PRPEP","taxonID"] = "PRPE2"
-    field.loc[field.taxonID=="COCOC","taxonID"] = "COCO6"
-    
-    
-    
-    
-    
+    field.loc[field.taxonID=="COCOC","taxonID"] = "COCO6"    
     
     field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
     field = field[~(field.eventID.str.contains("2014"))]
@@ -234,7 +229,10 @@ class TreeDataset(Dataset):
         if self.config["preload_images"]:
             self.image_dict = {}
             for index, row in self.annotations.iterrows():
-                self.image_dict[index] = load_image(row["image_path"], image_size=self.image_size)
+                try:
+                    self.image_dict[index] = load_image(row["image_path"], image_size=self.image_size)
+                except:
+                    self.image_dict[index] = None
 
     def __len__(self):
         # 0th based index
@@ -252,8 +250,10 @@ class TreeDataset(Dataset):
             else:
                 image_path = self.annotations.image_path.loc[index]  
                 year_model = self.year_model_dict[year]
-                image = load_image(image_path, image_size=self.image_size, year_model=year_model)
-                inputs["HSI"] = image
+                try:
+                    image = load_image(row["image_path"], image_size=self.image_size)
+                except:
+                    image = None
 
         if self.metadata:
             site = self.annotations.site.loc[index]  
@@ -534,6 +534,7 @@ class TreeData(LightningDataModule):
             self.train_ds,
             sampler = sampler,
             batch_size=self.config["batch_size"],
+            collate_fn=my_collate,
             num_workers=self.config["workers"])
         
         return data_loader
@@ -544,6 +545,8 @@ class TreeData(LightningDataModule):
             batch_size=self.config["batch_size"],
             shuffle=False,
             num_workers=self.config["workers"],
+            collate_fn=my_collate
+            
         )
         
         return data_loader
