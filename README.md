@@ -24,15 +24,6 @@ Project Organization
     │
     ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
     ├── src                <- Source code for use in this project.
-    │   ├── __init__.py       <- Makes src a Python module
-    │   ├── data.py           <- Pytorch Lighting data module for creating dataloaders for model training
-    │   ├── generate.py       <- Convert csv of point files to tree crowns
-    │   ├── main.py           <- Pytorch Lightning Module for model training
-    │   ├── neon_paths.py     <- Utilities for getting paths and metadata from NEON HSI data
-    │   ├── patches.py        <- Convert tree crowns into a set of pixels with overlapping windows
-    │   ├── start_cluster.py  <- dask utilities for SLURM parallel processing
-    │   ├── CHM.py            <- Canopy Height Model Lidar Processing
-    │   ├── Hyperspectral.py  <- Hyperspectral conversion from .h5 to .tif
     │   ├── Models         <- Model Architectures
 
 --------
@@ -141,4 +132,65 @@ class MetadataModel(main.TreeModel):
         return loss
 
 ```
+
+## Getting Started (UF - collaboration)
+
+This section is meant solely for members of the idtrees group who have access to the data.
+
+1) Fork this repo and install the conda environment.
+
+```
+conda env create -f=environment.yml
+conda activate DeepTreeAttention
+```
+
+2) Update the config.yml
+
+Currently, only members of the ewhite group have permissions to the raw NEON data.
+
+For example:
+
+```
+rgb_sensor_pool: /orange/ewhite/NeonData/*/DP3.30010.001/**/Camera/**/*.tif
+```
+
+This is not a problem, just set 
+
+```
+regenerate: False
+```
+
+and it will bypass these steps and use the existing train/test split (e.g. data/processed/train.csv) 
+
+You will need to set the correct crop directories
+
+```
+crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/crops/
+```
+To wherever the crops are saved. This is currently 
+
+```
+/orange/idtrees-collab/DeepTreeAttention/crops/
+```
+
+I highly recommend making a comet login. Change
+
+```
+#Comet dashboard
+comet_workspace: bw4sz
+```
+to your usename and add a [.comet.config file](https://www.comet.ml/docs/python-sdk/advanced/#non-interactive-setup) to authenticate.
+
+3) Submit a job
+
+Submit a SLURM job
+
+```
+sbatch SLURM/experiment.yml
+```
+
+4) Look at the comet repo for results
+
+The metrics tab has the Micro and Macro Accuracy.
+
 
