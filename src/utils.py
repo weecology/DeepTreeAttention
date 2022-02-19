@@ -61,6 +61,6 @@ def load_image(img_path, image_size):
 
 def my_collate(batch):
     """Drop empty batches"""
-    batch = filter (lambda x:x[1]["HSI"] is not None, batch)
+    batch = list(filter (lambda x:x[1]["HSI"] is not None, batch))
     
     return torch.utils.data.dataloader.default_collate(batch)
