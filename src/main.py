@@ -409,6 +409,8 @@ class TreeModel(LightningModule):
                     target=torch.tensor(group.label.values),
                     average="macro",
                     num_classes=self.classes)
+                experiment.log_metric("{}_macro".format(name), site_macro)
+                experiment.log_metric("{}_micro".format(name), site_micro)            
                 row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro.numpy()], "Macro Recall": [site_macro.numpy()]})
                 site_data_frame.append(row)
             site_data_frame = pd.concat(site_data_frame)
