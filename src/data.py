@@ -60,11 +60,6 @@ def filter_data(path, config):
     field.loc[field.taxonID=="PRPEP","taxonID"] = "PRPE2"
     field.loc[field.taxonID=="COCOC","taxonID"] = "COCO6"
     
-    
-    
-    
-    
-    
     field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
     field = field[~(field.eventID.str.contains("2014"))]
     with_heights = field[~field.height.isnull()]
@@ -117,7 +112,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
         iteration: a dummy parameter to make dask submission unique
     """
     #split by plot level
-    plotIDs = list(shp[shp.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])].plotID.unique())
+    plotIDs = shp.plotID.unique()
     if len(plotIDs) == 0:
         test = shp[shp.plotID == shp.plotID.unique()[0]]
         train = shp[shp.plotID == shp.plotID.unique()[1]]
@@ -336,13 +331,7 @@ class TreeData(LightningDataModule):
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
                     df = pd.concat([megaplot_data, df])
-                
-                if not self.debug:
-                    southeast = df[df.siteID.isin(["OSBS","LENO","TALL","DELA","DSNY","JERC"])]
-                    southeast = southeast.taxonID.unique()
-                    plotIDs_to_keep = df[df.taxonID.isin(southeast)].plotID.unique()
-                    df = df[df.plotID.isin(plotIDs_to_keep)]
-                    
+
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter", len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples before CHM filter", df.shape[0])

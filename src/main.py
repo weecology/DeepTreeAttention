@@ -85,11 +85,27 @@ class TreeModel(LightningModule):
         self.log("val_loss", loss, on_epoch=True)
         softmax_prob = F.softmax(y_hat, dim =1)
         output = self.metrics(softmax_prob, y) 
-        self.log_dict(output)
+        self.log_dict(output, on_epoch=True, on_step=False)
         
         return loss
 
-
+    def on_validation_epoch_end(self):
+        results = self.predict_dataloader(self.val_dataloader())
+        
+        final_micro = torchmetrics.functional.accuracy(
+            preds=torch.tensor(results.pred_label_top1.values),
+            target=torch.tensor(results.label.values),
+            average="micro")
+        
+        final_macro = torchmetrics.functional.accuracy(
+            preds=torch.tensor(results.pred_label_top1.values),
+            target=torch.tensor(results.label.values),
+            average="macro",
+            num_classes=self.classes)
+        
+        self.log("Epoch Micro Accuracy", final_micro)
+        self.log("Epoch Macro Accuracy", final_macro)
+        
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.config["lr"])
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
