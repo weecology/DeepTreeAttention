@@ -47,9 +47,9 @@ workers: 0
 
 #Network Parameters
 gpus: 1
-batch_size: 32
+batch_size: 128
 bands: 369
-lr: 0.00005
+lr: 0.0001
 fast_dev_run: False
 accelerator: dp
 epochs: 120
