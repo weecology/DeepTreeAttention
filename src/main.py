@@ -353,25 +353,6 @@ class TreeModel(LightningModule):
         crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
         results = results.merge(crowns.drop(columns="label"), on="individual")
         results = gpd.GeoDataFrame(results, geometry="geometry")
-        HSI_pool = glob.glob(self.config["HSI_tif_dir"] +"*.tif")
-        neighbors = spatial.spatial_neighbors(
-            results,
-            buffer=self.config["neighbor_buffer_size"],
-            model=self,
-            data_dir="{}/data/".format(self.ROOT),
-            image_size=self.config["image_size"],
-            HSI_pool=HSI_pool)        
-        
-        # Spatial function
-        labels, scores = spatial.spatial_smooth(neighbors, features, alpha=self.config["neighborhood_strength"])
-        results["spatial_pred_label"] = labels
-        results["spatial_score"] = scores
-
-        spatial_micro = torchmetrics.functional.accuracy(preds=torch.tensor(results.spatial_pred_label.values),target=torch.tensor(results.label.values), average="micro")
-        spatial_macro = torchmetrics.functional.accuracy(preds=torch.tensor(results.spatial_pred_label.values),target=torch.tensor(results.label.values), average="macro", num_classes=self.classes)
-        if experiment:
-            experiment.log_metric("spatial_micro",spatial_micro)
-            experiment.log_metric("spatial_macro",spatial_macro)
 
         # Log results by species
         taxon_accuracy = torchmetrics.functional.accuracy(
@@ -400,17 +381,21 @@ class TreeModel(LightningModule):
         if experiment:
             site_data_frame =[]
             for name, group in results.groupby("siteID"):
+                
                 site_micro = torchmetrics.functional.accuracy(
                     preds=torch.tensor(group.pred_label_top1.values),
                     target=torch.tensor(group.label.values),
                     average="micro")
+                
                 site_macro = torchmetrics.functional.accuracy(
                     preds=torch.tensor(group.pred_label_top1.values),
                     target=torch.tensor(group.label.values),
                     average="macro",
                     num_classes=self.classes)
+                
                 experiment.log_metric("{}_macro".format(name), site_macro)
-                experiment.log_metric("{}_micro".format(name), site_micro)            
+                experiment.log_metric("{}_micro".format(name), site_micro) 
+                
                 row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro.numpy()], "Macro Recall": [site_macro.numpy()]})
                 site_data_frame.append(row)
             site_data_frame = pd.concat(site_data_frame)
