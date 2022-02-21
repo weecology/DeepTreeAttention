@@ -329,7 +329,11 @@ class TreeData(LightningDataModule):
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
                     df = pd.concat([megaplot_data, df])
-
+                
+                if not self.debug:
+                    species_to_keep = df[df.siteID=="OSBS"].taxonID.unique()
+                    df = df[df.taxonID.isin(species_to_keep)]
+                    
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter", len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples before CHM filter", df.shape[0])
