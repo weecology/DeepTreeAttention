@@ -375,13 +375,13 @@ class TreeModel(LightningModule):
 
         # Log results by species
         taxon_accuracy = torchmetrics.functional.accuracy(
-            preds=torch.tensor(results.spatial_pred_label.values),
+            preds=torch.tensor(results.pred_label_top1.values),
             target=torch.tensor(results.label.values), 
             average="none", 
             num_classes=self.classes
         )
         taxon_precision = torchmetrics.functional.precision(
-            preds=torch.tensor(results.spatial_pred_label.values),
+            preds=torch.tensor(results.pred_label_top1.values),
             target=torch.tensor(results.label.values),
             average="none",
             num_classes=self.classes
@@ -401,11 +401,11 @@ class TreeModel(LightningModule):
             site_data_frame =[]
             for name, group in results.groupby("siteID"):
                 site_micro = torchmetrics.functional.accuracy(
-                    preds=torch.tensor(group.spatial_pred_label.values),
+                    preds=torch.tensor(group.pred_label_top1.values),
                     target=torch.tensor(group.label.values),
                     average="micro")
                 site_macro = torchmetrics.functional.accuracy(
-                    preds=torch.tensor(group.spatial_pred_label.values),
+                    preds=torch.tensor(group.pred_label_top1.values),
                     target=torch.tensor(group.label.values),
                     average="macro",
                     num_classes=self.classes)
