@@ -335,7 +335,7 @@ class TreeData(LightningDataModule):
                     df = pd.concat([megaplot_data, df])
                 
                 if not self.debug:
-                    data_from_other_sites = df[(~df.siteID=="OSBS")]
+                    data_from_other_sites = df[~(df.siteID=="OSBS")]
                     data_from_OSBS = df[(df.siteID=="OSBS")]
                     species_to_keep = df[df.siteID=="OSBS"].taxonID.unique()
                     data_from_other_sites = data_from_other_sites[data_from_other_sites.taxonID.isin(species_to_keep)].groupby("taxonID").apply(lambda x: x.head(self.config["samples_from_other_sites"]))
