@@ -335,8 +335,11 @@ class TreeData(LightningDataModule):
                     df = pd.concat([megaplot_data, df])
                 
                 if not self.debug:
+                    data_from_other_sites = df[(~df.siteID=="OSBS")]
+                    data_from_OSBS = df[(df.siteID=="OSBS")]
                     species_to_keep = df[df.siteID=="OSBS"].taxonID.unique()
-                    df = df[df.taxonID.isin(species_to_keep)]
+                    data_from_other_sites = data_from_other_sites[data_from_other_sites.taxonID.isin(species_to_keep)].groupby("taxonID").apply(lambda x: x.head(self.config["samples_from_other_sites"]))
+                    df = pd.concat([data_from_OSBS, data_from_other_sites])
                     
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter", len(df.taxonID.unique()))

@@ -39,6 +39,9 @@ new_train_test_split: True
 #Directory to store cropped images from crowns
 crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/crops/
 
+#How many samples from non-osbs sites can we use per species
+samples_from_other_sites: 10
+
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
@@ -52,7 +55,7 @@ bands: 369
 lr: 0.00005
 fast_dev_run: False
 accelerator: dp
-epochs: 120
+epochs: 80
 
 #Evaluation config
 #Top k class recall score
