@@ -17,7 +17,6 @@ def read_files(directory, config=None):
     for index, x in enumerate(sites):
         print(x)
         formatted_data = format(site=x, gdf=shps[index], config=config)
-        formatted_data["filename"] = os.path.splitext(os.path.basename(x))[0]
         sitedf.append(formatted_data)
 
     sitedf = pd.concat(sitedf)
@@ -33,6 +32,7 @@ def format(site, gdf, config):
     """
     #give each an individual ID
     gdf["individualID"] = gdf.index.to_series().apply(lambda x: "{}.contrib.{}".format(site,x)) 
+    gdf["filename"] = site
     gdf["siteID"] = site.split("_")[0]
     
     #PlotID variable to center on correct tile
