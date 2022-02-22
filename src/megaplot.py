@@ -36,7 +36,11 @@ def format(site, gdf, config):
     gdf["siteID"] = site.split("_")[0]
     
     #PlotID variable to center on correct tile
-    gdf = buffer_plots(gdf)
+    if gdf.shape[0] > 1000:
+        grid = create_grid(gdf)
+        gdf = gpd.sjoin(gdf, grid)
+    else:
+        gdf = buffer_plots(gdf)
     
     #Make sure any points sitting on the line are assigned only to one grid. Rare edge case
     gdf = gdf.groupby("individualID").apply(lambda x: x.head(1)).reset_index(drop=True)
