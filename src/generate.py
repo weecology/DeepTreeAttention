@@ -245,13 +245,13 @@ def write_crop(row, img_path, savedir, replace=True):
         filename = "{}/{}.tif".format(savedir, row["individual"])
         file_exists = os.path.exists(filename)
         if file_exists:
-            annotation = pd.DataFrame({"image_path":[filename], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "RGB_tile":[row["RGB_tile"]], "siteID":[row["siteID"]],"box_id":[row["box_id"]]})
+            annotation = pd.DataFrame({"image_path":[os.path.basename(filename)], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "RGB_tile":[row["RGB_tile"]], "siteID":[row["siteID"]],"box_id":[row["box_id"]]})
             return annotation            
         else:
             filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])  
     else:
         filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])
-        annotation = pd.DataFrame({"image_path":[filename], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "RGB_tile":[row["RGB_tile"]], "siteID":[row["siteID"]],"box_id":[row["box_id"]]})
+        annotation = pd.DataFrame({"image_path":[os.path.basename(filename)], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "RGB_tile":[row["RGB_tile"]], "siteID":[row["siteID"]],"box_id":[row["box_id"]]})
         return annotation
 
 def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=False, HSI_tif_dir=None, replace=True):
