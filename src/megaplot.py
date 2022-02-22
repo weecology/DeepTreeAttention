@@ -17,6 +17,7 @@ def read_files(directory, config=None):
     for index, x in enumerate(sites):
         print(x)
         formatted_data = format(site=x, gdf=shps[index], config=config)
+        formatted_data["filename"] = os.path.splitext(os.path.basename(x))[0]
         sitedf.append(formatted_data)
 
     sitedf = pd.concat(sitedf)
@@ -55,7 +56,7 @@ def buffer_plots(gdf):
         if not touches.empty:    
             gdf.loc[touches.index, "plotID"] = plotID
             plotID +=1
-    gdf["plotID"] = gdf.plotID.apply(lambda x: "{}_contrib_{}".format(gdf.site.unique()[0], int(x)))
+    gdf["plotID"] = gdf.plotID.apply(lambda x: "{}_contrib_{}".format(gdf.filename.unique()[0], int(x)))
     
     return gdf
         
