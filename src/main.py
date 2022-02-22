@@ -22,7 +22,6 @@ from src import data
 from src import generate
 from src import neon_paths
 from src import patches
-from src import spatial
 from src import utils
 from . import __file__
 
