@@ -13,7 +13,7 @@ min_stem_diameter: 10
 min_train_samples: 7
 min_test_samples: 5
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
-iterations: 4000
+iterations: 10000
 #minimum CHM height, leave blank to skip CHM filtering
 min_CHM_height: 1
 #Max difference between measured height and CHM height if CHM > height
@@ -40,7 +40,7 @@ new_train_test_split: True
 crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/crops/
 
 #How many samples from non-osbs sites can we use per species
-samples_from_other_sites: 10
+samples_from_other_sites: 0
 
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
@@ -55,7 +55,7 @@ bands: 369
 lr: 0.00005
 fast_dev_run: False
 accelerator: dp
-epochs: 80
+epochs: 90
 
 #Evaluation config
 #Top k class recall score
