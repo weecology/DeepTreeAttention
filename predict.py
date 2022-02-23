@@ -6,13 +6,10 @@ from glob import glob
 import pandas as pd
 import geopandas as gpd
 from src.start_cluster import start
-from src import generate
 from distributed import wait
 import os
 import re
 import traceback
-
-crop_sensor = True
 
 def find_rgb_files(site, year, config):
     tiles = glob(config["rgb_sensor_pool"], recursive=True)
@@ -41,7 +38,7 @@ tiles = find_rgb_files(site="OSBS", config=config, year="2019")
 hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
 rgb_pool = glob(config["rgb_sensor_pool"], recursive=True)
 
-cpu_client = start(cpus=75)
+cpu_client = start(cpus=1)
 
 tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"], year="2019")
 wait(tif_futures)
@@ -55,17 +52,13 @@ for x in tif_futures:
     except:
         pass
 
-if crop_sensor:
-    pass
-else:
-    cpu_client.close()
-    
-gpu_client = start(gpus=10, mem_size="50GB")
+cpu_client.close()    
+gpu_client = start(gpus=1, mem_size="50GB")
 
 #No daemonic dask children
 config["workers"] = 0
 futures =  []
-for x in hsi_tifs:
+for x in hsi_tifs[:1]:
     future = gpu_client.submit(predict.predict_tile, x, dead_model_path = dead_model_path, species_model_path=species_model_path, config=config)
     futures.append(future)
 
@@ -84,14 +77,3 @@ for future in futures:
 predictions = pd.concat(predictions)
 predictions = gpd.GeoDataFrame(predictions, geometry="geometry")
 predictions.to_file("results/OSBS_predictions.shp")
-
-if crop_sensor:
-    #format for generate crops
-    predictions["taxonID"] = predictions["spatial_taxonID"]
-    predictions["plotID"] = None
-    predictions["box_id"] = None
-    predictions["siteID"] = None
-    annotations = generate.generate_crops(predictions, sensor_glob=config["HSI_sensor_pool"], savedir="/orange/idtrees-collab/DeepTreeAttention/prediction_crops/HSI/", rgb_glob=config["rgb_sensor_pool"], client=None, convert_h5=True, HSI_tif_dir=config["HSI_tif_dir"])
-    generate.generate_crops(predictions, sensor_glob=config["rgb_sensor_pool"], savedir="/orange/idtrees-collab/DeepTreeAttention/prediction_crops/RGB/", rgb_glob=config["rgb_sensor_pool"], client=client)
-    generate.generate_crops(predictions, sensor_glob=config["CHM_pool"], savedir="/orange/idtrees-collab/DeepTreeAttention/prediction_crops/CHM/", rgb_glob=config["rgb_sensor_pool"], client=client)
-    
