@@ -59,6 +59,7 @@ def filter_data(path, config):
     field.loc[field.taxonID=="JUVIV","taxonID"] = "JUVI"
     field.loc[field.taxonID=="PRPEP","taxonID"] = "PRPE2"
     field.loc[field.taxonID=="COCOC","taxonID"] = "COCO6"
+    field.loc[field.taxonID=="NYBI","taxonID"] = "NYSY"
     
     field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
     field = field[~(field.eventID.str.contains("2014"))]
@@ -332,6 +333,8 @@ class TreeData(LightningDataModule):
                 # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
+                    #Simplify MAGNOLIA's just at OSBS
+                    df.loc[df.taxonID=="MAGR4","taxonID"] = "MAGNO"                    
                     df = pd.concat([megaplot_data, df])
                 
                 if not self.debug:
