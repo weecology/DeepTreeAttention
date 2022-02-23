@@ -120,16 +120,12 @@ def predict_tile(PATH, dead_model_path, species_model_path, config):
     #Load species model
     m = TreeModel.load_from_checkpoint(species_model_path)
     trees, features = predict_species(HSI_path=PATH, crowns=filtered_crowns, m=m, config=config)
-    
-    #Spatial smooth
-    trees = smooth(trees=trees, features=features, size=config["neighbor_buffer_size"], alpha=config["neighborhood_strength"])
-    trees["spatial_taxonID"] = trees["spatial_label"]
-    trees["spatial_taxonID"] = trees["spatial_label"].apply(lambda x: m.index_to_label[x]) 
-    
+
+
     #Remove predictions for dead trees
-    trees.loc[trees.dead_label==1,"spatial_taxonID"] = "DEAD"
-    trees.loc[trees.dead_label==1,"spatial_label"] = None
-    trees.loc[trees.dead_label==1,"spatial_score"] = None
+    trees.loc[trees.dead_label==1,"pred_taxa_top1"] = "DEAD"
+    trees.loc[trees.dead_label==1,"pred_label_top1"] = None
+    trees.loc[trees.dead_label==1,"top1_score"] = None
     
     #Calculate crown area
     trees["crown_area"] = crowns.geometry.area
@@ -187,23 +183,4 @@ def predict_dead(crowns, dead_model_path, rgb_tile, config):
     return label, score
 
 
-def smooth(trees, features, size, alpha):
-    """Given the results dataframe and feature labels, spatially smooth based on alpha value"""
-    trees = gpd.GeoDataFrame(trees, geometry="geometry")    
-    sindex = trees.sindex
-    tree_buffer = trees.buffer(size)
-    smoothed_features = []
-    for index, geom in enumerate(tree_buffer):
-        intersects = sindex.query(geom)
-        focal_feature = features[index,]
-        neighbor_features = np.mean(features[intersects,], axis=0)
-        smoothed_feature = focal_feature + alpha * neighbor_features
-        smoothed_features.append(smoothed_feature)
-    smoothed_features = np.vstack(smoothed_features)
-    spatial_label = np.argmax(smoothed_features, axis=1)
-    spatial_score = np.max(smoothed_features, axis=1)
-    trees["spatial_label"] = spatial_label
-    trees["spatial_score"] = spatial_score
-    
-    return trees
     

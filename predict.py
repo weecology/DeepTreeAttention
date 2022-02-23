@@ -41,12 +41,12 @@ tiles = find_rgb_files(site="OSBS", config=config, year="2019")
 hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
 rgb_pool = glob(config["rgb_sensor_pool"], recursive=True)
 
-cpu_client = start(cpus=50)
+cpu_client = start(cpus=75)
 
 tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"], year="2019")
 wait(tif_futures)
 
-species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0abd4a52fcb2453da44ae59740b4a9c8.pl"
+species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/71a7f9c0b3294b78bbd7c3f8f2ba83f6.pl"
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/9192d967fa324eecb8cf2107e4673a00.pl"
 hsi_tifs = []
 for x in tif_futures:
@@ -60,12 +60,12 @@ if crop_sensor:
 else:
     cpu_client.close()
     
-gpu_client = start(gpus=1, mem_size="50GB")
+gpu_client = start(gpus=10, mem_size="50GB")
 
 #No daemonic dask children
 config["workers"] = 0
 futures =  []
-for x in hsi_tifs[:1]:
+for x in hsi_tifs:
     future = gpu_client.submit(predict.predict_tile, x, dead_model_path = dead_model_path, species_model_path=species_model_path, config=config)
     futures.append(future)
 
