@@ -220,7 +220,8 @@ def points_to_crowns(
             try:
                 result = x.result()
                 results.append(result)
-            except:
+            except Exception as e:
+                print(e)
                 continue
     else:
         #IMPORTS at runtime due to dask pickling, kinda ugly.
@@ -277,7 +278,6 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
     img_pool = [x for x in img_pool if not "point_cloud" in x]
     rgb_pool = [x for x in rgb_pool if not "point_cloud" in x]
      
-    
     #Looking up the rgb -> HSI tile naming is expensive and repetitive. Create a dictionary first.
     gdf["geo_index"] = gdf.geometry.apply(lambda x: bounds_to_geoindex(x.bounds))
     tiles = gdf["geo_index"].unique()
