@@ -371,7 +371,7 @@ class TreeData(LightningDataModule):
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(crowns.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after crown prediction", crowns.shape[0])
-
+                
                 crowns.to_file("{}/processed/crowns.shp".format(self.data_dir))
             else:
                 crowns = gpd.read_file("{}/processed/crowns.shp".format(self.data_dir))
@@ -391,7 +391,26 @@ class TreeData(LightningDataModule):
             if self.comet_logger:
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(annotations.taxonID.unique()))
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
-                        
+                
+        
+            #Dead filter
+            if dead_model:
+                dead_label, dead_score = filter_dead_annotations(crowns, config=self.config)
+                crowns["dead_label"] = dead_label
+                crowns["dead_score"] = dead_score
+                individuals_to_keep = crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))].individual
+                annotations = annotations[annotations.individualID.isin(individuals_to_keep)]
+            
+            if self.comet_logger:
+                self.comet_logger.experiment.log_parameter("Species after dead filtering",len(annotations.taxonID.unique()))
+                self.comet_logger.experiment.log_parameter("Samples after dead filtering",annotations.shape[0])
+                predicted_dead = crowns[((dead_label == 1) & (dead_score > self.config["dead_threshold"]))]
+                
+                for x in predicted_dead.image_path:
+                    image_path = os.path.join(self.config["crop_dir"], x)
+                    img = rio.open(image_path).read()
+                    self.comet_logger.experiment.log_image(image_data = img, name=x)
+                
             if self.config["new_train_test_split"]:
                 train_annotations, test_annotations = train_test_split(annotations, config=self.config, client=self.client)   
             else:
