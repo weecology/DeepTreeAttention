@@ -408,6 +408,7 @@ class TreeData(LightningDataModule):
                 
                 rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
                 for index, row in predicted_dead.iterrows():
+                    left, bottom, right, top = row["geometry"]                   
                     img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=row["geometry"].bounds)
                     src = rasterio.open(img_path)
                     img = src.read(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))                      
