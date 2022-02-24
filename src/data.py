@@ -17,7 +17,7 @@ from src.utils import *
 from shapely.geometry import Point
 import torch
 from torch.utils.data import Dataset
-        
+import rasterio
 
 def filter_data(path, config):
     """Transform raw NEON data into clean shapefile   
