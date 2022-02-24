@@ -49,7 +49,7 @@ preload_images: True
 workers: 0
 
 #Network Parameters
-pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/_state_dict.pt
+pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/675efb32ae4542dca45105ce7f261896.pt
 gpus: 1
 batch_size: 32
 bands: 369
