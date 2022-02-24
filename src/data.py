@@ -11,6 +11,7 @@ from src import generate
 from src import CHM
 from src import augmentation
 from src import megaplot
+from src import neon_paths
 from src.models import dead
 from src.utils import *
 from shapely.geometry import Point
