@@ -30,7 +30,7 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Make new dataset
-regenerate: True
+regenerate: False
 convert_h5: True
 #Overwrite existing crops
 replace: True
@@ -49,6 +49,7 @@ preload_images: True
 workers: 0
 
 #Network Parameters
+pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/675efb32ae4542dca45105ce7f261896.pt
 gpus: 1
 batch_size: 32
 bands: 369

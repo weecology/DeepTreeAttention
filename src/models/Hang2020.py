@@ -51,12 +51,25 @@ class vanilla_CNN(Module):
         x = self.fc1(x)
         
         return x
+
+class Classifier(Module):
+    """A small module to seperate the classifier head, which depends on the number of classes.
+    This makes it easier to pretain on other data
+    """
+    def __init__(self, in_features, classes):
+        super(Classifier,self).__init__()        
+        self.fc1 = nn.Linear(in_features=in_features, out_features=classes)
     
+    def forward(self, features):
+        scores = self.fc1(features)
+        
+        return scores
+        
 class spatial_attention(Module):
     """
     Learn cross band spatial features with a set of convolutions and spectral pooling attention layers
     """
-    def __init__(self, filters, classes):
+    def __init__(self, filters):
         super(spatial_attention,self).__init__()
         self.channel_pool = nn.Conv2d(in_channels=filters, out_channels=1, kernel_size=1)
         
@@ -88,7 +101,6 @@ class spatial_attention(Module):
             raise ValueError("Unknown filter size for max pooling")
         
         self.class_pool = nn.MaxPool2d(pool_size)
-        self.fc1 = nn.Linear(in_features=in_features, out_features=classes)
         
     def forward(self, x):
         """Calculate attention and class scores for batch"""
@@ -108,9 +120,8 @@ class spatial_attention(Module):
         # Classification Head
         pooled_attention_features = self.class_pool(attention)
         pooled_attention_features = torch.flatten(pooled_attention_features, start_dim=1)
-        class_features = self.fc1(pooled_attention_features)
 
-        return attention, class_features
+        return attention, pooled_attention_features
 
 class spectral_attention(Module):
     """
@@ -119,7 +130,7 @@ class spectral_attention(Module):
     Args:
         in_channels: number of feature maps of the current image
     """
-    def __init__(self, filters, classes):
+    def __init__(self, filters):
         super(spectral_attention, self).__init__()        
         # Weak Attention with adaptive kernel size based on size of incoming feature map
         if filters == 32:
@@ -134,9 +145,6 @@ class spectral_attention(Module):
         
         self.attention_conv1 = nn.Conv1d(in_channels=filters, out_channels=filters, kernel_size=kernel_size, padding="same")
         self.attention_conv2 = nn.Conv1d(in_channels=filters, out_channels=filters, kernel_size=kernel_size, padding="same")
-        
-        #TODO Does this pool size change base on in_features?
-        self.fc1 = nn.Linear(in_features=filters, out_features=classes)
         
     def forward(self, x):
         """Calculate attention and class scores for batch"""
@@ -156,10 +164,8 @@ class spectral_attention(Module):
         # Classification Head
         pooled_attention_features = global_spectral_pool(attention)
         pooled_attention_features = torch.flatten(pooled_attention_features, start_dim=1)
-        class_features = self.fc1(pooled_attention_features)
-        class_features
         
-        return attention, class_features
+        return attention, pooled_attention_features
     
 class spatial_network(Module):
     """
@@ -170,22 +176,30 @@ class spatial_network(Module):
         
         #First submodel is 32 filters
         self.conv1 = conv_module(in_channels=bands, filters=32)
-        self.attention_1 = spatial_attention(filters=32, classes = classes)
+        self.attention_1 = spatial_attention(filters=32)
+        self.classifier1 = Classifier(classes=classes, in_features=128)
     
         self.conv2 = conv_module(in_channels=32, filters=64, maxpool_kernel=(2,2))
-        self.attention_2 = spatial_attention(filters=64, classes = classes)
+        self.attention_2 = spatial_attention(filters=64)
+        self.classifier2 = Classifier(classes=classes, in_features=256)        
     
         self.conv3 = conv_module(in_channels=64, filters=128, maxpool_kernel=(2,2))
-        self.attention_3 = spatial_attention(filters=128, classes = classes)
+        self.attention_3 = spatial_attention(filters=128)
+        self.classifier3 = Classifier(classes=classes, in_features=512)        
     
     def forward(self, x):
         """The forward method is written for training the joint scores of the three attention layers"""
         x = self.conv1(x)
-        x, scores1 = self.attention_1(x)
+        x, attention = self.attention_1(x)
+        scores1 = self.classifier1(attention)
+        
         x = self.conv2(x, pool = True)
-        x, scores2 = self.attention_2(x)
+        x, attention = self.attention_2(x)
+        scores2 = self.classifier2(attention)
+        
         x = self.conv3(x, pool = True)        
-        x, scores3 = self.attention_3(x)
+        x, attention = self.attention_3(x)
+        scores3 = self.classifier3(attention)
         
         return [scores1,scores2,scores3]
     
@@ -198,22 +212,30 @@ class spectral_network(Module):
         
         #First submodel is 32 filters
         self.conv1 = conv_module(in_channels=bands, filters=32)
-        self.attention_1 = spectral_attention(filters=32, classes = classes)
+        self.attention_1 = spectral_attention(filters=32)
+        self.classifier1 = Classifier(classes=classes, in_features=32)
     
         self.conv2 = conv_module(in_channels=32, filters=64, maxpool_kernel=(2,2))
-        self.attention_2 = spectral_attention(filters=64, classes = classes)
+        self.attention_2 = spectral_attention(filters=64)
+        self.classifier2 = Classifier(classes=classes, in_features=64)
     
         self.conv3 = conv_module(in_channels=64, filters=128, maxpool_kernel=(2,2))
-        self.attention_3 = spectral_attention(filters=128, classes = classes)
+        self.attention_3 = spectral_attention(filters=128)
+        self.classifier3 = Classifier(classes=classes, in_features=128)
     
     def forward(self, x):
         """The forward method is written for training the joint scores of the three attention layers"""
         x = self.conv1(x)
-        x, scores1 = self.attention_1(x)
+        x, attention = self.attention_1(x)
+        scores1 = self.classifier1(attention)
+        
         x = self.conv2(x, pool = True)
-        x, scores2 = self.attention_2(x)
+        x, attention = self.attention_2(x)
+        scores2 = self.classifier2(attention)
+        
         x = self.conv3(x, pool = True)        
-        x, scores3 = self.attention_3(x)
+        x, attention = self.attention_3(x)
+        scores3 = self.classifier3(attention)
         
         return [scores1,scores2,scores3]
         
@@ -240,4 +262,17 @@ class Hang2020(Module):
         
         return joint_score
         
+    
+def load_from_backbone(state_dict, classes, bands):
+    train_state_dict = torch.load(state_dict, map_location="cpu")
+    model = Hang2020(classes=classes, bands=bands)
+    dict_to_update = model.state_dict()
+    
+    #update weights from non-classifier layers
+    pretrained_dict = {k: v for k, v in train_state_dict.items() if not "classifier" in k}
+    dict_to_update.update(pretrained_dict)
+    model.load_state_dict(dict_to_update)
+    
+    return model
+    
     
