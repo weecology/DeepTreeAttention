@@ -59,6 +59,7 @@ def filter_data(path, config):
     field.loc[field.taxonID=="JUVIV","taxonID"] = "JUVI"
     field.loc[field.taxonID=="PRPEP","taxonID"] = "PRPE2"
     field.loc[field.taxonID=="COCOC","taxonID"] = "COCO6"    
+    field.loc[field.taxonID=="NYBI","taxonID"] = "NYSY"
     
     field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
     field = field[~(field.eventID.str.contains("2014"))]
@@ -102,7 +103,6 @@ def filter_data(path, config):
 
     return shp
 
-
 def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     """Sample and split a pandas dataframe based on plotID
     Args:
@@ -112,12 +112,14 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
         iteration: a dummy parameter to make dask submission unique
     """
     #split by plot level
-    plotIDs = list(shp[shp.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])].plotID.unique())
-    if len(plotIDs) == 0:
+    plotIDs = list(shp.plotID.unique())
+    if len(plotIDs) <=2:
         test = shp[shp.plotID == shp.plotID.unique()[0]]
         train = shp[shp.plotID == shp.plotID.unique()[1]]
 
         return train, test
+    else:
+        plotIDs = shp[shp.siteID=="OSBS"].plotID.unique()
 
     np.random.shuffle(plotIDs)
     species_to_sample = shp.taxonID.unique()
@@ -137,8 +139,6 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
 
     # Remove fixed boxes from test
     test = test.groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples)
-    train_keep = train[train.siteID.isin(["OSBS","JERC","DSNY","TALL","LENO","DELA"])].groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
-    train = train[train.taxonID.isin(train_keep.taxonID.unique())]
     train = train[train.taxonID.isin(test.taxonID)]    
     test = test[test.taxonID.isin(train.taxonID)]
     test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]
@@ -230,7 +230,8 @@ class TreeDataset(Dataset):
             self.image_dict = {}
             for index, row in self.annotations.iterrows():
                 try:
-                    self.image_dict[index] = load_image(row["image_path"], image_size=self.image_size)
+                    image_path = os.path.join(self.config["crop_dir"],row["image_path"])                    
+                    self.image_dict[index] = image_path
                 except:
                     self.image_dict[index] = None
 
@@ -251,7 +252,10 @@ class TreeDataset(Dataset):
                 image_path = self.annotations.image_path.loc[index]  
                 year_model = self.year_model_dict[year]
                 try:
-                    image = load_image(row["image_path"], image_size=self.image_size)
+                    image_basename = self.annotations.image_path.loc[index]  
+                    image_path = os.path.join(self.config["crop_dir"],image_basename)                
+                    image = load_image(image_path, image_size=self.image_size)
+                    inputs["HSI"] = image                    
                 except:
                     image = None
 
@@ -339,15 +343,16 @@ class TreeData(LightningDataModule):
                 # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
+                    #Simplify MAGNOLIA's just at OSBS
+                    df.loc[df.taxonID=="MAGR4","taxonID"] = "MAGNO"                    
                     df = pd.concat([megaplot_data, df])
                 
-                if self.debug:
-                    df = df[df.siteID=="HARV"]
-                else:
-                    southeast = df[df.siteID.isin(["OSBS","LENO","TALL","DELA","DSNY","JERC"])]
-                    southeast = southeast.taxonID.unique()
-                    plotIDs_to_keep = df[df.taxonID.isin(southeast)].plotID.unique()
-                    df = df[df.plotID.isin(plotIDs_to_keep)]
+                if not self.debug:
+                    data_from_other_sites = df[~(df.siteID=="OSBS")]
+                    data_from_OSBS = df[(df.siteID=="OSBS")]
+                    species_to_keep = df[df.siteID=="OSBS"].taxonID.unique()
+                    data_from_other_sites = data_from_other_sites[data_from_other_sites.taxonID.isin(species_to_keep)].groupby("taxonID").apply(lambda x: x.head(self.config["samples_from_other_sites"]))
+                    df = pd.concat([data_from_OSBS, data_from_other_sites])
                     
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter", len(df.taxonID.unique()))
@@ -376,7 +381,7 @@ class TreeData(LightningDataModule):
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(crowns.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after crown prediction", crowns.shape[0])
-
+                
                 crowns.to_file("{}/processed/crowns.shp".format(self.data_dir))
             else:
                 crowns = gpd.read_file("{}/processed/crowns.shp".format(self.data_dir))
@@ -396,7 +401,26 @@ class TreeData(LightningDataModule):
             if self.comet_logger:
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(annotations.taxonID.unique()))
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
-                        
+                
+        
+            #Dead filter
+            if dead_model:
+                dead_label, dead_score = filter_dead_annotations(crowns, config=self.config)
+                crowns["dead_label"] = dead_label
+                crowns["dead_score"] = dead_score
+                individuals_to_keep = crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))].individual
+                annotations = annotations[annotations.individualID.isin(individuals_to_keep)]
+            
+            if self.comet_logger:
+                self.comet_logger.experiment.log_parameter("Species after dead filtering",len(annotations.taxonID.unique()))
+                self.comet_logger.experiment.log_parameter("Samples after dead filtering",annotations.shape[0])
+                predicted_dead = crowns[((dead_label == 1) & (dead_score > self.config["dead_threshold"]))]
+                
+                for x in predicted_dead.image_path:
+                    image_path = os.path.join(self.config["crop_dir"], x)
+                    img = rio.open(image_path).read()
+                    self.comet_logger.experiment.log_image(image_data = img, name=x)
+                
             if self.config["new_train_test_split"]:
                 train_annotations, test_annotations = train_test_split(annotations, config=self.config, client=self.client)   
             else:
