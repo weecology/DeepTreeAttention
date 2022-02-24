@@ -394,7 +394,7 @@ class TreeData(LightningDataModule):
                 
         
             #Dead filter
-            if dead_model:
+            if self.config["dead_model"]:
                 dead_label, dead_score = filter_dead_annotations(crowns, config=self.config)
                 crowns["dead_label"] = dead_label
                 crowns["dead_score"] = dead_score
