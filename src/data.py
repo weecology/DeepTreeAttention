@@ -412,6 +412,7 @@ class TreeData(LightningDataModule):
                     img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=row["geometry"].bounds)
                     src = rasterio.open(img_path)
                     img = src.read(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))                      
+                    img = np.rollaxis(img, 0, 3)
                     self.comet_logger.experiment.log_image(image_data=img, name="Dead: {}".format(row["individual"]))
                 
             if self.config["new_train_test_split"]:
