@@ -48,7 +48,10 @@ comet_logger.experiment.log_table("test.csv", test)
 comet_logger.experiment.log_table("novel_species.csv", novel)
 
 #Load from state dict of previous run
-model = Hang2020.load_from_backbone(state_dict=config["pretrain_state_dict"], classes=data_module.num_classes, bands=config["bands"])
+if config["pretrain_state_dict"]:
+    model = Hang2020.load_from_backbone(state_dict=config["pretrain_state_dict"], classes=data_module.num_classes, bands=config["bands"])
+else:
+    model = Hang2020.Hang2020(bands=config["bands"], classes=data_module.num_classes)
 m = main.TreeModel(
     model=model, 
     classes=data_module.num_classes, 
