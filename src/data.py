@@ -392,7 +392,6 @@ class TreeData(LightningDataModule):
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(annotations.taxonID.unique()))
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
                 
-        
             #Dead filter
             if self.config["dead_model"]:
                 dead_label, dead_score = filter_dead_annotations(crowns, config=self.config)
@@ -404,12 +403,14 @@ class TreeData(LightningDataModule):
             if self.comet_logger:
                 self.comet_logger.experiment.log_parameter("Species after dead filtering",len(annotations.taxonID.unique()))
                 self.comet_logger.experiment.log_parameter("Samples after dead filtering",annotations.shape[0])
-                predicted_dead = annotations[~(annotations.individualID.isin(individuals_to_keep))]
+                predicted_dead = crowns[~(crowns.individual.isin(individuals_to_keep))]
                 
-                for x in predicted_dead.image_path:
-                    image_path = os.path.join(self.config["crop_dir"], x)
-                    img = rio.open(image_path).read()
-                    self.comet_logger.experiment.log_image(image_data = img, name=x)
+                rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
+                for index, row in predicted_dead.iterrows():
+                    img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=row["geometry"].bounds)
+                    src = rasterio.open(img_path)
+                    img = src.read(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))                      
+                    self.comet_logger.experiment.log_image(image_data=img, name="Dead: {}".format(row["individual"]))
                 
             if self.config["new_train_test_split"]:
                 train_annotations, test_annotations = train_test_split(annotations, config=self.config, client=self.client)   
