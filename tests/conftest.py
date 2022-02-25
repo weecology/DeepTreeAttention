@@ -106,8 +106,8 @@ def config(ROOT, dead_model_path):
     config["convert_h5"] = False
     config["plot_n_individuals"] = 1
     config["min_CHM_diff"] = None    
-    config["dead_model"] = dead_model_path
-    config["dead_threshold"] = 1
+    config["dead_model"] = "/Users/benweinstein/Downloads/9192d967fa324eecb8cf2107e4673a00.pl"
+    config["dead_threshold"] = 0.95
     config["megaplot_dir"] = None
     
     
