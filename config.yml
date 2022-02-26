@@ -22,7 +22,7 @@ max_CHM_diff: 4
 CHM_height_limit: 8
 
 #Dead model filter
-dead_model: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/71610e2d0b63435dba09eb0484965f0a.pl
+dead_model: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/86a73db1f7764333bdedc613c44ec892.pl
 dead_threshold: 0.999
 
 #Megaplot XY Data, these are .shp files saved as the siteID
