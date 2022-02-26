@@ -44,7 +44,7 @@ tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_po
 wait(tif_futures)
 
 species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5cb3929b12984945900d81b0d101de84.pl"
-dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/9192d967fa324eecb8cf2107e4673a00.pl"
+dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/71610e2d0b63435dba09eb0484965f0a.pl"
 hsi_tifs = []
 for x in tif_futures:
     try:
