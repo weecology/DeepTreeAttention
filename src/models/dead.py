@@ -26,7 +26,6 @@ def get_transform(augment):
     return transforms.Compose(data_transforms)
 
 class AliveDeadDataset(Dataset):
-
     def __init__(self, csv_file, root_dir, label_dict = {"Alive": 0,"Dead":1}, transform=True, augment=False, train=True):
         """
         Args:
@@ -101,16 +100,13 @@ class AliveDead(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x,y = batch
         outputs = self(x)
-        loss = F.cross_entropy(outputs,y)
-        softmax_prob = F.softmax(outputs, dim =1)
-        
+        loss = F.cross_entropy(outputs,y)        
         self.log("val_loss",loss)        
+        self.accuracy(outputs, y)
+        self.total_accuracy(outputs, y)
+        self.precision_metric(outputs, y)
         
-        self.accuracy(softmax_prob, y)
-        self.total_accuracy(softmax_prob, y)
-        self.precision_metric(softmax_prob, y)
-        
-        return softmax_prob
+        return outputs
  
     def validation_epoch_end(self, outputs):
         alive_accuracy, dead_accuracy = self.accuracy.compute()
