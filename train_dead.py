@@ -5,6 +5,7 @@ from pytorch_lightning.loggers import CometLogger
 from src.models import dead
 from src.data import read_config
 
+config = read_config("config.yml")
 comet_logger = CometLogger(
     project_name="DeepTreeAttention",
     workspace=config["comet_workspace"],
@@ -12,7 +13,6 @@ comet_logger = CometLogger(
 )    
 comet_logger.experiment.add_tag("Dead")
 
-config = read_config("config.yml")
 trainer = Trainer(max_epochs=config["dead"]["epochs"], checkpoint_callback=False)
 m = dead.AliveDead(config=config)
 
