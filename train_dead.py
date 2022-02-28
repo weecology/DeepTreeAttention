@@ -1,7 +1,7 @@
 # Train Dead 
 import comet_ml
 from pytorch_lightning import Trainer
-
+from pytorch_lightning.loggers import CometLogger
 from src.models import dead
 from src.data import read_config
 
