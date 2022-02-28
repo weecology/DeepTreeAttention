@@ -7,10 +7,10 @@ import pytorch_lightning as pl
 import rasterio
 from skimage import io
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 from torchvision import models, transforms
+from torchvision.datasets import ImageFolder
 import torchmetrics
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -52,17 +52,21 @@ class AliveDeadDataset(Dataset):
         selected_row = self.annotations.loc[idx]
         img_name = os.path.join(self.root_dir, selected_row["image_path"])
         image = io.imread(img_name)
-
-        # select annotations
-        xmin, xmax, ymin, ymax = selected_row[["xmin","xmax","ymin","ymax"]].values.astype(int)
         
-        xmin = np.max([0,xmin-1])
-        xmax = np.min([image.shape[1],xmax+1])
-        ymin = np.max([0,ymin-1])
-        ymax = np.min([image.shape[0],ymax+1])
-        
-        box = image[ymin:ymax, xmin:xmax]
-        
+        #Two kinds of annotations, pre-cropped and not cropped. If not already cropped, crop it.
+        if selected_row["is_box"]:
+            # select annotations
+            xmin, xmax, ymin, ymax = selected_row[["xmin","xmax","ymin","ymax"]].values.astype(int)
+            
+            xmin = np.max([0,xmin-1])
+            xmax = np.min([image.shape[1],xmax+1])
+            ymin = np.max([0,ymin-1])
+            ymax = np.min([image.shape[0],ymax+1])
+            
+            box = image[ymin:ymax, xmin:xmax]
+        else:
+            box = io.imread(img_name)
+            
         if self.transform is not None:
             box = self.transform(box)
         
@@ -75,19 +79,46 @@ class AliveDeadDataset(Dataset):
     
 #Lightning Model
 class AliveDead(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
         self.model = models.resnet18()
         num_ftrs = self.model.fc.in_features
-        self.model.fc = nn.Linear(num_ftrs, 2)        
+        self.model.fc = torch.nn.Linear(num_ftrs, 2)        
         self.accuracy = torchmetrics.Accuracy(average='none', num_classes=2)      
         self.total_accuracy = torchmetrics.Accuracy()        
         self.precision_metric = torchmetrics.Precision()
+        self.config = config
+        self.ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        transform = get_transform(augment=True)
+        train_dir = os.path.join(self.ROOT,config["dead"]["train_dir"])
+        val_dir = os.path.join(self.ROOT,config["dead"]["test_dir"])
+        self.train_ds = ImageFolder(root=train_dir, transform=transform)
+        self.val_ds = ImageFolder(root=val_dir, transform=transform)
         
     def forward(self, x):
         output = self.model(x)
-        
+
         return output
+    
+    def train_dataloader(self,):
+        train_loader = torch.utils.data.DataLoader(
+            self.train_ds,
+            batch_size=self.config["dead"]["batch_size"],
+            shuffle=True,
+            num_workers=self.config["dead"]["num_workers"]
+        )   
+        
+        return train_loader
+    
+    def val_dataloader(self):
+        val_loader = torch.utils.data.DataLoader(
+            self.val_ds,
+            batch_size=self.config["dead"]["batch_size"],
+            shuffle=True,
+            num_workers=self.config["dead"]["num_workers"]
+        )   
+        
+        return val_loader
     
     def training_step(self, batch, batch_idx):
         x,y = batch
@@ -101,23 +132,18 @@ class AliveDead(pl.LightningModule):
         x,y = batch
         outputs = self(x)
         loss = F.cross_entropy(outputs,y)        
-        self.log("val_loss",loss)        
-        self.accuracy(outputs, y)
-        self.total_accuracy(outputs, y)
-        self.precision_metric(outputs, y)
+        self.log("val_loss",loss)      
+        
+        return loss
+ 
+    def test_step(self):
+        x,y = batch
+        outputs = self(x)
         
         return outputs
- 
-    def validation_epoch_end(self, outputs):
-        alive_accuracy, dead_accuracy = self.accuracy.compute()
-        self.log('alive_accuracy',alive_accuracy)
-        self.log('dead_accuracy',dead_accuracy)
-        self.log('val_precision', self.precision_metric.compute())
-        self.log('val_acc',self.total_accuracy.compute())
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                                     mode='min',
                                                                     factor=0.5,

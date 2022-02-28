@@ -57,32 +57,10 @@ def plot_data(ROOT, sample_crowns):
 #Training module
 @pytest.fixture(scope="session")
 def dead_model_path(ROOT):
-    m = dead.AliveDead()
-    shp = gpd.read_file("{}/tests/data/processed/crowns.shp".format(ROOT))
-    shp["label"] = "Alive"
-    shp.loc[0,"label"] = "Dead"
-    shp["image_path"] = "{}/tests/data/2019_HARV_6_725000_4700000_image.tif".format(ROOT)
-    tile_bounds = rio.open("{}/tests/data/2019_HARV_6_725000_4700000_image.tif".format(ROOT)).bounds 
-    coords = shp.geometry.bounds
-    coords = coords.rename(columns = {"minx":"xmin","miny":"ymin","maxx":"xmax","maxy":"ymax"})
-    coords["xmin"] = (coords["xmin"] - tile_bounds.left) * 10
-    coords["xmax"] = (coords["xmax"] - tile_bounds.left) * 10
-    coords["ymin"] = (tile_bounds.top - coords["ymax"]) * 10
-    coords["ymax"] = (tile_bounds.top - coords["ymin"] ) * 10
-    
-    csv = pd.concat([shp[["image_path","label"]],coords], axis=1)
-    csv_file = "{}/dead.csv".format(tempfile.gettempdir())
-    csv.to_csv(csv_file)
-    ds = dead.AliveDeadDataset(csv_file, root_dir=ROOT)
-    train_loader = torch.utils.data.DataLoader(
-        ds,
-        batch_size=1,
-        shuffle=False,
-        num_workers=0
-    )     
-    
+    config = utils.read_config(config_path="{}/config.yml".format(ROOT))    
+    m = dead.AliveDead(config=config)
     trainer = Trainer(fast_dev_run=True)
-    trainer.fit(m, train_loader, train_loader)    
+    trainer.fit(m)    
     filepath = "{}/dead_model.pl".format(tempfile.gettempdir())
     trainer.save_checkpoint(filepath)
     
