@@ -18,4 +18,5 @@ m = dead.AliveDead(config=config)
 
 trainer.fit(m)
 trainer.validate(m)
+trainer.test(m)
 trainer.save_checkpoint("{}/{}.pl".format(config["dead"]["savedir"],comet_logger.experiment.id))

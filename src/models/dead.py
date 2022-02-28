@@ -81,12 +81,19 @@ class AliveDeadDataset(Dataset):
 class AliveDead(pl.LightningModule):
     def __init__(self, config):
         super().__init__()
-        self.model = models.resnet18()
+        
+        # Model
+        self.model = models.resnet50(pretrained=True)
         num_ftrs = self.model.fc.in_features
         self.model.fc = torch.nn.Linear(num_ftrs, 2)        
+        
+        # Metrics
         self.accuracy = torchmetrics.Accuracy(average='none', num_classes=2)      
         self.total_accuracy = torchmetrics.Accuracy()        
         self.precision_metric = torchmetrics.Precision()
+        self.metrics = torchmetrics.MetricCollection({"Class Accuracy":self.accuracy, "Accuracy":self.total_accuracy, "Precision":self.precision_metric})
+        
+        # Data
         self.config = config
         self.ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         transform = get_transform(augment=True)
@@ -97,6 +104,7 @@ class AliveDead(pl.LightningModule):
         
     def forward(self, x):
         output = self.model(x)
+        output = F.sigmoid(output)
 
         return output
     
@@ -134,6 +142,8 @@ class AliveDead(pl.LightningModule):
         loss = F.cross_entropy(outputs,y)        
         self.log("val_loss",loss)      
         
+        self.metrics(outputs, y)
+        
         return loss
  
     def test_step(self):
@@ -141,9 +151,12 @@ class AliveDead(pl.LightningModule):
         outputs = self(x)
         
         return outputs
+    
+    def on_test_end(self):
+        pass
         
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.config["dead"]["lr"])
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                                     mode='min',
                                                                     factor=0.5,
