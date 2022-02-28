@@ -148,7 +148,7 @@ class AliveDead(pl.LightningModule):
     
     def validation_epoch_end(self, outputs):
         val_metrics = self.metrics.compute()
-        self.log("validation_metrics",val_metrics)
+        self.log_dict(val_metrics)
         
     def test_step(self):
         x,y = batch
