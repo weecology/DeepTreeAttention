@@ -142,10 +142,14 @@ class AliveDead(pl.LightningModule):
         loss = F.cross_entropy(outputs,y)        
         self.log("val_loss",loss)      
         
-        self.metrics(outputs, y)
+        self.metrics.update(outputs, y)
         
         return loss
- 
+    
+    def validation_epoch_end(self, outputs):
+        val_metrics = self.metrics.compute()
+        self.log("validation_metrics",val_metrics)
+        
     def test_step(self):
         x,y = batch
         outputs = self(x)

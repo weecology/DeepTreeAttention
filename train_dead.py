@@ -13,7 +13,7 @@ comet_logger = CometLogger(
 )    
 comet_logger.experiment.add_tag("Dead")
 
-trainer = Trainer(max_epochs=config["dead"]["epochs"], checkpoint_callback=False, gpus=self.config["gpus"])
+trainer = Trainer(max_epochs=config["dead"]["epochs"], checkpoint_callback=False, gpus=config["gpus"])
 m = dead.AliveDead(config=config)
 
 trainer.fit(m)
