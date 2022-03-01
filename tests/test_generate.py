@@ -5,11 +5,8 @@ import geopandas as gpd
 import pandas as pd
 from deepforest import main
 import rasterio
-<<<<<<< HEAD
 import pytest
-=======
 import os
->>>>>>> main
 
 def test_predict_trees(rgb_path, plot_data):
     m = main.deepforest()

@@ -247,25 +247,31 @@ def write_crop(row, img_path, savedir, replace=True):
         filename = "{}/{}_{}.tif".format(savedir, row["individual"], tile_year)
         file_exists = os.path.exists(filename)
         if file_exists:
-<<<<<<< HEAD
             annotation = pd.DataFrame({
                 "image_path":[filename],
                 "taxonID":[row["taxonID"]],
                 "plotID":[row["plotID"]],
                 "individualID":[row["individual"]],
                 "tile_year":[tile_year],
-                "siteID":[row["siteID"]]
+                "siteID":[row["siteID"]],
+                "box_id":[row["box_id"]],
+                "RGB_tile":[row["RGB_tile"]]
             })            
             
-=======
-            annotation = pd.DataFrame({"image_path":[os.path.basename(filename)], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "RGB_tile":[row["RGB_tile"]], "siteID":[row["siteID"]],"box_id":[row["box_id"]]})
->>>>>>> main
             return annotation            
         else:
-            filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename="{}_{}".format(row["individual"], tile_year))  
+            filename = patches.crop(
+                bounds=row["geometry"].bounds,
+                sensor_path=img_path,
+                savedir=savedir,
+                basename="{}_{}".format(row["individual"], tile_year))
     else:
-<<<<<<< HEAD
-        filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename="{}_{}".format(row["individual"], tile_year))
+        filename = patches.crop(
+            bounds=row["geometry"].bounds,
+            sensor_path=img_path,
+            savedir=savedir,
+            basename="{}_{}".format(row["individual"], tile_year))
+        
         annotation = pd.DataFrame(
             {"image_path":[filename],
              "taxonID":[row["taxonID"]], 
@@ -273,13 +279,10 @@ def write_crop(row, img_path, savedir, replace=True):
              "individualID":[row["individual"]], 
              "siteID":[row["siteID"]],
              "tile_year":[tile_year],
-             "box_id":[row["box_id"]]
+             "box_id":[row["box_id"]],
+             "RGB_tile":[row["RGB_tile"]]
              })
-        
-=======
-        filename = patches.crop(bounds=row["geometry"].bounds, sensor_path=img_path, savedir=savedir, basename=row["individual"])
-        annotation = pd.DataFrame({"image_path":[os.path.basename(filename)], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "RGB_tile":[row["RGB_tile"]], "siteID":[row["siteID"]],"box_id":[row["box_id"]]})
->>>>>>> main
+    
         return annotation
 
 def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=False, HSI_tif_dir=None, replace=True):
@@ -303,11 +306,7 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
     #There were erroneous point cloud .tif
     img_pool = [x for x in img_pool if not "point_cloud" in x]
     rgb_pool = [x for x in rgb_pool if not "point_cloud" in x]
-<<<<<<< HEAD
-    
-=======
-     
->>>>>>> main
+
     #Looking up the rgb -> HSI tile naming is expensive and repetitive. Create a dictionary first.
     gdf["geo_index"] = gdf.geometry.apply(lambda x: bounds_to_geoindex(x.bounds))
     tiles = gdf["geo_index"].unique()
