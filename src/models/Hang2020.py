@@ -269,7 +269,7 @@ def load_from_backbone(state_dict, classes, bands):
     dict_to_update = model.state_dict()
     
     #update weights from non-classifier layers
-    pretrained_dict = {k: v for k, v in train_state_dict.items() if not "classifier" in k}
+    pretrained_dict = {k: v for k, v in train_state_dict().items() if not "classifier" in k}
     dict_to_update.update(pretrained_dict)
     model.load_state_dict(dict_to_update)
     
