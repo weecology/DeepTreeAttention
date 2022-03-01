@@ -88,6 +88,7 @@ def config(ROOT, dead_model_path):
     config["dead_threshold"] = 0.95
     config["megaplot_dir"] = None
     config["regenerate"] = True
+    config["dead"]["epochs"] = 1
     
     
     return config

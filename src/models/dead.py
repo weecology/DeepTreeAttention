@@ -141,24 +141,15 @@ class AliveDead(pl.LightningModule):
         outputs = self(x)
         loss = F.cross_entropy(outputs,y)        
         self.log("val_loss",loss)      
-        
-        self.metrics.update(outputs, y)
+        metric_dict = self.metrics(outputs, y)
+        self.log_dict(metric_dict)
         
         return loss
     
     def validation_epoch_end(self, outputs):
         val_metrics = self.metrics.compute()
         self.log_dict(val_metrics)
-        
-    def test_step(self):
-        x,y = batch
-        outputs = self(x)
-        
-        return outputs
     
-    def on_test_end(self):
-        pass
-        
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.config["dead"]["lr"])
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
@@ -248,3 +239,13 @@ def predict_dead_dataloader(dead_model, dataset, config):
     score = np.max(gather_predictions, 1)
     
     return label, score
+
+def index_to_example(index, test_dataset, experiment):
+    image_array = test_dataset[index][0].numpy()
+    image_array = np.rollaxis(image_array, 0,3)
+    image_name = "confusion-matrix-%05d.png" % index
+    results = experiment.log_image(
+        image_array, name=image_name,
+    )
+    # Return sample, assetId (index is added automatically)
+    return {"sample": image_name, "assetId": results["imageId"]}
