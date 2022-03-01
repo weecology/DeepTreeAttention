@@ -231,7 +231,7 @@ class TreeDataset(Dataset):
             for index, row in self.annotations.iterrows():
                 try:
                     image_path = os.path.join(self.config["crop_dir"],row["image_path"])                    
-                    self.image_dict[index] = image_path
+                    self.image_dict[index] = load_image(image_path, image_size=self.image_size)
                 except:
                     self.image_dict[index] = None
 
