@@ -99,7 +99,7 @@ def config(ROOT, dead_model_path):
     config["HSI_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
     config["min_train_samples"] = 1
     config["min_test_samples"] = 1
-    config["crop_dir"] = tempfile.gettempdir()
+    config["crop_dir"] = "{}/tests/data/crops/".format(ROOT)
     config["bands"] = 3
     config["classes"] = 3
     config["top_k"] = 1
@@ -109,6 +109,7 @@ def config(ROOT, dead_model_path):
     config["dead_model"] = dead_model_path
     config["dead_threshold"] = 1
     config["megaplot_dir"] = None
+    config["regenerate"] = True
     
     
     return config
