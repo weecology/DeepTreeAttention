@@ -99,7 +99,6 @@ class TreeModel(LightningModule):
         self.log("Epoch Micro Accuracy", final_micro)
         self.log("Epoch Macro Accuracy", final_macro)
         
->>>>>>> main
     def configure_optimizers(self):
         optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
         
