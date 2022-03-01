@@ -334,7 +334,7 @@ class TreeData(LightningDataModule):
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
                     #Simplify MAGNOLIA's just at OSBS
-                    df.loc[df.taxonID=="MAGR4","taxonID"] = "MAGNO"                    
+                    megaplot_data.loc[megaplot_data.taxonID=="MAGR4","taxonID"] = "MAGNO"                    
                     df = pd.concat([megaplot_data, df])
                 
                 if not self.debug:
