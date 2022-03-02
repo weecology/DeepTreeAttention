@@ -272,7 +272,7 @@ def filter_dead_annotations(crowns, config):
     Args:
         annotations: must contain xmin, xmax, ymin, ymax and image path fields"""
     ds = dead.utm_dataset(crowns, config=config)
-    dead_model = dead.AliveDead.load_from_checkpoint(config["dead_model"])    
+    dead_model = dead.AliveDead.load_from_checkpoint(config["dead_model"], config=config)    
     label, score = dead.predict_dead_dataloader(dead_model=dead_model, dataset=ds, config=config)
     
     return label, score
