@@ -16,7 +16,7 @@ comet_logger = CometLogger(
 )    
 comet_logger.experiment.add_tag("Dead")
 
-trainer = Trainer(max_epochs=config["dead"]["epochs"], checkpoint_callback=False, gpus=config["gpus"])
+trainer = Trainer(max_epochs=config["dead"]["epochs"], checkpoint_callback=False, gpus=config["gpus"], logger=comet_logger)
 m = dead.AliveDead(config=config)
 
 trainer.fit(m)
@@ -36,7 +36,7 @@ comet_logger.experiment.log_confusion_matrix(
     labels=["Alive","Dead"], index_to_example_function=dead.index_to_example, test_dataset=m.val_ds,
     experiment=comet_logger.experiment)    
 
-precision, recall = precision_recall_curve(y_true=true_class, probas_pred=predicted_scores)
+precision, recall, thresholds = precision_recall_curve(y_true=true_class, probas_pred=predicted_scores)
 disp = PrecisionRecallDisplay(precision=precision, recall=recall)
 disp.plot()
 comet_logger.experiment.log_figure("precision_recall")
