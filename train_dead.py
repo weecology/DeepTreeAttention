@@ -16,13 +16,7 @@ comet_logger = CometLogger(
 )    
 comet_logger.experiment.add_tag("Dead")
 
-trainer = Trainer(
-    max_epochs=config["dead"]["epochs"],
-    checkpoint_callback=False,
-    gpus=config["gpus"],
-    logger=comet_logger
-)
-
+trainer = Trainer(max_epochs=config["dead"]["epochs"], checkpoint_callback=False, gpus=config["gpus"])
 m = dead.AliveDead(config=config)
 
 trainer.fit(m)
@@ -33,8 +27,8 @@ true_class = [x[1] for x in m.val_ds]
 m.eval()
 with torch.no_grad():
     predictions = [m(x[0].unsqueeze(0)) for x in m.val_ds]
-predicted_class = [np.argmax(x.numpy()) for x in predicted_class]
-predicted_scores = [np.max(x.numpy()) for x in predicted_class]
+predicted_class = [np.argmax(x.numpy()) for x in predictions]
+predicted_scores = [np.max(x.numpy()) for x in predictions]
 
 comet_logger.experiment.log_confusion_matrix(
     true_class,

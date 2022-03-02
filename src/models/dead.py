@@ -142,6 +142,8 @@ class AliveDead(pl.LightningModule):
         loss = F.cross_entropy(outputs,y)        
         self.log("val_loss",loss)      
         metric_dict = self.metrics(outputs, y)
+        self.log("Alive Accuracy",metric_dict["Class Accuracy"][0])
+        self.log("Dead Accuracy",metric_dict["Class Accuracy"][1])        
         self.log_dict(metric_dict)
         
         return loss
