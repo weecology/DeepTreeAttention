@@ -24,58 +24,6 @@ def get_transform(augment):
     if augment:
         data_transforms.append(transforms.RandomHorizontalFlip(0.5))
     return transforms.Compose(data_transforms)
-
-class AliveDeadDataset(Dataset):
-    def __init__(self, csv_file, root_dir, label_dict = {"Alive": 0,"Dead":1}, transform=True, augment=False, train=True):
-        """
-        Args:
-            csv_file (string): Path to a single csv file with annotations.
-            root_dir (string): Directory with all the images.
-            label_dict: a dictionary where keys are labels from the csv column and values are numeric labels "Tree" -> 0
-        """
-        self.annotations = pd.read_csv(csv_file)
-        self.root_dir = root_dir
-        self.image_names = self.annotations.image_path.unique()
-        self.label_dict = label_dict
-        
-        if transform is True:
-            self.transform = get_transform(augment=augment)
-        else:
-            self.transform = None
-            
-        self.train = train
-
-    def __len__(self):
-        return self.annotations.shape[0]
-
-    def __getitem__(self, idx):
-        selected_row = self.annotations.loc[idx]
-        img_name = os.path.join(self.root_dir, selected_row["image_path"])
-        image = io.imread(img_name)
-        
-        #Two kinds of annotations, pre-cropped and not cropped. If not already cropped, crop it.
-        if selected_row["is_box"]:
-            # select annotations
-            xmin, xmax, ymin, ymax = selected_row[["xmin","xmax","ymin","ymax"]].values.astype(int)
-            
-            xmin = np.max([0,xmin-1])
-            xmax = np.min([image.shape[1],xmax+1])
-            ymin = np.max([0,ymin-1])
-            ymax = np.min([image.shape[0],ymax+1])
-            
-            box = image[ymin:ymax, xmin:xmax]
-        else:
-            box = io.imread(img_name)
-            
-        if self.transform is not None:
-            box = self.transform(box)
-        
-        # Labels need to be encoded if supplied
-        if self.train:
-            label = self.label_dict[selected_row.label]
-            return box, label
-        else:
-            return box
     
 #Lightning Model
 class AliveDead(pl.LightningModule):
@@ -96,11 +44,10 @@ class AliveDead(pl.LightningModule):
         # Data
         self.config = config
         self.ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        transform = get_transform(augment=True)
         train_dir = os.path.join(self.ROOT,config["dead"]["train_dir"])
         val_dir = os.path.join(self.ROOT,config["dead"]["test_dir"])
-        self.train_ds = ImageFolder(root=train_dir, transform=transform)
-        self.val_ds = ImageFolder(root=val_dir, transform=transform)
+        self.train_ds = ImageFolder(root=train_dir, transform=get_transform(augment=True))
+        self.val_ds = ImageFolder(root=val_dir, transform=get_transform(augment=False))
         
     def forward(self, x):
         output = self.model(x)
@@ -122,7 +69,7 @@ class AliveDead(pl.LightningModule):
         val_loader = torch.utils.data.DataLoader(
             self.val_ds,
             batch_size=self.config["dead"]["batch_size"],
-            shuffle=True,
+            shuffle=False,
             num_workers=self.config["dead"]["num_workers"]
         )   
         
@@ -207,9 +154,11 @@ class utm_dataset(Dataset):
         image_path = self.crowns.RGB_tile.iloc[index]
         RGB_src = rasterio.open(image_path)
         box = RGB_src.read(window=rasterio.windows.from_bounds(left-1, bottom-1, right+1, top+1, transform=RGB_src.transform))             
-        #Channels last
+        
+        # Channels last
         box = np.rollaxis(box,0,3)
-        #Preprocess
+        
+        # Preprocess
         image = self.transform(box.astype(np.float32))
             
         return image
