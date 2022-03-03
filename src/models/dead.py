@@ -32,7 +32,7 @@ class AliveDead(pl.LightningModule):
         
         # Model
         self.model = models.DenseNet(pretrained=True)
-        self.model.classifier = nn.Linear(1024, num_classes)
+        self.model.classifier = nn.Linear(1024, 2)
                         
         # Metrics
         self.accuracy = torchmetrics.Accuracy(average='none', num_classes=2)      
