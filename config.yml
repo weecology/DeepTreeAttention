@@ -79,3 +79,4 @@ dead:
     savedir: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/
     batch_size: 128
     num_workers: 0
+    predict_batch_size: 1024
