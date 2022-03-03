@@ -378,7 +378,7 @@ class TreeData(LightningDataModule):
                     dead_label, dead_score = filter_dead_annotations(crowns, config=self.config)
                     crowns["dead_label"] = dead_label
                     crowns["dead_score"] = dead_score
-                    predicted_dead = crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))]                    
+                    predicted_dead = crowns[((dead_label == 1) & (dead_score > self.config["dead_threshold"]))]                    
                     crowns = crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))]
                 
                 if self.comet_logger:
