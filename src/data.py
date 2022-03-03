@@ -405,7 +405,10 @@ class TreeData(LightningDataModule):
                 self.comet_logger.experiment.log_parameter("Species after dead filtering",len(annotations.taxonID.unique()))
                 self.comet_logger.experiment.log_parameter("Samples after dead filtering",annotations.shape[0])
                 predicted_dead = crowns[~(crowns.individual.isin(individuals_to_keep))]
-                predicted_dead.to_file("{}/processed/predicted_dead.shp".format(self.data_dir))
+                try:
+                    predicted_dead.to_file("{}/processed/predicted_dead.shp".format(self.data_dir))
+                except:
+                    pass
                 
                 rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
                 for index, row in predicted_dead.iterrows():
