@@ -165,17 +165,17 @@ class utm_dataset(Dataset):
         
 def predict_dead_dataloader(dead_model, dataset, config):
     """Given a set of bounding boxes and an RGB tile, predict Alive/Dead binary model"""
-    dead_model.train()
     
     data_loader = torch.utils.data.DataLoader(
         dataset,
-        batch_size=config["dead"]["batch_size"],
+        batch_size=config["dead"]["predict_batch_size"],
         shuffle=False,
-        num_workers=config["workers"],
+        num_workers=config["workers"]
     )
     if torch.cuda.is_available():
         dead_model = dead_model.to("cuda")
     
+    dead_model.eval()
     gather_predictions = []
     for batch in data_loader:
         if torch.cuda.is_available():

@@ -77,5 +77,6 @@ dead:
     epochs: 40
     lr: 0.0001
     savedir: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/
-    batch_size: 32
-    num_workers: 10
+    batch_size: 128
+    num_workers: 0
+    predict_batch_size: 128
