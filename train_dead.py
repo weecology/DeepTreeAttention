@@ -33,8 +33,7 @@ predicted_scores = [np.max(x.numpy()) for x in predictions]
 comet_logger.experiment.log_confusion_matrix(
     true_class,
     predicted_class,
-    labels=["Alive","Dead"], index_to_example_function=dead.index_to_example, test_dataset=m.val_ds,
-    experiment=comet_logger.experiment)    
+    labels=["Alive","Dead"], index_to_example_function=dead.index_to_example, test_dataset=m.val_ds)    
 
 precision, recall, thresholds = precision_recall_curve(y_true=true_class, probas_pred=predicted_scores)
 disp = PrecisionRecallDisplay(precision=precision, recall=recall)
