@@ -186,7 +186,7 @@ to your usename and add a [.comet.config file](https://www.comet.ml/docs/python-
 Submit a SLURM job
 
 ```
-sbatch SLURM/experiment.yml
+sbatch SLURM/experiment.sh
 ```
 
 4) Look at the comet repo for results
