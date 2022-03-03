@@ -242,7 +242,7 @@ def predict_dead_dataloader(dead_model, dataset, config):
     
     return label, score
 
-def index_to_example(index, test_dataset, experiment):
+def index_to_example(index, test_dataset):
     image_array = test_dataset[index][0].numpy()
     image_array = np.rollaxis(image_array, 0,3)
     image_name = "confusion-matrix-%05d.png" % index
