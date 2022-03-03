@@ -218,7 +218,7 @@ def predict_dead_dataloader(dead_model, dataset, config):
     """Given a set of bounding boxes and an RGB tile, predict Alive/Dead binary model"""
     data_loader = torch.utils.data.DataLoader(
         dataset,
-        batch_size=config["predict_batch_size"],
+        batch_size=config["dead"]["batch_size"],
         shuffle=False,
         num_workers=config["workers"],
     )
