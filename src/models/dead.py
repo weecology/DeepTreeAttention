@@ -181,7 +181,8 @@ def predict_dead_dataloader(dead_model, dataset, config):
         if torch.cuda.is_available():
             batch = batch.to("cuda")        
         with torch.no_grad():
-            predictions = dead_model(batch)
+            x,y = batch
+            predictions = dead_model(x)
         gather_predictions.append(predictions.cpu())
 
     gather_predictions = np.concatenate(gather_predictions)
