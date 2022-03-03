@@ -165,7 +165,7 @@ class utm_dataset(Dataset):
         
 def predict_dead_dataloader(dead_model, dataset, config):
     """Given a set of bounding boxes and an RGB tile, predict Alive/Dead binary model"""
-    dead_model.eval()
+    dead_model.train()
     
     data_loader = torch.utils.data.DataLoader(
         dataset,
@@ -185,7 +185,6 @@ def predict_dead_dataloader(dead_model, dataset, config):
         gather_predictions.append(predictions.cpu())
 
     gather_predictions = np.concatenate(gather_predictions)
-    
     label = np.argmax(gather_predictions,1)
     score = np.max(gather_predictions, 1)
     
