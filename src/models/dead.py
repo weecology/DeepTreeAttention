@@ -32,9 +32,8 @@ class AliveDead(pl.LightningModule):
         
         # Model
         self.model = models.vgg16(pretrained=True)
-        num_ftrs = self.model.fc.in_features
-        self.model.fc = torch.nn.Linear(num_ftrs, 2)        
-        
+        self.model.classifier[6] = torch.nn.Linear(4096,2)
+                
         # Metrics
         self.accuracy = torchmetrics.Accuracy(average='none', num_classes=2)      
         self.total_accuracy = torchmetrics.Accuracy()        
