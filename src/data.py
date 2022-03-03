@@ -373,6 +373,31 @@ class TreeData(LightningDataModule):
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(crowns.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after crown prediction", crowns.shape[0])
                 
+                #Dead filter
+                if self.config["dead_model"]:
+                    dead_label, dead_score = filter_dead_annotations(crowns, config=self.config)
+                    crowns["dead_label"] = dead_label
+                    crowns["dead_score"] = dead_score
+                    crowns = crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))]
+                
+                if self.comet_logger:
+                    self.comet_logger.experiment.log_parameter("Species after dead filtering",len(annotations.taxonID.unique()))
+                    self.comet_logger.experiment.log_parameter("Samples after dead filtering",annotations.shape[0])
+                    predicted_dead = crowns[~(crowns.individual.isin(individuals_to_keep))]
+                    try:
+                        predicted_dead.to_file("{}/processed/predicted_dead.shp".format(self.data_dir))
+                    except:
+                        print("No dead trees predicted")
+                    
+                    rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
+                    for index, row in predicted_dead.iterrows():
+                        left, bottom, right, top = row["geometry"].bounds                
+                        img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=row["geometry"].bounds)
+                        src = rasterio.open(img_path)
+                        img = src.read(window=rasterio.windows.from_bounds(left-1, bottom-1, right+1, top+1, transform=src.transform))                      
+                        img = np.rollaxis(img, 0, 3)
+                        self.comet_logger.experiment.log_image(image_data=img, name="Dead: {} ({:.2f}) {}".format(row["dead_label"],row["dead_score"],row["individual"]))
+                                
                 crowns.to_file("{}/processed/crowns.shp".format(self.data_dir))
             else:
                 crowns = gpd.read_file("{}/processed/crowns.shp".format(self.data_dir))
@@ -392,32 +417,6 @@ class TreeData(LightningDataModule):
             if self.comet_logger:
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(annotations.taxonID.unique()))
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
-                
-            #Dead filter
-            if self.config["dead_model"]:
-                dead_label, dead_score = filter_dead_annotations(crowns, config=self.config)
-                crowns["dead_label"] = dead_label
-                crowns["dead_score"] = dead_score
-                individuals_to_keep = crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))].individual
-                annotations = annotations[annotations.individualID.isin(individuals_to_keep)]
-            
-            if self.comet_logger:
-                self.comet_logger.experiment.log_parameter("Species after dead filtering",len(annotations.taxonID.unique()))
-                self.comet_logger.experiment.log_parameter("Samples after dead filtering",annotations.shape[0])
-                predicted_dead = crowns[~(crowns.individual.isin(individuals_to_keep))]
-                try:
-                    predicted_dead.to_file("{}/processed/predicted_dead.shp".format(self.data_dir))
-                except:
-                    pass
-                
-                rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
-                for index, row in predicted_dead.iterrows():
-                    left, bottom, right, top = row["geometry"].bounds                
-                    img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=row["geometry"].bounds)
-                    src = rasterio.open(img_path)
-                    img = src.read(window=rasterio.windows.from_bounds(left-1, bottom-1, right+1, top+1, transform=src.transform))                      
-                    img = np.rollaxis(img, 0, 3)
-                    self.comet_logger.experiment.log_image(image_data=img, name="Dead: {} ({:.2f}) {}".format(row["dead_label"],row["dead_score"],row["individual"]))
                 
             if self.config["new_train_test_split"]:
                 train_annotations, test_annotations = train_test_split(annotations, config=self.config, client=self.client)   
