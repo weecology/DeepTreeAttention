@@ -12,4 +12,4 @@ def test_validate(config):
     trainer = Trainer(fast_dev_run=True, checkpoint_callback=False)
     m = dead.AliveDead(config=config)
     trainer.validate(m)
-    assert True
+    assert True    
