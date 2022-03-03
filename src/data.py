@@ -378,12 +378,12 @@ class TreeData(LightningDataModule):
                     dead_label, dead_score = filter_dead_annotations(crowns, config=self.config)
                     crowns["dead_label"] = dead_label
                     crowns["dead_score"] = dead_score
+                    predicted_dead = crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))]                    
                     crowns = crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))]
                 
                 if self.comet_logger:
-                    self.comet_logger.experiment.log_parameter("Species after dead filtering",len(annotations.taxonID.unique()))
-                    self.comet_logger.experiment.log_parameter("Samples after dead filtering",annotations.shape[0])
-                    predicted_dead = crowns[~(crowns.individual.isin(individuals_to_keep))]
+                    self.comet_logger.experiment.log_parameter("Species after dead filtering",len(crowns.taxonID.unique()))
+                    self.comet_logger.experiment.log_parameter("Samples after dead filtering",crowns.shape[0])
                     try:
                         predicted_dead.to_file("{}/processed/predicted_dead.shp".format(self.data_dir))
                     except:
