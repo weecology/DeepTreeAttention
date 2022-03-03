@@ -174,7 +174,7 @@ def predict_species(crowns, HSI_path, m, config):
     return df, features
 
 def predict_dead(crowns, dead_model_path, rgb_tile, config):
-    dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path)
+    dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path, config=config)
     ds = on_the_fly_dataset(crowns=crowns, image_path=rgb_tile, config=config,data_type="RGB")
     label, score = dead.predict_dead_dataloader(dead_model, ds, config)
     
