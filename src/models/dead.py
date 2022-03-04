@@ -31,9 +31,10 @@ class AliveDead(pl.LightningModule):
         super().__init__()
         
         # Model
-        self.model = models.densenet161(pretrained=True)
-        self.model.classifier = torch.nn.Linear(2208, 2)
-                        
+        self.model = models.resnet50(pretrained=True)
+        num_ftrs = self.model.fc.in_features
+        self.model.fc = torch.nn.Linear(num_ftrs, 2)        
+        
         # Metrics
         self.accuracy = torchmetrics.Accuracy(average='none', num_classes=2)      
         self.total_accuracy = torchmetrics.Accuracy()        
@@ -174,7 +175,8 @@ def predict_dead_dataloader(dead_model, dataset, config):
     if torch.cuda.is_available():
         dead_model = dead_model.to("cuda")
     
-    dead_model.eval()            
+    dead_model.eval()
+            
     gather_predictions = []
     for batch in data_loader:
         if torch.cuda.is_available():
