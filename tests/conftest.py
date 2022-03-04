@@ -55,19 +55,19 @@ def plot_data(ROOT, sample_crowns):
     return plot_data
 
 #Training module
-@pytest.fixture(scope="session")
-def dead_model_path(ROOT):
-    config = utils.read_config(config_path="{}/config.yml".format(ROOT))    
-    m = dead.AliveDead(config=config)
-    trainer = Trainer(fast_dev_run=True)
-    trainer.fit(m)    
-    filepath = "{}/dead_model.pl".format(tempfile.gettempdir())
-    trainer.save_checkpoint(filepath)
+#@pytest.fixture(scope="session")
+#def dead_model_path(ROOT):
+    #config = utils.read_config(config_path="{}/config.yml".format(ROOT))    
+    #m = dead.AliveDead(config=config)
+    #trainer = Trainer(fast_dev_run=True)
+    #trainer.fit(m)    
+    #filepath = "{}/dead_model.pl".format(tempfile.gettempdir())
+    #trainer.save_checkpoint(filepath)
     
-    return filepath
+    #return filepath
 
 @pytest.fixture(scope="session")
-def config(ROOT, dead_model_path):
+def config(ROOT):
     print("Creating global config")
     #Turn of CHM filtering for the moment
     config = utils.read_config(config_path="{}/config.yml".format(ROOT))
@@ -84,7 +84,7 @@ def config(ROOT, dead_model_path):
     config["convert_h5"] = False
     config["plot_n_individuals"] = 1
     config["min_CHM_diff"] = None    
-    config["dead_model"] = dead_model_path
+    config["dead_model"] = None
     config["dead_threshold"] = 0.95
     config["megaplot_dir"] = None
     config["regenerate"] = True
