@@ -3,8 +3,8 @@ from src import predict
 from src.models import dead
 from skimage import io
 
-def test_dead_tree_model(dead_model_path, ROOT):
-    m = dead.AliveDead.load_from_checkpoint(dead_model_path)
+def test_dead_tree_model(dead_model_path, config, ROOT):
+    m = dead.AliveDead.load_from_checkpoint(dead_model_path, config=config)
     m.eval()
     dead_tree = io.imread("{}/tests/data/dead_tree.png".format(ROOT))
     transform = dead.get_transform(augment=False)

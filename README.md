@@ -78,6 +78,11 @@ trainer = Trainer(
 trainer.fit(m, datamodule=data_module)
 ```
 
+## Alive/Dead Filtering
+
+As part of the prediction pipeline, RGB crops are scored as either 'Alive', meanining they have leaves during presumed leaf-on season, or 'Dead', meaning they do not have leaves.
+To finetune the resent50 model, see src/models/dead.py. The classified data for the Alive/Dead crops can be found in data/raw/dead_train and dead/raw/dead_test.
+
 ### Dev Guide
 
 In general, major changes or improvements should be made on a new git branch. Only core improvements should be made on the main branch. If a change leads to higher scores, please create a pull request. Any pull requests are expected to have pytest unit tests (see tests/) that cover major use cases.
@@ -186,7 +191,7 @@ to your usename and add a [.comet.config file](https://www.comet.ml/docs/python-
 Submit a SLURM job
 
 ```
-sbatch SLURM/experiment.yml
+sbatch SLURM/experiment.sh
 ```
 
 4) Look at the comet repo for results
