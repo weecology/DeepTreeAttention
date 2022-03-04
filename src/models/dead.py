@@ -31,9 +31,8 @@ class AliveDead(pl.LightningModule):
         super().__init__()
         
         # Model
-        self.model = models.resnet50(pretrained=True)
-        num_ftrs = self.model.fc.in_features
-        self.model.fc = torch.nn.Linear(num_ftrs, 2)        
+        self.model = models.densenet169(pretrained=True)
+        self.model.classifier = torch.nn.Linear(2208, num_classes)       
         
         # Metrics
         self.accuracy = torchmetrics.Accuracy(average='none', num_classes=2)      
@@ -47,7 +46,7 @@ class AliveDead(pl.LightningModule):
         train_dir = os.path.join(self.ROOT,config["dead"]["train_dir"])
         val_dir = os.path.join(self.ROOT,config["dead"]["test_dir"])
         self.train_ds = ImageFolder(root=train_dir, transform=get_transform(augment=True))
-        self.val_ds = ImageFolder(root=val_dir, transform=get_transform(augment=True))
+        self.val_ds = ImageFolder(root=val_dir, transform=get_transform(augment=False))
         
     def forward(self, x):
         output = self.model(x)
