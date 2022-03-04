@@ -22,15 +22,15 @@ max_CHM_diff: 4
 CHM_height_limit: 8
 
 #Dead model filter
-dead_model: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/9192d967fa324eecb8cf2107e4673a00.pl
-dead_threshold: 0.95
+dead_model: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/8ae88838c5494edaa167a012c08cd989.pl
+dead_threshold: 0.5
 
 #Megaplot XY Data, these are .shp files saved as the siteID
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Make new dataset
-regenerate: False
+regenerate: True
 convert_h5: True
 #Overwrite existing crops
 replace: True
@@ -69,3 +69,14 @@ predict_batch_size: 1024
 
 #Comet dashboard
 comet_workspace: bw4sz
+
+## Alive Dead Model Training
+dead:
+    train_dir: data/raw/dead_train/
+    test_dir: data/raw/dead_test/
+    epochs: 40
+    lr: 0.0001
+    savedir: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/
+    batch_size: 128
+    num_workers: 0
+    predict_batch_size: 128
