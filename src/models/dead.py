@@ -68,7 +68,7 @@ class AliveDead(pl.LightningModule):
         val_loader = torch.utils.data.DataLoader(
             self.val_ds,
             batch_size=self.config["dead"]["batch_size"],
-            shuffle=False,
+            shuffle=True,
             num_workers=self.config["dead"]["num_workers"]
         )   
         
