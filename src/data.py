@@ -564,7 +564,7 @@ class TreeData(LightningDataModule):
         data_loader = torch.utils.data.DataLoader(
             self.val_ds,
             batch_size=self.config["batch_size"],
-            shuffle=True,
+            shuffle=False,
             num_workers=self.config["workers"],
         )
         
