@@ -386,18 +386,18 @@ class TreeData(LightningDataModule):
                     self.comet_logger.experiment.log_parameter("Samples after dead filtering",crowns.shape[0])
                     try:
                         predicted_dead.to_file("{}/processed/predicted_dead.shp".format(self.data_dir))
+                        rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
+                        for index, row in predicted_dead.iterrows():
+                            left, bottom, right, top = row["geometry"].bounds                
+                            img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=row["geometry"].bounds)
+                            src = rasterio.open(img_path)
+                            img = src.read(window=rasterio.windows.from_bounds(left-4, bottom-4, right+4, top+4, transform=src.transform))                      
+                            img = np.rollaxis(img, 0, 3)
+                            self.comet_logger.experiment.log_image(image_data=img, name="Dead: {} ({:.2f}) {}".format(row["dead_label"],row["dead_score"],row["individual"]))                        
                     except:
                         print("No dead trees predicted")
                     
-                    rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
-                    for index, row in predicted_dead.iterrows():
-                        left, bottom, right, top = row["geometry"].bounds                
-                        img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=row["geometry"].bounds)
-                        src = rasterio.open(img_path)
-                        img = src.read(window=rasterio.windows.from_bounds(left-4, bottom-4, right+4, top+4, transform=src.transform))                      
-                        img = np.rollaxis(img, 0, 3)
-                        self.comet_logger.experiment.log_image(image_data=img, name="Dead: {} ({:.2f}) {}".format(row["dead_label"],row["dead_score"],row["individual"]))
-                                
+
                 crowns.to_file("{}/processed/crowns.shp".format(self.data_dir))
             else:
                 crowns = gpd.read_file("{}/processed/crowns.shp".format(self.data_dir))
