@@ -31,7 +31,7 @@ class AliveDead(pl.LightningModule):
         super().__init__()
         
         # Model
-        self.model = models.DenseNet(pretrained=True)
+        self.model = models.densenet161(pretrained=True)
         self.model.classifier = nn.Linear(1024, 2)
                         
         # Metrics
