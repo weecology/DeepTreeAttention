@@ -47,7 +47,7 @@ class AliveDead(pl.LightningModule):
         train_dir = os.path.join(self.ROOT,config["dead"]["train_dir"])
         val_dir = os.path.join(self.ROOT,config["dead"]["test_dir"])
         self.train_ds = ImageFolder(root=train_dir, transform=get_transform(augment=True))
-        self.val_ds = ImageFolder(root=val_dir, transform=get_transform(augment=False))
+        self.val_ds = ImageFolder(root=val_dir, transform=get_transform(augment=True))
         
     def forward(self, x):
         output = self.model(x)
@@ -69,7 +69,7 @@ class AliveDead(pl.LightningModule):
         val_loader = torch.utils.data.DataLoader(
             self.val_ds,
             batch_size=self.config["dead"]["batch_size"],
-            shuffle=True,
+            shuffle=False,
             num_workers=self.config["dead"]["num_workers"]
         )   
         
