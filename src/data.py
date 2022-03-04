@@ -11,12 +11,13 @@ from src import generate
 from src import CHM
 from src import augmentation
 from src import megaplot
+from src import neon_paths
 from src.models import dead
 from src.utils import *
 from shapely.geometry import Point
 import torch
 from torch.utils.data import Dataset
-        
+import rasterio
 
 def filter_data(path, config):
     """Transform raw NEON data into clean shapefile   
@@ -281,7 +282,7 @@ def filter_dead_annotations(crowns, config):
     Args:
         annotations: must contain xmin, xmax, ymin, ymax and image path fields"""
     ds = dead.utm_dataset(crowns, config=config)
-    dead_model = dead.AliveDead.load_from_checkpoint(config["dead_model"])    
+    dead_model = dead.AliveDead.load_from_checkpoint(config["dead_model"], config=config)    
     label, score = dead.predict_dead_dataloader(dead_model=dead_model, dataset=ds, config=config)
     
     return label, score
@@ -344,7 +345,7 @@ class TreeData(LightningDataModule):
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
                     #Simplify MAGNOLIA's just at OSBS
-                    df.loc[df.taxonID=="MAGR4","taxonID"] = "MAGNO"                    
+                    megaplot_data.loc[megaplot_data.taxonID=="MAGR4","taxonID"] = "MAGNO"                    
                     df = pd.concat([megaplot_data, df])
                 
                 if not self.debug:
@@ -382,6 +383,31 @@ class TreeData(LightningDataModule):
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(crowns.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after crown prediction", crowns.shape[0])
                 
+                #Dead filter
+                if self.config["dead_model"]:
+                    dead_label, dead_score = filter_dead_annotations(crowns, config=self.config)
+                    crowns["dead_label"] = dead_label
+                    crowns["dead_score"] = dead_score
+                    predicted_dead = crowns[((dead_label == 1) & (dead_score > self.config["dead_threshold"]))]                    
+                    crowns = crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))]
+                
+                if self.comet_logger:
+                    self.comet_logger.experiment.log_parameter("Species after dead filtering",len(crowns.taxonID.unique()))
+                    self.comet_logger.experiment.log_parameter("Samples after dead filtering",crowns.shape[0])
+                    try:
+                        predicted_dead.to_file("{}/processed/predicted_dead.shp".format(self.data_dir))
+                        rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
+                        for index, row in predicted_dead.iterrows():
+                            left, bottom, right, top = row["geometry"].bounds                
+                            img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=row["geometry"].bounds)
+                            src = rasterio.open(img_path)
+                            img = src.read(window=rasterio.windows.from_bounds(left-4, bottom-4, right+4, top+4, transform=src.transform))                      
+                            img = np.rollaxis(img, 0, 3)
+                            self.comet_logger.experiment.log_image(image_data=img, name="Dead: {} ({:.2f}) {}".format(row["dead_label"],row["dead_score"],row["individual"]))                        
+                    except:
+                        print("No dead trees predicted")
+                    
+
                 crowns.to_file("{}/processed/crowns.shp".format(self.data_dir))
             else:
                 crowns = gpd.read_file("{}/processed/crowns.shp".format(self.data_dir))
@@ -400,7 +426,7 @@ class TreeData(LightningDataModule):
             
             if self.comet_logger:
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(annotations.taxonID.unique()))
-                self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])    
+                self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
                 
             if self.config["new_train_test_split"]:
                 train_annotations, test_annotations = train_test_split(annotations, config=self.config, client=self.client)   
@@ -549,7 +575,7 @@ class TreeData(LightningDataModule):
         data_loader = torch.utils.data.DataLoader(
             self.val_ds,
             batch_size=self.config["batch_size"],
-            shuffle=False,
+            shuffle=True,
             num_workers=self.config["workers"],
             collate_fn=my_collate
             
