@@ -251,10 +251,8 @@ class TreeDataset(Dataset):
                 inputs["HSI"] = self.image_dict[index]
             else:
                 image_path = self.annotations.image_path.loc[index]  
-                year_model = self.year_model_dict[year]
+                image_path = os.path.join(self.config["crop_dir"],image_path)                                
                 try:
-                    image_basename = self.annotations.image_path.loc[index]  
-                    image_path = os.path.join(self.config["crop_dir"],image_basename)                
                     image = load_image(image_path, image_size=self.image_size)
                     inputs["HSI"] = image                    
                 except:
@@ -354,6 +352,8 @@ class TreeData(LightningDataModule):
                     species_to_keep = df[df.siteID=="OSBS"].taxonID.unique()
                     data_from_other_sites = data_from_other_sites[data_from_other_sites.taxonID.isin(species_to_keep)].groupby("taxonID").apply(lambda x: x.head(self.config["samples_from_other_sites"]))
                     df = pd.concat([data_from_OSBS, data_from_other_sites])
+                else:
+                    df = df[df.siteID=="OSBS"].head(5)
                     
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter", len(df.taxonID.unique()))
