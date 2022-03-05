@@ -353,7 +353,8 @@ class TreeData(LightningDataModule):
                     data_from_other_sites = data_from_other_sites[data_from_other_sites.taxonID.isin(species_to_keep)].groupby("taxonID").apply(lambda x: x.head(self.config["samples_from_other_sites"]))
                     df = pd.concat([data_from_OSBS, data_from_other_sites])
                 else:
-                    df = df[df.siteID=="OSBS"].head(5)
+                    plotIDs = df[df.siteID=="OSBS"].plotID.unique()[:3]
+                    df = df[df.plotID.isin(plotIDs)]
                     
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter", len(df.taxonID.unique()))
