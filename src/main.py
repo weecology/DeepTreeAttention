@@ -371,8 +371,8 @@ class TreeModel(LightningModule):
         results = gpd.GeoDataFrame(results, geometry="geometry")    
         
         #Temporal function
-        temporal_micro = torchmetrics.functional.accuracy(preds=torch.tensor(results.temporal_pred_label_top1.values),target=torch.tensor(results.label.values), average="none", num_classes=self.classes)
-        temporal_macro = torchmetrics.functional.precision(preds=torch.tensor(results.temporal_pred_label_top1.values),target=torch.tensor(results.label.values), average="none", num_classes=self.classes)
+        temporal_micro = torchmetrics.functional.accuracy(preds=torch.tensor(results.temporal_pred_label_top1.values),target=torch.tensor(results.label.values), num_classes=self.classes)
+        temporal_macro = torchmetrics.functional.precision(preds=torch.tensor(results.temporal_pred_label_top1.values),target=torch.tensor(results.label.values), num_classes=self.classes)
         
         if experiment:
             experiment.log_metric("temporal_micro",temporal_micro)
