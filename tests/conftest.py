@@ -54,7 +54,11 @@ def plot_data(ROOT, sample_crowns):
     
     return plot_data
 
+<<<<<<< HEAD
 ##Training module
+=======
+#Training module
+>>>>>>> main
 #@pytest.fixture(scope="session")
 #def dead_model_path(ROOT):
     #config = utils.read_config(config_path="{}/config.yml".format(ROOT))    
