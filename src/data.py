@@ -557,9 +557,11 @@ class TreeData(LightningDataModule):
             label = int(targets.numpy())
             class_freq = class_weights[label]
             #under sample majority classes
-            if class_freq > self.config["resampling_ceiling"]:
-                class_freq = self.config["resampling_ceiling"]
-            data_weights.append(1/class_freq)
+            if class_freq < self.config["resampling_ceiling"]:
+                dw = (1/class_freq)* (class_freq/self.config["resampling_ceiling"])
+            else:
+                dw = 1/class_freq
+            data_weights.append(dw)
             
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights=data_weights, num_samples=len(self.train_ds))
         data_loader = torch.utils.data.DataLoader(
