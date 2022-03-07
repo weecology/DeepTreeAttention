@@ -352,8 +352,6 @@ class TreeData(LightningDataModule):
                     species_to_keep = df[df.siteID=="OSBS"].taxonID.unique()
                     data_from_other_sites = data_from_other_sites[data_from_other_sites.taxonID.isin(species_to_keep)].groupby("taxonID").apply(lambda x: x.head(self.config["samples_from_other_sites"]))
                     df = pd.concat([data_from_OSBS, data_from_other_sites])
-                else:
-                    df = df[df.siteID=="OSBS"].head(100)
                     
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter", len(df.taxonID.unique()))
@@ -556,11 +554,7 @@ class TreeData(LightningDataModule):
             path, image, targets = self.train_ds[idx]
             label = int(targets.numpy())
             class_freq = class_weights[label]
-            #under sample majority classes
-            if class_freq < self.config["resampling_ceiling"]:
-                dw = (1/class_freq)/ (class_freq/self.config["resampling_ceiling"])
-            else:
-                dw = 1/class_freq
+            dw = (1/class_freq)
             data_weights.append(dw)
             
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights=data_weights, num_samples=len(self.train_ds))
