@@ -320,7 +320,7 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
                 else:
                     img_path = lookup_and_convert(rgb_pool=rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir,  geo_index = geo_index, all_years=True)
             else:
-                img_path = find_sensor_path(lookup_pool = img_pool, geo_index = geo_index, all_years=True)  
+                img_path = find_sensor_path(lookup_pool = img_pool, geo_index=geo_index, all_years=True)  
         except:
             print("{} failed to find sensor path with traceback {}".format(geo_index, traceback.print_exc()))
             continue

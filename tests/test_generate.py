@@ -66,10 +66,12 @@ def test_run(tmpdir, sample_crowns, rgb_pool):
     
     assert len(glob.glob("{}/*.shp".format(tmpdir))) > 0    
 
-def test_generate_crops(tmpdir, ROOT, rgb_path):
-    data_path = "{}/tests/data/crown.shp".format(ROOT)
-    gdf = gpd.read_file(data_path)
+def test_generate_crops(tmpdir, ROOT, rgb_path, sample_crowns):
+    gdf = gpd.read_file(sample_crowns)
+    gdf.geometry = gdf.geometry.buffer(1)
     gdf["RGB_tile"] = rgb_path
+    gdf["box_id"] = gdf.index
+    
     annotations = generate.generate_crops(
         gdf=gdf,
         rgb_glob="{}/tests/data/*.tif".format(ROOT),
@@ -77,10 +79,10 @@ def test_generate_crops(tmpdir, ROOT, rgb_path):
         sensor_glob="{}/tests/data/*.tif".format(ROOT),
         savedir=tmpdir)
     
-    assert not annotations.empty
+    annotations.tile_year.unique() == ["2018","2019"]
     assert all([x in ["image_path","label","site","siteID","plotID","individualID","taxonID","point_id","box_id","RGB_tile","tile_year"] for x in annotations.columns])
-    assert len(annotations.box_id.unique()) == annotations.shape[0]
+    assert annotations.shape[0] == (gdf.shape[0] * 2)
     
-    #make sure the correct resolution, should be a large image > 50 pixels
+    #make sure the correct resolution, should be a large image
     image_path = os.path.join(tmpdir, annotations.image_path.iloc[0])
-    assert rasterio.open(image_path).read().shape[1] > 50
+    assert rasterio.open(image_path).read().shape[1] > 0
