@@ -243,7 +243,7 @@ class TreeDataset(Dataset):
     def __getitem__(self, index):
         inputs = {}
         image_path = self.annotations.image_path.loc[index]      
-        individual = os.path.basename(image_path.split(".tif")[0])        
+        individual = self.annotations.individualID[index]    
         year = self.annotations.tile_year.loc[index]
         
         if self.HSI:
