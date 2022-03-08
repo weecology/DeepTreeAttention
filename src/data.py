@@ -215,8 +215,10 @@ class TreeDataset(Dataset):
     Args:
        csv_file: path to csv file with image_path and label
     """
-    def __init__(self, csv_file, config=None, train=True, HSI=True, metadata=False):
+    def __init__(self, csv_file, config=None, train=True, HSI=True, metadata=False, year=None):
         self.annotations = pd.read_csv(csv_file)
+        if year:
+            self.annotations = self.annotations[self.annotations.tile_year==year]
         self.train = train
         self.HSI = HSI
         self.metadata = metadata
@@ -522,6 +524,7 @@ class TreeData(LightningDataModule):
                 csv_file = self.train_file,
                 config=self.config,
                 HSI=self.HSI,
+                year=2019,
                 metadata=self.metadata
             )
     
@@ -529,6 +532,7 @@ class TreeData(LightningDataModule):
                 csv_file = "{}/processed/test.csv".format(self.data_dir),
                 config=self.config,
                 HSI=self.HSI,
+                year=2021,
                 metadata=self.metadata
             )            
 
