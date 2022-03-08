@@ -524,7 +524,7 @@ class TreeData(LightningDataModule):
                 csv_file = self.train_file,
                 config=self.config,
                 HSI=self.HSI,
-                year=2019,
+                year=2021,
                 metadata=self.metadata
             )
     
@@ -532,7 +532,7 @@ class TreeData(LightningDataModule):
                 csv_file = "{}/processed/test.csv".format(self.data_dir),
                 config=self.config,
                 HSI=self.HSI,
-                year=2019,
+                year=2021,
                 metadata=self.metadata
             )            
 
