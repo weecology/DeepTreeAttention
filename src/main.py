@@ -285,12 +285,12 @@ class TreeModel(LightningModule):
         top1_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[0], axis=1)
         top2_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[1], axis=1)
         
-        #Construct a temporal prediction frame
-        temporal_df = pd.DataFrame({
-            "temporal_pred_label_top1":temporal_predictions_top1,
-            "temporal_top1_score":temporal_predictions_top1_score,
-            "individual": temporal_individuals
-        })
+        ##Construct a temporal prediction frame
+        #temporal_df = pd.DataFrame({
+            #"temporal_pred_label_top1":temporal_predictions_top1,
+            #"temporal_top1_score":temporal_predictions_top1_score,
+            #"individual": temporal_individuals
+        #})
         
         #Construct a df of predictions
         df = pd.DataFrame({
@@ -301,8 +301,8 @@ class TreeModel(LightningModule):
             "individual":individuals
         })
         
-        df = temporal_df.merge(df, on="individual")
-        df["temporal_taxa_top1"] = df["temporal_pred_label_top1"].apply(lambda x: self.index_to_label[x]) 
+        #df = temporal_df.merge(df, on="individual")
+        #df["temporal_taxa_top1"] = df["temporal_pred_label_top1"].apply(lambda x: self.index_to_label[x]) 
         df["pred_taxa_top1"] = df["pred_label_top1"].apply(lambda x: self.index_to_label[x]) 
         df["pred_taxa_top2"] = df["pred_label_top2"].apply(lambda x: self.index_to_label[x])        
         if train:
