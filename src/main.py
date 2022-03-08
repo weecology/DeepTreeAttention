@@ -305,6 +305,7 @@ class TreeModel(LightningModule):
         df["temporal_taxa_top1"] = df["temporal_pred_label_top1"].apply(lambda x: self.index_to_label[x]) 
         df["pred_taxa_top1"] = df["pred_label_top1"].apply(lambda x: self.index_to_label[x]) 
         df["pred_taxa_top2"] = df["pred_label_top2"].apply(lambda x: self.index_to_label[x])        
+        
         if train:
             df["label"] = labels
             df["true_taxa"] = df["label"].apply(lambda x: self.index_to_label[x])            
