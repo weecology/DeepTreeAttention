@@ -243,7 +243,7 @@ class TreeDataset(Dataset):
     def __getitem__(self, index):
         inputs = {}
         image_path = self.annotations.image_path.loc[index]      
-        individual = os.path.splitext(os.path.basename(image_path))[0].split("_")[0]
+        individual = os.path.basename(image_path.split(".tif")[0])        
         year = self.annotations.tile_year.loc[index]
         
         if self.HSI:
@@ -274,16 +274,6 @@ class TreeDataset(Dataset):
             return individual, inputs, label
         else:
             return individual, inputs
-
-def filter_dead_annotations(crowns, config):
-    """Given a set of annotations, predict whether RGB is dead
-    Args:
-        annotations: must contain xmin, xmax, ymin, ymax and image path fields"""
-    ds = dead.utm_dataset(crowns, config=config)
-    dead_model = dead.AliveDead.load_from_checkpoint(config["dead_model"], config=config)    
-    label, score = dead.predict_dead_dataloader(dead_model=dead_model, dataset=ds, config=config)
-    
-    return label, score
     
 class TreeData(LightningDataModule):
     """

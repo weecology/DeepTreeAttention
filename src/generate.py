@@ -242,7 +242,7 @@ def points_to_crowns(
 
 def write_crop(row, img_path, savedir, replace=True):
     """Wrapper to write a crop based on size and savedir"""
-    tile_year = os.path.basename(img_path).split("_")[0]
+    tile_year = os.path.splitext(os.path.basename(img_path))[0].split("_")[-1]
     if replace == False:
         filename = "{}/{}_{}.tif".format(savedir, row["individual"], tile_year)
         file_exists = os.path.exists(filename)
