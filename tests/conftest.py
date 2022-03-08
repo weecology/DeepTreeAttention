@@ -38,7 +38,7 @@ def rgb_pool(ROOT):
 
 @pytest.fixture(scope="session")
 def rgb_path(ROOT):
-    rgb_path = "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop.tif".format(ROOT)
+    rgb_path = "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop_2019.tif".format(ROOT)
     
     return rgb_path
 

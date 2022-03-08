@@ -223,6 +223,9 @@ class TreeDataset(Dataset):
         self.config = config         
         self.image_size = config["image_size"]
 
+        #HOT FIX - just try one year
+        self.annotations = self.annotations[self.annotations.tile_year=="2021"]
+        
         # Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=self.image_size)
 
