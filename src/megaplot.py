@@ -55,7 +55,7 @@ def buffer_plots(gdf):
     plotID = 0
     for x in gdf.geometry.centroid:
         x_buffer = x.buffer(40)
-        touches = gdf.geometry.intersection.centroid(x_buffer)
+        touches = gdf.geometry.centroid.intersection(x_buffer)
         touches = touches[~touches.is_empty]
         if not touches.empty:    
             gdf.loc[touches.index, "plotID"] = plotID
