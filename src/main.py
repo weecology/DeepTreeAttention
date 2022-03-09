@@ -106,8 +106,8 @@ class TreeModel(LightningModule):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.config["lr"])
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                          mode='min',
-                                                         factor=0.5,
-                                                         patience=10,
+                                                         factor=0.75,
+                                                         patience=8,
                                                          verbose=True,
                                                          threshold=0.0001,
                                                          threshold_mode='rel',
