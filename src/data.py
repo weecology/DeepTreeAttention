@@ -339,6 +339,7 @@ class TreeData(LightningDataModule):
                     #Hold IFAS records seperarely to model on polygons
                     IFAS = megaplot_data[megaplot_data.filename.str.contains("IFAS")]
                     IFAS.geometry = IFAS.geometry.envelope
+                    IFAS["box_id"] = list(range(IFAS.shape[0]))
                     megaplot_data = megaplot_data[~(megaplot_data.filename.str.contains("IFAS"))]
                     
                     df = pd.concat([megaplot_data, df])
