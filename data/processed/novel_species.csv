@@ -6,13 +6,7 @@
 0,OSBS_megaplot.contrib.1376.tif,QUMA13,65_contrib,OSBS_megaplot.contrib.1376,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_404000_3285000_image.tif,OSBS,15
 0,OSBS_megaplot.contrib.1462.tif,QUMA13,70_contrib,OSBS_megaplot.contrib.1462,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_404000_3284000_image.tif,OSBS,10
 0,OSBS_megaplot.contrib.1817.tif,QUMA13,79_contrib,OSBS_megaplot.contrib.1817,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_404000_3285000_image.tif,OSBS,0
-0,NEON.PLA.D03.OSBS.08480.tif,PIEL,OSBS_001,NEON.PLA.D03.OSBS.08480,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_402000_3286000_image.tif,OSBS,2
 0,NEON.PLA.D03.OSBS.01795.tif,GOLA,OSBS_001,NEON.PLA.D03.OSBS.01795,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_402000_3286000_image.tif,OSBS,fixed_box_3823
-0,NEON.PLA.D03.OSBS.01056.tif,PIEL,OSBS_011,NEON.PLA.D03.OSBS.01056,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_404000_3288000_image.tif,OSBS,21
-0,NEON.PLA.D03.OSBS.01202.tif,PIEL,OSBS_011,NEON.PLA.D03.OSBS.01202,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_404000_3288000_image.tif,OSBS,32
-0,NEON.PLA.D03.OSBS.00991.tif,PIEL,OSBS_011,NEON.PLA.D03.OSBS.00991,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_404000_3288000_image.tif,OSBS,fixed_box_3922
-0,NEON.PLA.D03.OSBS.00994.tif,PIEL,OSBS_011,NEON.PLA.D03.OSBS.00994,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_404000_3288000_image.tif,OSBS,fixed_box_3923
-0,NEON.PLA.D03.OSBS.02002.tif,PIEL,OSBS_016,NEON.PLA.D03.OSBS.02002,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_406000_3283000_image.tif,OSBS,0
 0,NEON.PLA.D03.OSBS.02965.tif,QUMA13,OSBS_034,NEON.PLA.D03.OSBS.02965,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_404000_3284000_image.tif,OSBS,fixed_box_4060
 0,OSBS_clark.contrib.15.tif,GOLA,OSBS_clark_contrib_25,OSBS_clark.contrib.15,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_402000_3286000_image.tif,OSBS,5
 0,OSBS_clark.contrib.8.tif,GOLA,OSBS_clark_contrib_25,OSBS_clark.contrib.8,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_402000_3286000_image.tif,OSBS,13
@@ -29,6 +23,7 @@
 0,OSBS_graves.contrib.447.tif,GOLA,OSBS_graves_contrib_545,OSBS_graves.contrib.447,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_404000_3286000_image.tif,OSBS,fixed_box_4848
 0,OSBS_townsend.contrib.29.tif,QUFA,OSBS_townsend_contrib_29,OSBS_townsend.contrib.29,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_405000_3288000_image.tif,OSBS,fixed_box_4949
 0,OSBS_townsend.contrib.33.tif,QULA3,OSBS_townsend_contrib_33,OSBS_townsend.contrib.33,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_406000_3283000_image.tif,OSBS,2
+0,OSBS_townsend.contrib.34.tif,QULA3,OSBS_townsend_contrib_34,OSBS_townsend.contrib.34,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_406000_3287000_image.tif,OSBS,2
 0,OSBS_townsend.contrib.38.tif,QULA3,OSBS_townsend_contrib_38,OSBS_townsend.contrib.38,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_402000_3286000_image.tif,OSBS,19
 0,OSBS_townsend.contrib.39.tif,QULA3,OSBS_townsend_contrib_39,OSBS_townsend.contrib.39,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_403000_3287000_image.tif,OSBS,8
 0,OSBS_townsend.contrib.40.tif,QULA3,OSBS_townsend_contrib_40,OSBS_townsend.contrib.40,/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_404000_3287000_image.tif,OSBS,3
