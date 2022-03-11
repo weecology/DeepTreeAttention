@@ -348,7 +348,7 @@ class TreeData(LightningDataModule):
                     df = pd.concat([megaplot_data, df])
                 
                 #hard sampling cutoff
-                df = df.groupby("taxonID").apply(lambda x: x.head(self.config["sampling_ceiling"]))
+                df = df.groupby("taxonID").apply(lambda x: x.head(self.config["sampling_ceiling"])).reset_index(drop=True)
                 
                 if not self.debug:
                     data_from_other_sites = df[~(df.siteID=="OSBS")]
