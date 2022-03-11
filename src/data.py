@@ -1,6 +1,5 @@
 #Ligthning data module
 from . import __file__
-from comet_ml import Artifact
 from distributed import wait
 import glob
 import geopandas as gpd
@@ -314,12 +313,8 @@ class TreeData(LightningDataModule):
         
     def setup(self,stage=None):
         # Clean data from raw csv, regenerate from scratch or check for progress and complete
-        if self.config["regenerate"]:
-            
-            #Create a comet artifact to hold data
-            if self.comet_logger:
-                artifact = Artifact(self.comet_logger.experiment.get_key(), "dataset")
-            
+        if not self.config["use_data_commit"]:
+                        
             if self.config["replace"]: 
                     
                 # Convert raw neon data to x,y tree locatins
@@ -360,8 +355,6 @@ class TreeData(LightningDataModule):
                 self.canopy_points = df
                 self.canopy_points.to_file("{}/canopy_points.shp".format(self.data_dir))
                 
-                if self.comet_logger:
-                    artifact.add("{}/canopy_points.shp".format(self.data_dir))
 
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after CHM filter", len(df.taxonID.unique()))
@@ -382,7 +375,6 @@ class TreeData(LightningDataModule):
                 
                 if self.comet_logger:
                     self.crowns.to_file("{}/crowns.shp".format(self.data_dir))
-                    artifact.add("{}/crowns.shp".format(self.data_dir))                    
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(crowns.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after crown prediction", crowns.shape[0])
                 
@@ -420,7 +412,11 @@ class TreeData(LightningDataModule):
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
                 
             if self.config["new_train_test_split"]:
-                self.train, self.test = train_test_split(annotations, config=self.config, client=self.client)   
+                self.train, self.test = train_test_split(annotations, config=self.config, client=self.client) 
+                
+                self.train.to_csv("{}/train.csv".format(self.data_dir))
+                self.test.to_csv("{}/test.csv".format(self.data_dir))
+                
             else:
                 previous_train = pd.read_csv("{}/train.csv".format(self.data_dir))
                 previous_test = pd.read_csv("{}/test.csv".format(self.data_dir))
@@ -494,10 +490,7 @@ class TreeData(LightningDataModule):
             )
              
         else:
-            print("Loading previous run")
-            artifact = comet_logger.experiment.get_artifact("Artifact-Name", project_name="DeepTreeAttention", workspace=self.config["comet_workspace"])
-            artifact.download(self.data_dir)
-            
+            print("Loading previous run")            
             self.train = pd.read_csv("{}/train.csv".format(self.data_dir))
             self.test = pd.read_csv("{}/test.csv".format(self.data_dir))
             

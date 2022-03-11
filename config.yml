@@ -30,7 +30,6 @@ use_data_commit:
 
 #Make new dataset
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
-regenerate: True
 convert_h5: True
 #Overwrite existing crops
 replace: True

@@ -4,7 +4,7 @@ import pandas as pd
 
 def test_TreeData_setup(config, ROOT):
     #One site's worth of data
-    config["regenerate"] = True 
+    config["use_data_commit"] = None 
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)               
     dm = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data".format(ROOT), debug=True) 
     dm.setup()  
