@@ -284,7 +284,7 @@ class TreeData(LightningDataModule):
     The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
     Use regenerate=True to override this behavior in setup()
     """
-    def __init__(self, csv_file, HSI=True, metadata=False, client = None, config=None, data_dir=None, comet_logger=None, debug=False):
+    def __init__(self, csv_file, config, HSI=True, metadata=False, client = None, data_dir=None, comet_logger=None, debug=False):
         """
         Args:
             config: optional config file to override
@@ -306,28 +306,14 @@ class TreeData(LightningDataModule):
             self.data_dir = "{}/data/".format(self.ROOT)
         else:
             self.data_dir = data_dir            
-        
-        self.train_file = "{}/processed/train.csv".format(self.data_dir)
-        
-        if config is None:
-            self.config = read_config("{}/config.yml".format(self.ROOT))   
-        else:
-            self.config = config
+
+        self.config = config
 
 
     def setup(self,stage=None):
         # Clean data from raw csv, regenerate from scratch or check for progress and complete
         if self.config["regenerate"]:
             if self.config["replace"]: 
-                try:
-                    # Remove any previous runs
-                    os.remove("{}/processed/canopy_points.shp".format(self.data_dir))
-                    os.remove(" ".format(self.data_dir))
-                    os.remove("{}/processed/crowns.shp".format(self.data_dir))
-                    for x in glob.glob(self.config["crop_dir"]):
-                        os.remove(x)
-                except:
-                    pass
                     
                 # Convert raw neon data to x,y tree locatins
                 df = filter_data(self.csv_file, config=self.config)
@@ -363,15 +349,16 @@ class TreeData(LightningDataModule):
                                     min_CHM_height=self.config["min_CHM_height"], 
                                     max_CHM_diff=self.config["max_CHM_diff"], 
                                     CHM_height_limit=self.config["CHM_height_limit"])  
-                df.to_file("{}/processed/canopy_points.shp".format(self.data_dir))
+                
+                self.canopy_points = df
 
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after CHM filter", len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after CHM filter", df.shape[0])
             
                 # Create crown data
-                crowns = generate.points_to_crowns(
-                    field_data="{}/processed/canopy_points.shp".format(self.data_dir),
+                self.crowns = generate.points_to_crowns(
+                    df=self.canopy_points,
                     rgb_dir=self.config["rgb_sensor_pool"],
                     savedir="{}/interim/".format(self.data_dir),
                     raw_box_savedir="{}/interim/".format(self.data_dir), 
@@ -380,7 +367,7 @@ class TreeData(LightningDataModule):
                 
                 if self.config["megaplot_dir"]:
                     #ADD IFAS back in, use polygons instead of deepforest boxes                    
-                    crowns = gpd.GeoDataFrame(pd.concat([crowns, IFAS]))
+                    self.crowns = gpd.GeoDataFrame(pd.concat([self.crowns, IFAS]))
                 
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(crowns.taxonID.unique()))
@@ -388,19 +375,18 @@ class TreeData(LightningDataModule):
                 
                 #Dead filter
                 if self.config["dead_model"]:
-                    dead_label, dead_score = filter_dead_annotations(crowns, config=self.config)
-                    crowns["dead_label"] = dead_label
-                    crowns["dead_score"] = dead_score
-                    predicted_dead = crowns[((dead_label == 1) & (dead_score > self.config["dead_threshold"]))]                    
-                    crowns = crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))]
+                    dead_label, dead_score = filter_dead_annotations(self.crowns, config=self.config)
+                    self.crowns["dead_label"] = dead_label
+                    self.crowns["dead_score"] = dead_score
+                    self.predicted_dead = self.crowns[((dead_label == 1) & (dead_score > self.config["dead_threshold"]))]                    
+                    self.crowns = self.crowns[~((dead_label == 1) & (dead_score > self.config["dead_threshold"]))]
                 
                 if self.comet_logger:
-                    self.comet_logger.experiment.log_parameter("Species after dead filtering",len(crowns.taxonID.unique()))
-                    self.comet_logger.experiment.log_parameter("Samples after dead filtering",crowns.shape[0])
+                    self.comet_logger.experiment.log_parameter("Species after dead filtering",len(self.crowns.taxonID.unique()))
+                    self.comet_logger.experiment.log_parameter("Samples after dead filtering",self.crowns.shape[0])
                     try:
-                        predicted_dead.to_file("{}/processed/predicted_dead.shp".format(self.data_dir))
                         rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
-                        for index, row in predicted_dead.iterrows():
+                        for index, row in self.predicted_dead.iterrows():
                             left, bottom, right, top = row["geometry"].bounds                
                             img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=row["geometry"].bounds)
                             src = rasterio.open(img_path)
@@ -409,9 +395,6 @@ class TreeData(LightningDataModule):
                             self.comet_logger.experiment.log_image(image_data=img, name="Dead: {} ({:.2f}) {}".format(row["dead_label"],row["dead_score"],row["individual"]))                        
                     except:
                         print("No dead trees predicted")
-                    
-
-                crowns.to_file("{}/processed/crowns.shp".format(self.data_dir))
             else:
                 crowns = gpd.read_file("{}/processed/crowns.shp".format(self.data_dir))
 
