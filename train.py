@@ -32,7 +32,7 @@ git_branch = subprocess.check_output(["git","symbolic-ref", "--short", "HEAD"]).
 comet_logger.experiment.log_parameter("git branch",git_branch)
 comet_logger.experiment.add_tag(git_branch)
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
-comet_logger.experiment.log_parameters(m.config)
+comet_logger.experiment.log_parameters(config)
 
 if config["regenerate"]:
     client = start_cluster.start(cpus=75, mem_size="5GB")
