@@ -336,7 +336,15 @@ class TreeData(LightningDataModule):
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
                     #Simplify MAGNOLIA's just at OSBS
-                    megaplot_data.loc[megaplot_data.taxonID=="MAGR4","taxonID"] = "MAGNO"                    
+                    megaplot_data.loc[megaplot_data.taxonID=="MAGR4","taxonID"] = "MAGNO"  
+                    #Hold IFAS records seperarely to model on polygons
+                    IFAS = megaplot_data[megaplot_data.filename.str.contains("IFAS")]
+                    IFAS.geometry = IFAS.geometry.envelope
+                    IFAS["box_id"] = list(range(IFAS.shape[0]))
+                    IFAS = IFAS[["geometry","taxonID","individualID","plotID","siteID","box_id"]]
+                    IFAS["individual"] = IFAS["individualID"]
+                    megaplot_data = megaplot_data[~(megaplot_data.filename.str.contains("IFAS"))]
+                    
                     df = pd.concat([megaplot_data, df])
                 
                 if not self.debug:
@@ -369,7 +377,11 @@ class TreeData(LightningDataModule):
                     raw_box_savedir="{}/interim/".format(self.data_dir), 
                     client=self.client
                 )
-
+                
+                if self.config["megaplot_dir"]:
+                    #ADD IFAS back in, use polygons instead of deepforest boxes                    
+                    crowns = gpd.GeoDataFrame(pd.concat([crowns, IFAS]))
+                
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(crowns.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after crown prediction", crowns.shape[0])
