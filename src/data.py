@@ -346,10 +346,7 @@ class TreeData(LightningDataModule):
                     megaplot_data = megaplot_data[~(megaplot_data.filename.str.contains("IFAS"))]
                     
                     df = pd.concat([megaplot_data, df])
-                
-                #hard sampling cutoff
-                df = df.groupby("taxonID").apply(lambda x: x.head(self.config["sampling_ceiling"])).reset_index(drop=True)
-                
+
                 if not self.debug:
                     data_from_other_sites = df[~(df.siteID=="OSBS")]
                     data_from_OSBS = df[(df.siteID=="OSBS")]
@@ -357,6 +354,9 @@ class TreeData(LightningDataModule):
                     data_from_other_sites = data_from_other_sites[data_from_other_sites.taxonID.isin(species_to_keep)].groupby("taxonID").apply(lambda x: x.head(self.config["samples_from_other_sites"]))
                     df = pd.concat([data_from_OSBS, data_from_other_sites])
                     
+                #hard sampling cutoff
+                df = df.groupby("taxonID").apply(lambda x: x.head(self.config["sampling_ceiling"])).reset_index(drop=True)
+                            
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter", len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples before CHM filter", df.shape[0])
