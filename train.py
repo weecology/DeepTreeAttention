@@ -23,9 +23,11 @@ comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["c
 #Generate new data or use previous run
 if config["use_data_commit"]:
     config["crop_dir"] = os.path.join(config["data_dir"], config["use_data_commit"])
+    client = None    
 else:
     crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
     os.mkdir(crop_dir)
+    client = start_cluster.start(cpus=75, mem_size="5GB")    
     config["crop_dir"] = crop_dir
 
 git_branch = subprocess.check_output(["git","symbolic-ref", "--short", "HEAD"]).decode("utf8")[0:-1]
@@ -33,11 +35,6 @@ comet_logger.experiment.log_parameter("git branch",git_branch)
 comet_logger.experiment.add_tag(git_branch)
 comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
 comet_logger.experiment.log_parameters(config)
-
-if config["regenerate"]:
-    client = start_cluster.start(cpus=75, mem_size="5GB")
-else:
-    client = None
 
 data_module = data.TreeData(
     csv_file="data/raw/neon_vst_data_2022.csv",
