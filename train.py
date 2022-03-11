@@ -41,7 +41,7 @@ else:
 
 data_module = data.TreeData(
     csv_file="data/raw/neon_vst_data_2022.csv",
-    data_dir=config["data_dir"]
+    data_dir=config["data_dir"],
     client=client,
     metadata=True,
     comet_logger=comet_logger)
