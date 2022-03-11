@@ -2,6 +2,7 @@
 import comet_ml
 import glob
 import geopandas as gpd
+import os
 from src import main
 from src import data
 from src import start_cluster
@@ -18,6 +19,15 @@ from pandas.util import hash_pandas_object
 #Create datamodule
 config = data.read_config("config.yml")
 comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"], auto_output_logging="simple")    
+
+#Generate new data or use previous run
+if config["use_data_commit"]:
+    config["crop_dir"] = os.path.join(config["data_dir"], config["use_data_commit"])
+else:
+    crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
+    os.mkdir(crop_dir)
+    config["crop_dir"] = crop_dir
+
 git_branch = subprocess.check_output(["git","symbolic-ref", "--short", "HEAD"]).decode("utf8")[0:-1]
 comet_logger.experiment.log_parameter("git branch",git_branch)
 comet_logger.experiment.add_tag(git_branch)
@@ -29,7 +39,13 @@ if config["regenerate"]:
 else:
     client = None
 
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2022.csv", client=client, metadata=True, comet_logger=comet_logger)
+data_module = data.TreeData(
+    csv_file="data/raw/neon_vst_data_2022.csv",
+    data_dir=config["data_dir"]
+    client=client,
+    metadata=True,
+    comet_logger=comet_logger)
+
 data_module.setup()
 if client:
     client.close()
@@ -67,7 +83,6 @@ trainer.fit(m, datamodule=data_module)
 #Save model checkpoint
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
 results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
-
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 
 visualize.confusion_matrix(

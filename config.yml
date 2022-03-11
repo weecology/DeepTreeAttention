@@ -21,23 +21,21 @@ max_CHM_diff: 4
 #Max difference between measured height and CHM height if CHM < height
 CHM_height_limit: 8
 
-#Dead model filter
-dead_model:
-dead_threshold: 0.5
-
 #Megaplot XY Data, these are .shp files saved as the siteID
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
+#Checkout data artifact from comet
+use_data_commit:
+
 #Make new dataset
+data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 regenerate: True
 convert_h5: True
 #Overwrite existing crops
 replace: True
 #Use existing plotIDs for train/test split
 new_train_test_split: True
-#Directory to store cropped images from crowns
-crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/crops/
 
 #How many samples from non-osbs sites can we use per species
 samples_from_other_sites: 0
