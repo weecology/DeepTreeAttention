@@ -375,8 +375,8 @@ class TreeData(LightningDataModule):
                 
                 if self.comet_logger:
                     self.crowns.to_file("{}/crowns.shp".format(self.data_dir))
-                    self.comet_logger.experiment.log_parameter("Species after crown prediction", len(crowns.taxonID.unique()))
-                    self.comet_logger.experiment.log_parameter("Samples after crown prediction", crowns.shape[0])
+                    self.comet_logger.experiment.log_parameter("Species after crown prediction", len(self.crowns.taxonID.unique()))
+                    self.comet_logger.experiment.log_parameter("Samples after crown prediction", self.crowns.shape[0])
                 
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after dead filtering",len(self.crowns.taxonID.unique()))
