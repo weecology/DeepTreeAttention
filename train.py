@@ -2,6 +2,7 @@
 import comet_ml
 import glob
 import geopandas as gpd
+import os
 from src import main
 from src import data
 from src import start_cluster
@@ -17,47 +18,53 @@ from pandas.util import hash_pandas_object
 
 #Create datamodule
 config = data.read_config("config.yml")
-if config["regenerate"]:
-    client = start_cluster.start(cpus=75, mem_size="5GB")
-else:
-    client = None
-
 comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"], auto_output_logging="simple")    
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2022.csv", client=client, metadata=True, comet_logger=comet_logger)
+
+#Generate new data or use previous run
+if config["use_data_commit"]:
+    config["crop_dir"] = os.path.join(config["data_dir"], config["use_data_commit"])
+    client = None    
+else:
+    crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
+    os.mkdir(crop_dir)
+    client = start_cluster.start(cpus=75, mem_size="5GB")    
+    config["crop_dir"] = crop_dir
+
+git_branch = subprocess.check_output(["git","symbolic-ref", "--short", "HEAD"]).decode("utf8")[0:-1]
+comet_logger.experiment.log_parameter("git branch",git_branch)
+comet_logger.experiment.add_tag(git_branch)
+comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
+comet_logger.experiment.log_parameters(config)
+
+data_module = data.TreeData(
+    csv_file="data/raw/neon_vst_data_2022.csv",
+    data_dir=config["data_dir"],
+    config=config,
+    client=client,
+    metadata=True,
+    comet_logger=comet_logger)
+
 data_module.setup()
 if client:
     client.close()
 
-comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
-
-#log branch
-git_branch = subprocess.check_output(["git","symbolic-ref", "--short", "HEAD"]).decode("utf8")[0:-1]
-comet_logger.experiment.log_parameter("git branch",git_branch)
-comet_logger.experiment.add_tag(git_branch)
-
-#Hash train and test
-train = pd.read_csv("data/processed/train.csv")
-test = pd.read_csv("data/processed/test.csv")
-novel = pd.read_csv("data/processed/novel_species.csv")
-
-comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(train))
-comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(test))
+comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(data_module.train))
+comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(data_module.test))
 comet_logger.experiment.log_parameter("num_species",data_module.num_classes)
-comet_logger.experiment.log_table("train.csv", train)
-comet_logger.experiment.log_table("test.csv", test)
-comet_logger.experiment.log_table("novel_species.csv", novel)
+comet_logger.experiment.log_table("train.csv", data_module.train)
+comet_logger.experiment.log_table("test.csv", data_module.test)
+comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
 
 #Load from state dict of previous run
 if config["pretrain_state_dict"]:
     model = Hang2020.load_from_backbone(state_dict=config["pretrain_state_dict"], classes=data_module.num_classes, bands=config["bands"])
 else:
     model = Hang2020.Hang2020(bands=config["bands"], classes=data_module.num_classes)
+
 m = main.TreeModel(
     model=model, 
     classes=data_module.num_classes, 
     label_dict=data_module.species_label_dict)
-
-comet_logger.experiment.log_parameters(m.config)
 
 #Create trainer
 lr_monitor = LearningRateMonitor(logging_interval='epoch')
@@ -74,16 +81,15 @@ trainer.fit(m, datamodule=data_module)
 #Save model checkpoint
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
 results = m.evaluate_crowns(data_module.val_dataloader(), experiment=comet_logger.experiment)
-
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
     results=results,
     species_label_dict=data_module.species_label_dict,
-    test_crowns="data/processed/crowns.shp",
-    test_csv="data/processed/test.csv",
-    test_points="data/processed/canopy_points.shp",
+    test_crowns=data_module.crowns,
+    test_csv=data_module.test,
+    test_points=data_module.canopy_points,
     rgb_pool=rgb_pool
 )
 
