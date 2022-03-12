@@ -54,18 +54,6 @@ def plot_data(ROOT, sample_crowns):
     
     return plot_data
 
-#Training module
-#@pytest.fixture(scope="session")
-#def dead_model_path(ROOT):
-    #config = utils.read_config(config_path="{}/config.yml".format(ROOT))    
-    #m = dead.AliveDead(config=config)
-    #trainer = Trainer(fast_dev_run=True)
-    #trainer.fit(m)    
-    #filepath = "{}/dead_model.pl".format(tempfile.gettempdir())
-    #trainer.save_checkpoint(filepath)
-    
-    #return filepath
-
 @pytest.fixture(scope="session")
 def config(ROOT):
     print("Creating global config")
@@ -87,7 +75,7 @@ def config(ROOT):
     config["dead_model"] = None
     config["dead_threshold"] = 0.95
     config["megaplot_dir"] = None
-    config["regenerate"] = True
+    config["use_data_commit"] = None
     config["dead"]["epochs"] = 1
     
     return config
