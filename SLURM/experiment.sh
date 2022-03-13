@@ -12,6 +12,8 @@
 #SBATCH --partition=gpu
 #SBATCH --gpus=1
 
+module load git gcc
+
 ulimit -c 0
 
 git checkout $1
@@ -19,5 +21,4 @@ git checkout $1
 source activate DeepTreeAttention
 
 cd ~/DeepTreeAttention/
-module load git gcc
 python train.py
