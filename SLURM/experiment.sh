@@ -14,10 +14,11 @@
 
 ulimit -c 0
 
+module load git gcc
+
 git checkout $1
 
 source activate DeepTreeAttention
 
 cd ~/DeepTreeAttention/
-module load git gcc
 python train.py
