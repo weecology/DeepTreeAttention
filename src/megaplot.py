@@ -32,11 +32,15 @@ def format(site, gdf, config):
     """
     #give each an individual ID
     gdf["individualID"] = gdf.index.to_series().apply(lambda x: "{}.contrib.{}".format(site,x)) 
+    gdf["filename"] = site
     gdf["siteID"] = site.split("_")[0]
     
     #PlotID variable to center on correct tile
-    grid = create_grid(gdf)
-    gdf = gpd.sjoin(gdf, grid)
+    if gdf.shape[0] > 1000:
+        grid = create_grid(gdf)
+        gdf = gpd.sjoin(gdf, grid)
+    else:
+        gdf = buffer_plots(gdf)
     
     #Make sure any points sitting on the line are assigned only to one grid. Rare edge case
     gdf = gdf.groupby("individualID").apply(lambda x: x.head(1)).reset_index(drop=True)
@@ -47,6 +51,19 @@ def format(site, gdf, config):
         
     return gdf
 
+def buffer_plots(gdf):
+    plotID = 0
+    for x in gdf.geometry.centroid:
+        x_buffer = x.buffer(40)
+        touches = gdf.geometry.centroid.intersection(x_buffer)
+        touches = touches[~touches.is_empty]
+        if not touches.empty:    
+            gdf.loc[touches.index, "plotID"] = plotID
+            plotID +=1
+    gdf["plotID"] = gdf.plotID.apply(lambda x: "{}_contrib_{}".format(gdf.filename.unique()[0], int(x)))
+    
+    return gdf
+        
 def create_grid(gdf):
     """Create a rectangular grid that overlays a geopandas object"""
     xmin, ymin, xmax, ymax= gdf.total_bounds
@@ -56,13 +73,14 @@ def create_grid(gdf):
     crs = gdf.crs
     # create the cells in a loop
     grid_cells = []
-    for x0 in np.arange(xmin, xmax+cell_size, cell_size ):
+    for x0 in np.arange(xmin, xmax+cell_size, cell_size):
         for y0 in np.arange(ymin, ymax+cell_size, cell_size):
             # bounds
             x1 = x0-cell_size
             y1 = y0+cell_size
-            grid_cells.append( shapely.geometry.box(x0, y0, x1, y1)  )
+            grid_cells.append(shapely.geometry.box(x0, y0, x1, y1)  )
     grid = gpd.GeoDataFrame(grid_cells, columns=['geometry'],crs=crs)
+    
     #give grid cells a plot ID
     grid["plotID"] = grid.index
     grid["plotID"] = grid.plotID.apply(lambda x: "{}_contrib".format(x))

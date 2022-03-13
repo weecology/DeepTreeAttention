@@ -1,8 +1,4 @@
 #!/bin/bash
-
-# Command line args for dict
-sbatch <<EOT
-#!/bin/bash
 #SBATCH --job-name=DeepTreeAttention   # Job name
 #SBATCH --mail-type=END               # Mail events
 #SBATCH --mail-user=benweinstein2010@gmail.com  # Where to send mail
@@ -18,10 +14,10 @@ sbatch <<EOT
 
 ulimit -c 0
 
+git checkout $1
+
 source activate DeepTreeAttention
 
 cd ~/DeepTreeAttention/
 module load git gcc
-python train.py $1
-EOT
-
+python train.py

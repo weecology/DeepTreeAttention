@@ -113,25 +113,19 @@ def predict_tile(PATH, dead_model_path, species_model_path, config):
         raise ValueError("No crowns left after CHM filter. {}".format(crowns.head(n=10)))
     
     dead_label, dead_score = predict_dead(crowns=filtered_crowns, dead_model_path=dead_model_path, rgb_tile=rgb_path, config=config)
-    
     filtered_crowns["dead_label"] = dead_label
     filtered_crowns["dead_score"] = dead_score
     
-    #Load species model
+    # Load species model
     m = TreeModel.load_from_checkpoint(species_model_path)
     trees, features = predict_species(HSI_path=PATH, crowns=filtered_crowns, m=m, config=config)
+
+    # Remove predictions for dead trees
+    trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"pred_taxa_top1"] = "DEAD"
+    trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"pred_label_top1"] = None
+    trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"top1_score"] = None
     
-    #Spatial smooth
-    trees = smooth(trees=trees, features=features, size=config["neighbor_buffer_size"], alpha=config["neighborhood_strength"])
-    trees["spatial_taxonID"] = trees["spatial_label"]
-    trees["spatial_taxonID"] = trees["spatial_label"].apply(lambda x: m.index_to_label[x]) 
-    
-    #Remove predictions for dead trees
-    trees.loc[trees.dead_label==1,"spatial_taxonID"] = "DEAD"
-    trees.loc[trees.dead_label==1,"spatial_label"] = None
-    trees.loc[trees.dead_label==1,"spatial_score"] = None
-    
-    #Calculate crown area
+    # Calculate crown area
     trees["crown_area"] = crowns.geometry.area
         
     return trees
@@ -180,30 +174,11 @@ def predict_species(crowns, HSI_path, m, config):
     return df, features
 
 def predict_dead(crowns, dead_model_path, rgb_tile, config):
-    dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path)
-    ds = on_the_fly_dataset(crowns=crowns, image_path=rgb_tile, config=config,data_type="RGB")
+    dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path, config=config)
+    ds = on_the_fly_dataset(crowns=crowns, image_path=rgb_tile, config=config, data_type="RGB")
     label, score = dead.predict_dead_dataloader(dead_model, ds, config)
     
     return label, score
 
 
-def smooth(trees, features, size, alpha):
-    """Given the results dataframe and feature labels, spatially smooth based on alpha value"""
-    trees = gpd.GeoDataFrame(trees, geometry="geometry")    
-    sindex = trees.sindex
-    tree_buffer = trees.buffer(size)
-    smoothed_features = []
-    for index, geom in enumerate(tree_buffer):
-        intersects = sindex.query(geom)
-        focal_feature = features[index,]
-        neighbor_features = np.mean(features[intersects,], axis=0)
-        smoothed_feature = focal_feature + alpha * neighbor_features
-        smoothed_features.append(smoothed_feature)
-    smoothed_features = np.vstack(smoothed_features)
-    spatial_label = np.argmax(smoothed_features, axis=1)
-    spatial_score = np.max(smoothed_features, axis=1)
-    trees["spatial_label"] = spatial_label
-    trees["spatial_score"] = spatial_score
-    
-    return trees
     
