@@ -51,7 +51,7 @@ pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/675efb
 gpus: 1
 batch_size: 128
 bands: 369
-lr: 0.00005
+lr: 0.0001
 fast_dev_run: False
 accelerator: dp
 epochs: 125
