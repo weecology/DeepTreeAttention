@@ -5,16 +5,15 @@
 rgb_sensor_pool: /orange/ewhite/NeonData/*/DP3.30010.001/**/Camera/**/*.tif 
 HSI_sensor_pool: /orange/ewhite/NeonData/*/DP3.30006.001/**/Reflectance/*.h5
 CHM_pool: /orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif
-HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/year/
+HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/
 
 #NEON data filtering
 min_stem_diameter: 10
-
 #Minimum number of test samples per class to be included
-min_train_samples: 10
-min_test_samples: 10
+min_train_samples: 5
+min_test_samples: 4
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
-iterations: 2000
+iterations: 10000
 #minimum CHM height, leave blank to skip CHM filtering
 min_CHM_height: 1
 #Max difference between measured height and CHM height if CHM > height
@@ -22,23 +21,20 @@ max_CHM_diff: 4
 #Max difference between measured height and CHM height if CHM < height
 CHM_height_limit: 8
 
-#Dead model filter
-dead_model:
-dead_threshold: 0.5
-
 #Megaplot XY Data, these are .shp files saved as the siteID
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
+#Checkout data artifact from comet
+use_data_commit:
+
 #Make new dataset
-regenerate: False
+data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 #Overwrite existing crops
 replace: True
 #Use existing plotIDs for train/test split
 new_train_test_split: True
-#Directory to store cropped images from crowns
-crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/crops/
 
 #How many samples from non-osbs sites can we use per species
 samples_from_other_sites: 0
@@ -48,23 +44,23 @@ samples_from_other_sites: 0
 image_size: 11
 preload_images: True
 workers: 0
-resampling_ceiling: 500
+sampling_ceiling: 100
 
 #Network Parameters
 pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/675efb32ae4542dca45105ce7f261896.pt
 gpus: 1
-batch_size: 32
+batch_size: 128
 bands: 369
 lr: 0.00005
 fast_dev_run: False
 accelerator: dp
-epochs: 30
+epochs: 125
 
 #Evaluation config
 #Top k class recall score
 top_k: 4
 #Number of individuals to plot in comet graphics tab
-plot_n_individuals: 10
+plot_n_individuals: 100
 
 #Predict
 predict_batch_size: 1024

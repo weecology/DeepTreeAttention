@@ -15,9 +15,9 @@ def index_to_example(index, test_csv, test_crowns, test_points, rgb_pool, comet_
     """Function to plot an RGB image, the NEON field point and the deepforest crown given a test index
     Args:
         index: pandas index .loc for test.csv
-        test_csv (str): path to test.csv
-        test_crowns (str): path to test_crowns.shp, see generate.py
-        test_points (str): path to test_points.csv see generate.py
+        test_csv (pandas df): dataframe from data.py
+        test_crowns (geopandas gdf): see generate.py
+        test_points (pandas df): see generate.py
         rgb_pool: config glob path to search for rgb images, see config.yml
         experiment: comet_experiment
     Returns:
@@ -25,9 +25,6 @@ def index_to_example(index, test_csv, test_crowns, test_points, rgb_pool, comet_
         sample_id: comet id
     """
     tmpdir = tempfile.gettempdir()
-    test = pd.read_csv(test_csv)
-    test_crowns = gpd.read_file(test_crowns)
-    test_points = gpd.read_file(test_points)
     individual = os.path.splitext(os.path.basename(test.loc[index]["image_path"]))[0]
     
     fig = plt.figure(0)
