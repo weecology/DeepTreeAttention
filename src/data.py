@@ -497,6 +497,8 @@ class TreeData(LightningDataModule):
             self.train = pd.read_csv("{}/train.csv".format(self.data_dir))
             self.test = pd.read_csv("{}/test.csv".format(self.data_dir))
             self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
+            #mimic schema due to abbreviation when .shp is saved
+            self.crowns["individualID"] = self.crowns["individual"]
             self.canopy_points = gpd.read_file("{}/canopy_points.shp".format(self.data_dir))
             
             #Store class labels
