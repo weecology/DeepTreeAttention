@@ -38,7 +38,7 @@ comet_logger.experiment.log_parameters(config)
 
 data_module = data.TreeData(
     csv_file="data/raw/neon_vst_data_2022.csv",
-    data_dir=config["data_dir"],
+    data_dir=config["crop_dir"],
     config=config,
     client=client,
     metadata=True,
