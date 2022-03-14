@@ -500,6 +500,7 @@ class TreeData(LightningDataModule):
             #mimic schema due to abbreviation when .shp is saved
             self.crowns["individualID"] = self.crowns["individual"]
             self.canopy_points = gpd.read_file("{}/canopy_points.shp".format(self.data_dir))
+            self.canopy_points["individualID"] = self.canopy_points["individual"]
             
             #Store class labels
             unique_species_labels = np.concatenate([self.train.taxonID.unique(), self.test.taxonID.unique()])
