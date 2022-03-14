@@ -233,7 +233,7 @@ class TreeModel(LightningModule):
             
         return pred
     
-    def predict_dataloader(self, data_loader, plot_n_individuals=1, return_features=False, experiment=None, train=True):
+    def predict_dataloader(self, data_loader, test_crowns=None, test_points=None, plot_n_individuals=1, return_features=False, experiment=None, train=True):
         """Given a file with paths to image crops, create crown predictions 
         The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
         unique identifier for each crown and counter is 0..n pixel crops that belong to that crown.
@@ -291,10 +291,7 @@ class TreeModel(LightningModule):
             
         if experiment:
             #load image pool and crown predicrions
-            rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
-            test_points = gpd.read_file("{}/data/processed/canopy_points.shp".format(self.ROOT))   
-            test_crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
-            
+            rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)            
             plt.ion()
             for index, row in df.sample(n=plot_n_individuals).iterrows():
                 fig = plt.figure(0)
@@ -315,7 +312,7 @@ class TreeModel(LightningModule):
                 ax.add_collection(PatchCollection(patches, match_original=True))
                 
                 #Plot field coordinate
-                stem = test_points[test_points.individual == individual]
+                stem = test_points[test_points.individualID == individual]
                 stem.plot(ax=ax)
                 
                 plt.savefig("{}/{}.png".format(self.tmpdir, row["individual"]))
@@ -329,11 +326,12 @@ class TreeModel(LightningModule):
         else:
             return df
     
-    def evaluate_crowns(self, data_loader, crowns, experiment=None):
+    def evaluate_crowns(self, data_loader, crowns, points=None, experiment=None):
         """Crown level measure of accuracy
         Args:
             data_loader: TreeData dataset
             experiment: optional comet experiment
+            points: the canopy_points.shp from the data_module
         Returns:
             df: results dataframe
             metric_dict: metric -> value
@@ -342,6 +340,8 @@ class TreeModel(LightningModule):
             data_loader=data_loader,
             plot_n_individuals=self.config["plot_n_individuals"],
             experiment=experiment,
+            test_crowns=crowns,
+            test_points=points,
             return_features=True
         )
         

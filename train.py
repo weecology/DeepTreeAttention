@@ -82,7 +82,12 @@ trainer = Trainer(
 trainer.fit(m, datamodule=data_module)
 #Save model checkpoint
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
-results = m.evaluate_crowns(data_module.val_dataloader(), crowns = data_module.crowns, experiment=comet_logger.experiment)
+results = m.evaluate_crowns(
+    data_module.val_dataloader(),
+    crowns = data_module.crowns,
+    experiment=comet_logger.experiment
+    points=data_module.canopy_points
+)
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 
 visualize.confusion_matrix(

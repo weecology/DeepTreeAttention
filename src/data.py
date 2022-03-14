@@ -121,7 +121,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
 
         return train, test
     else:
-        plotIDs = shp[shp.siteID=="OSBS"].plotID.unique()
+        plotIDs = shp.plotID.unique()
 
     np.random.shuffle(plotIDs)
     species_to_sample = shp.taxonID.unique()
@@ -334,7 +334,7 @@ class TreeData(LightningDataModule):
                     megaplot_data = megaplot_data[~(megaplot_data.filename.str.contains("IFAS"))]
                     
                     df = pd.concat([megaplot_data, df])
-
+                
                 if not self.debug:
                     data_from_other_sites = df[~(df.siteID=="OSBS")]
                     data_from_OSBS = df[(df.siteID=="OSBS")]
@@ -344,7 +344,7 @@ class TreeData(LightningDataModule):
                     
                 #hard sampling cutoff
                 df = df.groupby("taxonID").apply(lambda x: x.head(self.config["sampling_ceiling"])).reset_index(drop=True)
-                            
+                
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter", len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples before CHM filter", df.shape[0])
