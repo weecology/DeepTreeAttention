@@ -54,7 +54,7 @@ comet_logger.experiment.log_parameter("num_species",data_module.num_classes)
 comet_logger.experiment.log_table("train.csv", data_module.train)
 comet_logger.experiment.log_table("test.csv", data_module.test)
 
-if not config["data_commit"]:
+if not config["use_data_commit"]:
     comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
 
 #Load from state dict of previous run
