@@ -53,7 +53,9 @@ comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(data_module
 comet_logger.experiment.log_parameter("num_species",data_module.num_classes)
 comet_logger.experiment.log_table("train.csv", data_module.train)
 comet_logger.experiment.log_table("test.csv", data_module.test)
-comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
+
+if not config["data_commit"]:
+    comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
 
 #Load from state dict of previous run
 if config["pretrain_state_dict"]:
