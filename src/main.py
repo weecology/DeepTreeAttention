@@ -329,7 +329,7 @@ class TreeModel(LightningModule):
         else:
             return df
     
-    def evaluate_crowns(self, data_loader, experiment=None):
+    def evaluate_crowns(self, data_loader, crowns, experiment=None):
         """Crown level measure of accuracy
         Args:
             data_loader: TreeData dataset
@@ -346,7 +346,6 @@ class TreeModel(LightningModule):
         )
         
         # Read in crowns data
-        crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
         results = results.merge(crowns.drop(columns="label"), on="individual")
         results = gpd.GeoDataFrame(results, geometry="geometry")
 
