@@ -15,7 +15,7 @@ def test_predict_dataloader(config, m, dm, experiment, ROOT):
     
 def test_evaluate_crowns(config, experiment, m, dm, ROOT):
     m.ROOT = "{}/tests".format(ROOT)
-    df = m.evaluate_crowns(data_loader = dm.val_dataloader(), experiment=experiment)
+    df = m.evaluate_crowns(data_loader = dm.val_dataloader(), crowns=dm.crowns, experiment=experiment)
     assert all(["top{}_score".format(x) in df.columns for x in [1,2]]) 
 
 def test_predict_xy(config, m, dm, ROOT):
