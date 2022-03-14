@@ -312,7 +312,7 @@ class TreeModel(LightningModule):
                 ax.add_collection(PatchCollection(patches, match_original=True))
                 
                 #Plot field coordinate
-                stem = test_points[test_points.individual == individual]
+                stem = test_points[test_points.individualID == individual]
                 stem.plot(ax=ax)
                 
                 plt.savefig("{}/{}.png".format(self.tmpdir, row["individual"]))
