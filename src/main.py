@@ -121,7 +121,8 @@ class TreeModel(LightningModule):
              "precision":taxon_precision
              })
         
-        self.log("accuracy",species_table.set_index("taxonID").accuracy.to_dict())
+        for key, value in species_table.set_index("taxonID").accuracy.to_dict().items():
+            self.log("Epoch_{}_accuracy".format(key), value)
             
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.config["lr"])
