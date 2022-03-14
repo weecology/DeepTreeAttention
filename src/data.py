@@ -121,7 +121,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
 
         return train, test
     else:
-        plotIDs = shp.plotID.unique()
+        plotIDs = shp[shp.siteID=="OSBS"].plotID.unique()
 
     np.random.shuffle(plotIDs)
     species_to_sample = shp.taxonID.unique()
