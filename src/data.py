@@ -521,7 +521,7 @@ class TreeData(LightningDataModule):
             
             #Create dataloaders
             self.train_ds = TreeDataset(
-                csv_file = self.train_file,
+                csv_file = "{}/train.csv".format(self.data_dir),
                 config=self.config,
                 HSI=self.HSI,
                 metadata=self.metadata
