@@ -496,6 +496,8 @@ class TreeData(LightningDataModule):
             print("Loading previous run")            
             self.train = pd.read_csv("{}/train.csv".format(self.data_dir))
             self.test = pd.read_csv("{}/test.csv".format(self.data_dir))
+            self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
+            self.canopy_points = gpd.read_file("{}/canopy_points.shp".format(self.data_dir))
             
             #Store class labels
             unique_species_labels = np.concatenate([self.train.taxonID.unique(), self.test.taxonID.unique()])
