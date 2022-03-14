@@ -27,7 +27,7 @@ if config["use_data_commit"]:
 else:
     crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
     os.mkdir(crop_dir)
-    client = start_cluster.start(cpus=75, mem_size="5GB")    
+    client = start_cluster.start(cpus=50, mem_size="4GB")    
     config["crop_dir"] = crop_dir
 
 git_branch = subprocess.check_output(["git","symbolic-ref", "--short", "HEAD"]).decode("utf8")[0:-1]
@@ -38,7 +38,7 @@ comet_logger.experiment.log_parameters(config)
 
 data_module = data.TreeData(
     csv_file="data/raw/neon_vst_data_2022.csv",
-    data_dir=config["data_dir"],
+    data_dir=config["crop_dir"],
     config=config,
     client=client,
     metadata=True,
