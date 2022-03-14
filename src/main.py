@@ -102,6 +102,27 @@ class TreeModel(LightningModule):
         self.log("Epoch Micro Accuracy", final_micro)
         self.log("Epoch Macro Accuracy", final_macro)
         
+        # Log results by species
+        taxon_accuracy = torchmetrics.functional.accuracy(
+            preds=torch.tensor(results.pred_label_top1.values),
+            target=torch.tensor(results.label.values), 
+            average="none", 
+            num_classes=self.classes
+        )
+        taxon_precision = torchmetrics.functional.precision(
+            preds=torch.tensor(results.pred_label_top1.values),
+            target=torch.tensor(results.label.values),
+            average="none",
+            num_classes=self.classes
+        )
+        species_table = pd.DataFrame(
+            {"taxonID":self.label_to_index.keys(),
+             "accuracy":taxon_accuracy,
+             "precision":taxon_precision
+             })
+        
+        self.log("accuracy",species_table.set_index("taxonID").accuracy.to_dict())
+            
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.config["lr"])
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
