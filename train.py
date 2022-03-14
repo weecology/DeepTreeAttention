@@ -99,7 +99,7 @@ visualize.confusion_matrix(
     results=results,
     species_label_dict=data_module.species_label_dict,
     test_crowns=data_module.crowns,
-    test_csv=data_module.test,
+    test=data_module.test,
     test_points=data_module.canopy_points,
     rgb_pool=rgb_pool
 )
@@ -112,12 +112,12 @@ comet_logger.experiment.log_parameter("spectral_spatial weight", alpha_weight)
 comet_logger.experiment.log_table("test_predictions.csv", results)
 
 #Within site confusion
-site_lists = train.groupby("label").site.unique()
+site_lists = data_module.train.groupby("label").site.unique()
 within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=site_lists)
 comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
 
 #Within plot confusion
-plot_lists = train.groupby("label").plotID.unique()
+plot_lists = data_module.train.groupby("label").plotID.unique()
 within_plot_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=plot_lists)
 comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)
 

@@ -11,7 +11,7 @@ from rasterio.plot import show
 from src import neon_paths
 import tempfile
 
-def index_to_example(index, test_csv, test_crowns, test_points, rgb_pool, comet_experiment):
+def index_to_example(index, test, test_crowns, test_points, rgb_pool, comet_experiment):
     """Function to plot an RGB image, the NEON field point and the deepforest crown given a test index
     Args:
         index: pandas index .loc for test.csv
@@ -56,7 +56,7 @@ def index_to_example(index, test_csv, test_crowns, test_points, rgb_pool, comet_
     # Return sample, assetId (index is added automatically)
     return {"sample": image_name, "assetId": results["imageId"]}
 
-def confusion_matrix(comet_experiment, results, species_label_dict, test_csv, test_points, test_crowns, rgb_pool):
+def confusion_matrix(comet_experiment, results, species_label_dict, test, test_points, test_crowns, rgb_pool):
     #Confusion matrix
     comet_experiment.log_confusion_matrix(
         results.label.values,
@@ -64,7 +64,7 @@ def confusion_matrix(comet_experiment, results, species_label_dict, test_csv, te
         labels=list(species_label_dict.keys()),
         max_categories=len(species_label_dict.keys()),
         index_to_example_function=index_to_example,
-        test_csv=test_csv,
+        test=test,
         test_points=test_points,
         test_crowns=test_crowns,
         rgb_pool=rgb_pool,
