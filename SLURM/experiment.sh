@@ -12,6 +12,8 @@
 #SBATCH --partition=gpu
 #SBATCH --gpus=1
 
+module load git gcc
+
 ulimit -c 0
 
 module load git gcc

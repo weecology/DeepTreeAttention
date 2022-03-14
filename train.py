@@ -53,7 +53,9 @@ comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(data_module
 comet_logger.experiment.log_parameter("num_species",data_module.num_classes)
 comet_logger.experiment.log_table("train.csv", data_module.train)
 comet_logger.experiment.log_table("test.csv", data_module.test)
-comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
+
+if not config["data_commit"]:
+    comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
 
 #Load from state dict of previous run
 if config["pretrain_state_dict"]:
@@ -80,7 +82,7 @@ trainer = Trainer(
 trainer.fit(m, datamodule=data_module)
 #Save model checkpoint
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
-results = m.evaluate_crowns(data_module.val_dataloader(), crowns=data_module.crowns, experiment=comet_logger.experiment)
+results = m.evaluate_crowns(data_module.val_dataloader(), crowns = data_module.crowns, experiment=comet_logger.experiment)
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 
 visualize.confusion_matrix(
