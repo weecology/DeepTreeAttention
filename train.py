@@ -9,12 +9,17 @@ from src import start_cluster
 from src.models import Hang2020
 from src import visualize
 from src import metrics
+import sys
 from pytorch_lightning import Trainer
 import subprocess
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
 import pandas as pd
 from pandas.util import hash_pandas_object
+
+#Get branch name for the comet tag
+git_branch=sys.argv[1]
+git_commit=sys.argv[2]
 
 #Create datamodule
 config = data.read_config("config.yml")
@@ -30,10 +35,9 @@ else:
     client = start_cluster.start(cpus=50, mem_size="4GB")    
     config["crop_dir"] = crop_dir
 
-git_branch = subprocess.check_output(["git","symbolic-ref", "--short", "HEAD"]).decode("utf8")[0:-1]
 comet_logger.experiment.log_parameter("git branch",git_branch)
 comet_logger.experiment.add_tag(git_branch)
-comet_logger.experiment.log_parameter("commit hash",subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip())
+comet_logger.experiment.log_parameter("commit hash",git_commit)
 comet_logger.experiment.log_parameters(config)
 
 data_module = data.TreeData(
