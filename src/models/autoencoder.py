@@ -31,25 +31,14 @@ class AutoencoderDataset(Dataset):
         #Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=image_size)
         
-        #Pin data to memory if desired
-        if self.config["preload_images"]:
-            self.image_dict = {}
-            for index, row in self.annotations.iterrows():
-                image_path = os.path.join(self.config["crop_dir"],row["image_path"])
-                self.image_dict[index] = utils.load_image(image_path, image_size=image_size)
-        
     def __len__(self):
         #0th based index
         return self.annotations.shape[0]
         
     def __getitem__(self, index):
-        image_path = self.annotations.image_path.loc[index]      
-        if self.config["preload_images"]:
-            image = self.image_dict[index]
-        else:
-            image_path = self.annotations.image_path.loc[index]
-            image_path = os.path.join(self.config["crop_dir"],image_path)            
-            image = utils.load_image(image_path, image_size=self.image_size)
+        image_path = self.annotations.image_path.loc[index]
+        image_path = os.path.join(self.config["crop_dir"],image_path)            
+        image = utils.load_image(image_path, image_size=self.image_size)
     
         return image
     
