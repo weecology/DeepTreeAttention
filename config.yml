@@ -47,7 +47,7 @@ workers: 0
 sampling_ceiling: 100
 
 #Autoencoder
-autoencoder_batch_size: 32
+autoencoder_batch_size: 128
 autoencoder_epochs: 100
 autoencoder_depth: 16
 
