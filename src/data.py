@@ -341,9 +341,6 @@ class TreeData(LightningDataModule):
                     species_to_keep = df[df.siteID=="OSBS"].taxonID.unique()
                     data_from_other_sites = data_from_other_sites[data_from_other_sites.taxonID.isin(species_to_keep)].groupby("taxonID").apply(lambda x: x.head(self.config["samples_from_other_sites"]))
                     df = pd.concat([data_from_OSBS, data_from_other_sites])
-                    
-                #hard sampling cutoff
-                df = df.groupby("taxonID").apply(lambda x: x.head(self.config["sampling_ceiling"])).reset_index(drop=True)
                 
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter", len(df.taxonID.unique()))
@@ -373,8 +370,13 @@ class TreeData(LightningDataModule):
                 )
                 
                 if self.config["megaplot_dir"]:
-                    #ADD IFAS back in, use polygons instead of deepforest boxes                    
+                    #ADD IFAS back in, use polygons instead of deepforest boxes 
                     self.crowns = gpd.GeoDataFrame(pd.concat([self.crowns, IFAS]))
+                
+                self.crowns = self.crowns[self.crowns.taxonID.isin(["CAGL8","QUNI","QULA2","QUGE2","QUHE2","QUVI"])]
+                self.crowns.loc[self.crowns.taxonID.isin(["QUNI","QULA2","QUGE2","QUHE2","QUVI"]),"taxonID"] = "OAK"
+                num_carya = self.crowns[self.crowns.taxonID=="CAGL8"].shape[0]
+                self.crowns = self.crowns.groupby("taxonID").apply(lambda x: x.sample(frac=1).head(num_carya)).reset_index(drop=True)
                 
                 if self.comet_logger:
                     self.crowns.to_file("{}/crowns.shp".format(self.data_dir))
@@ -417,6 +419,7 @@ class TreeData(LightningDataModule):
             if self.config["new_train_test_split"]:
                 self.train, self.test = train_test_split(annotations, config=self.config, client=self.client) 
                 
+                #Add test data back in from sampling
                 self.train.to_csv("{}/train.csv".format(self.data_dir))
                 self.test.to_csv("{}/test.csv".format(self.data_dir))
                 

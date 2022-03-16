@@ -11,7 +11,7 @@ HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/
 min_stem_diameter: 10
 #Minimum number of test samples per class to be included
 min_train_samples: 5
-min_test_samples: 4
+min_test_samples: 10
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
 iterations: 10000
 #minimum CHM height, leave blank to skip CHM filtering
@@ -65,7 +65,7 @@ epochs: 125
 #Top k class recall score
 top_k: 4
 #Number of individuals to plot in comet graphics tab
-plot_n_individuals: 100
+plot_n_individuals: 1
 
 #Predict
 predict_batch_size: 1024
