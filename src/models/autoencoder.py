@@ -98,7 +98,7 @@ class autoencoder(LightningModule):
             self.train_ds,
             shuffle=True,
             batch_size=self.config["autoencoder_batch_size"],
-            num_workers=0)     
+            num_workers=20)     
 
         return data_loader
 
@@ -107,7 +107,7 @@ class autoencoder(LightningModule):
             self.val_ds,
             shuffle=False,
             batch_size=self.config["autoencoder_batch_size"],
-            num_workers=0)     
+            num_workers=20)     
 
         return data_loader
     
@@ -158,7 +158,7 @@ class autoencoder(LightningModule):
         return loss
         
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=0.0001)
+        optimizer = optim.Adam(self.parameters(), lr=0.00001)
         
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                          mode='min',
