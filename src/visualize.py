@@ -11,13 +11,13 @@ from rasterio.plot import show
 from src import neon_paths
 import tempfile
 
-def index_to_example(index, test_csv, test_crowns, test_points, rgb_pool, comet_experiment):
+def index_to_example(index, test, test_crowns, test_points, rgb_pool, comet_experiment):
     """Function to plot an RGB image, the NEON field point and the deepforest crown given a test index
     Args:
         index: pandas index .loc for test.csv
-        test_csv (str): path to test.csv
-        test_crowns (str): path to test_crowns.shp, see generate.py
-        test_points (str): path to test_points.csv see generate.py
+        test_csv (pandas df): dataframe from data.py
+        test_crowns (geopandas gdf): see generate.py
+        test_points (pandas df): see generate.py
         rgb_pool: config glob path to search for rgb images, see config.yml
         experiment: comet_experiment
     Returns:
@@ -25,9 +25,6 @@ def index_to_example(index, test_csv, test_crowns, test_points, rgb_pool, comet_
         sample_id: comet id
     """
     tmpdir = tempfile.gettempdir()
-    test = pd.read_csv(test_csv)
-    test_crowns = gpd.read_file(test_crowns)
-    test_points = gpd.read_file(test_points)
     individual = os.path.splitext(os.path.basename(test.loc[index]["image_path"]))[0]
     
     fig = plt.figure(0)
@@ -59,7 +56,7 @@ def index_to_example(index, test_csv, test_crowns, test_points, rgb_pool, comet_
     # Return sample, assetId (index is added automatically)
     return {"sample": image_name, "assetId": results["imageId"]}
 
-def confusion_matrix(comet_experiment, results, species_label_dict, test_csv, test_points, test_crowns, rgb_pool):
+def confusion_matrix(comet_experiment, results, species_label_dict, test, test_points, test_crowns, rgb_pool):
     #Confusion matrix
     comet_experiment.log_confusion_matrix(
         results.label.values,
@@ -67,7 +64,7 @@ def confusion_matrix(comet_experiment, results, species_label_dict, test_csv, te
         labels=list(species_label_dict.keys()),
         max_categories=len(species_label_dict.keys()),
         index_to_example_function=index_to_example,
-        test_csv=test_csv,
+        test=test,
         test_points=test_points,
         test_crowns=test_crowns,
         rgb_pool=rgb_pool,

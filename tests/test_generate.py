@@ -4,6 +4,8 @@ import glob
 import geopandas as gpd
 import pandas as pd
 from deepforest import main
+import rasterio
+import os
 
 def test_predict_trees(rgb_path, plot_data):
     m = main.deepforest()
@@ -61,7 +63,7 @@ def test_run(tmpdir, sample_crowns, rgb_pool):
         raw_box_savedir=tmpdir
     ) 
     
-    assert len(glob.glob("{}/*.shp".format(tmpdir))) > 0
+    assert len(glob.glob("{}/*.shp".format(tmpdir))) > 0    
 
 def test_generate_crops(tmpdir, ROOT, rgb_path):
     data_path = "{}/tests/data/crown.shp".format(ROOT)
@@ -74,3 +76,7 @@ def test_generate_crops(tmpdir, ROOT, rgb_path):
     assert not annotations.empty
     assert all([x in ["image_path","label","site","siteID","plotID","individualID","taxonID","point_id","box_id","RGB_tile"] for x in annotations.columns])
     assert len(annotations.box_id.unique()) == annotations.shape[0]
+    
+    #make sure the correct resolution, should be a large image > 50 pixels
+    image_path = os.path.join(tmpdir, annotations.image_path.iloc[0])
+    assert rasterio.open(image_path).read().shape[1] > 50

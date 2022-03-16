@@ -10,10 +10,10 @@ HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/
 #NEON data filtering
 min_stem_diameter: 10
 #Minimum number of test samples per class to be included
-min_train_samples: 7
-min_test_samples: 5
+min_train_samples: 5
+min_test_samples: 4
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
-iterations: 4000
+iterations: 10000
 #minimum CHM height, leave blank to skip CHM filtering
 min_CHM_height: 1
 #Max difference between measured height and CHM height if CHM > height
@@ -21,30 +21,30 @@ max_CHM_diff: 4
 #Max difference between measured height and CHM height if CHM < height
 CHM_height_limit: 8
 
-#Dead model filter
-dead_model: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/9192d967fa324eecb8cf2107e4673a00.pl
-dead_threshold: 0.95
-
 #Megaplot XY Data, these are .shp files saved as the siteID
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
+#Checkout data artifact from comet
+use_data_commit: 090c992c3a75404e9b5747ddd619992b
+
 #Make new dataset
-regenerate: False
+data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 #Overwrite existing crops
 replace: True
 #Use existing plotIDs for train/test split
 new_train_test_split: True
-#Directoy to store cropped images from crowns
-crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/crops/
-RGB_crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/rgb_crops/
+
+#How many samples from non-osbs sites can we use per species
+samples_from_other_sites: 0
 
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
 preload_images: True
 workers: 0
+sampling_ceiling: 100
 
 #Autoencoder
 autoencoder_batch_size: 32
@@ -52,28 +52,34 @@ autoencoder_epochs: 100
 autoencoder_depth: 16
 
 #Network Parameters
+pretrain_state_dict:
 gpus: 1
-batch_size: 32
+batch_size: 128
 bands: 369
-lr: 0.00005
+lr: 0.0001
 fast_dev_run: False
 accelerator: dp
-epochs: 120
-
-#Spatial smooth
-#Distance radius to search
-neighbor_buffer_size: 3
-#degree of neighborhood effect (0-1)
-neighborhood_strength: 0.1
+epochs: 125
 
 #Evaluation config
 #Top k class recall score
 top_k: 4
 #Number of individuals to plot in comet graphics tab
-plot_n_individuals: 10
+plot_n_individuals: 100
 
 #Predict
 predict_batch_size: 1024
 
 #Comet dashboard
 comet_workspace: bw4sz
+
+## Alive Dead Model Training
+dead:
+    train_dir: data/raw/dead_train/
+    test_dir: data/raw/dead_test/
+    epochs: 40
+    lr: 0.0001
+    savedir: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/
+    batch_size: 128
+    num_workers: 0
+    predict_batch_size: 128

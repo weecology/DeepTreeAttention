@@ -49,7 +49,6 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None, geo_index=None):
         except Exception as e:
             raise ValueError("No matches for geoindex {} in sensor pool with bounds {}".format(geo_index, bounds))
     else:
-
         #Get file metadata from name string
         basename = os.path.splitext(os.path.basename(shapefile))[0]
         geo_index = re.search("(\d+_\d+)_image", basename).group(1)
