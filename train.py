@@ -70,7 +70,7 @@ else:
 
 #Autoencoder for dimensionality reduction
 train = pd.read_csv("/orange/idtrees-collab/mining/mining.csv")
-autoencoder_model = autoencoder.autoencoder(train_df=train.head(20000), val_df=data_module.test, classes=data_module.num_classes, config=config, comet_logger=comet_logger)
+autoencoder_model = autoencoder.autoencoder(train_df=train, val_df=data_module.test, classes=data_module.num_classes, config=config, comet_logger=comet_logger)
 trainer = Trainer(
     gpus=data_module.config["gpus"],
     fast_dev_run=data_module.config["fast_dev_run"],
