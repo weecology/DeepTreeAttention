@@ -67,7 +67,7 @@ class TreeModel(LightningModule):
         individual, inputs, y = batch
         images = inputs["HSI"]
         y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat, y)    
+        loss = F.cross_entropy(y_hat[-1], y)    
 
         return loss
 
@@ -78,7 +78,7 @@ class TreeModel(LightningModule):
         individual, inputs, y = batch
         images = inputs["HSI"]        
         y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat, y)        
+        loss = F.cross_entropy(y_hat[-1], y)        
         
         # Log loss and metrics
         self.log("val_loss", loss, on_epoch=True)
@@ -147,7 +147,7 @@ class TreeModel(LightningModule):
         batch = torch.unsqueeze(image, dim=0)
         with torch.no_grad():
             y = self.model(batch)  
-        index = np.argmax(y, 1).numpy()[0]
+        index = np.argmax(y[-1], 1).numpy()[0]
         
         if return_numeric:
             return index
@@ -248,11 +248,15 @@ class TreeModel(LightningModule):
             images = inputs["HSI"]
             images = images.cuda()
             pred = self.model(images)
+            #Last spectral block
+            pred = pred[-1]
             pred = pred.cpu()
         else:
             images = inputs["HSI"]
             pred = self.model(images)
-            
+            #Last spectral block            
+            pred = pred[-1]
+        
         return pred
     
     def predict_dataloader(self, data_loader, test_crowns=None, test_points=None, plot_n_individuals=1, return_features=False, experiment=None, train=True):
