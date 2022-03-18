@@ -72,7 +72,7 @@ for x in data_module.species_label_dict:
     
 loss_weight = np.array(loss_weight/np.max(loss_weight))
 #Provide min value
-loss_weight[loss_weight < 0.8] = 0.8
+loss_weight[loss_weight < 0.1] = 0.1
 comet_logger.experiment.log_parameter("loss_weight", loss_weight)
 
 m = main.TreeModel(
