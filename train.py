@@ -3,6 +3,7 @@ import comet_ml
 import glob
 import geopandas as gpd
 import os
+import numpy as np
 from src import main
 from src import data
 from src import start_cluster
@@ -69,7 +70,7 @@ loss_weight = []
 for x in data_module.species_label_dict:
     loss_weight.append(1/data_module.train[data_module.train.taxonID==x].shape[0])
     
-loss_weight = loss_weight/loss_weight.max()
+loss_weight = loss_weight/np.max(loss_weight)
 
 m = main.TreeModel(
     model=model, 
