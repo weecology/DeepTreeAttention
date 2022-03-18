@@ -26,7 +26,7 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Checkout data artifact from comet
-use_data_commit:
+use_data_commit: 713985712b3445b2a7dd53c04c36f6fb
 
 #Make new dataset
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
@@ -37,7 +37,7 @@ replace: True
 new_train_test_split: True
 
 #How many samples from non-osbs sites can we use per species
-samples_from_other_sites: 10
+samples_from_other_sites: 0
 
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
