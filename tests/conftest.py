@@ -104,7 +104,7 @@ def experiment():
 @pytest.fixture(scope="session")
 def m(config, dm, ROOT):
     model = Hang2020.spectral_network(bands=3, classes=3)
-    m = main.TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict)
+    m = main.TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict, loss_weight=[0.1,0.8,1])
     m.ROOT = "{}/tests/".format(ROOT)
     
     return m

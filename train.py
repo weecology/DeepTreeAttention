@@ -3,6 +3,7 @@ import comet_ml
 import glob
 import geopandas as gpd
 import os
+import numpy as np
 from src import main
 from src import data
 from src import start_cluster
@@ -64,9 +65,20 @@ if not config["use_data_commit"]:
 #Load from state dict of previous run
 model = Hang2020.spectral_network(bands=config["bands"], classes=data_module.num_classes)
 
+#Loss weight, balanced
+loss_weight = []
+for x in data_module.species_label_dict:
+    loss_weight.append(1/data_module.train[data_module.train.taxonID==x].shape[0])
+    
+loss_weight = np.array(loss_weight/np.max(loss_weight))
+#Provide min value
+loss_weight[loss_weight < 0.5] = 0.5
+comet_logger.experiment.log_parameter("loss_weight", loss_weight)
+
 m = main.TreeModel(
     model=model, 
     classes=data_module.num_classes, 
+    loss_weight=loss_weight,
     label_dict=data_module.species_label_dict)
 
 #Create trainer
