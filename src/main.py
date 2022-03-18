@@ -57,15 +57,15 @@ class TreeModel(LightningModule):
              "Macro Accuracy":macro_recall,
              "Top {} Accuracy".format(self.config["top_k"]): top_k_recall
              })
+                
         
-    
+        self.save_hyperparameters()
+        
         #Weighted loss
         if torch.cuda.is_available():
             self.loss_weight = torch.tensor(loss_weight, device="cuda", dtype=float)
         else:
-            self.loss_weight = torch.tensor(loss_weight, dtype=float)            
-        
-        self.save_hyperparameters()
+            self.loss_weight = torch.tensor(loss_weight, dtype=float)        
 
         
     def training_step(self, batch, batch_idx):
