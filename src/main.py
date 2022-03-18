@@ -60,7 +60,10 @@ class TreeModel(LightningModule):
         
     
         #Weighted loss
-        self.loss_weight = torch.tensor(loss_weight, device=self.device)
+        if torch.cuda.is_available():
+            self.loss_weight = torch.tensor(loss_weight, device="cuda")
+        else:
+            self.loss_weight = torch.tensor(loss_weight)            
         
         self.save_hyperparameters()
 
