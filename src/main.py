@@ -60,7 +60,7 @@ class TreeModel(LightningModule):
         
     
         #Weighted loss
-        self.loss_weight = torch.tensor(loss_weight)
+        self.loss_weight = torch.tensor(loss_weight, device=self.device)
         
         self.save_hyperparameters()
 
