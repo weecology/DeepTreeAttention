@@ -72,6 +72,8 @@ for x in data_module.species_label_dict:
     
 loss_weight = loss_weight/np.max(loss_weight)
 
+comet_logger.experiment.log_parameter("loss_weight", loss_weight)
+
 m = main.TreeModel(
     model=model, 
     classes=data_module.num_classes, 
