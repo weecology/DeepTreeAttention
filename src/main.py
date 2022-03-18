@@ -30,7 +30,7 @@ class TreeModel(LightningModule):
     Args:
         model (str): Model to use. See the models/ directory. The name is the filename, each model should take in the same data loader
     """
-    def __init__(self, model, classes, label_dict, config=None, *args, **kwargs):
+    def __init__(self, model, classes, label_dict, loss_weight=None, config=None, *args, **kwargs):
         super().__init__()
         self.ROOT = os.path.dirname(os.path.dirname(__file__))    
         self.tmpdir = tempfile.gettempdir()
@@ -57,9 +57,14 @@ class TreeModel(LightningModule):
              "Macro Accuracy":macro_recall,
              "Top {} Accuracy".format(self.config["top_k"]): top_k_recall
              })
+        
+    
+        #Weighted loss
+        self.loss_weight = torch.tensor(loss_weight)
+        
         self.save_hyperparameters()
 
-
+        
     def training_step(self, batch, batch_idx):
         """Calculate train loss
         """
@@ -67,7 +72,7 @@ class TreeModel(LightningModule):
         individual, inputs, y = batch
         images = inputs["HSI"]
         y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat[-1], y)    
+        loss = F.cross_entropy(y_hat[-1], y, weight=self.loss_weight)    
 
         return loss
 
@@ -78,7 +83,7 @@ class TreeModel(LightningModule):
         individual, inputs, y = batch
         images = inputs["HSI"]        
         y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat[-1], y)        
+        loss = F.cross_entropy(y_hat[-1], y, weight=self.loss_weight)        
         
         # Log loss and metrics
         self.log("val_loss", loss, on_epoch=True)

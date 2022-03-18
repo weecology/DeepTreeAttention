@@ -64,9 +64,17 @@ if not config["use_data_commit"]:
 #Load from state dict of previous run
 model = Hang2020.spectral_network(bands=config["bands"], classes=data_module.num_classes)
 
+#Loss weight, balanced
+loss_weight = []
+for x in self.species_label_dict:
+    loss_weight.append(1/data_module.train[data_module.train.taxonID==x].shape[0])
+    
+loss_weight = loss_weight/loss_weight.max()
+
 m = main.TreeModel(
     model=model, 
     classes=data_module.num_classes, 
+    loss_weight=loss_weight,
     label_dict=data_module.species_label_dict)
 
 #Create trainer
