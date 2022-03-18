@@ -59,7 +59,7 @@ class TreeModel(LightningModule):
              })
                 
         
-        self.save_hyperparameters()
+        #self.save_hyperparameters()
         
         #Weighted loss
         if torch.cuda.is_available():
