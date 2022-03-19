@@ -334,7 +334,7 @@ class TreeData(LightningDataModule):
                     megaplot_data = megaplot_data[~(megaplot_data.filename.str.contains("IFAS"))]
                     
                     df = pd.concat([megaplot_data, df])
-
+                
                 if not self.debug:
                     data_from_other_sites = df[~(df.siteID=="OSBS")]
                     data_from_OSBS = df[(df.siteID=="OSBS")]
@@ -344,7 +344,7 @@ class TreeData(LightningDataModule):
                     
                 #hard sampling cutoff
                 df = df.groupby("taxonID").apply(lambda x: x.head(self.config["sampling_ceiling"])).reset_index(drop=True)
-                            
+                
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter", len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples before CHM filter", df.shape[0])
@@ -496,6 +496,11 @@ class TreeData(LightningDataModule):
             print("Loading previous run")            
             self.train = pd.read_csv("{}/train.csv".format(self.data_dir))
             self.test = pd.read_csv("{}/test.csv".format(self.data_dir))
+            self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
+            #mimic schema due to abbreviation when .shp is saved
+            self.crowns["individualID"] = self.crowns["individual"]
+            self.canopy_points = gpd.read_file("{}/canopy_points.shp".format(self.data_dir))
+            self.canopy_points["individualID"] = self.canopy_points["individual"]
             
             #Store class labels
             unique_species_labels = np.concatenate([self.train.taxonID.unique(), self.test.taxonID.unique()])
@@ -521,7 +526,7 @@ class TreeData(LightningDataModule):
             
             #Create dataloaders
             self.train_ds = TreeDataset(
-                csv_file = self.train_file,
+                csv_file = "{}/train.csv".format(self.data_dir),
                 config=self.config,
                 HSI=self.HSI,
                 year=2021,
@@ -543,6 +548,7 @@ class TreeData(LightningDataModule):
             shuffle=True,
             num_workers=self.config["workers"],
             collate_fn=my_collate
+            )
         
         return data_loader
     

@@ -30,7 +30,7 @@ class TreeModel(LightningModule):
     Args:
         model (str): Model to use. See the models/ directory. The name is the filename, each model should take in the same data loader
     """
-    def __init__(self,model, classes, label_dict, config=None, *args, **kwargs):
+    def __init__(self, model, classes, label_dict, loss_weight=None, config=None, *args, **kwargs):
         super().__init__()
     
         self.ROOT = os.path.dirname(os.path.dirname(__file__))    
@@ -53,9 +53,20 @@ class TreeModel(LightningModule):
         micro_recall = torchmetrics.Accuracy(average="micro")
         macro_recall = torchmetrics.Accuracy(average="macro", num_classes=classes)
         top_k_recall = torchmetrics.Accuracy(average="micro",top_k=self.config["top_k"])
-        self.metrics = torchmetrics.MetricCollection({"Micro Accuracy":micro_recall,"Macro Accuracy":macro_recall,"Top {} Accuracy".format(self.config["top_k"]): top_k_recall})
+
+        self.metrics = torchmetrics.MetricCollection(
+            {"Micro Accuracy":micro_recall,
+             "Macro Accuracy":macro_recall,
+             "Top {} Accuracy".format(self.config["top_k"]): top_k_recall
+             })
+
+        #self.save_hyperparameters()
         
-        self.save_hyperparameters()
+        #Weighted loss
+        if torch.cuda.is_available():
+            self.loss_weight = torch.tensor(loss_weight, device="cuda", dtype=torch.float)
+        else:
+            self.loss_weight = torch.tensor(loss_weight, dtype=torch.float)        
         
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
@@ -64,8 +75,8 @@ class TreeModel(LightningModule):
         individual, inputs, y = batch
         images = inputs["HSI"]
         y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat, y)    
-        
+        loss = F.cross_entropy(y_hat[-1], y, weight=self.loss_weight)    
+
         return loss
     
     def validation_step(self, batch, batch_idx):
@@ -75,7 +86,7 @@ class TreeModel(LightningModule):
         individual, inputs, y = batch
         images = inputs["HSI"]        
         y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat, y)        
+        loss = F.cross_entropy(y_hat[-1], y, weight=self.loss_weight)        
         
         # Log loss and metrics
         self.log("val_loss", loss, on_epoch=True)
@@ -99,6 +110,28 @@ class TreeModel(LightningModule):
         self.log("Epoch Micro Accuracy", final_micro)
         self.log("Epoch Macro Accuracy", final_macro)
         
+        # Log results by species
+        taxon_accuracy = torchmetrics.functional.accuracy(
+            preds=torch.tensor(results.pred_label_top1.values),
+            target=torch.tensor(results.label.values), 
+            average="none", 
+            num_classes=self.classes
+        )
+        taxon_precision = torchmetrics.functional.precision(
+            preds=torch.tensor(results.pred_label_top1.values),
+            target=torch.tensor(results.label.values),
+            average="none",
+            num_classes=self.classes
+        )
+        species_table = pd.DataFrame(
+            {"taxonID":self.label_to_index.keys(),
+             "accuracy":taxon_accuracy,
+             "precision":taxon_precision
+             })
+        
+        for key, value in species_table.set_index("taxonID").accuracy.to_dict().items():
+            self.log("Epoch_{}_accuracy".format(key), value)
+            
     def configure_optimizers(self):
         optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
         
@@ -122,7 +155,7 @@ class TreeModel(LightningModule):
         batch = torch.unsqueeze(image, dim=0)
         with torch.no_grad():
             y = self.model(batch)  
-        index = np.argmax(y, 1).numpy()[0]
+        index = np.argmax(y[-1], 1).numpy()[0]
         
         if return_numeric:
             return index
@@ -224,14 +257,18 @@ class TreeModel(LightningModule):
             images = inputs["HSI"]
             images = images.cuda()
             pred = self.model(images)
+            #Last spectral block
+            pred = pred[-1]
             pred = pred.cpu()
         else:
             images = inputs["HSI"]
             pred = self.model(images)
-            
+            #Last spectral block            
+            pred = pred[-1]
+        
         return pred
     
-    def predict_dataloader(self, data_loader, plot_n_individuals=1, return_features=False, experiment=None, train=True):
+    def predict_dataloader(self, data_loader, test_crowns=None, test_points=None, plot_n_individuals=1, return_features=False, experiment=None, train=True):
         """Given a file with paths to image crops, create crown predictions 
         The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
         unique identifier for each crown and counter is 0..n pixel crops that belong to that crown.
@@ -312,10 +349,7 @@ class TreeModel(LightningModule):
             
         if experiment:
             #load image pool and crown predicrions
-            rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
-            test_points = gpd.read_file("{}/data/processed/canopy_points.shp".format(self.ROOT))   
-            test_crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
-            
+            rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)            
             plt.ion()
             for index, row in df.sample(n=plot_n_individuals).iterrows():
                 fig = plt.figure(0)
@@ -341,7 +375,7 @@ class TreeModel(LightningModule):
                 ax.add_collection(PatchCollection(patches, match_original=True))
                 
                 #Plot field coordinate
-                stem = test_points[test_points.individual == individual]
+                stem = test_points[test_points.individualID == individual]
                 stem.plot(ax=ax)
                 
                 plt.savefig("{}/{}.png".format(self.tmpdir, row["individual"]))
@@ -355,19 +389,26 @@ class TreeModel(LightningModule):
         else:
             return df
     
-    def evaluate_crowns(self, data_loader, experiment=None):
+    def evaluate_crowns(self, data_loader, crowns, points=None, experiment=None):
         """Crown level measure of accuracy
         Args:
             data_loader: TreeData dataset
             experiment: optional comet experiment
+            points: the canopy_points.shp from the data_module
         Returns:
             df: results dataframe
             metric_dict: metric -> value
         """
-        results, features = self.predict_dataloader(data_loader=data_loader, plot_n_individuals=self.config["plot_n_individuals"], experiment=experiment, return_features=True)
+        results, features = self.predict_dataloader(
+            data_loader=data_loader,
+            plot_n_individuals=self.config["plot_n_individuals"],
+            experiment=experiment,
+            test_crowns=crowns,
+            test_points=points,
+            return_features=True
+        )
         
-        #read in crowns data
-        crowns = gpd.read_file("{}/data/processed/crowns.shp".format(self.ROOT))   
+        # Read in crowns data
         results = results.merge(crowns.drop(columns="label"), on="individual")
         results = gpd.GeoDataFrame(results, geometry="geometry")    
         
