@@ -116,10 +116,11 @@ visualize.confusion_matrix(
 )
 
 #Temporal
-results["pred_label_top1"] = results["temporal_pred_label_top1"]
+temporal_only = results.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
+temporal_only["pred_label_top1"] = temporal_only["temporal_pred_label_top1"]
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
-    results=results,
+    results=temporal_only,
     species_label_dict=data_module.species_label_dict,
     test_crowns=data_module.crowns,
     test=data_module.test,
