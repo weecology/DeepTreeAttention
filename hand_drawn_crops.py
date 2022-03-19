@@ -15,7 +15,6 @@ rgb_pool = glob.glob(config["rgb_sensor_pool"], recursive=True)
 for index, row in crowns.iterrows():
     sensor_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=row["geometry"].bounds)
     basename = row["individual"]
-    left, top, right, bottom = row["geometry"].bounds
-    bounds = [left -5, right +5, top + 5, bottom -5]
+    bounds = row["geometry"].buffer(5).bounds
     patches.crop(bounds, sensor_path, savedir="/orange/idtrees-collab/DeepTreeAttention/hand_annotations/", basename=basename)
 
