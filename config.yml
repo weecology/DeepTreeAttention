@@ -10,8 +10,8 @@ HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/
 #NEON data filtering
 min_stem_diameter: 10
 #Minimum number of test samples per class to be included
-min_train_samples: 5
-min_test_samples: 4
+min_train_samples: 15
+min_test_samples: 10
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
 iterations: 10000
 #minimum CHM height, leave blank to skip CHM filtering
@@ -26,7 +26,7 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Checkout data artifact from comet
-use_data_commit: 713985712b3445b2a7dd53c04c36f6fb
+use_data_commit: 
 
 #Make new dataset
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
@@ -54,7 +54,7 @@ bands: 369
 lr: 0.0001
 fast_dev_run: False
 accelerator: dp
-epochs: 150
+epochs: 160
 
 #Evaluation config
 #Top k class recall score

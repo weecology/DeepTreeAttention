@@ -104,6 +104,19 @@ results = m.evaluate_crowns(
 )
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 
+#Confusion matrix all years
+visualize.confusion_matrix(
+    comet_experiment=comet_logger.experiment,
+    results=results,
+    species_label_dict=data_module.species_label_dict,
+    test_crowns=data_module.crowns,
+    test=data_module.test,
+    test_points=data_module.canopy_points,
+    rgb_pool=rgb_pool
+)
+
+#Temporal
+results["pred_label_top1"] = results["temporal_pred_label_top1"]
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
     results=results,
