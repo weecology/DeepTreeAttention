@@ -311,7 +311,7 @@ class TreeData(LightningDataModule):
         except:
             pass
         
-    def setup(self,stage=None):
+    def setup(self,year=None, stage=None):
         # Clean data from raw csv, regenerate from scratch or check for progress and complete
         if not self.config["use_data_commit"]:
                         
@@ -482,6 +482,7 @@ class TreeData(LightningDataModule):
                 csv_file = "{}/train.csv".format(self.data_dir),
                 config=self.config,
                 HSI=self.HSI,
+                year=year,
                 metadata=self.metadata
             )
             
@@ -489,6 +490,7 @@ class TreeData(LightningDataModule):
                 csv_file = "{}/test.csv".format(self.data_dir),
                 config=self.config,
                 HSI=self.HSI,
+                year=year,
                 metadata=self.metadata
             )
              

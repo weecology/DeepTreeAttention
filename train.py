@@ -76,24 +76,28 @@ loss_weight[loss_weight < 0.5] = 0.5
 
 comet_logger.experiment.log_parameter("loss_weight", loss_weight)
 
-m = main.TreeModel(
-    model=model, 
-    classes=data_module.num_classes, 
-    loss_weight=loss_weight,
-    label_dict=data_module.species_label_dict)
+year_model = {}
+for x in data_module.train.tile_year.unique():
+    data_module.setup(year=x)    
+    year_model[x] = main.TreeModel(
+        model=model, 
+        classes=data_module.num_classes, 
+        loss_weight=loss_weight,
+        label_dict=data_module.species_label_dict)
+    
+    #Create trainer
+    lr_monitor = LearningRateMonitor(logging_interval='epoch')
+    trainer = Trainer(
+        gpus=data_module.config["gpus"],
+        fast_dev_run=data_module.config["fast_dev_run"],
+        max_epochs=data_module.config["epochs"],
+        accelerator=data_module.config["accelerator"],
+        checkpoint_callback=False,
+        callbacks=[lr_monitor],
+        logger=comet_logger)
 
-#Create trainer
-lr_monitor = LearningRateMonitor(logging_interval='epoch')
-trainer = Trainer(
-    gpus=data_module.config["gpus"],
-    fast_dev_run=data_module.config["fast_dev_run"],
-    max_epochs=data_module.config["epochs"],
-    accelerator=data_module.config["accelerator"],
-    checkpoint_callback=False,
-    callbacks=[lr_monitor],
-    logger=comet_logger)
-
-trainer.fit(m, datamodule=data_module)
+    trainer.fit(year_model[x], datamodule=data_module)
+    
 #Save model checkpoint
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
 results = m.evaluate_crowns(
