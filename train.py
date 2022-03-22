@@ -81,59 +81,60 @@ year_results = []
 year_individuals = {}
 
 for x in data_module.train.tile_year.unique():
-    data_module.setup(year=x)    
-    year_model[x] = main.TreeModel(
-        model=model, 
-        classes=data_module.num_classes, 
-        loss_weight=loss_weight,
-        label_dict=data_module.species_label_dict)
+    with comet_logger.experiment.context_manager(x):
+        data_module.setup(year=x)    
+        year_model[x] = main.TreeModel(
+            model=model, 
+            classes=data_module.num_classes, 
+            loss_weight=loss_weight,
+            label_dict=data_module.species_label_dict)
+        
+        #Create trainer
+        lr_monitor = LearningRateMonitor(logging_interval='epoch')
+        trainer = Trainer(
+            gpus=data_module.config["gpus"],
+            fast_dev_run=data_module.config["fast_dev_run"],
+            max_epochs=data_module.config["epochs"],
+            accelerator=data_module.config["accelerator"],
+            checkpoint_callback=False,
+            callbacks=[lr_monitor],
+            logger=comet_logger)
     
-    #Create trainer
-    lr_monitor = LearningRateMonitor(logging_interval='epoch')
-    trainer = Trainer(
-        gpus=data_module.config["gpus"],
-        fast_dev_run=data_module.config["fast_dev_run"],
-        max_epochs=data_module.config["epochs"],
-        accelerator=data_module.config["accelerator"],
-        checkpoint_callback=False,
-        callbacks=[lr_monitor],
-        logger=comet_logger)
-
-    trainer.fit(year_model[x], datamodule=data_module)
-    
-    #Save model checkpoint
-    trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
-    results, features = m.predict_dataloader(
-        data_loader=data_module.val_dataloader(),
-        experiment=None,
-        return_features=True
-    )
-    
-    for index, row in enumerate(features):
-        try:
-            year_individuals[results.individual.iloc[index]].append(row)
-        except :
-            year_individuals[results.individual.iloc[index]] = [row]
-            
-    results = m.evaluate_crowns(
-        data_module.val_dataloader(),
-        crowns = data_module.crowns,
-        experiment=comet_logger.experiment,
-        points=data_module.canopy_points
-    )
-    rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
-    results["year"] = x
-    year_results.append(results)
-    #Confusion matrix all years
-    visualize.confusion_matrix(
-        comet_experiment=comet_logger.experiment,
-        results=results,
-        species_label_dict=data_module.species_label_dict,
-        test_crowns=data_module.crowns,
-        test=data_module.test,
-        test_points=data_module.canopy_points,
-        rgb_pool=rgb_pool
-    )
+        trainer.fit(year_model[x], datamodule=data_module)
+        
+        #Save model checkpoint
+        trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
+        results, features = m.predict_dataloader(
+            data_loader=data_module.val_dataloader(),
+            experiment=None,
+            return_features=True
+        )
+        
+        for index, row in enumerate(features):
+            try:
+                year_individuals[results.individual.iloc[index]].append(row)
+            except :
+                year_individuals[results.individual.iloc[index]] = [row]
+                
+        results = m.evaluate_crowns(
+            data_module.val_dataloader(),
+            crowns = data_module.crowns,
+            experiment=comet_logger.experiment,
+            points=data_module.canopy_points
+        )
+        rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
+        results["year"] = x
+        year_results.append(results)
+        #Confusion matrix all years
+        visualize.confusion_matrix(
+            comet_experiment=comet_logger.experiment,
+            results=results,
+            species_label_dict=data_module.species_label_dict,
+            test_crowns=data_module.crowns,
+            test=data_module.test,
+            test_points=data_module.canopy_points,
+            rgb_pool=rgb_pool
+        )
 
 #Average among years
 temporal_prediction = []
