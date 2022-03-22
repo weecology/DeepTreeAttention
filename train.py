@@ -77,6 +77,9 @@ loss_weight[loss_weight < 0.5] = 0.5
 comet_logger.experiment.log_parameter("loss_weight", loss_weight)
 
 year_model = {}
+year_results = []
+year_individuals = {}
+
 for x in data_module.train.tile_year.unique():
     data_module.setup(year=x)    
     year_model[x] = main.TreeModel(
@@ -98,30 +101,57 @@ for x in data_module.train.tile_year.unique():
 
     trainer.fit(year_model[x], datamodule=data_module)
     
-#Save model checkpoint
-trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
-results = m.evaluate_crowns(
-    data_module.val_dataloader(),
-    crowns = data_module.crowns,
-    experiment=comet_logger.experiment,
-    points=data_module.canopy_points
-)
-rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
+    #Save model checkpoint
+    trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
+    results, features = m.predict_dataloader(
+        data_loader=data_module.val_dataloader(),
+        experiment=None,
+        return_features=True
+    )
+    
+    for index, row in enumerate(features):
+        try:
+            year_individuals[results.individual.iloc[index]].append(row)
+        except :
+            year_individuals[results.individual.iloc[index]] = [row]
+            
+    results = m.evaluate_crowns(
+        data_module.val_dataloader(),
+        crowns = data_module.crowns,
+        experiment=comet_logger.experiment,
+        points=data_module.canopy_points
+    )
+    rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
+    results["year"] = x
+    year_results.append(results)
+    #Confusion matrix all years
+    visualize.confusion_matrix(
+        comet_experiment=comet_logger.experiment,
+        results=results,
+        species_label_dict=data_module.species_label_dict,
+        test_crowns=data_module.crowns,
+        test=data_module.test,
+        test_points=data_module.canopy_points,
+        rgb_pool=rgb_pool
+    )
 
-#Confusion matrix all years
-visualize.confusion_matrix(
-    comet_experiment=comet_logger.experiment,
-    results=results,
-    species_label_dict=data_module.species_label_dict,
-    test_crowns=data_module.crowns,
-    test=data_module.test,
-    test_points=data_module.canopy_points,
-    rgb_pool=rgb_pool
-)
+#Average among years
+temporal_prediction = []
+temporal_score = []
+for x in results.individual:
+    year_mean = np.mean(np.vstack(year_individuals[x]), axis=1)
+    temporal_prediction.append(np.argmax(year_mean))
+    temporal_score.append(np.max(year_mean))
 
-#Temporal
+#Set prediction and taxa ID
+results["temporal_pred_label_top1"] = temporal_prediction
+results["temporal_top1_score"] = temporal_score
+df["temporal_taxa_top1"] = df["temporal_pred_label_top1"].apply(lambda x: self.index_to_label[x]) 
+
+#Confusion matrix
 temporal_only = results.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
 temporal_only["pred_label_top1"] = temporal_only["temporal_pred_label_top1"]
+
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
     results=temporal_only,
