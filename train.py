@@ -104,7 +104,7 @@ for x in data_module.train.tile_year.unique():
         
         #Save model checkpoint
         trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
-        results, features = m.predict_dataloader(
+        results, features = year_model[x].predict_dataloader(
             data_loader=data_module.val_dataloader(),
             experiment=None,
             return_features=True
@@ -116,7 +116,7 @@ for x in data_module.train.tile_year.unique():
             except :
                 year_individuals[results.individual.iloc[index]] = [row]
                 
-        results = m.evaluate_crowns(
+        results = year_model[x].evaluate_crowns(
             data_module.val_dataloader(),
             crowns = data_module.crowns,
             experiment=comet_logger.experiment,
