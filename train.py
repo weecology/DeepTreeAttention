@@ -11,6 +11,8 @@ from src.models import Hang2020
 from src import visualize
 from src import metrics
 import sys
+import torch
+import torchmetrics
 from pytorch_lightning import Trainer
 import subprocess
 from pytorch_lightning.loggers import CometLogger
@@ -147,12 +149,19 @@ for x in results.individual:
 #Set prediction and taxa ID
 results["temporal_pred_label_top1"] = temporal_prediction
 results["temporal_top1_score"] = temporal_score
-df["temporal_taxa_top1"] = df["temporal_pred_label_top1"].apply(lambda x: self.index_to_label[x]) 
+results["temporal_taxa_top1"] = results["temporal_pred_label_top1"].apply(lambda x: data_module.index_to_label[x]) 
 
 #Confusion matrix
 temporal_only = results.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
 temporal_only["pred_label_top1"] = temporal_only["temporal_pred_label_top1"]
 
+#Temporal function
+temporal_micro = torchmetrics.functional.accuracy(preds=torch.tensor(temporal_only.temporal_pred_label_top1.values),target=torch.tensor(temporal_only.label.values), num_classes=data_module.num_classes,average="micro")
+temporal_macro = torchmetrics.functional.precision(preds=torch.tensor(temporal_only.temporal_pred_label_top1.values),target=torch.tensor(temporal_only.label.values), num_classes=data_module.num_classes, average="macro")
+
+comet_logger.experiment.log_metric("temporal_micro",temporal_micro)
+comet_logger.experiment.log_metric("temporal_macro",temporal_macro)
+    
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
     results=temporal_only,
