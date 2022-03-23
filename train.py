@@ -149,7 +149,7 @@ for x in results.individual:
 #Set prediction and taxa ID
 results["temporal_pred_label_top1"] = temporal_prediction
 results["temporal_top1_score"] = temporal_score
-results["temporal_taxa_top1"] = results["temporal_pred_label_top1"].apply(lambda x: data_module.index_to_label[x]) 
+results["temporal_taxa_top1"] = results["temporal_pred_label_top1"].apply(lambda x: data_module.species_label_dict[x]) 
 
 #Confusion matrix
 temporal_only = results.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
