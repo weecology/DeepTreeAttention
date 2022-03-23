@@ -153,7 +153,6 @@ results["temporal_taxa_top1"] = results["temporal_pred_label_top1"].apply(lambda
 
 #Confusion matrix
 temporal_only = results.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
-temporal_only["pred_label_top1"] = temporal_only["temporal_pred_label_top1"]
 
 #Temporal function
 temporal_micro = torchmetrics.functional.accuracy(preds=torch.tensor(temporal_only.temporal_pred_label_top1.values),target=torch.tensor(temporal_only.label.values), num_classes=data_module.num_classes,average="micro")
@@ -161,7 +160,8 @@ temporal_macro = torchmetrics.functional.precision(preds=torch.tensor(temporal_o
 
 comet_logger.experiment.log_metric("temporal_micro",temporal_micro)
 comet_logger.experiment.log_metric("temporal_macro",temporal_macro)
-    
+temporal_only["pred_label_top1"] = temporal_only["temporal_pred_label_top1"]
+
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
     results=temporal_only,
