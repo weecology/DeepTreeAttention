@@ -147,6 +147,10 @@ for x in results.individual:
     temporal_score.append(np.max(year_mean))
 
 #Confusion matrix
+#Set prediction and taxa ID
+results["temporal_pred_label_top1"] = temporal_prediction
+results["temporal_top1_score"] = temporal_score
+
 temporal_only = results.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
 
 #Temporal function
@@ -156,9 +160,7 @@ temporal_macro = torchmetrics.functional.precision(preds=torch.tensor(temporal_o
 comet_logger.experiment.log_metric("temporal_micro",temporal_micro)
 comet_logger.experiment.log_metric("temporal_macro",temporal_macro)
 
-#Set prediction and taxa ID
-results["temporal_pred_label_top1"] = temporal_prediction
-results["temporal_top1_score"] = temporal_score
+
 temporal_only["pred_label_top1"] = temporal_only["temporal_pred_label_top1"]
 
 visualize.confusion_matrix(
