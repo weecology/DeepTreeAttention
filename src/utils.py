@@ -64,3 +64,18 @@ def my_collate(batch):
     batch = list(filter (lambda x:x[1]["HSI"] is not None, batch))
     
     return torch.utils.data.dataloader.default_collate(batch)
+
+def ensemble(results, year_individuals):
+    """combine a set of results from main.evaluate crowns"""
+    #Average among years
+    temporal_prediction = []
+    temporal_score = []
+    for x in results.individual:
+        year_mean = np.mean(np.vstack(year_individuals[x]), axis=0)
+        temporal_prediction.append(np.argmax(year_mean))
+        temporal_score.append(np.max(year_mean))    
+    
+    results["temporal_pred_label_top1"] = temporal_prediction
+    results["temporal_top1_score"] = temporal_score
+    
+    return results
