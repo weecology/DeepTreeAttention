@@ -106,7 +106,7 @@ for x in data_module.train.tile_year.unique():
         trainer.fit(year_model[x], datamodule=data_module)
         
         #Save model checkpoint
-        trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
+        trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_{}.pl".format(comet_logger.experiment.id, x))
         results, features = year_model[x].predict_dataloader(
             data_loader=data_module.val_dataloader(),
             experiment=None,
