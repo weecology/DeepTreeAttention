@@ -10,6 +10,7 @@ from src import start_cluster
 from src.models import Hang2020
 from src import visualize
 from src import metrics
+from src import utils
 import sys
 import torch
 import torchmetrics
@@ -138,19 +139,11 @@ for x in data_module.train.tile_year.unique():
             rgb_pool=rgb_pool
         )
 
-#Average among years
-temporal_prediction = []
-temporal_score = []
-for x in results.individual:
-    year_mean = np.mean(np.vstack(year_individuals[x]), axis=1)
-    temporal_prediction.append(np.argmax(year_mean))
-    temporal_score.append(np.max(year_mean))
+results = pd.concat(year_results)
+results = utils.ensemble(results, year_individuals)
+results["pred_taxa_top1"] = results["temporal_pred_label_top1"].apply(lambda x: data_module.label_to_taxonID[x]) 
 
 #Confusion matrix
-#Set prediction and taxa ID
-results["temporal_pred_label_top1"] = temporal_prediction
-results["temporal_top1_score"] = temporal_score
-
 temporal_only = results.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
 
 #Temporal function
@@ -159,7 +152,6 @@ temporal_macro = torchmetrics.functional.precision(preds=torch.tensor(temporal_o
 
 comet_logger.experiment.log_metric("temporal_micro",temporal_micro)
 comet_logger.experiment.log_metric("temporal_macro",temporal_macro)
-
 
 temporal_only["pred_label_top1"] = temporal_only["temporal_pred_label_top1"]
 
