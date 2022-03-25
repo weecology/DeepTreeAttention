@@ -135,9 +135,10 @@ def predict_tile(PATH, species_model_dir, config, dead_model_path=None):
     trees, features = predict_species(HSI_path=PATH, crowns=filtered_crowns, models=models, config=config)
 
     # Remove predictions for dead trees
-    trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"pred_taxa_top1"] = "DEAD"
-    trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"pred_label_top1"] = None
-    trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"top1_score"] = None
+    if dead_model_path:
+        trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"pred_taxa_top1"] = "DEAD"
+        trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"pred_label_top1"] = None
+        trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"top1_score"] = None
     
     # Calculate crown area
     trees["crown_area"] = crowns.geometry.area
@@ -188,7 +189,8 @@ def predict_species(crowns, HSI_path, models, config):
     for year, m in enumerate(models):
         results, features = m.predict_dataloader(
             data_loader=data_loader,
-            return_features=True
+            return_features=True,
+            train=False
         )
         
         for index, row in enumerate(features):

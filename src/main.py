@@ -60,7 +60,7 @@ class TreeModel(LightningModule):
              "Top {} Accuracy".format(self.config["top_k"]): top_k_recall
              })
 
-        #self.save_hyperparameters()
+        self.save_hyperparameters()
         
         #Weighted loss
         if torch.cuda.is_available():

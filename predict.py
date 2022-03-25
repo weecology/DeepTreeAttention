@@ -53,12 +53,12 @@ for x in tif_futures:
         pass
 
 cpu_client.close()    
-gpu_client = start(gpus=10, mem_size="50GB")
+gpu_client = start(gpus=1, mem_size="50GB")
 
 #No daemonic dask children
 config["workers"] = 0
 futures =  []
-for x in hsi_tifs:
+for x in hsi_tifs[:2]:
     future = gpu_client.submit(predict.predict_tile, x, dead_model_path = dead_model_path, species_model_dir=species_model_dir, config=config)
     futures.append(future)
 
