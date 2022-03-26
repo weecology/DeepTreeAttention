@@ -167,6 +167,8 @@ def predict_crowns(PATH):
     gdf["plotID"] = None
     gdf["taxonID"] = None
     gdf["RGB_tile"] = PATH
+    gdf["tile_year"] = PATH
+    
     
     return gdf
 
