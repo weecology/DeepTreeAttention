@@ -26,7 +26,7 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Checkout data artifact from comet
-use_data_commit:
+use_data_commit: 103c9c5aa9394f4a9b8b7c95ed1b171b
 
 #Make new dataset
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
