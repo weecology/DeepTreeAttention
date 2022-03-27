@@ -106,7 +106,7 @@ for x in data_module.train.tile_year.unique():
         trainer.fit(year_model[x], datamodule=data_module)
         
         #Save model checkpoint
-        trainer.save_checkpoint(os.path.join(data_module.data_dir,"{}_{}.pl".format(comet_logger.experiment.id, x)))
+        trainer.save_checkpoint(os.path.join(config["data_dir"],"{}_{}.pl".format(comet_logger.experiment.id, x)))
         results, features = year_model[x].predict_dataloader(
             data_loader=data_module.val_dataloader(),
             experiment=None,
@@ -128,6 +128,7 @@ for x in data_module.train.tile_year.unique():
         rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
         results["year"] = x
         year_results.append(results)
+        
         #Confusion matrix all years
         visualize.confusion_matrix(
             comet_experiment=comet_logger.experiment,
