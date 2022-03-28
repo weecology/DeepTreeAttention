@@ -64,6 +64,7 @@ plot_n_individuals: 100
 
 #Predict
 predict_batch_size: 1024
+dead_threshold: 0.95
 
 #Comet dashboard
 comet_workspace: bw4sz
