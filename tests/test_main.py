@@ -4,7 +4,7 @@ import pandas as pd
 from pytorch_lightning import Trainer
 
 def test_fit(config, m, dm, comet_logger):
-    trainer = Trainer(fast_dev_run=True, logger=comet_logger.experiment)
+    trainer = Trainer(fast_dev_run=True, logger=comet_logger)
     trainer.fit(m,datamodule=dm)
     
 def test_predict_dataloader(config, m, dm, comet_logger, ROOT):
