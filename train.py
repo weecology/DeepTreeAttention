@@ -33,11 +33,14 @@ comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["c
 if config["use_data_commit"]:
     config["crop_dir"] = os.path.join(config["data_dir"], config["use_data_commit"])
     client = None    
+    model_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key()) 
+    os.mkdir(model_dir)
 else:
     crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
     os.mkdir(crop_dir)
     client = start_cluster.start(cpus=50, mem_size="4GB")    
     config["crop_dir"] = crop_dir
+    model_dir = crop_dir
 
 comet_logger.experiment.log_parameter("git branch",git_branch)
 comet_logger.experiment.add_tag(git_branch)
@@ -106,7 +109,7 @@ for x in data_module.train.tile_year.unique():
         trainer.fit(year_model[x], datamodule=data_module)
         
         #Save model checkpoint
-        trainer.save_checkpoint(os.path.join(config["data_dir"],"{}_{}.pl".format(comet_logger.experiment.id, x)))
+        trainer.save_checkpoint(os.path.join(model_dir,"{}_{}.pl".format(comet_logger.experiment.id, x)))
         results, features = year_model[x].predict_dataloader(
             data_loader=data_module.val_dataloader(),
             experiment=None,
