@@ -322,17 +322,26 @@ class TreeModel(LightningModule):
             df["true_taxa"] = df["label"].apply(lambda x: self.index_to_label[x])            
             
         if experiment:
-            #load image pool and crown predicrions
+            #load image pool and crown predictions
             rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)            
             plt.ion()
             for index, row in df.sample(n=plot_n_individuals).iterrows():
+                #Plot spectra
+                HSI_path = os.path.join(self.config["crop_dir"],row["image_path"])
+                hsi_sample = utils.load_image(img_path=HSI_path, image_size=11)
+                for x in hsi_sample.reshape(hsi_sample.shape[0], np.prod(hsi_sample.shape[1:])).T:
+                    plt.plot(x)
+                plt.savefig("{}/{}_spectra.png".format(self.tmpdir, row["individual"]))
+                experiment.log_image("{}/{}_spectra.png".format(self.tmpdir, row["individual"]), name="{}, {} Predicted {}".format(row["individual"], row.true_taxa, row.pred_taxa_top1))
+                plt.close()
+                
                 fig = plt.figure(0)
                 ax = fig.add_subplot(1, 1, 1)                
                 individual = row["individual"]
                 geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
                 left, bottom, right, top = geom.bounds
                 
-                #Find image
+                #Find RGB image
                 img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
                 src = rasterio.open(img_path)
                 img = src.read(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
