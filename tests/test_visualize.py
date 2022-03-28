@@ -1,11 +1,11 @@
 #test validate
 from src import visualize
-def test_confusion_matrix(dm, rgb_pool, m, experiment, ROOT):
-    if experiment:
+def test_confusion_matrix(dm, rgb_pool, m, comet_logger, ROOT):
+    if comet_logger:
         m.ROOT = "{}/tests".format(ROOT)
         results = m.evaluate_crowns(data_loader = dm.val_dataloader())
         visualize.confusion_matrix(
-            comet_experiment=experiment,
+            comet_experiment=comet_logger.experiment,
             results=results,
             species_label_dict=dm.species_label_dict,
             test_csv="{}/tests/data/processed/test.csv".format(ROOT),
