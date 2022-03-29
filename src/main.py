@@ -327,7 +327,7 @@ class TreeModel(LightningModule):
             plt.ion()
             for index, row in df.sample(n=plot_n_individuals).iterrows():
                 #Plot spectra
-                HSI_path = os.path.join(self.config["crop_dir"],row["image_path"])
+                HSI_path = os.path.join(self.config["crop_dir"],"{}.tif".format(row["individual"]))
                 hsi_sample = utils.load_image(img_path=HSI_path, image_size=11)
                 for x in hsi_sample.reshape(hsi_sample.shape[0], np.prod(hsi_sample.shape[1:])).T:
                     plt.plot(x)
