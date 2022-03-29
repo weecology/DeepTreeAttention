@@ -53,7 +53,7 @@ for x in tif_futures:
         pass
 
 cpu_client.close()    
-gpu_client = start(gpus=12, mem_size="50GB")
+gpu_client = start(gpus=12, mem_size="20GB")
 
 #No daemonic dask children
 config["workers"] = 0
