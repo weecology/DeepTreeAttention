@@ -76,4 +76,4 @@ for future in futures:
 
 predictions = pd.concat(predictions)
 predictions = gpd.GeoDataFrame(predictions, geometry="geometry")
-predictions.to_file("results/OSBS_predictions.shp")
+predictions.to_file("/blue/ewhite/b.weinstein/DeepTreeAttention/results/OSBS_predictions.shp")
