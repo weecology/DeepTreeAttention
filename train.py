@@ -104,7 +104,7 @@ results = m.evaluate_crowns(
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 
 #Visualizations
-visualize.plot_spectra(results, crop_dir=crop_dir, experiment=comet_logger.experiment)
+visualize.plot_spectra(results, crop_dir=config["crop_dir"], experiment=comet_logger.experiment)
 visualize.rgb_plots(
     df=results,
     config=config,
