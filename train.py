@@ -65,7 +65,7 @@ if not config["use_data_commit"]:
 
 #Load from state dict of previous run
 if config["pretrain_state_dict"]:
-    model = Hang2020.spectral_network.load_from_backbone(state_dict=config["pretrain_state_dict"], classes=data_module.num_classes, bands=config["bands"])
+    model = Hang2020.load_from_backbone(state_dict=config["pretrain_state_dict"], classes=data_module.num_classes, bands=config["bands"])
 else:
     model = Hang2020.spectral_network(bands=config["bands"], classes=data_module.num_classes)
     
