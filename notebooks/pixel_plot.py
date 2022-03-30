@@ -17,7 +17,6 @@ plt.close('all')
 plt.Figure()
 for x in raw_image_norm.reshape(raw_image.shape[0], np.prod(raw_image.shape[1:])).T:
     plt.plot(x)
-plt.plot(raw_image_norm.mean(axis=(1,2)))
 plt.show()
 
 
