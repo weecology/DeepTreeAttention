@@ -87,10 +87,14 @@ def my_collate(batch):
     
     return default_collate(batch)
 
-def predict_tile(PATH, species_model_dir, config, dead_model_path=None):
-    """Generate species prediction from a HSI tile"""
-    #get rgb from HSI path
-    HSI_basename = os.path.basename(PATH)
+def predict_tile(HSI_paths, species_model_dir, config, dead_model_path=None):
+    """Generate species prediction from a HSI tile
+    Args:
+        HSI_paths: a dict of paths for a geoindex year->path_to_tif
+        species_model_dir: directory to load year models
+    """
+    #get rgb from HSI path, all names are the same from the RGB tile
+    HSI_basename = os.path.basename(HSI_paths[list(HSI_paths.keys())[0]])
     if "hyperspectral" in HSI_basename:
         rgb_name = "{}.tif".format(HSI_basename.split("_hyperspectral")[0])    
     else:
@@ -98,7 +102,6 @@ def predict_tile(PATH, species_model_dir, config, dead_model_path=None):
     rgb_pool = glob.glob(config["rgb_sensor_pool"], recursive=True)
     rgb_path = [x for x in rgb_pool if rgb_name in x][0]
     crowns = predict_crowns(rgb_path)
-    crowns["tile"] = PATH
     
     #CHM filter
     if config["CHM_pool"]:
@@ -124,15 +127,16 @@ def predict_tile(PATH, species_model_dir, config, dead_model_path=None):
         filtered_crowns["dead_label"] = dead_label
         filtered_crowns["dead_score"] = dead_score
     
-    # Load species models
+    # Load species models and index by year
     model_paths = glob.glob(os.path.join(species_model_dir,"*.pl"))
-    models = []
+    models = {}
     for x in model_paths:
-        m = TreeModel.load_from_checkpoint(x)        
-        models.append(m)
+        prediction_model = TreeModel.load_from_checkpoint(x)       
+        year = os.path.splitext(x)[0].split("_")[-1]
+        models[year] = prediction_model
     
     # Predict
-    trees, features = predict_species(HSI_path=PATH, crowns=filtered_crowns, models=models, config=config)
+    trees, features = predict_species(HSI_paths=HSI_paths, crowns=filtered_crowns, models=models, config=config)
 
     # Remove predictions for dead trees
     if dead_model_path:
@@ -167,29 +171,43 @@ def predict_crowns(PATH):
     gdf["plotID"] = None
     gdf["taxonID"] = None
     gdf["RGB_tile"] = PATH
-    gdf["tile_year"] = PATH
+    gdf["tile_year"] = None
     
     
     return gdf
 
-def predict_species(crowns, HSI_path, models, config):
-    """Given a shapefile and HSI path, apply a model ensemble"""
+def predict_species(crowns, HSI_paths, models, config):
+    """Given a shapefile and HSI path, apply a model ensemble
+    Args:
+        crowns: a geodataframe of geospatial locations to predict
+        HSI_paths: a dict year->path for each HSI tile in a geo_index location
+        models: a dict year->model for pytorch lightning models
+        config: config.yml
+    """
     # Prepare data for ensemble prediction
-    crowns["bbox_score"] = crowns["score"]    
-    ds = on_the_fly_dataset(crowns=crowns, image_path=HSI_path, config=config)
-    data_loader = torch.utils.data.DataLoader(
-        ds,
-        batch_size=config["predict_batch_size"],
-        shuffle=False,
-        num_workers=config["workers"],
-        collate_fn=my_collate
-    )
+    crowns["bbox_score"] = crowns["score"]
     
-    # Predict species for each year
-    year_individuals = {} 
-    year_results = []
-    for year, m in enumerate(models):
-        results, features = m.predict_dataloader(
+    for year in HSI_paths:
+        ds = on_the_fly_dataset(crowns=crowns, image_path=HSI_paths[year], config=config)
+        data_loader = torch.utils.data.DataLoader(
+            ds,
+            batch_size=config["predict_batch_size"],
+            shuffle=False,
+            num_workers=config["workers"],
+            collate_fn=my_collate
+        )
+        
+        # Predict species for each year
+        year_individuals = {} 
+        year_results = []
+        
+        try:
+            year_model = models[year]
+        except:
+            print("No model for year {}".format(year))
+            continue
+        
+        results, features = year_model.predict_dataloader(
             data_loader=data_loader,
             return_features=True,
             train=False

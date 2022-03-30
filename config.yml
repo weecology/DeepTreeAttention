@@ -45,9 +45,8 @@ image_size: 11
 preload_images: True
 workers: 0
 sampling_ceiling: 100
-
 #Network Parameters
-pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/c025efd0454c4b0e8facef0dc9c44d77.pt	
+pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/c025efd0454c4b0e8facef0dc9c44d77.pt
 gpus: 1
 batch_size: 128
 bands: 369
