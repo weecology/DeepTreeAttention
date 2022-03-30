@@ -20,6 +20,7 @@ from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
 import pandas as pd
 from pandas.util import hash_pandas_object
+import copy
 
 #Get branch name for the comet tag
 git_branch=sys.argv[1]
@@ -88,9 +89,9 @@ year_individuals = {}
 
 for x in data_module.train.tile_year.unique():
     with comet_logger.experiment.context_manager(x):
-        data_module.setup(year=x)    
+        data_module.setup(year=x)
         year_model[x] = main.TreeModel(
-            model=model, 
+            model=copy.deepcopy(model), 
             classes=data_module.num_classes, 
             loss_weight=loss_weight,
             label_dict=data_module.species_label_dict)

@@ -75,5 +75,8 @@ for future in futures:
         print(traceback.print_exc())
 
 predictions = pd.concat(predictions)
+
+#We only want ones years predictions
+predictions = predictions[predictions.tile.str.contains("2021_OSBS")]
 predictions = gpd.GeoDataFrame(predictions, geometry="geometry")
 predictions.to_file("/blue/ewhite/b.weinstein/DeepTreeAttention/results/OSBS_predictions.shp")
