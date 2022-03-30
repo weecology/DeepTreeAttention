@@ -100,10 +100,17 @@ results = m.evaluate_crowns(
     data_module.val_dataloader(),
     crowns = data_module.crowns,
     experiment=comet_logger.experiment,
-    points=data_module.canopy_points
 )
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 
+#Visualizations
+visualize.plot_spectra(results, crop_dir=crop_dir, experiment=comet_logger.experiment)
+visualize.rgb_plots(
+    df=results,
+    config=config,
+    test_crowns=data_module.crowns,
+    test_points=data_module.canopy_points,
+    experiment=comet_logger.experiment)
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
     results=results,

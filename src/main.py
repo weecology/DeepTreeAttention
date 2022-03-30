@@ -265,7 +265,7 @@ class TreeModel(LightningModule):
         
         return pred
     
-    def predict_dataloader(self, data_loader, test_crowns=None, test_points=None, plot_n_individuals=1, return_features=False, experiment=None, train=True):
+    def predict_dataloader(self, data_loader, return_features=False, train=True):
         """Given a file with paths to image crops, create crown predictions 
         The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
         unique identifier for each crown and counter is 0..n pixel crops that belong to that crown.
@@ -320,54 +320,13 @@ class TreeModel(LightningModule):
         if train:
             df["label"] = labels
             df["true_taxa"] = df["label"].apply(lambda x: self.index_to_label[x])            
-            
-        if experiment:
-            #load image pool and crown predictions
-            rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)            
-            plt.ion()
-            for index, row in df.sample(n=plot_n_individuals).iterrows():
-                #Plot spectra
-                HSI_path = os.path.join(self.config["crop_dir"],"{}.tif".format(row["individual"]))
-                hsi_sample = utils.load_image(img_path=HSI_path, image_size=11)
-                for x in hsi_sample.reshape(hsi_sample.shape[0], np.prod(hsi_sample.shape[1:])).T:
-                    plt.plot(x)
-                plt.savefig("{}/{}_spectra.png".format(self.tmpdir, row["individual"]))
-                experiment.log_image("{}/{}_spectra.png".format(self.tmpdir, row["individual"]), name="{}, {} Predicted {}".format(row["individual"], row.true_taxa, row.pred_taxa_top1))
-                plt.close()
-                
-                fig = plt.figure(0)
-                ax = fig.add_subplot(1, 1, 1)                
-                individual = row["individual"]
-                geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
-                left, bottom, right, top = geom.bounds
-                
-                #Find RGB image
-                img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
-                src = rasterio.open(img_path)
-                img = src.read(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
-                img_transform = src.window_transform(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
-                
-                #Plot crown
-                patches = [PolygonPatch(geom, edgecolor='red', facecolor='none')]
-                show(img, ax=ax, transform=img_transform)                
-                ax.add_collection(PatchCollection(patches, match_original=True))
-                
-                #Plot field coordinate
-                stem = test_points[test_points.individualID == individual]
-                stem.plot(ax=ax)
-                
-                plt.savefig("{}/{}.png".format(self.tmpdir, row["individual"]))
-                experiment.log_image("{}/{}.png".format(self.tmpdir, row["individual"]), name="crown: {}, True: {}, Predicted {}".format(row["individual"], row.true_taxa, row.pred_taxa_top1))
-                src.close()
-                plt.close("all")
-            plt.ioff()
     
         if return_features:            
             return df, predictions        
         else:
             return df
     
-    def evaluate_crowns(self, data_loader, crowns, points=None, experiment=None):
+    def evaluate_crowns(self, data_loader, crowns, experiment=None):
         """Crown level measure of accuracy
         Args:
             data_loader: TreeData dataset
@@ -379,10 +338,6 @@ class TreeModel(LightningModule):
         """
         results, features = self.predict_dataloader(
             data_loader=data_loader,
-            plot_n_individuals=self.config["plot_n_individuals"],
-            experiment=experiment,
-            test_crowns=crowns,
-            test_points=points,
             return_features=True
         )
         

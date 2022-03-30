@@ -400,7 +400,7 @@ class TreeData(LightningDataModule):
 
             annotations = generate.generate_crops(
                 self.crowns,
-                savedir=self.config["crop_dir"],
+                savedir=self.data_dir,
                 sensor_glob=self.config["HSI_sensor_pool"],
                 convert_h5=self.config["convert_h5"],   
                 rgb_glob=self.config["rgb_sensor_pool"],

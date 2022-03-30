@@ -12,7 +12,8 @@ def test_predict_dataloader(config, m, dm, comet_logger, ROOT):
         experiment = comet_logger.experiment
     else:
         experiment = None
-    df = m.predict_dataloader(dm.val_dataloader(), test_crowns=dm.crowns, test_points=dm.canopy_points, experiment=experiment)
+    df = m.predict_dataloader(
+        dm.val_dataloader())
     input_data = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))    
     
     assert df.shape[0] == len(input_data.image_path.apply(lambda x: os.path.basename(x).split("_")[0]).unique())
@@ -23,7 +24,7 @@ def test_evaluate_crowns(config, comet_logger, m, dm, ROOT):
     else:
         experiment = None    
     m.ROOT = "{}/tests".format(ROOT)
-    df = m.evaluate_crowns(data_loader = dm.val_dataloader(), crowns=dm.crowns, points=dm.canopy_points, experiment=experiment)
+    df = m.evaluate_crowns(data_loader = dm.val_dataloader(), crowns=dm.crowns, experiment=experiment)
     assert all(["top{}_score".format(x) in df.columns for x in [1,2]]) 
 
 def test_predict_xy(config, m, dm, ROOT):
