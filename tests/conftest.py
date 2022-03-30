@@ -84,7 +84,7 @@ def config(ROOT):
 @pytest.fixture(scope="session")
 def dm(config, ROOT):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)               
-    dm = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data".format(ROOT), debug=True, metadata=True) 
+    dm = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data/crops/".format(ROOT), debug=True, metadata=True) 
     dm.setup()    
     
     return dm
@@ -115,7 +115,7 @@ def species_model_path(config, dm):
     model = Hang2020.spectral_network(bands=3, classes=3)
     m = main.TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict)
     m.ROOT = "{}/tests/".format(ROOT)
-    filepath = "{}/model.pl".format(tempfile.gettempdir())
+    filepath = "{}/model_2019.pl".format(tempfile.gettempdir())
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m, dm)
     trainer.save_checkpoint(filepath)
