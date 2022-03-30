@@ -47,14 +47,14 @@ workers: 0
 sampling_ceiling: 100
 
 #Network Parameters
-pretrain_state_dict:
+pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7c74c32565f14d289cabfc4c31cd5f90.pt	
 gpus: 1
 batch_size: 128
 bands: 369
 lr: 0.0001
 fast_dev_run: False
 accelerator: dp
-epochs: 160
+epochs: 150
 
 #Evaluation config
 #Top k class recall score
