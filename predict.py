@@ -38,7 +38,7 @@ tiles = find_rgb_files(site="OSBS", config=config, year="2019")
 hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
 rgb_pool = glob(config["rgb_sensor_pool"], recursive=True)
 
-cpu_client = start(cpus=20)
+cpu_client = start(cpus=20, mem_size="8GB")
 
 tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"], year="2019")
 wait(tif_futures)
@@ -53,7 +53,7 @@ for x in tif_futures:
         pass
 
 cpu_client.close()    
-gpu_client = start(gpus=5, mem_size="20GB")
+gpu_client = start(gpus=14, mem_size="15GB")
 
 #No daemonic dask children
 config["workers"] = 0
