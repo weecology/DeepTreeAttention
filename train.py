@@ -62,8 +62,14 @@ comet_logger.experiment.log_table("test.csv", data_module.test)
 if not config["use_data_commit"]:
     comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
 
+
 #Load from state dict of previous run
-model = Hang2020.spectral_network(bands=config["bands"], classes=data_module.num_classes)
+if config["pretrain_state_dict"]:
+    model = Hang2020.spectral_network.load_from_backbone(state_dict=config["pretrain_state_dict"], classes=data_module.num_classes, bands=config["bands"])
+else:
+    model = Hang2020.spectral_network(bands=config["bands"], classes=data_module.num_classes)
+    
+#Load from state dict of previous run
 
 #Loss weight, balanced
 loss_weight = []
