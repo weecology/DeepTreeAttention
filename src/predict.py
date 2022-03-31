@@ -87,7 +87,7 @@ def my_collate(batch):
     
     return default_collate(batch)
 
-def predict_tile(PATH, dead_model_path, species_model_path, config):
+def predict_tile(PATH, dead_model_path, species_model_path, config, savedir):
     #get rgb from HSI path
     HSI_basename = os.path.basename(PATH)
     if "hyperspectral" in HSI_basename:
@@ -130,7 +130,8 @@ def predict_tile(PATH, dead_model_path, species_model_path, config):
         
     # Calculate crown area
     trees["crown_area"] = crowns.geometry.area
-        
+    trees.to_file(os.path.join(savedir, "{}.shp".format(HSI_basename)))
+    
     return trees
 
 def predict_crowns(PATH):
