@@ -66,6 +66,7 @@ try:
 except:
     pass
 
+#TO DO, TURN HSI_TIFS INTO DICT OF GEOINDEX
 for x in hsi_tifs[:1]:
     future = gpu_client.submit(
         predict.predict_tile,
