@@ -87,7 +87,7 @@ def my_collate(batch):
     
     return default_collate(batch)
 
-def predict_tile(HSI_paths, species_model_dir, config, dead_model_path=None):
+def predict_tile(HSI_paths, species_model_dir, config, dead_model_path=None, savedir=None):
     """Generate species prediction from a HSI tile
     Args:
         HSI_paths: a dict of paths for a geoindex year->path_to_tif
@@ -146,6 +146,12 @@ def predict_tile(HSI_paths, species_model_dir, config, dead_model_path=None):
     
     # Calculate crown area
     trees["crown_area"] = crowns.geometry.area
+    
+    #Latest year
+    trees = trees[trees.year == "2021"]        
+    
+    if savedir:
+        trees.to_file(os.path.join(savedir,"{}.shp".format(HSI_basename)))
         
     return trees
 
