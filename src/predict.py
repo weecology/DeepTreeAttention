@@ -87,7 +87,7 @@ def my_collate(batch):
     
     return default_collate(batch)
 
-def predict_tile(HSI_paths, species_model_dir, config, dead_model_path=None):
+def predict_tile(HSI_paths, species_model_dir, config, dead_model_path=None, savedir=None):
     """Generate species prediction from a HSI tile
     Args:
         HSI_paths: a dict of paths for a geoindex year->path_to_tif
@@ -146,6 +146,12 @@ def predict_tile(HSI_paths, species_model_dir, config, dead_model_path=None):
     
     # Calculate crown area
     trees["crown_area"] = crowns.geometry.area
+    
+    #Latest year
+    trees = trees[trees.year == "2021"]        
+    
+    if savedir:
+        trees.to_file(os.path.join(savedir,"{}.shp".format(HSI_basename)))
         
     return trees
 
@@ -225,15 +231,8 @@ def predict_species(crowns, HSI_paths, models, config):
     # Ensemble and merge into original frame
     results = pd.concat(year_results)
     results = ensemble(results, year_individuals)
-    
-    species_to_label_dict = results.set_index("label").true_taxa.to_dict()
-    results["ensembleTaxonID"] = results.temporal_pred_label_top1.apply(lambda x: species_to_label_dict[x])
-    
-    crowns = crowns[[
-        "individual","geometry","bbox_score",
-        "tile","CHM_height","dead_label",
-        "dead_score","RGB_tile"
-    ]]
+    results["ensembleTaxonID"] = results.temporal_pred_label_top1.apply(lambda x: year_model.index_to_label[x])
+    crowns = crowns.loc[:,crowns.columns.isin(["geometry","dead_label","dead_score","CHM_height","bbox_score","box_id","individual"])]
     results = results.merge(crowns, on="individual")
                
     return results, features

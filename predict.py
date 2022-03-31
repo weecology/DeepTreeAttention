@@ -53,13 +53,28 @@ for x in tif_futures:
         pass
 
 cpu_client.close()    
-gpu_client = start(gpus=12, mem_size="20GB")
+gpu_client = start(gpus=1, mem_size="50GB")
 
 #No daemonic dask children
 config["workers"] = 0
 futures =  []
-for x in hsi_tifs:
-    future = gpu_client.submit(predict.predict_tile, x, dead_model_path = dead_model_path, species_model_dir=species_model_dir, config=config)
+
+#Save each file seperately in a dir named for the species model
+savedir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",os.path.basename(species_model_dir))
+try:
+    os.mkdir(savedir)
+except:
+    pass
+
+for x in hsi_tifs[:1]:
+    future = gpu_client.submit(
+        predict.predict_tile,
+        x,
+        dead_model_path=dead_model_path,
+        species_model_dir=species_model_dir,
+        config=config,
+        savedir=savedir
+    )
     futures.append(future)
 
 wait(futures)
@@ -73,10 +88,3 @@ for future in futures:
     except Exception as e:
         print(e)
         print(traceback.print_exc())
-
-predictions = pd.concat(predictions)
-
-#We only want ones years predictions
-predictions = predictions[predictions.tile.str.contains("2021_OSBS")]
-predictions = gpd.GeoDataFrame(predictions, geometry="geometry")
-predictions.to_file("/blue/ewhite/b.weinstein/DeepTreeAttention/results/OSBS_predictions.shp")
