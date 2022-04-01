@@ -59,7 +59,7 @@ class TreeModel(LightningModule):
              })
                 
         #Weighted loss
-        if isinstance(loss_weight, None):
+        if isinstance(loss_weight, type(None)):
             loss_weight = torch.ones((classes))                
             
         if torch.cuda.is_available():
