@@ -131,7 +131,7 @@ def predict_tile(PATH, dead_model_path, species_model_path, config, savedir):
     # Calculate crown area
     trees["crown_area"] = crowns.geometry.area
     trees = gpd.GeoDataFrame(trees, geometry="geometry")    
-    trees.to_file(os.path.join(savedir, "{}.shp".format(HSI_basename)))
+    trees.to_file(os.path.join(savedir, "{}.shp".format(os.path.splitext(HSI_basename)[0])))
     
     return trees
 
