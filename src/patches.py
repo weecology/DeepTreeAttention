@@ -1,5 +1,6 @@
 #Patches
 import rasterio
+from rasterio.features import geometry_mask
 
 def crop(bounds, sensor_path, savedir = None, basename = None, mask=None):
     """Given a 4 pointed bounding box, crop sensor data"""
@@ -13,7 +14,7 @@ def crop(bounds, sensor_path, savedir = None, basename = None, mask=None):
         img_tr = src.window_transform(
             window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform)
         )
-        feature_mask = rasterio.features.geometry_mask(geometries=[mask], out_shape=img.shape[1:], transform=img_tr, invert=True)
+        feature_mask = geometry_mask(geometries=[mask], out_shape=img.shape[1:], transform=img_tr, invert=True)
         img = img * feature_mask
     if savedir:
         filename = "{}/{}.tif".format(savedir, basename)
