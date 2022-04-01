@@ -11,10 +11,13 @@ import os
 import re
 import traceback
 
-def find_rgb_files(site, year, config):
+
+def find_rgb_files(site, config, year=None):
     tiles = glob(config["rgb_sensor_pool"], recursive=True)
     tiles = [x for x in tiles if site in x]
-    tiles = [x for x in tiles if "/{}/".format(year) in x]
+    
+    if year:
+        tiles = [x for x in tiles if "/{}/".format(year) in x]
     
     return tiles
     
@@ -32,7 +35,7 @@ def convert(rgb_path, hyperspectral_pool, year, savedir):
     return tif_path
 
 config = data.read_config("config.yml")
-tiles = find_rgb_files(site="OSBS", config=config, year="2019")
+tiles = find_rgb_files(site="OSBS", config=config)
 
 #generate HSI_tif data if needed.
 hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
@@ -66,11 +69,18 @@ try:
 except:
     pass
 
-#TO DO, TURN HSI_TIFS INTO DICT OF GEOINDEX
-for x in hsi_tifs[:1]:
+geo_index = [re.search("(\d+_\d+)_image", os.path.basename(x)).group(1) for x in hsi_tifs]
+
+for i in pd.Series(geo_index).unique():
+    HSI_paths = {}
+    tiles = [x for x in hsi_tifs if i in x] 
+    for tile in tiles:
+        year = os.path.splitext(tile)[0].split("_")[-1]
+        HSI_paths[year] = tile
+
     future = gpu_client.submit(
         predict.predict_tile,
-        x,
+        HSI_paths,
         dead_model_path=dead_model_path,
         species_model_dir=species_model_dir,
         config=config,
