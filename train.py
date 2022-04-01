@@ -116,6 +116,7 @@ visualize.rgb_plots(
     config=config,
     test_crowns=data_module.crowns,
     test_points=data_module.canopy_points,
+    plot_n_individuals=config["plot_n_individuals"]
     experiment=comet_logger.experiment)
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
