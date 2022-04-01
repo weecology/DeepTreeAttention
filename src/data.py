@@ -417,7 +417,7 @@ class TreeData(LightningDataModule):
             #Remove crowns from test dataset if specified
             if self.config["existing_test_csv"]:
                 existing_test = pd.read_csv(self.config["existing_test_csv"])
-                self.test = self.annotations[self.annotations.individualID.isin(existing_test.individualID))]   
+                self.test = self.annotations[self.annotations.individualID.isin(existing_test.individualID)]   
                 self.train = self.annotations[~(self.annotations.individualID.isin(existing_test.individualID))]
             else:
                 self.train, self.test = train_test_split(annotations, config=self.config, client=self.client) 
