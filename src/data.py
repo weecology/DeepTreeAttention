@@ -398,6 +398,11 @@ class TreeData(LightningDataModule):
             else:
                 self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
 
+            #Remove crowns from test dataset if specified
+            if self.config["existing_test_csv"]:
+                existing_test = pd.read_csv(self.config["existing_test_csv"])
+                self.crowns = self.crowns[~(self.crowns.individualID.isin(existing_test.individualID))]
+                    
             annotations = generate.generate_crops(
                 self.crowns,
                 savedir=self.data_dir,
@@ -414,18 +419,10 @@ class TreeData(LightningDataModule):
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(annotations.taxonID.unique()))
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
                 
-            if self.config["new_train_test_split"]:
-                self.train, self.test = train_test_split(annotations, config=self.config, client=self.client) 
-                
-                self.train.to_csv("{}/train.csv".format(self.data_dir))
-                self.test.to_csv("{}/test.csv".format(self.data_dir))
-                
-            else:
-                previous_train = pd.read_csv("{}/train.csv".format(self.data_dir))
-                previous_test = pd.read_csv("{}/test.csv".format(self.data_dir))
-                
-                self.train = annotations[annotations.individualID.isin(previous_train.individualID)]
-                self.test = annotations[annotations.individualID.isin(previous_test.individualID)]
+            self.train, self.test = train_test_split(annotations, config=self.config, client=self.client) 
+            self.train.to_csv("{}/train.csv".format(self.data_dir))
+            self.test.to_csv("{}/test.csv".format(self.data_dir))
+
                 
             # Capture discarded species
             individualIDs = np.concatenate([self.train.individualID.unique(), self.test.individualID.unique()])

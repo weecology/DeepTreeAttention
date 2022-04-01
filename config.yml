@@ -34,7 +34,7 @@ convert_h5: True
 #Overwrite existing crops
 replace: True
 #Use existing plotIDs for train/test split
-new_train_test_split: True
+existing_test_csv:
 
 #How many samples from non-osbs sites can we use per species
 samples_from_other_sites: 0
