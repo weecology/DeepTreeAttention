@@ -425,7 +425,6 @@ class TreeData(LightningDataModule):
             self.train.to_csv("{}/train.csv".format(self.data_dir))
             self.test.to_csv("{}/test.csv".format(self.data_dir))
 
-                
             # Capture discarded species
             individualIDs = np.concatenate([self.train.individualID.unique(), self.test.individualID.unique()])
             self.novel = annotations[~annotations.individualID.isin(individualIDs)]
