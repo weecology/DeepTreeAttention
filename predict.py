@@ -59,7 +59,7 @@ for x in tif_futures:
         pass
 
 cpu_client.close()    
-gpu_client = start(gpus=12, mem_size="10GB")
+gpu_client = start(gpus=2, mem_size="10GB")
 
 #No daemonic dask children
 config["workers"] = 0
@@ -74,6 +74,7 @@ except:
 
 geo_index = [re.search("(\d+_\d+)_image", os.path.basename(x)).group(1) for x in hsi_tifs]
 
+geo_index = ["401000_3283000","403000_3284000"]
 for i in pd.Series(geo_index).unique():
     HSI_paths = {}
     tiles = [x for x in hsi_tifs if i in x] 
