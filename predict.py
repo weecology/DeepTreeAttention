@@ -52,7 +52,7 @@ for x in tif_futures:
         pass
 
 cpu_client.close()    
-gpu_client = start(gpus=15, mem_size="50GB")
+gpu_client = start(gpus=1, mem_size="50GB")
 
 #No daemonic dask children
 config["workers"] = 0
@@ -65,7 +65,7 @@ try:
 except:
     pass
 
-hsi_tifs = ["/orange/idtrees-collab/Hyperspectral_tifs/2019_OSBS_5_401000_3283000_image_hyperspectral.tif"]
+hsi_tifs = ["/orange/idtrees-collab/Hyperspectral_tifs/2019_OSBS_5_403000_3284000_image_hyperspectral.tif"]
 for x in hsi_tifs:
     future = gpu_client.submit(
         predict.predict_tile,
