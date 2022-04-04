@@ -27,10 +27,10 @@ def convert(rgb_path, hyperspectral_pool, year, savedir):
     geo_index = re.search("(\d+_\d+)_image", basename).group(1)
     hyperspectral_h5_path = [x for x in hyperspectral_pool if geo_index in x]
     hyperspectral_h5_path = [x for x in hyperspectral_h5_path if year in x][0]
-    tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral.tif"
+    tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral_{}.tif".format(year)
     tif_path = "{}/{}".format(savedir, tif_basename)
     if not os.path.exists(tif_path):
-        tif_path = neon_paths.convert_h5(hyperspectral_h5_path, rgb_path, savedir)
+        tif_path = neon_paths.convert_h5(hyperspectral_h5_path, rgb_path, savedir, year=year)
     
     return tif_path
 
