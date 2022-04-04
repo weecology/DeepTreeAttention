@@ -41,7 +41,10 @@ samples_from_other_sites: 0
 
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
+#HSI
 image_size: 11
+#RGB
+rgb_image_size: 110
 preload_images: True
 workers: 0
 sampling_ceiling: 100
