@@ -92,12 +92,9 @@ for i in pd.Series(geo_index).unique():
 
 wait(futures)
 
-predictions = []
 for future in futures:
     try:
-        trees = future.result()
-        if not trees.empty:
-            predictions.append(trees)        
+        trees = future.result()    
     except Exception as e:
         print(e)
         print(traceback.print_exc())

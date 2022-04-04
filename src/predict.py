@@ -149,7 +149,7 @@ def predict_tile(HSI_paths, species_model_dir, config, dead_model_path=None, sav
     
     #Latest year
     trees = trees[trees.year == "2021"]        
-    
+    trees = gpd.GeoDataFrame(trees, geometry="geometry")
     if savedir:
         trees.to_file(os.path.join(savedir,"{}.shp".format(HSI_basename)))
         
