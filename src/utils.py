@@ -32,12 +32,18 @@ def read_config(config_path):
 
 def preprocess_image(image, channel_is_first=False):
     """Preprocess a loaded image, if already C*H*W set channel_is_first=True"""
+    
+    #Clip first and last 10 bands
+    if image.shape[0] > 3:
+        image = image[10:,:,:]
+        image = image[:-10,:,:]
+        
     img = np.asarray(image, dtype='float32')
-    data = img.reshape(img.shape[0], np.prod(img.shape[1:]))
+    data = img.reshape(img.shape[0], np.prod(img.shape[1:])).T
     
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', UserWarning)    
-        data  = preprocessing.scale(data)
+        data  = preprocessing.minmax_scale(data, axis=1).T
     img = data.reshape(img.shape)
     
     if not channel_is_first:
@@ -51,31 +57,13 @@ def load_image(img_path, image_size):
     """Load and preprocess an image for training/prediction"""
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', rio.errors.NotGeoreferencedWarning)
-        image = rio.open(img_path).read()       
+        image = rio.open(img_path).read() 
+    
+    #Clip first 10 bands of each side
+    
     image = preprocess_image(image, channel_is_first=True)
     
     #resize image
     image = transforms.functional.resize(image, size=(image_size,image_size), interpolation=transforms.InterpolationMode.NEAREST)
     
     return image
-
-def my_collate(batch):
-    """Drop empty batches"""
-    batch = list(filter (lambda x:x[1]["HSI"] is not None, batch))
-    
-    return torch.utils.data.dataloader.default_collate(batch)
-
-def ensemble(results, year_individuals):
-    """combine a set of results from main.evaluate crowns"""
-    #Average among years
-    temporal_prediction = []
-    temporal_score = []
-    for x in results.individual:
-        year_mean = np.mean(np.vstack(year_individuals[x]), axis=0)
-        temporal_prediction.append(np.argmax(year_mean))
-        temporal_score.append(np.max(year_mean))    
-    
-    results["temporal_pred_label_top1"] = temporal_prediction
-    results["temporal_top1_score"] = temporal_score
-    
-    return results
