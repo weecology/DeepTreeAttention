@@ -25,25 +25,27 @@ def convert(rgb_path, hyperspectral_pool, year, savedir):
     #convert .h5 hyperspec tile if needed
     basename = os.path.basename(rgb_path)
     geo_index = re.search("(\d+_\d+)_image", basename).group(1)
-    hyperspectral_h5_path = [x for x in hyperspectral_pool if geo_index in x]
-    hyperspectral_h5_path = [x for x in hyperspectral_h5_path if year in x][0]
-    tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral_{}.tif".format(year)
-    tif_path = "{}/{}".format(savedir, tif_basename)
-    if not os.path.exists(tif_path):
-        tif_path = neon_paths.convert_h5(hyperspectral_h5_path, rgb_path, savedir, year=year)
+    h5_list = [x for x in hyperspectral_pool if geo_index in x]
+    tif_paths = []
+    for path in h5_list:
+        year = path[0].split("/")[6]
+        tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral_{}.tif".format(year)
+        tif_path = "{}/{}".format(savedir, tif_basename)
+        if not os.path.exists(tif_path):
+            tif_paths.append(neon_paths.convert_h5(path, rgb_path, savedir, year=year))
     
-    return tif_path
+    return tif_paths
 
 config = data.read_config("config.yml")
-tiles = find_rgb_files(site="OSBS", config=config)
+tiles = find_rgb_files(site="OSBS", config=config, year=2021)
 
 #generate HSI_tif data if needed.
 hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
 rgb_pool = glob(config["rgb_sensor_pool"], recursive=True)
 
-cpu_client = start(cpus=20)
+cpu_client = start(cpus=60)
 
-tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"], year="2019")
+tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"], year=None)
 wait(tif_futures)
 
 species_model_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/91ba2dc9445547f48805ec60be0a2f2f"
@@ -51,7 +53,8 @@ dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945
 hsi_tifs = []
 for x in tif_futures:
     try:
-        hsi_tifs.append(x.result())
+        for path in x.result():
+            hsi_tifs.append(path)
     except:
         pass
 
