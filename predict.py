@@ -73,8 +73,6 @@ except:
     pass
 
 geo_index = [re.search("(\d+_\d+)_image", os.path.basename(x)).group(1) for x in hsi_tifs]
-
-geo_index = ["401000_3283000","403000_3284000"]
 for i in pd.Series(geo_index).unique():
     HSI_paths = {}
     tiles = [x for x in hsi_tifs if i in x] 
