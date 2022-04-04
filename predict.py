@@ -44,7 +44,7 @@ rgb_pool = glob(config["rgb_sensor_pool"], recursive=True)
 
 cpu_client = start(cpus=50, mem_size="8GB")
 
-tif_futures = cpu_client.map(convert, tiles[:1], hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"])
+tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"])
 wait(tif_futures)
 
 species_model_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/91ba2dc9445547f48805ec60be0a2f2f"
