@@ -44,7 +44,7 @@ tiles = find_rgb_files(site="OSBS", config=config, year=2021)
 hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
 rgb_pool = glob(config["rgb_sensor_pool"], recursive=True)
 
-cpu_client = start(cpus=3, mem_size="8GB")
+cpu_client = start(cpus=30, mem_size="8GB")
 tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"])
 wait(tif_futures)
 
@@ -61,7 +61,7 @@ for x in tif_futures:
         pass
 
 cpu_client.close()    
-gpu_client = start(gpus=2, mem_size="10GB")
+gpu_client = start(gpus=12, mem_size="10GB")
 
 #No daemonic dask children
 config["workers"] = 0
@@ -75,7 +75,7 @@ except:
 
 geo_index = [re.search("(\d+_\d+)_image", os.path.basename(x)).group(1) for x in hsi_tifs]
 
-for i in pd.Series(geo_index).unique()[:1]:
+for i in pd.Series(geo_index).unique():
     HSI_paths = {}
     tiles = [x for x in hsi_tifs if i in x] 
     for tile in tiles:
