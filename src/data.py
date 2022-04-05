@@ -412,7 +412,8 @@ class TreeData(LightningDataModule):
                 rgb_glob=self.config["rgb_sensor_pool"],
                 HSI_tif_dir=self.config["HSI_tif_dir"],
                 client=self.client,
-                replace=self.config["replace"]
+                replace=self.config["replace"],
+                suffix="HSI"
             )
             
             rgb_annotations = generate.generate_crops(
@@ -423,7 +424,8 @@ class TreeData(LightningDataModule):
                 rgb_glob=self.config["rgb_sensor_pool"],
                 HSI_tif_dir=self.config["HSI_tif_dir"],
                 client=self.client,
-                replace=self.config["replace"]
+                replace=self.config["replace"],
+                suffix="RGB"
             )
             rgb_annotations["RGB_image_path"] = rgb_annotations["image_path"]
             annotations = annotations.merge(rgb_annotations[["individualID","RGB_image_path"]], on="individualID")
@@ -543,15 +545,12 @@ class TreeData(LightningDataModule):
             self.train_ds = TreeDataset(
                 csv_file = "{}/train.csv".format(self.data_dir),
                 config=self.config,
-                HSI=self.HSI,
                 metadata=self.metadata
             )
     
             self.val_ds = TreeDataset(
                 csv_file = "{}/test.csv".format(self.data_dir),
                 config=self.config,
-                HSI=self.HSI,
-                metadata=self.metadata
             )            
 
     def train_dataloader(self):

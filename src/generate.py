@@ -240,10 +240,13 @@ def points_to_crowns(
     
     return results
 
-def write_crop(row, img_path, savedir, replace=True):
+def write_crop(row, img_path, savedir, replace=True, suffix=None):
     """Wrapper to write a crop based on size and savedir"""
     if replace == False:
-        filename = "{}/{}.tif".format(savedir, row["individual"])
+        if suffix:
+            filename = "{}/{}_{}.tif".format(savedir, row["individual"], suffix)
+        else:
+            filename = "{}/{}.tif".format(savedir, row["individual"])
         file_exists = os.path.exists(filename)
         if file_exists:
             annotation = pd.DataFrame({"image_path":[os.path.basename(filename)], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "RGB_tile":[row["RGB_tile"]], "siteID":[row["siteID"]],"box_id":[row["box_id"]]})
@@ -265,7 +268,7 @@ def write_crop(row, img_path, savedir, replace=True):
         annotation = pd.DataFrame({"image_path":[os.path.basename(filename)], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "RGB_tile":[row["RGB_tile"]], "siteID":[row["siteID"]],"box_id":[row["box_id"]]})
         return annotation
 
-def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=False, HSI_tif_dir=None, replace=True):
+def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=False, HSI_tif_dir=None, replace=True, suffix=None):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:
@@ -276,6 +279,7 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
         convert_h5: If HSI data is passed, make sure .tif conversion is complete
         rgb_glob: glob to search images to match when converting h5s -> tif.
         HSI_tif_dir: if converting H5 -> tif, where to save .tif files. Only needed if convert_h5 is True
+        suffix: append a str to the image path names, useful if there are multiple sensor types per individual
     Returns:
        annotations: pandas dataframe of filenames and individual IDs to link with data
     """
@@ -315,7 +319,7 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
                 img_path = tile_to_path[row["geo_index"]]
             except:
                 continue
-            future = client.submit(write_crop,row=row,img_path=img_path, savedir=savedir, replace=replace)
+            future = client.submit(write_crop,row=row,img_path=img_path, savedir=savedir, replace=replace, suffix=suffix)
             futures.append(future)
             
         wait(futures)
@@ -332,7 +336,7 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
             except:
                 continue
             try:
-                annotation = write_crop(row=row, img_path=img_path, savedir=savedir, replace=replace)
+                annotation = write_crop(row=row, img_path=img_path, savedir=savedir, replace=replace, suffix=suffix)
             except Exception as e:
                 print("index {} failed with {}".format(index,e))
                 continue

@@ -71,7 +71,7 @@ def test_generate_crops(tmpdir, ROOT, rgb_path):
     gdf["RGB_tile"] = rgb_path
     annotations = generate.generate_crops(
         gdf=gdf, rgb_glob="{}/tests/data/*.tif".format(ROOT),
-        convert_h5=False, sensor_glob="{}/tests/data/*.tif".format(ROOT), savedir=tmpdir)
+        convert_h5=False, sensor_glob="{}/tests/data/*.tif".format(ROOT), savedir=tmpdir, suffix="RGB")
     
     assert not annotations.empty
     assert all([x in ["image_path","label","site","siteID","plotID","individualID","taxonID","point_id","box_id","RGB_tile"] for x in annotations.columns])
