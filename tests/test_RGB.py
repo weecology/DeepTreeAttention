@@ -6,9 +6,6 @@ def test_RGB():
     m = RGB.RGB()
     image = torch.randn(20, 3, 110, 110)
     output = m(image)
-    
-    #Needs to match target output shape of HSI 2nd layer
-    assert output.shape == (20,64,4,4)
 
 def test_spectral_network():
     m = RGB.spectral_fusion_network(classes=10, bands=349)
