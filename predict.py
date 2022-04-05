@@ -32,6 +32,8 @@ def convert(rgb_path, hyperspectral_pool, savedir):
         tif_path = "{}/{}".format(savedir, tif_basename)
         if not os.path.exists(tif_path):
             tif_paths.append(neon_paths.convert_h5(path, rgb_path, savedir, year=year))
+        else:
+            tif_paths.append(tif_path)
     
     return tif_paths
 
@@ -42,7 +44,7 @@ tiles = find_rgb_files(site="OSBS", config=config, year=2021)
 hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
 rgb_pool = glob(config["rgb_sensor_pool"], recursive=True)
 
-cpu_client = start(cpus=50, mem_size="8GB")
+cpu_client = start(cpus=3, mem_size="8GB")
 
 tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"])
 wait(tif_futures)
@@ -73,7 +75,8 @@ except:
     pass
 
 geo_index = [re.search("(\d+_\d+)_image", os.path.basename(x)).group(1) for x in hsi_tifs]
-for i in pd.Series(geo_index).unique():
+
+for i in pd.Series(geo_index).unique()[:1]:
     HSI_paths = {}
     tiles = [x for x in hsi_tifs if i in x] 
     for tile in tiles:
