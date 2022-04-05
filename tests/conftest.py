@@ -115,9 +115,12 @@ def species_model_path(config, dm):
     model = Hang2020.spectral_network(bands=3, classes=3)
     m = main.TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict)
     m.ROOT = "{}/tests/".format(ROOT)
-    filepath = "{}/model_2019.pl".format(tempfile.gettempdir())
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m, dm)
+    #Save two copies of the model for testing multi-temporal prediction
+    filepath = "{}/model_2019.pl".format(tempfile.gettempdir())    
+    trainer.save_checkpoint(filepath)
+    filepath = "{}/model_2018.pl".format(tempfile.gettempdir())    
     trainer.save_checkpoint(filepath)
     
     return filepath

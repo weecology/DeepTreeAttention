@@ -87,11 +87,12 @@ def my_collate(batch):
     
     return default_collate(batch)
 
-def predict_tile(HSI_paths, species_model_dir, config, dead_model_path=None, savedir=None):
+def predict_tile(HSI_paths, species_model_dir, config, dead_model_path=None, savedir=None, keep_year=None):
     """Generate species prediction from a HSI tile
     Args:
         HSI_paths: a dict of paths for a geoindex year->path_to_tif
         species_model_dir: directory to load year models
+        keep_year: which year to keep, if None, all years are kept. 
     """
     #get rgb from HSI path, all names are the same from the RGB tile
     HSI_basename = os.path.basename(HSI_paths[list(HSI_paths.keys())[0]])
@@ -149,6 +150,8 @@ def predict_tile(HSI_paths, species_model_dir, config, dead_model_path=None, sav
     
     #Latest year
     trees = gpd.GeoDataFrame(trees, geometry="geometry")
+    if keep_year:
+        trees = trees[trees.year==str(keep_year)]    
     if savedir:
         trees.to_file(os.path.join(savedir,"{}.shp".format(os.path.splitext(HSI_basename)[0])))
         
@@ -192,6 +195,9 @@ def predict_species(crowns, HSI_paths, models, config):
     # Prepare data for ensemble prediction
     crowns["bbox_score"] = crowns["score"]
     
+    # Predict species for each year
+    year_individuals = {} 
+    year_results = []    
     for year in HSI_paths:
         ds = on_the_fly_dataset(crowns=crowns, image_path=HSI_paths[year], config=config)
         data_loader = torch.utils.data.DataLoader(
@@ -201,11 +207,6 @@ def predict_species(crowns, HSI_paths, models, config):
             num_workers=config["workers"],
             collate_fn=my_collate
         )
-        
-        # Predict species for each year
-        year_individuals = {} 
-        year_results = []
-        
         try:
             year_model = models[year]
         except:

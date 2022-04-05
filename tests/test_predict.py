@@ -1,4 +1,5 @@
-#test_predict
+
+
 import os
 from src import predict
 from src.models import dead
@@ -25,4 +26,18 @@ def test_predict_tile(species_model_path, config, ROOT):
         dead_model_path=None,
         species_model_dir=species_model_dir,
         config=config)
-    assert all([x in trees.columns for x in ["pred_taxa_top1","geometry","top1_score"]])
+    assert all([x in trees.columns for x in ["pred_taxa_top1","geometry","top1_score","ensembleTaxonID"]])
+    assert all(trees.year.unique() == ["2018","2019"])
+    assert trees.loc[trees.individual == trees.individual[0]].shape[0] == 2
+    assert len(trees.loc[trees.individual == trees.individual[0]].ensembleTaxonID.unique()) == 1
+    
+    #Test keep year
+    trees = predict.predict_tile(
+        HSI_paths,
+        dead_model_path=None,
+        species_model_dir=species_model_dir,
+        config=config,
+        keep_year="2018"
+    )    
+    assert all(trees.year.unique() == ["2018"])
+    
