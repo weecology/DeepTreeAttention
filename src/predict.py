@@ -150,7 +150,7 @@ def predict_tile(HSI_paths, species_model_dir, config, dead_model_path=None, sav
     #Latest year
     trees = gpd.GeoDataFrame(trees, geometry="geometry")
     if savedir:
-        trees.to_file(os.path.join(savedir,"{}.shp".format(HSI_basename)))
+        trees.to_file(os.path.join(savedir,"{}.shp".format(os.path.splitext(HSI_basename)[0])))
         
     return trees
 
@@ -225,16 +225,17 @@ def predict_species(crowns, HSI_paths, models, config):
                 year_individuals[results.individual.iloc[index]] = [row]
 
         results["year"] = year
+        results["tile"] = HSI_paths[year]
         year_results.append(results)
 
     # Ensemble and merge into original frame
-    results = pd.concat(year_results)
-    results = ensemble(results, year_individuals)
-    results["ensembleTaxonID"] = results.temporal_pred_label_top1.apply(lambda x: year_model.index_to_label[x])
+    year_results = pd.concat(year_results)
+    year_results = ensemble(year_results, year_individuals)
+    year_results["ensembleTaxonID"] = year_results.temporal_pred_label_top1.apply(lambda x: year_model.index_to_label[x])
     crowns = crowns.loc[:,crowns.columns.isin(["geometry","dead_label","dead_score","CHM_height","bbox_score","box_id","individual"])]
-    results = results.merge(crowns, on="individual")
+    year_results = year_results.merge(crowns, on="individual")
                
-    return results, features
+    return year_results, features
 
 def predict_dead(crowns, dead_model_path, rgb_tile, config):
     """Classify RGB crops as Alive/Dead"""

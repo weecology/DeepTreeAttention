@@ -45,12 +45,12 @@ hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
 rgb_pool = glob(config["rgb_sensor_pool"], recursive=True)
 
 cpu_client = start(cpus=3, mem_size="8GB")
-
 tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"])
 wait(tif_futures)
 
 species_model_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/91ba2dc9445547f48805ec60be0a2f2f"
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
+
 hsi_tifs = []
 for x in tif_futures:
     try:
@@ -66,7 +66,6 @@ gpu_client = start(gpus=2, mem_size="10GB")
 #No daemonic dask children
 config["workers"] = 0
 futures =  []
-
 #Save each file seperately in a dir named for the species model
 savedir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",os.path.basename(species_model_dir))
 try:
