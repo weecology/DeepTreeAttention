@@ -545,7 +545,6 @@ class TreeData(LightningDataModule):
             self.train_ds = TreeDataset(
                 csv_file = "{}/train.csv".format(self.data_dir),
                 config=self.config,
-                metadata=self.metadata
             )
     
             self.val_ds = TreeDataset(
