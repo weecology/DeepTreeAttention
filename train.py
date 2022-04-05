@@ -7,7 +7,7 @@ import numpy as np
 from src import main
 from src import data
 from src import start_cluster
-from src.models import Hang2020
+from src.models import RGB
 from src import visualize
 from src import metrics
 import sys
@@ -65,9 +65,9 @@ if not config["use_data_commit"]:
 
 #Load from state dict of previous run
 if config["pretrain_state_dict"]:
-    model = Hang2020.load_from_backbone(state_dict=config["pretrain_state_dict"], classes=data_module.num_classes, bands=config["bands"])
+    model = RGB.load_from_backbone(state_dict=config["pretrain_state_dict"], classes=data_module.num_classes, bands=config["bands"])
 else:
-    model = Hang2020.spectral_network(bands=config["bands"], classes=data_module.num_classes)
+    model = RGB.spectral_fusion_network(bands=config["bands"], classes=data_module.num_classes)
     
 #Load from state dict of previous run
 

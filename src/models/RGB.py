@@ -119,3 +119,16 @@ class spectral_fusion_network(Module):
         scores = self.classifier3(attention)
         
         return scores
+    
+def load_from_backbone(state_dict, classes, bands):
+    train_state_dict = torch.load(state_dict, map_location="cpu")
+    dict_items = train_state_dict.items()
+    model = spectral_fusion_network(classes=classes, bands=bands)
+    dict_to_update = model.state_dict()
+    
+    #update weights from non-classifier layers
+    pretrained_dict = {k: v for k, v in dict_items if not "classifier" in k}
+    dict_to_update.update(pretrained_dict)
+    model.load_state_dict(dict_to_update)
+    
+    return model
