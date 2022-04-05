@@ -65,7 +65,7 @@ def config(ROOT):
     config["HSI_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
     config["min_train_samples"] = 1
     config["min_test_samples"] = 1
-    config["crop_dir"] = "{}/tests/data/crops/".format(ROOT)
+    config["crop_dir"] = "{}/tests/data/".format(ROOT)
     config["bands"] = 3
     config["classes"] = 3
     config["top_k"] = 1
