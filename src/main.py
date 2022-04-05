@@ -74,9 +74,10 @@ class TreeModel(LightningModule):
         """Calculate train loss
         """
         individual, inputs, y = batch
-        images = inputs["HSI"]
-        y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat[-1], y, weight=self.loss_weight)    
+        hsi_images = inputs["HSI"]    
+        rgb_images = inputs["RGB"]        
+        y_hat = self.model.forward(hsi_images, rgb_images)
+        loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)    
 
         return loss
 
@@ -85,9 +86,10 @@ class TreeModel(LightningModule):
         """Calculate val loss
         """
         individual, inputs, y = batch
-        images = inputs["HSI"]        
-        y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat[-1], y, weight=self.loss_weight)        
+        hsi_images = inputs["HSI"]    
+        rgb_images = inputs["RGB"]        
+        y_hat = self.model.forward(hsi_images, rgb_images)
+        loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)        
         
         # Log loss and metrics
         self.log("val_loss", loss, on_epoch=True)
@@ -253,18 +255,16 @@ class TreeModel(LightningModule):
     
     def predict(self,inputs):
         """Given a input dictionary, construct args for prediction"""
-        if "cuda" == self.device.type:
-            images = inputs["HSI"]
-            images = images.cuda()
-            pred = self.model(images)
-            #Last spectral block
-            pred = pred[-1]
+        hsi_images = inputs["HSI"]
+        rgb_images = inputs["RGB"]
+        
+        if "cuda" == self.device.type:            
+            hsi_images = hsi_images.cuda()
+            rgb_images = rgb_images.cuda()
+            pred = self.model(hsi_images, rgb_images)
             pred = pred.cpu()
         else:
-            images = inputs["HSI"]
-            pred = self.model(images)
-            #Last spectral block            
-            pred = pred[-1]
+            pred = self.model(hsi_images, rgb_images)
         
         return pred
     

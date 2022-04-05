@@ -44,7 +44,7 @@ samples_from_other_sites: 0
 #HSI
 image_size: 11
 #RGB
-rgb_image_size: 110
+RGB_image_size: 110
 preload_images: True
 workers: 0
 sampling_ceiling: 100

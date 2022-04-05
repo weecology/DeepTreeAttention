@@ -6,7 +6,7 @@ import os
 import glob
 import rasterio as rio
 from src import data
-from src.models import Hang2020
+from src.models import RGB
 from src.models import dead
 from src import main
 from src import utils
@@ -76,6 +76,7 @@ def config(ROOT):
     config["dead_threshold"] = 0.95
     config["megaplot_dir"] = None
     config["use_data_commit"] = None
+    config["existing_test_csv"] = None
     config["dead"]["epochs"] = 1
     
     return config
@@ -103,7 +104,7 @@ def comet_logger():
 #Training module
 @pytest.fixture(scope="session")
 def m(config, dm, ROOT):
-    model = Hang2020.spectral_network(bands=3, classes=3)
+    model = RGB.spectral_fusion_network(bands=3, classes=3)
     m = main.TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict, loss_weight=[0.1,0.8,1])
     m.ROOT = "{}/tests/".format(ROOT)
     

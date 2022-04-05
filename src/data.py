@@ -217,13 +217,12 @@ class TreeDataset(Dataset):
     Args:
        csv_file: path to csv file with image_path and label
     """
-    def __init__(self, csv_file, config=None, train=True, HSI=True, metadata=False):
+    def __init__(self, csv_file, config=None, train=True):
         self.annotations = pd.read_csv(csv_file)
         self.train = train
-        self.HSI = HSI
-        self.metadata = metadata
         self.config = config         
         self.image_size = config["image_size"]
+        self.RGB_image_size = config["RGB_image_size"]
 
         # Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=self.image_size)
@@ -234,6 +233,10 @@ class TreeDataset(Dataset):
             for index, row in self.annotations.iterrows():
                 image_path = os.path.join(self.config["crop_dir"],row["image_path"])
                 self.image_dict[index] = load_image(image_path, image_size=self.image_size)
+            self.RGB_image_dict = {}
+            for index, row in self.annotations.iterrows():
+                image_path = os.path.join(self.config["crop_dir"],row["RGB_image_path"])
+                self.RGB_image_dict[index] = load_image(image_path, image_size=self.RGB_image_size)
 
     def __len__(self):
         # 0th based index
@@ -243,26 +246,30 @@ class TreeDataset(Dataset):
         inputs = {}
         image_path = self.annotations.image_path.loc[index]      
         individual = os.path.basename(image_path.split(".tif")[0])
-        if self.HSI:
-            if self.config["preload_images"]:
-                inputs["HSI"] = self.image_dict[index]
-            else:
-                image_basename = self.annotations.image_path.loc[index]  
-                image_path = os.path.join(self.config["crop_dir"],image_basename)                
-                image = load_image(image_path, image_size=self.image_size)
-                inputs["HSI"] = image
-
-        if self.metadata:
-            site = self.annotations.site.loc[index]  
-            site = torch.tensor(site, dtype=torch.int)
-            inputs["site"] = site
+        if self.config["preload_images"]:
+            inputs["HSI"] = self.image_dict[index]
+        else:
+            image_basename = self.annotations.image_path.loc[index]  
+            image_path = os.path.join(self.config["crop_dir"],image_basename)                
+            image = load_image(image_path, image_size=self.image_size)
+            inputs["HSI"] = image
+        if self.config["preload_images"]:
+            inputs["RGB"] = self.RGB_image_dict[index]
+        else:
+            image_basename = self.annotations.RGB_image_path.loc[index]  
+            image_path = os.path.join(self.config["crop_dir"],image_basename)                
+            image = load_image(image_path, image_size=self.RGB_image_size)
+            inputs["RGB"] = image
+        site = self.annotations.site.loc[index]  
+        site = torch.tensor(site, dtype=torch.int)
+        inputs["site"] = site
 
         if self.train:
             label = self.annotations.label.loc[index]
             label = torch.tensor(label, dtype=torch.long)
 
-            if self.HSI:
-                inputs["HSI"] = self.transformer(inputs["HSI"])
+            inputs["HSI"] = self.transformer(inputs["HSI"])
+            inputs["RGB"] = self.transformer(inputs["RGB"])
 
             return individual, inputs, label
         else:
@@ -407,6 +414,20 @@ class TreeData(LightningDataModule):
                 client=self.client,
                 replace=self.config["replace"]
             )
+            
+            rgb_annotations = generate.generate_crops(
+                self.crowns,
+                savedir=self.data_dir,
+                sensor_glob=self.config["rgb_sensor_pool"],
+                convert_h5=False,   
+                rgb_glob=self.config["rgb_sensor_pool"],
+                HSI_tif_dir=self.config["HSI_tif_dir"],
+                client=self.client,
+                replace=self.config["replace"]
+            )
+            rgb_annotations["RGB_image_path"] = rgb_annotations["image_path"]
+            annotations = annotations.merge(rgb_annotations[["individualID","RGB_image_path"]], on="individualID")
+            
             annotations.to_csv("{}/annotations.csv".format(self.data_dir))
             
             if self.comet_logger:
@@ -478,16 +499,12 @@ class TreeData(LightningDataModule):
             #Create dataloaders
             self.train_ds = TreeDataset(
                 csv_file = "{}/train.csv".format(self.data_dir),
-                config=self.config,
-                HSI=self.HSI,
-                metadata=self.metadata
+                config=self.config
             )
             
             self.val_ds = TreeDataset(
                 csv_file = "{}/test.csv".format(self.data_dir),
-                config=self.config,
-                HSI=self.HSI,
-                metadata=self.metadata
+                config=self.config
             )
              
         else:

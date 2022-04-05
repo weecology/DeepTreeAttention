@@ -3,7 +3,7 @@ import rasterio
 from rasterio.features import geometry_mask
 import numpy as np
 
-def crop(bounds, sensor_path, savedir = None, basename = None, mask=None):
+def crop(bounds, sensor_path, savedir = None, basename = None):
     """Given a 4 pointed bounding box, crop sensor data"""
     left, bottom, right, top = bounds 
     src = rasterio.open(sensor_path)        
@@ -11,13 +11,6 @@ def crop(bounds, sensor_path, savedir = None, basename = None, mask=None):
     res = src.res[0]
     height = (top - bottom)/res
     width = (right - left)/res  
-    if mask:
-        img_tr = src.window_transform(
-            window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform)
-        )
-        feature_mask = geometry_mask(geometries=[mask], out_shape=img.shape[1:], transform=img_tr, invert=True)
-        mean_pixel = img.mean(axis=(1,2))
-        img = np.where(feature_mask[np.newaxis,:,:,],img,mean_pixel[:,np.newaxis,np.newaxis])
     if savedir:
         filename = "{}/{}.tif".format(savedir, basename)
         with rasterio.open(filename, "w", driver="GTiff",height=height, width=width, count = img.shape[0], dtype=img.dtype) as dst:

@@ -224,7 +224,7 @@ def points_to_crowns(
                 print(e)
                 continue
     else:
-        #IMPORTS at runtime due to dask pickling, kinda ugly.
+        # Imports at runtime due to dask pickling, kinda ugly.
         deepforest_model = main.deepforest()  
         deepforest_model.use_release(check_release=False)
         for plot in plot_names:
@@ -235,7 +235,7 @@ def points_to_crowns(
                 print("{} failed with {}".format(plot, e))
     results = pd.concat(results)
     
-    #In case any contrib data has the same CHM and height and sitting in the same deepforest box.Should be rare.
+    # In case any contrib data has the same CHM and height and sitting in the same deepforest box
     results = results.groupby(["plotID","box_id"]).apply(lambda x: x.head(1)).reset_index(drop=True)
     
     return results
@@ -253,16 +253,14 @@ def write_crop(row, img_path, savedir, replace=True):
                 bounds=row["geometry"].bounds,
                 sensor_path=img_path,
                 savedir=savedir,
-                basename=row["individual"],
-                mask=row["geometry"]
+                basename=row["individual"]
             )  
     else:
         filename = patches.crop(
             bounds=row["geometry"].bounds,
             sensor_path=img_path,
             savedir=savedir,
-            basename=row["individual"],
-            mask=row["geometry"]
+            basename=row["individual"]
         )
         annotation = pd.DataFrame({"image_path":[os.path.basename(filename)], "taxonID":[row["taxonID"]], "plotID":[row["plotID"]], "individualID":[row["individual"]], "RGB_tile":[row["RGB_tile"]], "siteID":[row["siteID"]],"box_id":[row["box_id"]]})
         return annotation
