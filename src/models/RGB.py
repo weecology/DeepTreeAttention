@@ -28,7 +28,7 @@ class RGB_conv_module(Module):
 class RGB(nn.Module):
     def __init__(self):
         super(RGB, self).__init__()        
-        self.feature_extractor = resnet50(pretrained=True)
+        self.feature_extractor = resnet18(pretrained=True)
         #get last layer
         self.feature_extractor.fc = nn.Identity()
         self.pooling = nn.MaxPool1d(kernel_size=7)
