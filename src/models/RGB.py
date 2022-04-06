@@ -101,7 +101,7 @@ class spectral_fusion_network(Module):
     
         self.conv3 = conv_module(in_channels=64, filters=128, maxpool_kernel=(2,2))
         self.attention_3 = spatial_attention(filters=128)
-        self.classifier = Classifier(classes=classes, in_features=512+292)
+        self.classifier = Classifier(classes=classes, in_features=512+73)
     
     def forward(self, hsi_image, rgb_image):
         """The forward method is written for training the joint scores of the three attention layers"""
