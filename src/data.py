@@ -226,7 +226,7 @@ class TreeDataset(Dataset):
 
         # Create augmentor
         self.transformer = augmentation.train_augmentation()
-        self.RGB_transformer = augmentation.rgb_augmentation()
+        self.RGB_transformer = augmentation.RGB_augmentation()
         
         # Pin data to memory if desired
         if self.config["preload_images"]:
