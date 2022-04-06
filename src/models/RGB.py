@@ -29,6 +29,11 @@ class RGB(nn.Module):
     def __init__(self):
         super(RGB, self).__init__()        
         self.feature_extractor = resnet18(pretrained=True)
+        
+        #Freeze extractor
+        for param in self.feature_extractor.parameters():
+            param.requires_grad = False
+            
         #get last layer
         self.feature_extractor.fc = nn.Identity()
         self.pooling = nn.MaxPool1d(kernel_size=7)
