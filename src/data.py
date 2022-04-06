@@ -225,8 +225,9 @@ class TreeDataset(Dataset):
         self.RGB_image_size = config["RGB_image_size"]
 
         # Create augmentor
-        self.transformer = augmentation.train_augmentation(image_size=self.image_size)
-
+        self.transformer = augmentation.train_augmentation()
+        self.RGB_transformer = augmentation.rgb_augmentation()
+        
         # Pin data to memory if desired
         if self.config["preload_images"]:
             self.image_dict = {}
@@ -269,7 +270,7 @@ class TreeDataset(Dataset):
             label = torch.tensor(label, dtype=torch.long)
 
             inputs["HSI"] = self.transformer(inputs["HSI"])
-            inputs["RGB"] = self.transformer(inputs["RGB"])
+            inputs["RGB"] = self.RGB_transformer(inputs["RGB"])
 
             return individual, inputs, label
         else:
