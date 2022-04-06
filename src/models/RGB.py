@@ -3,6 +3,7 @@ from src.models.Hang2020 import *
 from torch.nn import Module
 from torch.nn import functional as F
 from torch import nn
+from torchvision.models import resnet50
 
 class RGB_conv_module(Module):
     def __init__(self, in_channels, filters, maxpool_kernel=None):
@@ -27,12 +28,12 @@ class RGB_conv_module(Module):
 class RGB(nn.Module):
     def __init__(self):
         super(RGB, self).__init__()        
-        self.conv1 = RGB_conv_module(in_channels=3, filters=16)
-        self.conv2 = RGB_conv_module(in_channels=16, filters=32, maxpool_kernel=(7,7))
-    
+        self.feature_extractor = resnet50(pretrained=True)
+        #get last layer
+        self.feature_extractor.fc = nn.Identity()
+        
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.conv2(x, pool=True)
+        x = self.feature_extractor(x)
         
         return x
 
@@ -97,7 +98,7 @@ class spectral_fusion_network(Module):
     
         self.conv3 = conv_module(in_channels=64, filters=128, maxpool_kernel=(2,2))
         self.attention_3 = spatial_attention(filters=128)
-        self.classifier = Classifier(classes=classes, in_features=512+32)
+        self.classifier = Classifier(classes=classes, in_features=512+2048)
     
     def forward(self, hsi_image, rgb_image):
         """The forward method is written for training the joint scores of the three attention layers"""
