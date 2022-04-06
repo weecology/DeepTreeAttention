@@ -112,7 +112,7 @@ class spectral_fusion_network(Module):
         rgb_features = self.RGB_features(rgb_image)  
         rgb_features = torch.flatten(rgb_features, start_dim=1)
         
-        attention = torch.cat([attention, rgb_features], dim=1)
+        #attention = torch.cat([attention, rgb_features], dim=1)
         scores = self.classifier(attention)
         
         return scores
