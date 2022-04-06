@@ -3,7 +3,7 @@ from src.models.Hang2020 import *
 from torch.nn import Module
 from torch.nn import functional as F
 from torch import nn
-from torchvision.models import resnet50
+from torchvision.models import resnet18
 
 class RGB_conv_module(Module):
     def __init__(self, in_channels, filters, maxpool_kernel=None):
