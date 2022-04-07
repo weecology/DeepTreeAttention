@@ -108,8 +108,8 @@ class spectral_fusion_network(Module):
         self.attention_3 = spatial_attention(filters=128)
         
         #normalize 
-        self.rgb_norm = nn.LayerNorm((73))
-        self.hsi_norm = nn.LayerNorm((512))
+        self.rgb_norm = nn.BatchNorm1d((73))
+        self.hsi_norm = nn.BatchNorm1d((512))
         
         self.classifier = Classifier(classes=classes, in_features=512+73)
         
