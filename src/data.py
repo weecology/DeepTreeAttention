@@ -420,7 +420,7 @@ class TreeData(LightningDataModule):
             rgb_crowns = self.crowns.copy()
             rgb_crowns.geometry = rgb_crowns.geometry.buffer(4)
             rgb_annotations = generate.generate_crops(
-                self.rgb_crowns,
+                rgb_crowns,
                 savedir=self.data_dir,
                 sensor_glob=self.config["rgb_sensor_pool"],
                 convert_h5=False,   
