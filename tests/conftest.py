@@ -110,7 +110,7 @@ def m(config, dm, ROOT):
     
     return m
 
-#Training module
+#Training module for prediction
 @pytest.fixture(scope="session")
 def species_model_path(config, dm):
     model = Hang2020.spectral_network(bands=3, classes=3)
