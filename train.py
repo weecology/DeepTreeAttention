@@ -39,7 +39,7 @@ if config["use_data_commit"]:
 else:
     crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
     os.mkdir(crop_dir)
-    client = start_cluster.start(cpus=50, mem_size="4GB")    
+    client = start_cluster.start(cpus=100, mem_size="4GB")    
     config["crop_dir"] = crop_dir
     model_dir = crop_dir
 
