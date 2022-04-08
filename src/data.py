@@ -405,6 +405,8 @@ class TreeData(LightningDataModule):
                 client=self.client,
                 replace=self.config["replace"]
             )
+            
+            annotations = annotations.groupby("taxonID").apply(lambda x: x.head(self.config["sampling_ceiling"])).reset_index(drop=True)            
             annotations.to_csv("{}/annotations.csv".format(self.data_dir))
             
             if self.comet_logger:
