@@ -407,7 +407,7 @@ class TreeData(LightningDataModule):
             )
             
             ids_to_keep = annotations.groupby("taxonID").apply(lambda x: x.head(self.config["sampling_ceiling"])).reset_index(drop=True)            
-            annotations[annotations.individualID.isin(ids_to_keep)]
+            annotations = annotations[annotations.individualID.isin(ids_to_keep)]
             annotations.to_csv("{}/annotations.csv".format(self.data_dir))
             
             if self.comet_logger:
