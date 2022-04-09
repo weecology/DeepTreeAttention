@@ -406,7 +406,7 @@ class TreeData(LightningDataModule):
                 replace=self.config["replace"]
             )
             
-            ids_to_keep = annotations.groupby("taxonID").apply(lambda x: x.head(self.config["sampling_ceiling"])).reset_index(drop=True)            
+            ids_to_keep = annotations.drop_duplicates(subset=["individualID"]).groupby("taxonID").apply(lambda x: x.head(self.config["sampling_ceiling"])).reset_index(drop=True)            
             annotations = annotations[annotations.individualID.isin(ids_to_keep.individualID)]
             annotations.to_csv("{}/annotations.csv".format(self.data_dir))
             
