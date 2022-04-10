@@ -152,13 +152,6 @@ for x in data_module.train.tile_year.unique():
 results = pd.concat(year_results)
 results = utils.ensemble(results, year_individuals)
 
-#Temporal function
-temporal_micro = torchmetrics.functional.accuracy(preds=torch.tensor(temporal_only.temporal_pred_label_top1.values),target=torch.tensor(temporal_only.label.values), num_classes=data_module.num_classes,average="micro")
-temporal_macro = torchmetrics.functional.precision(preds=torch.tensor(temporal_only.temporal_pred_label_top1.values),target=torch.tensor(temporal_only.label.values), num_classes=data_module.num_classes, average="macro")
-
-comet_logger.experiment.log_metric("temporal_micro",temporal_micro)
-comet_logger.experiment.log_metric("temporal_macro",temporal_macro)
-
 #Log prediction
 comet_logger.experiment.log_table("test_predictions.csv", results)
 
@@ -166,6 +159,13 @@ comet_logger.experiment.log_table("test_predictions.csv", results)
 temporal_only = results.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
 temporal_only["pred_taxa_top1"] = temporal_only["temporal_pred_label_top1"].apply(lambda x: data_module.label_to_taxonID[x]) 
 temporal_only["pred_label_top1"] = temporal_only["temporal_pred_label_top1"]
+
+#Temporal function
+temporal_micro = torchmetrics.functional.accuracy(preds=torch.tensor(temporal_only.temporal_pred_label_top1.values),target=torch.tensor(temporal_only.label.values), num_classes=data_module.num_classes,average="micro")
+temporal_macro = torchmetrics.functional.precision(preds=torch.tensor(temporal_only.temporal_pred_label_top1.values),target=torch.tensor(temporal_only.label.values), num_classes=data_module.num_classes, average="macro")
+
+comet_logger.experiment.log_metric("temporal_micro",temporal_micro)
+comet_logger.experiment.log_metric("temporal_macro",temporal_macro)
 
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
