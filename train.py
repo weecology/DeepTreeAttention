@@ -96,13 +96,13 @@ for x in data_module.train.tile_year.unique():
     with comet_logger.experiment.context_manager(x):
         
         #Set the dataloaders by year
-        data_module.train_ds = TreeDataset(
+        data_module.train_ds = data.TreeDataset(
             csv_file = "{}/train.csv".format(data_module.data_dir),
             config=data_module.config,
             year=x,
         )
         
-        data_module.val_ds = TreeDataset(
+        data_module.val_ds = data.TreeDataset(
             csv_file = "{}/test.csv".format(data_module.data_dir),
             config=data_module.config,
             year=x
