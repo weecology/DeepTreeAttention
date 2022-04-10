@@ -94,7 +94,20 @@ year_individuals = {}
 
 for x in data_module.train.tile_year.unique():
     with comet_logger.experiment.context_manager(x):
-        data_module.setup(year=x)
+        
+        #Set the dataloaders by year
+        data_module.train_ds = TreeDataset(
+            csv_file = "{}/train.csv".format(data_module.data_dir),
+            config=data_module.config,
+            year=x,
+        )
+        
+        data_module.val_ds = TreeDataset(
+            csv_file = "{}/test.csv".format(data_module.data_dir),
+            config=data_module.config,
+            year=x
+        )
+        
         year_model[x] = main.TreeModel(
             model=copy.deepcopy(model), 
             classes=data_module.num_classes, 
