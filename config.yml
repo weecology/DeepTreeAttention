@@ -26,7 +26,7 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Checkout data artifact from comet
-use_data_commit: 122725bdf0cb4e9cb398c6ebc1170797
+use_data_commit: 8d8fb8b6abf048d89b4bcc13d00a2d45
 
 #Make new dataset
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
@@ -44,7 +44,7 @@ samples_from_other_sites: 0
 image_size: 11
 preload_images: True
 workers: 0
-sampling_ceiling: 100
+sampling_ceiling: 200
 #Network Parameters
 pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/3febd94f4aa64244bf91e6714b987106.pt
 gpus: 1
