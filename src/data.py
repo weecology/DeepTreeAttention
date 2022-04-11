@@ -219,7 +219,7 @@ class TreeDataset(Dataset):
     def __init__(self, csv_file, config=None, train=True, HSI=True, metadata=False, year=None):
         self.annotations = pd.read_csv(csv_file)
         if year:
-            self.annotations = self.annotations[self.annotations.tile_year==year].reset_index(drop=True)
+            self.annotations = self.annotations[self.annotations.tile_year==int(year)].reset_index(drop=True)
         self.train = train
         self.HSI = HSI
         self.metadata = metadata
