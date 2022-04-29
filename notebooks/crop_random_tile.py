@@ -1,7 +1,7 @@
 #crop random dataset
 import glob
 import sys
-sys.path.append("..")
+sys.path.append("../")
 from src.data import read_config
 import os
 from src import neon_paths
@@ -152,6 +152,8 @@ for x in range(300):
 
 wait(futures)
 
+for x in futures:
+    x.result()
 # post process cleanup
 files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/**/*.tif",recursive=True)
 counts = pd.DataFrame({"basename":[os.path.basename(x) for x in files],"path":files}) 
