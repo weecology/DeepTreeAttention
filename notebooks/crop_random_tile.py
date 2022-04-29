@@ -1,7 +1,6 @@
 #crop random dataset
 import glob
 import sys
-sys.path.append("../")
 from src.data import read_config
 import os
 from src import neon_paths
@@ -16,7 +15,7 @@ import pandas as pd
 import h5py
 import json
 
-client = start(cpus=200, mem_size = "20GB")
+client = start(cpus=10, mem_size = "20GB")
 def crop(bounds, sensor_path, savedir = None, basename = None):
     """Given a 4 pointed bounding box, crop sensor data"""
     left, bottom, right, top = bounds 
@@ -137,7 +136,7 @@ def random_crop(rgb_pool, hsi_pool, CHM_pool, config, iteration):
              savedir=year_dir,
              basename="HSI")
 
-config = read_config("../config.yml")    
+config = read_config("config.yml")    
 rgb_pool = glob.glob(config["rgb_sensor_pool"], recursive=True)
 rgb_pool = [x for x in rgb_pool if not "classified" in x]
 hsi_pool = glob.glob(config["HSI_sensor_pool"], recursive=True)
@@ -146,14 +145,18 @@ CHM_pool = glob.glob(config["CHM_pool"], recursive=True)
 random_crop(rgb_pool=rgb_pool, hsi_pool=hsi_pool, CHM_pool=CHM_pool, config=config, iteration=0)
 
 futures = []
-for x in range(300):
+for x in range(1000):
     future = client.submit(random_crop, rgb_pool=rgb_pool, hsi_pool=hsi_pool, CHM_pool=CHM_pool, config=config, iteration=x)
     futures.append(future)
 
 wait(futures)
 
 for x in futures:
-    x.result()
+    try:
+        x.result()
+    except Exception as e:
+        print(e)
+        
 # post process cleanup
 files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/**/*.tif",recursive=True)
 counts = pd.DataFrame({"basename":[os.path.basename(x) for x in files],"path":files}) 
