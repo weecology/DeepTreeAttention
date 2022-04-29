@@ -137,7 +137,7 @@ def random_crop(rgb_pool, hsi_pool, CHM_pool, config, iteration):
              savedir=year_dir,
              basename="HSI")
 
-config = read_config("config.yml")    
+config = read_config("../config.yml")    
 rgb_pool = glob.glob(config["rgb_sensor_pool"], recursive=True)
 rgb_pool = [x for x in rgb_pool if not "classified" in x]
 hsi_pool = glob.glob(config["HSI_sensor_pool"], recursive=True)
