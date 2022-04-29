@@ -1,5 +1,7 @@
 #crop random dataset
 import glob
+import sys
+sys.path.append("..")
 from src.data import read_config
 import os
 from src import neon_paths
@@ -125,7 +127,6 @@ def random_crop(rgb_pool, hsi_pool, CHM_pool, config, iteration):
         year_dir = os.path.join(coord_dir,selected_years[index]) 
         with open(os.path.join(year_dir,"metadata.json"), 'w') as convert_file:
             convert_file.write(json.dumps(selected_dict))
-            
         crop(bounds=bounds, sensor_path=tile,
              savedir=year_dir,
              basename="CHM")
