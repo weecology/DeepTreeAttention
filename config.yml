@@ -59,7 +59,7 @@ epochs: 150
 #Top k class recall score
 top_k: 4
 #Number of individuals to plot in comet graphics tab
-plot_n_individuals: 10
+plot_n_individuals: 0
 
 #Predict
 predict_batch_size: 1024
