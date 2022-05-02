@@ -292,7 +292,7 @@ class TreeModel(LightningModule):
         results, features = self.predict_dataloader(
             data_loader=data_loader,
             plot_n_individuals=self.config["plot_n_individuals"],
-            experiment=experiment,
+            experiment=None,
             test_crowns=crowns,
             test_points=points,
             return_features=True
