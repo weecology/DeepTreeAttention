@@ -19,21 +19,6 @@ def test_evaluate_crowns(config, experiment, m, dm, ROOT):
     df = m.evaluate_crowns(data_loader = dm.val_dataloader(), crowns=dm.crowns, points=dm.canopy_points, experiment=experiment)
     assert all(["top{}_score".format(x) in df.columns for x in [1,2]]) 
 
-def test_predict_xy(config, m, dm, ROOT):
-    csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)            
-    df = pd.read_csv(csv_file)
-    label, score = m.predict_xy(coordinates=(df.itcEasting[0],df.itcNorthing[0]))
-    
-    assert label in dm.species_label_dict.keys()
-    assert score > 0 
-
-def test_predict_crown(config, m, dm, ROOT):
-    gdf = gpd.read_file("{}/tests/data/crown.shp".format(ROOT))
-    label, score = m.predict_crown(geom = gdf.geometry[0], sensor_path = "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop.tif".format(ROOT))
-    
-    assert label in dm.species_label_dict.keys()
-    assert score > 0 
-
 def test_ensemble(m, dm, ROOT):
     m.ROOT = "{}/tests".format(ROOT)
     models = [m, m]

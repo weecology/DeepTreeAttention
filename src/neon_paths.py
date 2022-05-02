@@ -45,7 +45,6 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None, geo_index=None, a
         
     #Get most recent year
     if all_years:
-        
         return match
     else:        
         match.sort()
