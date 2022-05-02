@@ -26,7 +26,7 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Checkout data artifact from comet
-use_data_commit:
+use_data_commit: 65cc182259e246c1916938747badee7e
 
 #Make new dataset
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
@@ -59,7 +59,7 @@ epochs: 150
 #Top k class recall score
 top_k: 4
 #Number of individuals to plot in comet graphics tab
-plot_n_individuals: 100
+plot_n_individuals: 0
 
 #Predict
 predict_batch_size: 1024
