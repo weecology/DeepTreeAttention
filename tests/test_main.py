@@ -12,40 +12,11 @@ def test_predict_dataloader(config, m, dm, experiment, ROOT):
     df = m.predict_dataloader(dm.val_dataloader(), test_crowns=dm.crowns, test_points=dm.canopy_points, experiment = experiment)
     input_data = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))    
     
-    assert df.shape[0] == len(input_data.image_path.apply(lambda x: os.path.basename(x).split("_")[0]))
+    assert df.shape[0] == dm.test.shape[0]
     
 def test_evaluate_crowns(config, experiment, m, dm, ROOT):
     m.ROOT = "{}/tests".format(ROOT)
     df = m.evaluate_crowns(data_loader = dm.val_dataloader(), crowns=dm.crowns, points=dm.canopy_points, experiment=experiment)
     assert all(["top{}_score".format(x) in df.columns for x in [1,2]]) 
-
-def test_ensemble(m, dm, ROOT):
-    m.ROOT = "{}/tests".format(ROOT)
-    models = [m, m]
-    
-    individuals = {}
-    result_df = []
-    for x in models:
-        results, features = x.predict_dataloader(
-            data_loader=dm.val_dataloader(),
-            experiment=None,
-            return_features=True
-        )
-        
-        for index, row in enumerate(features):
-            try:
-                individuals[results.individual.iloc[index]].append(row)
-            except:
-                individuals[results.individual.iloc[index]] = [row]
-                
-        results = x.evaluate_crowns(
-            dm.val_dataloader(),
-            crowns=dm.crowns
-        )
-        result_df.append(results)
-        
-    result_df = pd.concat(result_df)
-    temporal_df = utils.ensemble(result_df, individuals)
-    assert temporal_df.shape[0] == dm.test.shape[0] * len(models)
     
     

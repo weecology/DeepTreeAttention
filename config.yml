@@ -13,7 +13,7 @@ min_stem_diameter: 10
 min_train_samples: 15
 min_test_samples: 15
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
-iterations: 10000
+iterations: 100
 #minimum CHM height, leave blank to skip CHM filtering
 min_CHM_height: 1
 #Max difference between measured height and CHM height if CHM > height
