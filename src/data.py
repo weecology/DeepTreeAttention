@@ -216,15 +216,12 @@ class TreeDataset(Dataset):
     Args:
        csv_file: path to csv file with image_path and label
     """
-    def __init__(self, csv_file, config=None, train=True, HSI=True, metadata=False, year=None):
+    def __init__(self, csv_file, config=None, train=True):
         self.annotations = pd.read_csv(csv_file)
-        if year:
-            self.annotations = self.annotations[self.annotations.tile_year==int(year)].reset_index(drop=True)
         self.train = train
-        self.HSI = HSI
-        self.metadata = metadata
         self.config = config         
         self.image_size = config["image_size"]
+        self.individuals = self.annotations.individualID.unique()
         
         # Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=self.image_size)
@@ -235,45 +232,39 @@ class TreeDataset(Dataset):
             for index, row in self.annotations.iterrows():
                 try:
                     image_path = os.path.join(self.config["crop_dir"],row["image_path"])                    
-                    self.image_dict[index] = load_image(image_path, image_size=self.image_size)
+                    image = load_image(image_path, image_size=self.image_size)
+                    if self.train:
+                        image = self.transformer(image)   
+                    self.image_dict[index] = image
                 except:
                     self.image_dict[index] = None
 
     def __len__(self):
         # 0th based index
-        return self.annotations.shape[0]
+        return len(self.annotations.individualID.unique())
 
     def __getitem__(self, index):
         inputs = {}
-        image_path = self.annotations.image_path.loc[index]      
-        individual = self.annotations.individualID[index]    
-        year = self.annotations.tile_year.loc[index]
-        
-        if self.HSI:
+        individual = self.individuals[index]
+        individual_annotations = self.annotations[self.annotations.individualID == individual]
+        year_images = []
+        for index, row in individual_annotations.iterrows():
             if self.config["preload_images"]:
-                inputs["HSI"] = self.image_dict[index]
+                image = self.image_dict[index]    
+                year_images.append(image)
             else:
-                image_path = self.annotations.image_path.loc[index]  
-                image_path = os.path.join(self.config["crop_dir"],image_path)                                
-                try:
-                    image = load_image(image_path, image_size=self.image_size)
-                    inputs["HSI"] = image                    
-                except:
-                    image = None
-
-        if self.metadata:
-            site = self.annotations.site.loc[index]  
-            site = torch.tensor(site, dtype=torch.int)
-            inputs["site"] = site
-
+                image_path = os.path.join(self.config["crop_dir"],row["image_path"])                    
+                image = load_image(image_path, image_size=self.image_size)
+                if self.train:
+                    image = self.transformer(image)
+                year_images.append(image)  
+        
+        inputs["HSI"] = year_images
+        
         if self.train:
             label = self.annotations.label.loc[index]
             label = torch.tensor(label, dtype=torch.long)
-
-            if self.HSI:
-                if not inputs["HSI"] is None:
-                    inputs["HSI"] = self.transformer(inputs["HSI"])
-
+            
             return individual, inputs, label
         else:
             return individual, inputs
@@ -295,8 +286,6 @@ class TreeData(LightningDataModule):
         super().__init__()
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
         self.csv_file = csv_file
-        self.HSI = HSI
-        self.metadata = metadata
         self.comet_logger = comet_logger
         self.debug = debug 
 
@@ -316,7 +305,6 @@ class TreeData(LightningDataModule):
         if not self.config["use_data_commit"]:
                         
             if self.config["replace"]: 
-                    
                 # Convert raw neon data to x,y tree locatins
                 df = filter_data(self.csv_file, config=self.config)
                     
@@ -480,19 +468,12 @@ class TreeData(LightningDataModule):
             #Create dataloaders
             self.train_ds = TreeDataset(
                 csv_file = "{}/train.csv".format(self.data_dir),
-                config=self.config,
-                HSI=self.HSI,
-                year=year,
-                metadata=self.metadata
+                config=self.config
             )
             
             self.val_ds = TreeDataset(
                 csv_file = "{}/test.csv".format(self.data_dir),
-                config=self.config,
-                HSI=self.HSI,
-                year=year,
-                metadata=self.metadata
-            )
+                config=self.config)
              
         else:
             print("Loading previous run")            
@@ -529,18 +510,12 @@ class TreeData(LightningDataModule):
             #Create dataloaders
             self.train_ds = TreeDataset(
                 csv_file = "{}/train.csv".format(self.data_dir),
-                config=self.config,
-                HSI=self.HSI,
-                year=year,
-                metadata=self.metadata
+                config=self.config
             )
     
             self.val_ds = TreeDataset(
                 csv_file = "{}/test.csv".format(self.data_dir),
-                config=self.config,
-                HSI=self.HSI,
-                year=year,
-                metadata=self.metadata
+                config=self.config
             )            
 
     def train_dataloader(self):
@@ -561,7 +536,6 @@ class TreeData(LightningDataModule):
             shuffle=False,
             num_workers=self.config["workers"],
             collate_fn=my_collate
-            
         )
         
         return data_loader

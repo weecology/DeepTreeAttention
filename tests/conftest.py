@@ -6,7 +6,7 @@ import os
 import glob
 import rasterio as rio
 from src import data
-from src.models import Hang2020
+from src.models import year
 from src.models import dead
 from src import main
 from src import utils
@@ -77,6 +77,7 @@ def config(ROOT):
     config["megaplot_dir"] = None
     config["use_data_commit"] = None
     config["dead"]["epochs"] = 1
+    config["pretrain_state_dict"] = None
     
     return config
 
@@ -84,7 +85,7 @@ def config(ROOT):
 @pytest.fixture(scope="session")
 def dm(config, ROOT):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)               
-    dm = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data/crops/".format(ROOT), debug=True, metadata=True) 
+    dm = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data/crops/".format(ROOT), debug=True) 
     dm.setup()    
     
     return dm
@@ -103,7 +104,7 @@ def experiment():
 #Training module
 @pytest.fixture(scope="session")
 def m(config, dm, ROOT):
-    model = Hang2020.spectral_network(bands=3, classes=3)
+    model = year.YearModel(bands=3, classes=3, config=config)
     m = main.TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict, loss_weight=[0.1,0.8,1])
     m.ROOT = "{}/tests/".format(ROOT)
     
@@ -112,7 +113,7 @@ def m(config, dm, ROOT):
 #Training module
 @pytest.fixture(scope="session")
 def species_model_path(config, dm):
-    model = Hang2020.spectral_network(bands=3, classes=3)
+    model = year.YearModel(bands=3, classes=3, config=config)
     m = main.TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict)
     m.ROOT = "{}/tests/".format(ROOT)
     trainer = Trainer(fast_dev_run=True)
