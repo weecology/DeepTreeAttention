@@ -218,7 +218,7 @@ class TreeDataset(Dataset):
     """
     def __init__(self, csv_file, config=None, train=True):
         self.annotations = pd.read_csv(csv_file)
-        self.annotations[self.annotations.tile_year.isin([2018,2019,2020,2021,2022])]
+        self.annotations[self.annotations.tile_year.isin([2018,2019])]
         self.train = train
         self.config = config         
         self.image_size = config["image_size"]
