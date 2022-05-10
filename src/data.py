@@ -524,8 +524,7 @@ class TreeData(LightningDataModule):
             self.train_ds,
             batch_size=self.config["batch_size"],
             shuffle=True,
-            num_workers=self.config["workers"],
-            collate_fn=my_collate
+            num_workers=self.config["workers"]
             )
         
         return data_loader
@@ -535,8 +534,7 @@ class TreeData(LightningDataModule):
             self.val_ds,
             batch_size=self.config["batch_size"],
             shuffle=False,
-            num_workers=self.config["workers"],
-            collate_fn=my_collate
+            num_workers=self.config["workers"]
         )
         
         return data_loader
