@@ -7,7 +7,7 @@ import numpy as np
 from src import main
 from src import data
 from src import start_cluster
-from src.models import Hang2020
+from src.models import year
 from src import visualize
 from src import metrics
 import sys
@@ -73,6 +73,7 @@ loss_weight[loss_weight < 0.5] = 0.5
 
 comet_logger.experiment.log_parameter("loss_weight", loss_weight)
 
+model = year.YearModel(bands=config["bands"], classes=data_module.num_classes, config=config)
 m = main.TreeModel(
     model=model, 
     classes=data_module.num_classes, 

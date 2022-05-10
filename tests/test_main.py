@@ -12,7 +12,7 @@ def test_predict_dataloader(config, m, dm, experiment, ROOT):
     df = m.predict_dataloader(dm.val_dataloader(), test_crowns=dm.crowns, test_points=dm.canopy_points, experiment = experiment)
     input_data = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))    
     
-    assert df.shape[0] == dm.test.shape[0]
+    assert df.shape[0] == len(dm.test.individualID.unique())
     
 def test_evaluate_crowns(config, experiment, m, dm, ROOT):
     m.ROOT = "{}/tests".format(ROOT)
