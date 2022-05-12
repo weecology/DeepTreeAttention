@@ -90,10 +90,10 @@ trainer.fit(m, datamodule=data_module)
 
 #Save model checkpoint
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
-predictions = trainer.predict(dataloaders=dm.predict_dataloader(dm.test))
+predictions = trainer.predict(dataloaders=data_module.predict_dataloader(data_module.test))
 ensemble_df = m.ensemble(predictions)
 ensemble_df["individualID"] = ensemble_df["individual"]
-ensemble_df = ensemble_df.merge(dm.test_df, on ="individualID")
+ensemble_df = ensemble_df.merge(data_module.test_df, on="individualID")
 
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 visualize.confusion_matrix(
