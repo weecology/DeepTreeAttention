@@ -94,6 +94,7 @@ predictions = trainer.predict(m, dataloaders=data_module.predict_dataloader(data
 ensemble_df = m.ensemble(predictions)
 ensemble_df["individualID"] = ensemble_df["individual"]
 ensemble_df = ensemble_df.merge(data_module.test_df, on="individualID")
+m.ensemble_metrics(ensemble_df, experiment=comet_logger.experiment)
 
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 visualize.confusion_matrix(
@@ -108,3 +109,16 @@ visualize.confusion_matrix(
 
 #Log prediction
 comet_logger.experiment.log_table("test_predictions.csv", ensemble_df)
+
+#Cross year prediction
+dls = data_module.predict_dataloader(data_module.test)
+for index, year_model in enumerate(m.models):
+    train_year = m.years[index]
+    for test_index, dl in enumerate(dls):
+        test_year = m.years[test_index]
+        with comet_logger.experiment.context_manager("{}_{}".format(train_year, test_year)):
+            results = year_model.evaluate_crowns(
+                crowns=data_module.crowns,
+                experiment = comet_logger.experiment
+            )
+    
