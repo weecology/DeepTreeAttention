@@ -104,8 +104,7 @@ def experiment():
 #Training module
 @pytest.fixture(scope="session")
 def m(config, dm, ROOT):
-    model = year.YearModel(bands=3, classes=3, config=config)
-    m = main.TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict, loss_weight=[0.1,0.8,1])
+    m = year.YearEnsemble(classes=dm.num_classes, years=len(dm.train.tile_year.unique()), config=config)
     m.ROOT = "{}/tests/".format(ROOT)
     
     return m
@@ -113,8 +112,7 @@ def m(config, dm, ROOT):
 #Training module
 @pytest.fixture(scope="session")
 def species_model_path(config, dm):
-    model = year.YearModel(bands=3, classes=3, config=config)
-    m = main.TreeModel(model=model, classes=3, config=config, label_dict=dm.species_label_dict)
+    m = year.YearEnsemble(classes=dm.num_classes, years=len(dm.train.tile_year.unique()), config=config)
     m.ROOT = "{}/tests/".format(ROOT)
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m, dm)

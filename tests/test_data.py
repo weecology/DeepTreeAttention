@@ -22,11 +22,10 @@ def test_TreeDataset(dm, config,tmpdir, ROOT):
     #Train loader
     data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/train.csv".format(ROOT), config=config)
     individuals, inputs, label = data_loader[0]
-    images = inputs["HSI"]    
-    assert len(images) == len(dm.train.tile_year.unique())
-    assert images[0].shape == (3, config["image_size"], config["image_size"])
+    image = inputs["HSI"]    
+    assert image.shape == (3, config["image_size"], config["image_size"])
     
     #Test loader
     data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/test.csv".format(ROOT), train=False, config=config)    
     annotations = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
-    assert len(data_loader) * len(dm.train.tile_year.unique()) == annotations.shape[0]
+    assert len(data_loader) == annotations.shape[0]

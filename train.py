@@ -17,6 +17,7 @@ from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
 import pandas as pd
 from pandas.util import hash_pandas_object
+import torchmetrics
 
 #Get branch name for the comet tag
 git_branch=sys.argv[1]
@@ -72,13 +73,7 @@ loss_weight = np.array(loss_weight/np.max(loss_weight))
 loss_weight[loss_weight < 0.5] = 0.5  
 
 comet_logger.experiment.log_parameter("loss_weight", loss_weight)
-
-model = year.YearModel(bands=config["bands"], classes=data_module.num_classes, config=config)
-m = main.TreeModel(
-    model=model, 
-    classes=data_module.num_classes, 
-    loss_weight=loss_weight,
-    label_dict=data_module.species_label_dict)
+m = year.YearEnsemble(classes=data_module.num_classes, years=len(data_module.train.tile_year.unique()), config=config)
 
 #Create trainer
 lr_monitor = LearningRateMonitor(logging_interval='epoch')
@@ -94,15 +89,15 @@ trainer = Trainer(
 trainer.fit(m, datamodule=data_module)
 #Save model checkpoint
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
-results = m.evaluate_crowns(
-    data_module.val_dataloader(),
-    crowns = data_module.crowns,
-    experiment=comet_logger.experiment,
-)
+predictions = trainer.predict(dataloaders=dm.predict_dataloader(dm.test))
+ensemble_df = m.ensemble(predictions)
+ensemble_df["individualID"] = ensemble_df["individual"]
+ensemble_df = ensemble_df.merge(dm.test_df, on ="individualID")
+
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
-    results=results,
+    results=ensemble_df,
     species_label_dict=data_module.species_label_dict,
     test_crowns=data_module.crowns,
     test=data_module.test,
@@ -111,4 +106,4 @@ visualize.confusion_matrix(
 )
 
 #Log prediction
-comet_logger.experiment.log_table("test_predictions.csv", results)
+comet_logger.experiment.log_table("test_predictions.csv", ensemble_df)

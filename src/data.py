@@ -211,68 +211,52 @@ def train_test_split(shp, config, client = None):
 
 
 # Dataset class
+# Dataset class
 class TreeDataset(Dataset):
     """A csv file with a path to image crop and label
     Args:
        csv_file: path to csv file with image_path and label
     """
-    def __init__(self, csv_file, config=None, train=True):
-        self.annotations = pd.read_csv(csv_file)
-        self.years = self.annotations.tile_year.unique()        
+    def __init__(self, df=None, csv_file=None, config=None, train=True):
+        if csv_file:
+            self.annotations = pd.read_csv(csv_file)
+        else:
+            self.annotations = df
         self.train = train
         self.config = config         
         self.image_size = config["image_size"]
-        self.individuals = self.annotations.individualID.unique()
-        
+
         # Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=self.image_size)
 
         # Pin data to memory if desired
         if self.config["preload_images"]:
             self.image_dict = {}
-            for name, group in self.annotations.groupby("individualID"):
-                year_images = []
-                for x in self.years:
-                    year_annotations = group[group.tile_year==x]
-                    if year_annotations.empty:
-                        padding = torch.zeros((self.config["bands"],self.image_size, self.image_size))
-                        year_images.append(padding)
-                    else:
-                        image_path = os.path.join(self.config["crop_dir"],year_annotations.image_path.values[0])                                            
-                        image = load_image(image_path, image_size=self.image_size)
-                        image = self.transformer(image) 
-                        year_images.append(image)
-                self.image_dict[name] = year_images
+            for index, row in self.annotations.iterrows():
+                image_path = os.path.join(self.config["crop_dir"],row["image_path"])
+                self.image_dict[index] = load_image(image_path, image_size=self.image_size)
 
     def __len__(self):
         # 0th based index
-        return len(self.annotations.individualID.unique())
+        return self.annotations.shape[0]
 
     def __getitem__(self, index):
         inputs = {}
-        individual = self.individuals[index]
+        image_path = self.annotations.image_path.loc[index]      
+        individual = self.annotations.individualID[index]    
         if self.config["preload_images"]:
-            year_images = self.image_dict[individual]
+            inputs["HSI"] = self.image_dict[index]
         else:
-            individual_annotations = self.annotations[self.annotations.individualID == individual]
-            year_images = []            
-            for x in self.years:
-                year_annotations = individual_annotations[individual_annotations.tile_year==x]
-                if year_annotations.empty:
-                    padding = torch.zeros((self.config["bands"],self.image_size, self.image_size))
-                    year_images.append(padding)
-                else:
-                    image_path = os.path.join(self.config["crop_dir"],row["image_path"])                                            
-                    image = load_image(image_path, image_size=self.image_size)
-                    image = self.transformer(image) 
-                    year_images.append(image)
-        
-        inputs["HSI"] = year_images
-        
+            image_basename = self.annotations.image_path.loc[index]  
+            image_path = os.path.join(self.config["crop_dir"],image_basename)                
+            image = load_image(image_path, image_size=self.image_size)
+            inputs["HSI"] = image
+
         if self.train:
             label = self.annotations.label.loc[index]
             label = torch.tensor(label, dtype=torch.long)
-            
+            inputs["HSI"] = self.transformer(inputs["HSI"])
+
             return individual, inputs, label
         else:
             return individual, inputs
@@ -473,16 +457,6 @@ class TreeData(LightningDataModule):
                 len(self.test.site.unique()))
             )
              
-            #Create dataloaders
-            self.train_ds = TreeDataset(
-                csv_file = "{}/train.csv".format(self.data_dir),
-                config=self.config
-            )
-            
-            self.val_ds = TreeDataset(
-                csv_file = "{}/test.csv".format(self.data_dir),
-                config=self.config)
-             
         else:
             print("Loading previous run")            
             self.train = pd.read_csv("{}/train.csv".format(self.data_dir))
@@ -515,34 +489,61 @@ class TreeData(LightningDataModule):
             self.num_sites = len(self.site_label_dict)                   
             
             self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
-            
-            #Create dataloaders
-            self.train_ds = TreeDataset(
-                csv_file = "{}/train.csv".format(self.data_dir),
-                config=self.config
-            )
-    
-            self.val_ds = TreeDataset(
-                csv_file = "{}/test.csv".format(self.data_dir),
-                config=self.config
-            )            
 
     def train_dataloader(self):
-        data_loader = torch.utils.data.DataLoader(
-            self.train_ds,
-            batch_size=self.config["batch_size"],
-            shuffle=True,
-            num_workers=self.config["workers"]
+        data_loaders = []
+        for name, group  in self.train.groupby("tile_year"):
+            #Create dataloaders
+            ds = TreeDataset(
+                df=group.reset_index(drop=True),
+                config=self.config
             )
+            
+            data_loader = torch.utils.data.DataLoader(
+                ds,
+                batch_size=self.config["batch_size"],
+                shuffle=True,
+                num_workers=self.config["workers"]
+                )
+            data_loaders.append(data_loader)
         
-        return data_loader
+        return data_loaders
     
     def val_dataloader(self):
-        data_loader = torch.utils.data.DataLoader(
-            self.val_ds,
-            batch_size=self.config["batch_size"],
-            shuffle=False,
-            num_workers=self.config["workers"],
-        )
+        data_loaders = []
+        for name, group  in self.test.groupby("tile_year"):
+            #Create dataloaders
+            ds = TreeDataset(
+                df=group.reset_index(drop=True),
+                config=self.config
+            )
+            
+            data_loader = torch.utils.data.DataLoader(
+                ds,
+                batch_size=self.config["batch_size"],
+                shuffle=False,
+                num_workers=self.config["workers"]
+                )
+            data_loaders.append(data_loader)
         
-        return data_loader
+        return data_loaders
+    
+    
+    def predict_dataloader(self, df):
+        data_loaders = []
+        for name, group  in df.groupby("tile_year"):
+            #Create dataloaders
+            ds = TreeDataset(
+                df=group.reset_index(drop=True),
+                config=self.config
+            )
+            
+            data_loader = torch.utils.data.DataLoader(
+                ds,
+                batch_size=self.config["batch_size"],
+                shuffle=False,
+                num_workers=self.config["workers"]
+                )
+            data_loaders.append(data_loader)
+        
+        return data_loaders    
