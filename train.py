@@ -119,7 +119,7 @@ train_years = []
 test_years = []
 for index, year_model in enumerate(m.models):
     train_year = m.years[index]
-    yr = main.TreeModel(year_model.model, classes=m.classes, label_dict=data_module.species_label_dict)    
+    yr = main.TreeModel(year_model.model, classes=m.classes, label_dict=data_module.species_label_dict, loss_weight=loss_weight)    
     for test_index, dl in enumerate(dls):
         test_year = m.years[test_index]
         with comet_logger.experiment.context_manager("{}_{}".format(train_year, test_year)):
