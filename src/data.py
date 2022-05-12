@@ -235,7 +235,7 @@ class TreeDataset(Dataset):
                 for x in self.years:
                     year_annotations = group[group.tile_year==x]
                     if year_annotations.empty:
-                        padding = torch.zeros((self.config["bands"],self.image_dict, self.image_dict))
+                        padding = torch.zeros((self.config["bands"],self.image_size, self.image_size))
                         year_images.append(padding)
                     else:
                         image_path = os.path.join(self.config["crop_dir"],year_annotations.image_path.values[0])                                            
@@ -259,7 +259,7 @@ class TreeDataset(Dataset):
             for x in self.years:
                 year_annotations = individual_annotations[individual_annotations.tile_year==x]
                 if year_annotations.empty:
-                    padding = torch.zeros((self.config["bands"],self.image_dict, self.image_dict))
+                    padding = torch.zeros((self.config["bands"],self.image_size, self.image_size))
                     year_images.append(padding)
                 else:
                     image_path = os.path.join(self.config["crop_dir"],row["image_path"])                                            
