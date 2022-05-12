@@ -112,6 +112,11 @@ comet_logger.experiment.log_table("test_predictions.csv", ensemble_df)
 
 #Cross year prediction
 dls = data_module.predict_dataloader(data_module.test)
+
+macro = []
+micro = []
+train_years = []
+test_years = []
 for index, year_model in enumerate(m.models):
     train_year = m.years[index]
     for test_index, dl in enumerate(dls):
@@ -121,4 +126,11 @@ for index, year_model in enumerate(m.models):
                 crowns=data_module.crowns,
                 experiment = comet_logger.experiment
             )
+            micro.append(comet_logger.experiment.get_metric("OSBS_micro"))
+            macro.append(comet_logger.experiment.get_metric("OSBS_macro"))
+            test_years.append(test_year)
+            train_years.append(train_year)
+
+cross_matrix = pd.DataFrame({"train":train_years,"test":test_years,"micro": micro,"macro":macro})
+comet_logger.experiment.log_table("cross_matrix.csv", cross_matrix)
     
