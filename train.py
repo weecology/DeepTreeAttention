@@ -93,7 +93,7 @@ trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}
 predictions = trainer.predict(m, dataloaders=data_module.predict_dataloader(data_module.test))
 ensemble_df = m.ensemble(predictions)
 ensemble_df["individualID"] = ensemble_df["individual"]
-ensemble_df = ensemble_df.merge(data_module.test_df, on="individualID")
+ensemble_df = ensemble_df.merge(data_module.test, on="individualID")
 m.ensemble_metrics(ensemble_df, experiment=comet_logger.experiment)
 
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
