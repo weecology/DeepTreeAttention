@@ -39,7 +39,7 @@ class YearEnsemble(LightningModule):
         #Load from state dict of previous run
         self.years = years
         self.config = config
-        self.models = []
+        self.models = nn.ModuleList()
         self.species_label_dict = label_dict
         self.classes = classes
         
