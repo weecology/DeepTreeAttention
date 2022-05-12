@@ -218,7 +218,7 @@ class TreeDataset(Dataset):
     """
     def __init__(self, csv_file, config=None, train=True):
         self.annotations = pd.read_csv(csv_file)
-        self.annotations[self.annotations.tile_year.isin([2018,2019])]
+        self.years = self.annotations.tile_year.unique()        
         self.train = train
         self.config = config         
         self.image_size = config["image_size"]
@@ -230,15 +230,19 @@ class TreeDataset(Dataset):
         # Pin data to memory if desired
         if self.config["preload_images"]:
             self.image_dict = {}
-            for index, row in self.annotations.iterrows():
-                try:
-                    image_path = os.path.join(self.config["crop_dir"],row["image_path"])                    
-                    image = load_image(image_path, image_size=self.image_size)
-                    if self.train:
-                        image = self.transformer(image)   
-                    self.image_dict[index] = image
-                except:
-                    self.image_dict[index] = None
+            for name, group in self.annotations.groupby("individualID"):
+                year_images = []
+                for x in self.years:
+                    year_annotations = group[group.tile_year==x]
+                    if year_annotations.empty:
+                        padding = torch.zeros((self.config["bands"],self.image_dict, self.image_dict))
+                        year_images.append(padding)
+                    else:
+                        image_path = os.path.join(self.config["crop_dir"],year_annotations.image_path.values[0])                                            
+                        image = load_image(image_path, image_size=self.image_size)
+                        image = self.transformer(image) 
+                        year_images.append(image)
+                self.image_dict[name] = year_images
 
     def __len__(self):
         # 0th based index
@@ -247,18 +251,21 @@ class TreeDataset(Dataset):
     def __getitem__(self, index):
         inputs = {}
         individual = self.individuals[index]
-        individual_annotations = self.annotations[self.annotations.individualID == individual]
-        year_images = []
-        for index, row in individual_annotations.iterrows():
-            if self.config["preload_images"]:
-                image = self.image_dict[index]    
-                year_images.append(image)
-            else:
-                image_path = os.path.join(self.config["crop_dir"],row["image_path"])                    
-                image = load_image(image_path, image_size=self.image_size)
-                if self.train:
-                    image = self.transformer(image)
-                year_images.append(image)  
+        if self.config["preload_images"]:
+            year_images = self.image_dict[individual]
+        else:
+            individual_annotations = self.annotations[self.annotations.individualID == individual]
+            year_images = []            
+            for x in self.years:
+                year_annotations = individual_annotations[individual_annotations.tile_year==x]
+                if year_annotations.empty:
+                    padding = torch.zeros((self.config["bands"],self.image_dict, self.image_dict))
+                    year_images.append(padding)
+                else:
+                    image_path = os.path.join(self.config["crop_dir"],row["image_path"])                                            
+                    image = load_image(image_path, image_size=self.image_size)
+                    image = self.transformer(image) 
+                    year_images.append(image)
         
         inputs["HSI"] = year_images
         
@@ -481,6 +488,7 @@ class TreeData(LightningDataModule):
             self.train = pd.read_csv("{}/train.csv".format(self.data_dir))
             self.test = pd.read_csv("{}/test.csv".format(self.data_dir))
             self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
+            
             #mimic schema due to abbreviation when .shp is saved
             self.crowns["individualID"] = self.crowns["individual"]
             self.canopy_points = gpd.read_file("{}/canopy_points.shp".format(self.data_dir))
@@ -534,7 +542,7 @@ class TreeData(LightningDataModule):
             self.val_ds,
             batch_size=self.config["batch_size"],
             shuffle=False,
-            num_workers=self.config["workers"]
+            num_workers=self.config["workers"],
         )
         
         return data_loader
