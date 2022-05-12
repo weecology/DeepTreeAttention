@@ -90,7 +90,7 @@ trainer.fit(m, datamodule=data_module)
 
 #Save model checkpoint
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
-predictions = trainer.predict(dataloaders=data_module.predict_dataloader(data_module.test))
+predictions = trainer.predict(m, dataloaders=data_module.predict_dataloader(data_module.test))
 ensemble_df = m.ensemble(predictions)
 ensemble_df["individualID"] = ensemble_df["individual"]
 ensemble_df = ensemble_df.merge(data_module.test_df, on="individualID")
