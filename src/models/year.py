@@ -174,7 +174,7 @@ class YearEnsemble(LightningModule):
             num_classes=self.classes
         )
         species_table = pd.DataFrame(
-            {"taxonID":self.label_to_index.keys(),
+            {"taxonID":self.species_label_dict.keys(),
              "accuracy":taxon_accuracy,
              "precision":taxon_precision
              })
@@ -198,8 +198,8 @@ class YearEnsemble(LightningModule):
                     average="macro",
                     num_classes=self.classes)
                 
-                experiment.log_metric("{}_macro".format(name), site_macro)
-                experiment.log_metric("{}_micro".format(name), site_micro) 
+                experiment.log_metric("{}_temporal_macro".format(name), site_macro)
+                experiment.log_metric("{}_temporal_micro".format(name), site_micro) 
                 row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro.numpy()], "Macro Recall": [site_macro.numpy()]})
                 site_data_frame.append(row)
             site_data_frame = pd.concat(site_data_frame)
