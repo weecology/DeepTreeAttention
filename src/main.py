@@ -153,7 +153,7 @@ class TreeModel(LightningModule):
         """Given a input dictionary, construct args for prediction"""
         if "cuda" == self.device.type:
             images = inputs["HSI"]
-            images = images.cuda()
+            images = [x.cuda() for x in images]
             pred = self.model(images)
             pred = pred.cpu()
         else:
