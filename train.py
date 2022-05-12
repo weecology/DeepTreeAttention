@@ -94,6 +94,9 @@ predictions = trainer.predict(m, dataloaders=data_module.predict_dataloader(data
 ensemble_df = m.ensemble(predictions)
 ensemble_df["individualID"] = ensemble_df["individual"]
 ensemble_df = ensemble_df.merge(data_module.test, on="individualID")
+
+#All years have same ensemble label
+ensemble_df = ensemble_df.groupby("individualID").apply(lambda x: x.head(1)).reset_index(drop=True)
 m.ensemble_metrics(ensemble_df, experiment=comet_logger.experiment)
 
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
