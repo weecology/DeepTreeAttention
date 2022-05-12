@@ -73,7 +73,7 @@ loss_weight = np.array(loss_weight/np.max(loss_weight))
 loss_weight[loss_weight < 0.5] = 0.5  
 
 comet_logger.experiment.log_parameter("loss_weight", loss_weight)
-m = year.YearEnsemble(classes=data_module.num_classes, years=len(data_module.train.tile_year.unique()), config=config)
+m = year.YearEnsemble(classes=data_module.num_classes, years=len(data_module.train.tile_year.unique()), config=config, label_dict=data_module.species_label_dict)
 
 #Create trainer
 lr_monitor = LearningRateMonitor(logging_interval='epoch')
@@ -87,6 +87,7 @@ trainer = Trainer(
     logger=comet_logger)
 
 trainer.fit(m, datamodule=data_module)
+
 #Save model checkpoint
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
 predictions = trainer.predict(dataloaders=dm.predict_dataloader(dm.test))
