@@ -292,7 +292,6 @@ class TreeData(LightningDataModule):
         except:
             pass
         
-    def prepare_data(self, stage=None):
         # Clean data from raw csv, regenerate from scratch or check for progress and complete
         if not self.config["use_data_commit"]:
                         
@@ -335,7 +334,7 @@ class TreeData(LightningDataModule):
                 self.canopy_points = df
                 self.canopy_points.to_file("{}/canopy_points.shp".format(self.data_dir))
                 
-
+    
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after CHM filter", len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after CHM filter", df.shape[0])
@@ -374,7 +373,7 @@ class TreeData(LightningDataModule):
                         print("No dead trees predicted")
             else:
                 self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
-
+    
             annotations = generate.generate_crops(
                 self.crowns,
                 savedir=self.config["crop_dir"],
@@ -423,7 +422,7 @@ class TreeData(LightningDataModule):
             self.species_label_dict = {}
             for index, taxonID in enumerate(unique_species_labels):
                 self.species_label_dict[taxonID] = index
-
+    
             # Store site labels
             unique_site_labels = np.concatenate([self.train.siteID.unique(), self.test.siteID.unique()])
             unique_site_labels = np.unique(unique_site_labels)
