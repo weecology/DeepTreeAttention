@@ -50,7 +50,7 @@ data_module = data.TreeData(
     metadata=True,
     comet_logger=comet_logger)
 
-data_module.setup()
+data_module.prepare_data()
 if client:
     client.close()
 

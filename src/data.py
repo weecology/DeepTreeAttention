@@ -292,7 +292,7 @@ class TreeData(LightningDataModule):
         except:
             pass
         
-    def setup(self,year=None, stage=None):
+    def prepare_data(self, stage=None):
         # Clean data from raw csv, regenerate from scratch or check for progress and complete
         if not self.config["use_data_commit"]:
                         
