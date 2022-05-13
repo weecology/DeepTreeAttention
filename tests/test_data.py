@@ -7,7 +7,7 @@ def test_TreeData_setup(config, ROOT):
     config["use_data_commit"] = None 
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)               
     dm = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data".format(ROOT), debug=True) 
-    dm.setup()  
+    dm.prepare_data()  
     
     test = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
     train = pd.read_csv("{}/tests/data/processed/train.csv".format(ROOT))

@@ -86,7 +86,7 @@ def config(ROOT):
 def dm(config, ROOT):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)               
     dm = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data/crops/".format(ROOT), debug=True) 
-    dm.setup()    
+    dm.prepare_data()    
     
     return dm
 
@@ -104,7 +104,7 @@ def experiment():
 #Training module
 @pytest.fixture(scope="session")
 def m(config, dm, ROOT):
-    m = year.YearEnsemble(classes=dm.num_classes, years=len(dm.train.tile_year.unique()), config=config)
+    m = year.YearEnsemble(classes=dm.num_classes, years=dm.train.tile_year.unique(), config=config, label_dict=dm.species_label_dict)
     m.ROOT = "{}/tests/".format(ROOT)
     
     return m
@@ -112,7 +112,7 @@ def m(config, dm, ROOT):
 #Training module
 @pytest.fixture(scope="session")
 def species_model_path(config, dm):
-    m = year.YearEnsemble(classes=dm.num_classes, years=len(dm.train.tile_year.unique()), config=config)
+    m = year.YearEnsemble(classes=dm.num_classes, years=dm.train.tile_year.unique(), config=config, label_dict=dm.species_label_dict)
     m.ROOT = "{}/tests/".format(ROOT)
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m, dm)
