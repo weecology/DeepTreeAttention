@@ -72,7 +72,13 @@ loss_weight = np.array(loss_weight/np.max(loss_weight))
 loss_weight[loss_weight < 0.5] = 0.5  
 
 comet_logger.experiment.log_parameter("loss_weight", loss_weight)
-m = year.YearEnsemble(classes=data_module.num_classes, years=data_module.train.tile_year.unique(), config=config, label_dict=data_module.species_label_dict)
+m = year.YearEnsemble(
+    classes=data_module.num_classes,
+    years=data_module.train.tile_year.unique(),
+    config=config,
+    label_dict=data_module.species_label_dict,
+    loss_weight=loss_weight
+)
 
 #Create trainer
 lr_monitor = LearningRateMonitor(logging_interval='epoch')
