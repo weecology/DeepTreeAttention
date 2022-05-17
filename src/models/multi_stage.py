@@ -337,9 +337,7 @@ class MultiStage(LightningModule):
             
             for key, value in species_table.set_index("taxonID").accuracy.to_dict().items():
                 self.log("Epoch_{}_accuracy".format(key), value)
-            
 
-    
     def temporal_ensemble(self, predict_ouputs):
         individual_dict ={}
         for index, results in enumerate(predict_ouputs):
