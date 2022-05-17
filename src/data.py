@@ -224,6 +224,7 @@ class TreeDataset(Dataset):
             self.annotations = df
         if year:
             self.annotations = self.annotations[self.annotations.tile_year==year].reset_index(drop=True)
+        
         self.train = train
         self.config = config         
         self.image_size = config["image_size"]
@@ -250,7 +251,7 @@ class TreeDataset(Dataset):
         if self.config["preload_images"]:
             inputs["HSI"] = self.image_dict[index]
         else:
-            image_basename = self.annotations.image_path.loc[index]  
+            image_basename = self.annotations.image_path.iloc[index]  
             image_path = os.path.join(self.config["crop_dir"],image_basename)                
             image = load_image(image_path, image_size=self.image_size)
             inputs["HSI"] = image
