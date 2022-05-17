@@ -62,12 +62,7 @@ comet_logger.experiment.log_table("test.csv", data_module.test)
 if not config["use_data_commit"]:
     comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
 
-
-#Load from state dict of previous run
-if config["pretrain_state_dict"]:
-    model = Hang2020.load_from_backbone(state_dict=config["pretrain_state_dict"], classes=data_module.num_classes, bands=config["bands"])
-else:
-    model = Hang2020.spectral_network(bands=config["bands"], classes=data_module.num_classes)
+model = Hang2020.vanilla_CNN(bands=config["bands"], classes=data_module.num_classes)
     
 #Load from state dict of previous run
 
