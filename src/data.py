@@ -217,11 +217,13 @@ class TreeDataset(Dataset):
     Args:
        csv_file: path to csv file with image_path and label
     """
-    def __init__(self, df=None, csv_file=None, config=None, train=True):
+    def __init__(self, df=None, csv_file=None, config=None, train=True, year=None):
         if csv_file:
             self.annotations = pd.read_csv(csv_file)
         else:
             self.annotations = df
+        if year:
+            self.annotations = self.annotations[self.annotations.tile_year==year].reset_index(drop=True)
         self.train = train
         self.config = config         
         self.image_size = config["image_size"]
@@ -242,8 +244,9 @@ class TreeDataset(Dataset):
 
     def __getitem__(self, index):
         inputs = {}
-        image_path = self.annotations.image_path.loc[index]      
-        individual = self.annotations.individualID[index]    
+        image_path = self.annotations.image_path.iloc[index]      
+        individual = self.annotations.individualID.iloc[index]  
+        year = self.annotations.tile_year.iloc[index]  
         if self.config["preload_images"]:
             inputs["HSI"] = self.image_dict[index]
         else:
@@ -251,15 +254,15 @@ class TreeDataset(Dataset):
             image_path = os.path.join(self.config["crop_dir"],image_basename)                
             image = load_image(image_path, image_size=self.image_size)
             inputs["HSI"] = image
-
+        
         if self.train:
-            label = self.annotations.label.loc[index]
+            label = self.annotations.label.iloc[index]
             label = torch.tensor(label, dtype=torch.long)
             inputs["HSI"] = self.transformer(inputs["HSI"])
 
-            return individual, inputs, label
+            return year, individual, inputs, label
         else:
-            return individual, inputs
+            return year, individual, inputs
     
 class TreeData(LightningDataModule):
     """

@@ -20,7 +20,7 @@ def test_TreeData_setup(config, ROOT):
 def test_TreeDataset(dm, config,tmpdir, ROOT):
     #Train loader
     data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/train.csv".format(ROOT), config=config)
-    individuals, inputs, label = data_loader[0]
+    year, individuals, inputs, label = data_loader[0]
     image = inputs["HSI"]    
     assert image.shape == (3, config["image_size"], config["image_size"])
     

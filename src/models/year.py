@@ -84,7 +84,7 @@ class YearEnsemble(LightningModule):
     def training_step(self, batch, batch_idx, optimizer_idx):
         """Calculate train_df loss
         """
-        individual, inputs, y = batch[optimizer_idx]
+        year, individual, inputs, y = batch[optimizer_idx]
         images = inputs["HSI"]  
         y_hat = self.models[optimizer_idx].forward(images)
         loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)    
@@ -95,7 +95,7 @@ class YearEnsemble(LightningModule):
     def validation_step(self, batch, batch_idx, dataloader_idx):
         """Calculate val loss 
         """
-        individual, inputs, y = batch
+        year, individual, inputs, y = batch
         images = inputs["HSI"]  
         y_hat = self.models[dataloader_idx].forward(images)
         loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)   
@@ -110,7 +110,7 @@ class YearEnsemble(LightningModule):
     def predict_step(self, batch, batch_idx, dataloader_idx):
         """Calculate predictions
         """
-        individual, inputs, y = batch
+        year, individual, inputs, y = batch
         images = inputs["HSI"]  
         y_hat = self.models[dataloader_idx].forward(images)
         y_hat = F.softmax(y_hat, dim=1)

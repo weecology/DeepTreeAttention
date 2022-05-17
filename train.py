@@ -7,17 +7,16 @@ import numpy as np
 from src import main
 from src import data
 from src import start_cluster
-from src.models import year
+from src.models import multi_stage
 from src import visualize
 from src import metrics
+import subprocess
 import sys
 from pytorch_lightning import Trainer
-import subprocess
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
 import pandas as pd
 from pandas.util import hash_pandas_object
-import torchmetrics
 
 #Get branch name for the comet tag
 git_branch=sys.argv[1]
@@ -34,7 +33,7 @@ if config["use_data_commit"]:
 else:
     crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
     os.mkdir(crop_dir)
-    client = start_cluster.start(cpus=20, mem_size="20GB")    
+    client = start_cluster.start(cpus=50, mem_size="4GB")    
     config["crop_dir"] = crop_dir
 
 comet_logger.experiment.log_parameter("git branch",git_branch)
@@ -50,6 +49,7 @@ data_module = data.TreeData(
     metadata=True,
     comet_logger=comet_logger)
 
+data_module.setup()
 if client:
     client.close()
 
@@ -62,23 +62,7 @@ comet_logger.experiment.log_table("test.csv", data_module.test)
 if not config["use_data_commit"]:
     comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
 
-#Loss weight, balanced
-loss_weight = []
-for x in data_module.species_label_dict:
-    loss_weight.append(1/data_module.train[data_module.train.taxonID==x].shape[0])
-    
-loss_weight = np.array(loss_weight/np.max(loss_weight))
-#Provide min value
-loss_weight[loss_weight < 0.5] = 0.5  
-
-comet_logger.experiment.log_parameter("loss_weight", loss_weight)
-m = year.YearEnsemble(
-    classes=data_module.num_classes,
-    years=data_module.train.tile_year.unique(),
-    config=config,
-    label_dict=data_module.species_label_dict,
-    loss_weight=loss_weight
-)
+m = multi_stage.MultiStage(data_module.train, data_module.test, config=data_module.config, crowns=data_module.crowns)
 
 #Create trainer
 lr_monitor = LearningRateMonitor(logging_interval='epoch')
@@ -88,23 +72,52 @@ trainer = Trainer(
     max_epochs=data_module.config["epochs"],
     accelerator=data_module.config["accelerator"],
     checkpoint_callback=False,
+    num_sanity_val_steps=0,
     callbacks=[lr_monitor],
     logger=comet_logger)
 
-trainer.fit(m, datamodule=data_module)
+trainer.fit(m)
 
 #Save model checkpoint
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
-predictions = trainer.predict(m, dataloaders=data_module.predict_dataloader(data_module.test))
-ensemble_df = m.ensemble(predictions)
-ensemble_df["individualID"] = ensemble_df["individual"]
-ensemble_df = ensemble_df.merge(data_module.test, on="individualID")
 
-#All years have same ensemble label
-ensemble_df = ensemble_df.groupby("individualID").apply(lambda x: x.head(1)).reset_index(drop=True)
-m.ensemble_metrics(ensemble_df, experiment=comet_logger.experiment)
+#Predict each year and aggregrate
+level_results = []
+for level in range(m.levels):
+    year_output = trainer.predict(m, dataloaders=m.create_dataloaders(df=m.level_test_dict[year]))
+    temporal_output = m.temporal_ensemble(year_output)
+    temporal_output = data_module.crowns[["geometry","individual","tile_year"]].merge(temporal_output, on=["individual","tile_year"])    
+    temporal_output["pred_label_top1_level_{}".format(level)] = temporal_output["pred_label_top1"]
+    temporal_output["top1_score_level_{}".format(level)] = temporal_output["top1_score_level"]
+    temporal_output["pred_taxa_top1_level_{}".format(level)] = temporal_output["pred_taxa_top1"]
+    temporal_output = temporal_output.drop(columns=["pred_label_top1","top1_score","pred_taxa_top1"])
+    level_results.append(temporal_output)
+    
+results = reduce(lambda  left,right: pd.merge(left,right,on=['individual'],
+                                                how='outer'), level_results) 
+ensemble_df = m.ensemble(results)
+ensemble_df = m.evaluation_scores(
+    ensemble_df,
+    experiment=comet_logger.experiment
+)
 
+#Log prediction
+comet_logger.experiment.log_table("test_predictions.csv", results)
+comet_logger.experiment.log_table("ensemble_df.csv", ensemble_df)
+
+#Visualizations
+ensemble_df["pred_taxa_top1"] = ensemble_df.ensembleTaxonID
+ensemble_df["pred_label_top1"] = ensemble_df.ens_label
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
+visualize.plot_spectra(ensemble_df, crop_dir=config["crop_dir"], experiment=comet_logger.experiment)
+visualize.rgb_plots(
+    df=ensemble_df,
+    config=config,
+    test_crowns=data_module.crowns,
+    test_points=data_module.canopy_points,
+    plot_n_individuals=config["plot_n_individuals"],
+    experiment=comet_logger.experiment)
+
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
     results=ensemble_df,
@@ -115,31 +128,22 @@ visualize.confusion_matrix(
     rgb_pool=rgb_pool
 )
 
-#Log prediction
-comet_logger.experiment.log_table("test_predictions.csv", ensemble_df)
+#Confusion matrix for each level
 
-#Cross year prediction
-dls = data_module.predict_dataloader(data_module.test)
-
-macro = []
-micro = []
-train_years = []
-test_years = []
-for index, year_model in enumerate(m.models):
-    train_year = m.years[index]
-    yr = main.TreeModel(year_model.model, classes=m.classes, label_dict=data_module.species_label_dict, loss_weight=loss_weight)    
-    for test_index, dl in enumerate(dls):
-        test_year = m.years[test_index]
-        with comet_logger.experiment.context_manager("{}_{}".format(train_year, test_year)):
-            results = yr.evaluate_crowns(
-                crowns=data_module.crowns,
-                experiment = comet_logger.experiment
-            )
-            micro.append(comet_logger.experiment.get_metric("OSBS_micro"))
-            macro.append(comet_logger.experiment.get_metric("OSBS_macro"))
-            test_years.append(test_year)
-            train_years.append(train_year)
-
-cross_matrix = pd.DataFrame({"train":train_years,"test":test_years,"micro": micro,"macro":macro})
-comet_logger.experiment.log_table("cross_matrix.csv", cross_matrix)
+for x in range(len(m.models)):
+    label_list = [m.level_0_test, m.level_1_test,m.level_2_test, m.level_3_test, m.level_4_test]
+    test_df = label_list[x]
+    test_df["individual"] = test_df["individualID"]
+    confusion_results = results.merge(test_df,on='individual')
+    confusion_results["pred_taxa_top1"] = confusion_results["pred_taxa_top1_level_{}".format(x)]
+    confusion_results["pred_label_top1"] = confusion_results["pred_label_top1_level_{}".format(x)]   
     
+    visualize.confusion_matrix(
+        comet_experiment=comet_logger.experiment,
+        results=confusion_results,
+        species_label_dict=m.level_label_dicts[x],
+        test_crowns=data_module.crowns,
+        test=data_module.test,
+        test_points=data_module.canopy_points,
+        rgb_pool=rgb_pool
+    )
