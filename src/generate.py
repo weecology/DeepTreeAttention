@@ -248,7 +248,7 @@ def write_crop(row, img_path, savedir, replace=True):
         file_exists = os.path.exists(filename)
         if file_exists:
             annotation = pd.DataFrame({
-                "image_path":[filename],
+                "image_path":[os.path.basename(filename)],
                 "taxonID":[row["taxonID"]],
                 "plotID":[row["plotID"]],
                 "individualID":[row["individual"]],
@@ -273,7 +273,7 @@ def write_crop(row, img_path, savedir, replace=True):
             basename="{}_{}".format(row["individual"], tile_year))
         
         annotation = pd.DataFrame(
-            {"image_path":[filename],
+            {"image_path":[os.path.basename(filename)],
              "taxonID":[row["taxonID"]], 
              "plotID":[row["plotID"]],
              "individualID":[row["individual"]], 
