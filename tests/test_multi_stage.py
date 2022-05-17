@@ -8,13 +8,13 @@ import numpy as np
 
 def test_MultiStage(dm, config):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test,crowns=dm.crowns, config=config)
-    image = torch.randn(20, 349, 110, 110)    
+    image = torch.randn(20, 3, 110, 110)    
     for x in range(5):
         with torch.no_grad(): 
-            output = m.models[x](image)
+            output = m.models[x].model(image)
     
     train_dict = m.train_dataloader()
-    assert len(train_dict) == 5
+    assert len(train_dict) == 10
     
 def test_fit(config, dm, comet_logger):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)

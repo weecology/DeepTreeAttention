@@ -1,7 +1,7 @@
 #Multiple stage model
 from functools import reduce
 import geopandas as gpd
-from src.models import year
+from src.models import Hang2020
 from src.data import TreeDataset
 from pytorch_lightning import LightningModule
 import pandas as pd
@@ -13,17 +13,21 @@ import torchmetrics
 import torch
 
 class base_model(Module):
-    def __init__(self, classes, years, label_dict, config):
+    def __init__(self, classes, config):
         super().__init__()
-
-        self.model = year.YearEnsemble(classes, years, label_dict, config)
+        #Load from state dict of previous run
+        if config["pretrain_state_dict"]:
+            self.model = Hang2020.load_from_backbone(state_dict=config["pretrain_state_dict"], classes=classes, bands=config["bands"])
+        else:
+            self.model = Hang2020.spectral_network(bands=config["bands"], classes=classes)
+        
         micro_recall = torchmetrics.Accuracy(average="micro")
         macro_recall = torchmetrics.Accuracy(average="macro", num_classes=classes)
         self.metrics = torchmetrics.MetricCollection(
             {"Micro Accuracy":micro_recall,
              "Macro Accuracy":macro_recall,
              })
-            
+        
     def forward(self,x):
         x = self.model(x)
         # Last attention layer as score        
@@ -52,7 +56,7 @@ class MultiStage(LightningModule):
         
         for ds in self.train_datasets: 
             labels = [x[3] for x in ds]
-            base = base_model(classes=self.classes, years=self.years, label_dict=self.species_label_dict, config=config)
+            base = base_model(classes=self.classes, config=config)
             loss_weight = []
             for x in np.unique(labels):
                 loss_weight.append(1/np.sum(labels==x))
@@ -190,7 +194,7 @@ class MultiStage(LightningModule):
         data_loaders = {}
         for ds in self.train_datasets:
             data_loader = torch.utils.data.DataLoader(
-                self.train_datasets[ds],
+                ds,
                 batch_size=self.config["batch_size"],
                 shuffle=True,
                 num_workers=self.config["workers"],
