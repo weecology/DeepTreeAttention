@@ -250,7 +250,7 @@ class MultiStage(LightningModule):
         """Create a optimizer for each level"""
         optimizers = []
         for x, ds in enumerate(self.train_datasets):
-            optimizer = torch.optim.Adam(self.models[x].parameters(), lr=self.config["lr_{}".format(x)])
+            optimizer = torch.optim.Adam(self.models[x].parameters(), lr=self.config["lr"])
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                              mode='min',
                                                              factor=0.75,
