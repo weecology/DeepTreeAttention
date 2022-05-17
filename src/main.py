@@ -76,7 +76,7 @@ class TreeModel(LightningModule):
         individual, inputs, y = batch
         images = inputs["HSI"]
         y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat[-1], y, weight=self.loss_weight)    
+        loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)    
 
         return loss
 
@@ -87,7 +87,7 @@ class TreeModel(LightningModule):
         individual, inputs, y = batch
         images = inputs["HSI"]        
         y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat[-1], y, weight=self.loss_weight)        
+        loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)        
         
         # Log loss and metrics
         self.log("val_loss", loss, on_epoch=True)
@@ -156,7 +156,7 @@ class TreeModel(LightningModule):
         batch = torch.unsqueeze(image, dim=0)
         with torch.no_grad():
             y = self.model(batch)  
-        index = np.argmax(y[-1], 1).numpy()[0]
+        index = np.argmax(y, 1).numpy()[0]
         
         if return_numeric:
             return index
@@ -208,7 +208,7 @@ class TreeModel(LightningModule):
         self.model.eval() 
         with torch.no_grad():
             class_probs = self.model(image)
-            class_probs = F.softmax(class_probs[-1])
+            class_probs = F.softmax(class_probs)
         class_probs = class_probs.numpy()
         index = np.argmax(class_probs)
         label = self.index_to_label[index]
@@ -241,7 +241,7 @@ class TreeModel(LightningModule):
         self.model.eval() 
         with torch.no_grad():
             class_probs = self.model(image) 
-            class_probs = F.softmax(class_probs[-1], 1)
+            class_probs = F.softmax(class_probs, 1)
         class_probs = class_probs.detach().numpy()
         index = np.argmax(class_probs)
         label = self.index_to_label[index]
@@ -258,13 +258,13 @@ class TreeModel(LightningModule):
             images = images.cuda()
             pred = self.model(images)
             #Last spectral block
-            pred = pred[-1]
+            pred = pred
             pred = pred.cpu()
         else:
             images = inputs["HSI"]
             pred = self.model(images)
             #Last spectral block            
-            pred = pred[-1]
+            pred = pred
         
         return pred
     
