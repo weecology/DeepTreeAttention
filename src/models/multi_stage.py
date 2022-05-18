@@ -47,16 +47,16 @@ class MultiStage(LightningModule):
         self.species_label_dict = train_df[["taxonID","label"]].drop_duplicates().set_index("taxonID").to_dict()["label"]
         self.index_to_label = {v:k for k,v in self.species_label_dict.items()}
         self.crowns = crowns
-        self.level_label_dicts = {}     
-        self.label_to_taxonIDs = {}    
+        self.level_label_dicts = []    
+        self.label_to_taxonIDs = []   
         self.train_df = train_df
         self.test_df = test_df
         self.train_datasets, self.test_datasets = self.create_datasets()
         self.classes = len(self.train_df.label.unique())
         
-        for ds in self.train_datasets: 
+        for index, ds in enumerate(self.train_datasets): 
             labels = [x[3] for x in ds]
-            classes=np.max(labels)
+            classes = self.num_classes[index]
             base = base_model(classes=classes, config=config)
             loss_weight = []
             for x in range(classes):
@@ -88,9 +88,10 @@ class MultiStage(LightningModule):
         for level in range(self.levels):
             self.level_test_dict[level] = []
         
+        self.num_classes = []
         for year in self.years:
-            self.level_label_dicts[0] = {"PIPA2":0,"OTHER":1}
-            self.label_to_taxonIDs[0] = {v: k  for k, v in self.level_label_dicts[0].items()}
+            self.level_label_dicts.append({"PIPA2":0,"OTHER":1})
+            self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[0].items()})
             
             self.level_0_train = self.train_df.copy()
             self.level_0_train.loc[~(self.level_0_train.taxonID == "PIPA2"),"taxonID"] = "OTHER"
@@ -99,6 +100,7 @@ class MultiStage(LightningModule):
             self.level_0_train["label"] = [self.level_label_dicts[0][x] for x in self.level_0_train.taxonID]
             self.level_0_train_ds = TreeDataset(df=self.level_0_train, config=self.config, year=year)
             train_datasets.append(self.level_0_train_ds)
+            self.num_classes.append(len(self.level_0_train.taxonID.unique()))
             
             self.level_0_test = self.test_df.copy()
             self.level_0_test.loc[~(self.level_0_test.taxonID == "PIPA2"),"taxonID"] = "OTHER"
@@ -109,8 +111,8 @@ class MultiStage(LightningModule):
             self.level_test_dict[0].append(self.level_0_test_ds)
             
             ## Level 1
-            self.level_label_dicts[1] =  {"CONIFER":0,"BROADLEAF":1}
-            self.label_to_taxonIDs[1] = {v: k  for k, v in self.level_label_dicts[1].items()}
+            self.level_label_dicts.append({"CONIFER":0,"BROADLEAF":1})
+            self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[1].items()})
             self.level_1_train = self.train_df.copy()
             self.level_1_train = self.level_1_train[~(self.level_1_train.taxonID=="PIPA2")]    
             self.level_1_train.loc[~self.level_1_train.taxonID.isin(["PICL","PIEL","PITA"]),"taxonID"] = "BROADLEAF"   
@@ -124,6 +126,7 @@ class MultiStage(LightningModule):
             self.level_1_train["label"] = [self.level_label_dicts[1][x] for x in self.level_1_train.taxonID]
             self.level_1_train_ds = TreeDataset(df=self.level_1_train, config=self.config, year=year)
             train_datasets.append(self.level_1_train_ds)
+            self.num_classes.append(len(self.level_1_train.taxonID.unique()))
             
             self.level_1_test = self.test_df.copy()
             self.level_1_test = self.level_1_test[~(self.level_1_test.taxonID=="PIPA2")].reset_index(drop=True)    
@@ -135,10 +138,11 @@ class MultiStage(LightningModule):
             self.level_test_dict[1].append(self.level_1_test_ds)
             
             ## Level 2
-            broadleaf = [x for x in list(self.species_label_dict.keys()) if (not x in ["PICL","PIEL","PITA","PIPA2"]) & (not "QU" in x)]            
-            self.level_label_dicts[2] =  {v:k for k, v in enumerate(broadleaf)}
-            self.level_label_dicts[2]["OAK"] = len(self.level_label_dicts[2])
-            self.label_to_taxonIDs[2] = {v: k  for k, v in self.level_label_dicts[2].items()}
+            broadleaf = [x for x in list(self.species_label_dict.keys()) if (not x in ["PICL","PIEL","PITA","PIPA2"]) & (not "QU" in x)]     
+            broadleaf = {v:k for k, v in enumerate(broadleaf)}
+            broadleaf["OAK"] = len(broadleaf)
+            self.level_label_dicts.append(broadleaf)
+            self.label_to_taxonIDs.append({v: k  for k, v in broadleaf.items()})
                         
             self.level_2_train = self.train_df.copy()
             self.level_2_train = self.level_2_train[~self.level_2_train.taxonID.isin(["PICL","PIEL","PITA","PIPA2"])].reset_index(drop=True)
@@ -146,6 +150,7 @@ class MultiStage(LightningModule):
             self.level_2_train["label"] = [self.level_label_dicts[2][x] for x in self.level_2_train.taxonID]
             self.level_2_train_ds = TreeDataset(df=self.level_2_train, config=self.config, year=year)
             train_datasets.append(self.level_2_train_ds)
+            self.num_classes.append(len(self.level_2_train.taxonID.unique()))
             
             self.level_2_test = self.test_df.copy()
             self.level_2_test = self.level_2_test[~self.level_2_test.taxonID.isin(["PICL","PIEL","PITA","PIPA2"])].reset_index(drop=True) 
@@ -157,14 +162,16 @@ class MultiStage(LightningModule):
             
             ## Level 3
             evergreen = [x for x in list(self.species_label_dict.keys()) if x in ["PICL","PIEL","PITA"]]         
-            self.level_label_dicts[3] =  {v:k for k, v in enumerate(evergreen)}
-            self.label_to_taxonIDs[3] = {v: k  for k, v in self.level_label_dicts[3].items()}
+            evergreen = {v:k for k, v in enumerate(evergreen)}
+            self.level_label_dicts.append(evergreen)  
+            self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[3].items()})
                         
             self.level_3_train = self.train_df.copy()
             self.level_3_train = self.level_3_train[self.level_3_train.taxonID.isin(["PICL","PIEL","PITA"])].reset_index(drop=True) 
             self.level_3_train["label"] = [self.level_label_dicts[3][x] for x in self.level_3_train.taxonID]
             self.level_3_train_ds = TreeDataset(df=self.level_3_train, config=self.config)
             train_datasets.append(self.level_3_train_ds)
+            self.num_classes.append(len(self.level_3_train.taxonID.unique()))
             
             self.level_3_test = self.test_df.copy()
             self.level_3_test = self.level_3_test[self.level_3_test.taxonID.isin(["PICL","PIEL","PITA"])].reset_index(drop=True) 
@@ -175,8 +182,8 @@ class MultiStage(LightningModule):
             
             ## Level 4
             oak = [x for x in list(self.species_label_dict.keys()) if "QU" in x]
-            self.level_label_dicts[4] =  {v:k for k, v in enumerate(oak)}
-            self.label_to_taxonIDs[4] = {v: k  for k, v in self.level_label_dicts[4].items()}
+            self.level_label_dicts.append({v:k for k, v in enumerate(oak)})
+            self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[4].items()})
             
             #Balance the train in OAKs
             self.level_4_train = self.train_df.copy()
@@ -185,6 +192,7 @@ class MultiStage(LightningModule):
             self.level_4_train = self.level_4_train.groupby("taxonID").apply(lambda x:x.sample(frac=1).head(self.config["oaks_sampling_ceiling"])).reset_index(drop=True)
             self.level_4_train_ds = TreeDataset(df=self.level_4_train, config=self.config, year=year)
             train_datasets.append(self.level_4_train_ds)
+            self.num_classes.append(len(self.level_4_train.taxonID.unique()))
 
             self.level_4_test = self.test_df.copy()
             self.level_4_test = self.level_4_test[self.level_4_test.taxonID.str.contains("QU")].reset_index(drop=True)
@@ -273,7 +281,7 @@ class MultiStage(LightningModule):
     def training_step(self, batch, batch_idx, optimizer_idx):
         """Calculate train_df loss
         """
-        year, individual, inputs, y = batch[optimizer_idx]
+        year, individual, inputs, y = batch
         images = inputs["HSI"]  
         y_hat = self.models[optimizer_idx].forward(images)
         loss = F.cross_entropy(y_hat, y, weight=self.loss_weights[optimizer_idx])    
@@ -311,12 +319,12 @@ class MultiStage(LightningModule):
             labels = torch.cat([x["label"] for x in results]).cpu().numpy()            
             yhat = np.argmax(yhat, 1)
             epoch_micro = torchmetrics.functional.accuracy(
-                preds=torch.tensor(labels.values),
+                preds=torch.tensor(labels),
                 target=torch.tensor(yhat),
                 average="micro")
             
             epoch_macro = torchmetrics.functional.accuracy(
-                preds=torch.tensor(labels.values),
+                preds=torch.tensor(labels),
                 target=torch.tensor(yhat),
                 average="macro",
                 num_classes=len(self.species_label_dict)
@@ -328,13 +336,13 @@ class MultiStage(LightningModule):
             # Log results by species
             taxon_accuracy = torchmetrics.functional.accuracy(
                 preds=torch.tensor(yhat),
-                target=torch.tensor(labels.values), 
+                target=torch.tensor(labels), 
                 average="none", 
                 num_classes=len(self.level_label_dicts[level])
             )
             taxon_precision = torchmetrics.functional.precision(
                 preds=torch.tensor(yhat),
-                target=torch.tensor(labels.values), 
+                target=torch.tensor(labels), 
                 average="none", 
                 num_classes=len(self.level_label_dicts[level])
             )

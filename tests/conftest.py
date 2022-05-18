@@ -110,18 +110,3 @@ def m(config, dm, ROOT):
     m.ROOT = "{}/tests/".format(ROOT)
     
     return m
-
-#Training module
-@pytest.fixture(scope="session")
-def species_model_path(config, dm):
-    m = year.YearEnsemble(classes=dm.num_classes, years=dm.train.tile_year.unique(), config=config, label_dict=dm.species_label_dict)
-    m.ROOT = "{}/tests/".format(ROOT)
-    trainer = Trainer(fast_dev_run=True)
-    trainer.fit(m, dm)
-    #Save two copies of the model for testing multi-temporal prediction
-    filepath = "{}/model_2019.pl".format(tempfile.gettempdir())    
-    trainer.save_checkpoint(filepath)
-    filepath = "{}/model_2018.pl".format(tempfile.gettempdir())    
-    trainer.save_checkpoint(filepath)
-    
-    return filepath
