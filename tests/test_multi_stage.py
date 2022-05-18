@@ -14,7 +14,7 @@ def test_MultiStage(dm, config):
             output = m.models[x].model(image)
     
     train_dict = m.train_dataloader()
-    assert len(train_dict) == 10
+    assert len(train_dict) == 20
     
 def test_fit(config, dm):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)

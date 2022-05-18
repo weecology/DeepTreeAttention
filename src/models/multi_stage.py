@@ -56,10 +56,15 @@ class MultiStage(LightningModule):
         
         for ds in self.train_datasets: 
             labels = [x[3] for x in ds]
-            base = base_model(classes=len(np.unique(labels)), config=config)
+            classes=np.max(labels)
+            base = base_model(classes=classes, config=config)
             loss_weight = []
-            for x in np.unique(labels):
-                loss_weight.append(1/np.sum(labels==x))
+            for x in range(classes):
+                try:
+                    w = 1/np.sum(labels==x)
+                except:
+                    w = 1 
+                loss_weight.append(w)
 
             loss_weight = np.array(loss_weight/np.max(loss_weight))
             loss_weight[loss_weight < 0.5] = 0.5  
