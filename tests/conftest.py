@@ -67,7 +67,7 @@ def config(ROOT):
     config["min_test_samples"] = 1
     config["crop_dir"] = "{}/tests/data/1d6a975b1018469f91dfae955ae2f6b3".format(ROOT)
     config["data_dir"] = "{}/tests/data/".format(ROOT)
-    config["bands"] = 3
+    config["bands"] = 349
     config["classes"] = 3
     config["top_k"] = 1
     config["convert_h5"] = False
