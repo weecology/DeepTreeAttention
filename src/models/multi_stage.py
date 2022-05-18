@@ -204,7 +204,7 @@ class MultiStage(LightningModule):
         return train_datasets, test_datasets
     
     def train_dataloader(self):
-        data_loaders = {}
+        data_loaders = []
         for ds in self.train_datasets:
             data_loader = torch.utils.data.DataLoader(
                 ds,
@@ -212,7 +212,7 @@ class MultiStage(LightningModule):
                 shuffle=True,
                 num_workers=self.config["workers"],
             )
-            data_loaders[ds] = data_loader
+            data_loaders.append(data_loader)
         
         return data_loaders        
 
@@ -281,7 +281,7 @@ class MultiStage(LightningModule):
     def training_step(self, batch, batch_idx, optimizer_idx):
         """Calculate train_df loss
         """
-        year, individual, inputs, y = batch
+        year, individual, inputs, y = batch[optimizer_idx]
         images = inputs["HSI"]  
         y_hat = self.models[optimizer_idx].forward(images)
         loss = F.cross_entropy(y_hat, y, weight=self.loss_weights[optimizer_idx])    
