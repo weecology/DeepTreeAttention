@@ -5,6 +5,7 @@ from src import visualize
 import torch
 import pandas as pd
 import numpy as np
+from functools import reduce
 
 def test_MultiStage(dm, config):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test,crowns=dm.crowns, config=config)
@@ -20,31 +21,15 @@ def test_fit(config, dm):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
     trainer = Trainer(fast_dev_run=False, max_epochs=1)
     trainer.fit(m)
-    
-def test_predict(config, dm):
-    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
-    trainer = Trainer(fast_dev_run=True)
-    dls = m.predict_dataloader(df=dm.test)
-    predictions = trainer.predict(m, dataloaders=dls)
-    assert len(predictions) == 5
 
-def test_gather_predictions(config, dm, comet_logger):
+def test_gather_predictions(config, dm):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
-    trainer = Trainer(fast_dev_run=True)
-    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(df=dm.test))
-    predictions = m.gather_predictions(predict_df=predictions, crowns=dm.crowns)    
-    predictions.shape[0] == config["batch_size"]
-    ensemble_df = m.ensemble(predictions)
-    ensemble_df = m.evaluation_scores(ensemble_df, experiment=comet_logger.experiment)
-    ensemble_df["pred_taxa_top1"] = ensemble_df.ensembleTaxonID
-    ensemble_df["pred_label_top1"] = ensemble_df.ens_label    
-    visualize.confusion_matrix(
-        comet_experiment=comet_logger.experiment,
-        results=ensemble_df,
-        species_label_dict=dm.species_label_dict,
-        test_crowns=dm.crowns,
-        test=dm.test,
-        test_points=dm.canopy_points,
-        rgb_pool=None
-    )
-    
+    trainer = Trainer(fast_dev_run=False)
+    predictions = trainer.predict(m, dataloaders=m.val_dataloader())
+    results = m.gather_levels(predictions)    
+    results["individualID"] = results["individual"]
+    results = results.merge(dm.test, on=["individualID"])
+    ensemble_df = m.ensemble(results)
+    ensemble_df = m.evaluation_scores(
+        ensemble_df
+    )    

@@ -84,11 +84,9 @@ class MultiStage(LightningModule):
         ## Level 0     
         train_datasets = []
         test_datasets = []
-        self.level_test_dict = {}
-        for level in range(self.levels):
-            self.level_test_dict[level] = []
         
         self.num_classes = []
+        self.level_id = []
         for year in self.years:
             self.level_label_dicts.append({"PIPA2":0,"OTHER":1})
             self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[0].items()})
@@ -108,7 +106,7 @@ class MultiStage(LightningModule):
             self.level_0_test["label"]= [self.level_label_dicts[0][x] for x in self.level_0_test.taxonID]            
             self.level_0_test_ds = TreeDataset(df=self.level_0_test, config=self.config, year=year)
             test_datasets.append(self.level_0_test_ds)
-            self.level_test_dict[0].append(self.level_0_test_ds)
+            self.level_id.append(0)
             
             ## Level 1
             self.level_label_dicts.append({"CONIFER":0,"BROADLEAF":1})
@@ -135,7 +133,7 @@ class MultiStage(LightningModule):
             self.level_1_test["label"] = [self.level_label_dicts[1][x] for x in self.level_1_test.taxonID]
             self.level_1_test_ds = TreeDataset(df=self.level_1_test, config=self.config, year=year)
             test_datasets.append(self.level_1_test_ds)
-            self.level_test_dict[1].append(self.level_1_test_ds)
+            self.level_id.append(1)
             
             ## Level 2
             broadleaf = [x for x in list(self.species_label_dict.keys()) if (not x in ["PICL","PIEL","PITA","PIPA2"]) & (not "QU" in x)]     
@@ -158,7 +156,7 @@ class MultiStage(LightningModule):
             self.level_2_test["label"] = [self.level_label_dicts[2][x] for x in self.level_2_test.taxonID]
             self.level_2_test_ds = TreeDataset(df=self.level_2_test, config=self.config, year=year)
             test_datasets.append(self.level_2_test_ds)
-            self.level_test_dict[2].append(self.level_2_test_ds)
+            self.level_id.append(2)
             
             ## Level 3
             evergreen = [x for x in list(self.species_label_dict.keys()) if x in ["PICL","PIEL","PITA"]]         
@@ -178,7 +176,7 @@ class MultiStage(LightningModule):
             self.level_3_test["label"] = [self.level_label_dicts[3][x] for x in self.level_3_test.taxonID]
             self.level_3_test_ds = TreeDataset(df=self.level_3_test, config=self.config, year=year)
             test_datasets.append(self.level_3_test_ds)
-            self.level_test_dict[3].append(self.level_3_test_ds)
+            self.level_id.append(3)
             
             ## Level 4
             oak = [x for x in list(self.species_label_dict.keys()) if "QU" in x]
@@ -199,7 +197,7 @@ class MultiStage(LightningModule):
             self.level_4_test["label"] = [self.level_label_dicts[4][x] for x in self.level_4_test.taxonID]
             self.level_4_test_ds = TreeDataset(df=self.level_4_test, config=self.config, year=year)
             test_datasets.append(self.level_4_test_ds)
-            self.level_test_dict[4].append(self.level_4_test_ds)
+            self.level_id.append(4)
 
         return train_datasets, test_datasets
     
@@ -220,20 +218,6 @@ class MultiStage(LightningModule):
         ## Validation loaders are a list https://github.com/PyTorchLightning/pytorch-lightning/issues/10809
         data_loaders = []
         for ds in self.test_datasets:
-            data_loader = torch.utils.data.DataLoader(
-                ds,
-                batch_size=self.config["batch_size"],
-                shuffle=False,
-                num_workers=self.config["workers"],
-            )
-            data_loaders.append(data_loader)
-        
-        return data_loaders 
-    
-    def create_dataloaders(self, ds_list):
-        """Create a set of dataloaders from a list of datasets"""
-        data_loaders = []
-        for ds in ds_list:
             data_loader = torch.utils.data.DataLoader(
                 ds,
                 batch_size=self.config["batch_size"],
@@ -354,12 +338,12 @@ class MultiStage(LightningModule):
             
             for key, value in species_table.set_index("taxonID").accuracy.to_dict().items():
                 self.log("Epoch_{}_accuracy".format(key), value)
-
-    def temporal_ensemble(self, predict_ouputs):
+            
+    def temporal_ensemble(self, predict_ouputs, label_dict):
         individual_dict ={}
         for index, results in enumerate(predict_ouputs):
-            year_yhat = torch.cat([x[1] for x in results]).cpu()
-            individuals = np.concatenate([x[2] for x in results])
+            individuals = np.concatenate([x[1] for x in results])            
+            year_yhat = torch.cat([x[2] for x in results]).cpu()
             for i, individual in enumerate(individuals):
                 try:
                     individual_dict[individual].append(year_yhat[i])
@@ -373,13 +357,36 @@ class MultiStage(LightningModule):
             scores.append(np.max(ensemble))
         
         ensemble_df = pd.DataFrame({"individual":list(individual_dict.keys()),"pred_label_top1":pred,"top1_score":scores})
-        ensemble_df["pred_taxa_top1"] = ensemble_df.pred_label_top1.apply(lambda x: self.label_to_index[x])
+        ensemble_df["pred_taxa_top1"] = ensemble_df.pred_label_top1.apply(lambda x: label_dict[x])
         
         return ensemble_df
     
+    def gather_levels(self, predictions):
+        #Sort into level lists
+        level_lists = {}
+        for x in range(self.levels):
+            level_lists[x] = []
+            
+        for index, array in enumerate(predictions):
+            level_lists[self.level_id[index]].append(array)
+        
+        #Average predictions within a level
+        level_results = []
+        for i in level_lists:        
+            temporal_output = self.temporal_ensemble(level_lists[i], label_dict=self.label_to_taxonIDs[i])
+            temporal_output["pred_label_top1_level_{}".format(i)] = temporal_output["pred_label_top1"]
+            temporal_output["top1_score_level_{}".format(i)] = temporal_output["top1_score"]
+            temporal_output["pred_taxa_top1_level_{}".format(i)] = temporal_output["pred_taxa_top1"]
+            temporal_output = temporal_output.drop(columns=["pred_label_top1","top1_score","pred_taxa_top1"])
+            level_results.append(temporal_output)    
+        
+        results = reduce(lambda  left,right: pd.merge(left,right,on=['individual'],
+                                                        how='outer'), level_results)
+        
+        return results
+        
     def ensemble(self, results):
         """Given a multi-level model, create a final output prediction and score"""
-        
         ensemble_taxonID = []
         ensemble_label = []
         ensemble_score = []
@@ -408,7 +415,7 @@ class MultiStage(LightningModule):
         results["ens_score"] = ensemble_score
         results["ens_label"] = ensemble_label
         
-        return results[["geometry","individual","ens_score","ensembleTaxonID","ens_label"]]
+        return results[["individual","ens_score","ensembleTaxonID","ens_label"]]
             
     def evaluation_scores(self, ensemble_df, experiment):   
         self.test_df["individual"] = self.test_df["individualID"]

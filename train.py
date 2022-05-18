@@ -80,21 +80,10 @@ trainer.fit(m)
 
 #Save model checkpoint
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
-
-#Predict each year and aggregrate
-level_results = []
-for level in range(m.levels):
-    year_output = trainer.predict(m, dataloaders=m.create_dataloaders(df=m.level_test_dict[year]))
-    temporal_output = m.temporal_ensemble(year_output)
-    temporal_output = data_module.crowns[["geometry","individual","tile_year"]].merge(temporal_output, on=["individual","tile_year"])    
-    temporal_output["pred_label_top1_level_{}".format(level)] = temporal_output["pred_label_top1"]
-    temporal_output["top1_score_level_{}".format(level)] = temporal_output["top1_score_level"]
-    temporal_output["pred_taxa_top1_level_{}".format(level)] = temporal_output["pred_taxa_top1"]
-    temporal_output = temporal_output.drop(columns=["pred_label_top1","top1_score","pred_taxa_top1"])
-    level_results.append(temporal_output)
-    
-results = reduce(lambda  left,right: pd.merge(left,right,on=['individual'],
-                                                how='outer'), level_results) 
+trainer.predict(m, dataloaders=m.val_dataloader())
+results = m.gather_levels(predictions)
+results["individualID"] = results["individual"]
+results = results.merge(data_module.crowns, on=["individualID"])
 ensemble_df = m.ensemble(results)
 ensemble_df = m.evaluation_scores(
     ensemble_df,
