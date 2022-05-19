@@ -379,7 +379,7 @@ class MultiStage(LightningModule):
             level_results.append(temporal_output)    
         
         results = reduce(lambda  left,right: pd.merge(left,right,on=['individual'],
-                                                        how='outer'), level_results)
+                                                        how='outer'), level_temporal_multi_stageresults)
         
         return results
         
@@ -413,11 +413,10 @@ class MultiStage(LightningModule):
         results["ens_score"] = ensemble_score
         results["ens_label"] = ensemble_label
         
-        return results[["individual","ens_score","ensembleTaxonID","ens_label"]]
+        return results[["individualID","ens_score","ensembleTaxonID","ens_label"]]
             
     def evaluation_scores(self, ensemble_df, experiment):   
-        self.test_df["individual"] = self.test_df["individualID"]
-        ensemble_df = ensemble_df.merge(self.test_df, on="individual")
+        ensemble_df = ensemble_df.merge(self.test_df, on="individualID")
         
         taxon_accuracy = torchmetrics.functional.accuracy(
             preds=torch.tensor(ensemble_df.ens_label.values),
