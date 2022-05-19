@@ -108,14 +108,6 @@ comet_logger.experiment.log_table("ensemble_df.csv", ensemble_df)
 ensemble_df["pred_taxa_top1"] = ensemble_df.ensembleTaxonID
 ensemble_df["pred_label_top1"] = ensemble_df.ens_label
 rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
-visualize.plot_spectra(ensemble_df, crop_dir=config["crop_dir"], experiment=comet_logger.experiment)
-visualize.rgb_plots(
-    df=ensemble_df,
-    config=config,
-    test_crowns=data_module.crowns,
-    test_points=data_module.canopy_points,
-    plot_n_individuals=config["plot_n_individuals"],
-    experiment=comet_logger.experiment)
 
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
@@ -127,22 +119,3 @@ visualize.confusion_matrix(
     rgb_pool=rgb_pool
 )
 
-#Confusion matrix for each level
-
-for x in range(len(m.models)):
-    label_list = [m.level_0_test, m.level_1_test,m.level_2_test, m.level_3_test, m.level_4_test]
-    test_df = label_list[x]
-    test_df["individual"] = test_df["individualID"]
-    confusion_results = results.merge(test_df,on='individual')
-    confusion_results["pred_taxa_top1"] = confusion_results["pred_taxa_top1_level_{}".format(x)]
-    confusion_results["pred_label_top1"] = confusion_results["pred_label_top1_level_{}".format(x)]   
-    
-    visualize.confusion_matrix(
-        comet_experiment=comet_logger.experiment,
-        results=confusion_results,
-        species_label_dict=m.level_label_dicts[x],
-        test_crowns=data_module.crowns,
-        test=data_module.test,
-        test_points=data_module.canopy_points,
-        rgb_pool=rgb_pool
-    )
