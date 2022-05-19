@@ -84,7 +84,6 @@ class MultiStage(LightningModule):
         ## Level 0     
         train_datasets = []
         test_datasets = []
-        
         self.num_classes = []
         self.level_id = []
         for year in self.years:
@@ -228,11 +227,9 @@ class MultiStage(LightningModule):
         
         return data_loaders 
     
-    def predict_dataloader(self, df):
-        ## Validation loaders are a list https://github.com/PyTorchLightning/pytorch-lightning/issues/10809
+    def predict_dataloader(self, ds_list):
         data_loaders = []
-        ds = TreeDataset(df=df, config=self.config)        
-        for x in range(len(self.models)):
+        for ds in ds_list:
             data_loader = torch.utils.data.DataLoader(
                 ds,
                 batch_size=self.config["batch_size"],
@@ -291,10 +288,11 @@ class MultiStage(LightningModule):
     def predict_step(self, batch, batch_idx, dataloader_idx):
         """Calculate predictions
         """
-        year, individual, inputs, y = batch
+        year, individual, inputs = batch
         images = inputs["HSI"]  
         y_hat = self.models[dataloader_idx].forward(images)
         y_hat = F.softmax(y_hat, dim=1)
+        
         return year, individual, y_hat
     
     def validation_epoch_end(self, validation_step_outputs): 
