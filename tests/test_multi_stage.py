@@ -31,5 +31,6 @@ def test_gather_predictions(config, dm):
     results = results.merge(dm.test, on=["individualID"])
     ensemble_df = m.ensemble(results)
     ensemble_df = m.evaluation_scores(
-        ensemble_df
+        ensemble_df,
+        experiment=None
     )    

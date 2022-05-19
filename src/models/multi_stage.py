@@ -55,7 +55,7 @@ class MultiStage(LightningModule):
         self.classes = len(self.train_df.label.unique())
         
         for index, ds in enumerate(self.train_datasets): 
-            labels = [x[3] for x in ds]
+            labels = torch.stack([x[3] for x in ds]))
             classes = self.num_classes[index]
             base = base_model(classes=classes, config=config)
             loss_weight = []
