@@ -80,7 +80,7 @@ trainer.fit(m)
 
 #Save model checkpoint
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
-trainer.predict(m, dataloaders=m.val_dataloader())
+predictions = trainer.predict(m, dataloaders=m.val_dataloader())
 results = m.gather_levels(predictions)
 results["individualID"] = results["individual"]
 results = results.merge(data_module.crowns, on=["individualID"])
