@@ -85,7 +85,7 @@ trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}
 predict_datasets = []
 for year in m.years:
     for level in range(m.levels):
-        ds = TreeDataset(df=data_module.test, train=False, year=year, config=config)
+        ds = data.TreeDataset(df=data_module.test, train=False, year=year, config=config)
         predict_datasets.append(ds)
         
 predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
