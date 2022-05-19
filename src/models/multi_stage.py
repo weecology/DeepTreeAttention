@@ -379,7 +379,7 @@ class MultiStage(LightningModule):
             level_results.append(temporal_output)    
         
         results = reduce(lambda  left,right: pd.merge(left,right,on=['individual'],
-                                                        how='outer'), level_temporal_multi_stageresults)
+                                                        how='outer'), level_results)
         
         return results
         
