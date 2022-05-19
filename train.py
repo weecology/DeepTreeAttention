@@ -92,7 +92,9 @@ predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predic
 
 results = m.gather_levels(predictions)
 results["individualID"] = results["individual"]
-results = results.merge(data_module.crowns, on=["individualID"])
+results = results.merge(data_module.crowns, on="individualID")
+comet_logger.experiment.log_table("test_predictions.csv", results)
+
 ensemble_df = m.ensemble(results)
 ensemble_df = m.evaluation_scores(
     ensemble_df,
@@ -100,7 +102,6 @@ ensemble_df = m.evaluation_scores(
 )
 
 #Log prediction
-comet_logger.experiment.log_table("test_predictions.csv", results)
 comet_logger.experiment.log_table("ensemble_df.csv", ensemble_df)
 
 #Visualizations
