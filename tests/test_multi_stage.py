@@ -1,6 +1,7 @@
 #Test multi_stage
 from pytorch_lightning import Trainer
 from src.models import multi_stage
+from src.data import TreeDataset
 from src import visualize
 import torch
 import pandas as pd
@@ -25,7 +26,14 @@ def test_fit(config, dm):
 def test_gather_predictions(config, dm):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
     trainer = Trainer(fast_dev_run=False)
-    predictions = trainer.predict(m, dataloaders=m.val_dataloader())
+    
+    predict_datasets = []
+    for year in m.years:
+        for level in range(m.levels):
+            ds = TreeDataset(df=dm.test, train=False, year=year, config=config)
+            predict_datasets.append(ds)
+            
+    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
     results = m.gather_levels(predictions)    
     results["individualID"] = results["individual"]
     results = results.merge(dm.test, on=["individualID"])

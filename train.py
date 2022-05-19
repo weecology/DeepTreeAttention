@@ -80,7 +80,16 @@ trainer.fit(m)
 
 #Save model checkpoint
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
-predictions = trainer.predict(m, dataloaders=m.val_dataloader())
+
+# Prediction datasets are indexed by year, but full data is given to each model before ensembling
+predict_datasets = []
+for year in m.years:
+    for level in range(m.levels):
+        ds = TreeDataset(df=data_module.test, train=False, year=year, config=config)
+        predict_datasets.append(ds)
+        
+predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
+
 results = m.gather_levels(predictions)
 results["individualID"] = results["individual"]
 results = results.merge(data_module.crowns, on=["individualID"])
