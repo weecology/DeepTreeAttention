@@ -61,7 +61,7 @@ lr_3: 0.0001
 lr_4: 0.0001
 fast_dev_run: False
 accelerator: dp
-epochs: 150
+epochs: 2
 
 #Evaluation config
 #Top k class recall score
