@@ -336,6 +336,21 @@ class MultiStage(LightningModule):
             
             for key, value in species_table.set_index("taxonID").accuracy.to_dict().items():
                 self.log("Epoch_{}_accuracy".format(key), value)
+    
+    def predictions_to_df(self, predict_ouputs):
+        """ Unwrap prediction frame to create a pandas dataframe for evaluation"""
+        dfs = []
+        for index, results in enumerate(predict_ouputs):
+            year = np.concatenate([x[0] for x in results])                        
+            individuals = np.concatenate([x[1] for x in results])            
+            year_yhat = torch.cat([x[2] for x in results]).cpu()
+            pred = np.argmax(year_yhat, 1)
+            score = np.max(year_yhat, 1)
+            df = pd.DataFrame({"tile_year":year,"individualID":individuals,"pred_label_top1": pred, "top1_score":score })
+            df["pred_taxa_top1"] = df.pred_label_top1.apply(lambda x: self.label_to_taxonIDs[index][x])
+            dfs.append(df)
+        
+        return pd.concat(dfs)
             
     def temporal_ensemble(self, predict_ouputs, label_dict):
         individual_dict ={}

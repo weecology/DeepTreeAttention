@@ -34,6 +34,8 @@ def test_gather_predictions(config, dm):
             predict_datasets.append(ds)
             
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
+    df = m.predictions_to_df(predictions)
+    
     results = m.gather_levels(predictions)    
     results["individualID"] = results["individual"]
     results = results.merge(dm.test, on=["individualID"])

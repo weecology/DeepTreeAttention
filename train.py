@@ -90,10 +90,14 @@ for year in m.years:
         
 predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
 
+#Unwrap to record entire set of predictions
+prediction_df = m.predictions_to_df(predictions)
+comet_logger.experiment.log_table("all_predictions.csv", prediction_df)
+
 results = m.gather_levels(predictions)
 results["individualID"] = results["individual"]
 results = results.merge(data_module.crowns, on="individualID")
-comet_logger.experiment.log_table("test_predictions.csv", results)
+comet_logger.experiment.log_table("nested_predictions.csv", results)
 
 ensemble_df = m.ensemble(results)
 ensemble_df = m.evaluation_scores(
