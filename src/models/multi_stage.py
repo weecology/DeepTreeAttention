@@ -244,7 +244,7 @@ class MultiStage(LightningModule):
         """Create a optimizer for each level"""
         optimizers = []
         for x, ds in enumerate(self.train_datasets):
-            optimizer = torch.optim.Adam(self.models[x].parameters(), lr=self.config["lr"])
+            optimizer = torch.optim.Adam(self.models[x].parameters(), lr=self.config["lr_{}".format(x)])
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                              mode='min',
                                                              factor=0.75,
@@ -336,6 +336,21 @@ class MultiStage(LightningModule):
             
             for key, value in species_table.set_index("taxonID").accuracy.to_dict().items():
                 self.log("Epoch_{}_accuracy".format(key), value)
+    
+    def predictions_to_df(self, predict_ouputs):
+        """ Unwrap prediction frame to create a pandas dataframe for evaluation"""
+        dfs = []
+        for index, results in enumerate(predict_ouputs):
+            year = np.concatenate([x[0] for x in results])                        
+            individuals = np.concatenate([x[1] for x in results])            
+            year_yhat = torch.cat([x[2] for x in results]).cpu()
+            pred = np.argmax(year_yhat, 1)
+            score = year_yhat.max(1).values
+            df = pd.DataFrame({"tile_year":year,"individualID":individuals,"pred_label_top1": pred, "top1_score":score })
+            df["pred_taxa_top1"] = df.pred_label_top1.apply(lambda x: self.label_to_taxonIDs[index][x])
+            dfs.append(df)
+        
+        return pd.concat(dfs)
             
     def temporal_ensemble(self, predict_ouputs, label_dict):
         individual_dict ={}
