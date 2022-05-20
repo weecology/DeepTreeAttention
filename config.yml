@@ -62,7 +62,6 @@ accelerator: dp
 epochs: 150
 min_loss_weight: 0.7
 
-
 #Evaluation config
 #Top k class recall score
 top_k: 4
