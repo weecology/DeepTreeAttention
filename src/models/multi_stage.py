@@ -93,7 +93,11 @@ class MultiStage(LightningModule):
             self.level_0_train = self.train_df.copy()
             self.level_0_train.loc[~(self.level_0_train.taxonID == "PIPA2"),"taxonID"] = "OTHER"
             self.level_0_train.loc[(self.level_0_train.taxonID == "PIPA2"),"taxonID"] = "PIPA2"  
-            #xself.level_0_train = self.level_0_train.groupby("taxonID").apply(lambda x:x.sample(frac=1).head(self.config["PIPA2_sampling_ceiling"])).reset_index(drop=True)        
+            
+            #equal sample
+            ids_to_keep = self.level_0_train.groupby("taxonID").apply(lambda x:x.sample(frac=1).head(self.config["PIPA2_sampling_ceiling"])).individualID
+            self.level_0_train =  self.level_0_train[self.level_0_train.individualID.isin(ids_to_keep)].reset_index(drop=True)
+             
             self.level_0_train["label"] = [self.level_label_dicts[0][x] for x in self.level_0_train.taxonID]
             self.level_0_train_ds = TreeDataset(df=self.level_0_train, config=self.config, year=year)
             train_datasets.append(self.level_0_train_ds)
@@ -116,10 +120,10 @@ class MultiStage(LightningModule):
             self.level_1_train.loc[self.level_1_train.taxonID.isin(["PICL","PIEL","PITA"]),"taxonID"] = "CONIFER" 
             
             #subsample broadleaf, labels have not been converted, relate to original taxonID
-            #broadleaf_ids = self.level_1_train[self.level_1_train.taxonID=="BROADLEAF"].groupby("label").apply(lambda x: x.sample(frac=1).head(self.config["broadleaf_ceiling"])).individualID
-            #conifer_ids = self.level_1_train[self.level_1_train.taxonID=="CONIFER"].individualID
-            #ids_to_keep = np.concatenate([broadleaf_ids, conifer_ids])
-            #self.level_1_train = self.level_1_train[self.level_1_train.individualID.isin(ids_to_keep)].reset_index(drop=True)
+            broadleaf_ids = self.level_1_train[self.level_1_train.taxonID=="BROADLEAF"].groupby("label").apply(lambda x: x.sample(frac=1).head(self.config["broadleaf_ceiling"])).individualID
+            conifer_ids = self.level_1_train[self.level_1_train.taxonID=="CONIFER"].individualID
+            ids_to_keep = np.concatenate([broadleaf_ids, conifer_ids])
+            self.level_1_train = self.level_1_train[self.level_1_train.individualID.isin(ids_to_keep)].reset_index(drop=True)
             self.level_1_train["label"] = [self.level_label_dicts[1][x] for x in self.level_1_train.taxonID]
             self.level_1_train_ds = TreeDataset(df=self.level_1_train, config=self.config, year=year)
             train_datasets.append(self.level_1_train_ds)
@@ -186,7 +190,10 @@ class MultiStage(LightningModule):
             self.level_4_train = self.train_df.copy()
             self.level_4_train = self.level_4_train[self.level_4_train.taxonID.str.contains("QU")].reset_index(drop=True)
             self.level_4_train["label"] = [self.level_label_dicts[4][x] for x in self.level_4_train.taxonID]
-            #self.level_4_train = self.level_4_train.groupby("taxonID").apply(lambda x:x.sample(frac=1).head(self.config["oaks_sampling_ceiling"])).reset_index(drop=True)
+            
+            ids_to_keep = self.level_4_train.groupby("taxonID").apply(lambda x:x.sample(frac=1).head(self.config["oaks_sampling_ceiling"])).individualID
+            self.level_4_train = self.level_4_train[self.level_4_train.individualID.isin(ids_to_keep)].reset_index(drop=True)
+            
             self.level_4_train_ds = TreeDataset(df=self.level_4_train, config=self.config, year=year)
             train_datasets.append(self.level_4_train_ds)
             self.num_classes.append(len(self.level_4_train.taxonID.unique()))
