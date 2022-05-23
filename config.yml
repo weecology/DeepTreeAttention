@@ -39,8 +39,8 @@ new_train_test_split: True
 #How many samples from non-osbs sites can we use per species
 samples_from_other_sites: 0
 oaks_sampling_ceiling: 100
-PIPA2_sampling_ceiling: 1000
-broadleaf_ceiling: 25
+PIPA2_sampling_ceiling: 2000
+broadleaf_ceiling: 50
 
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
@@ -60,7 +60,7 @@ lr: 0.0001
 fast_dev_run: False
 accelerator: dp
 epochs: 150
-min_loss_weight: 0.7
+min_loss_weight: 0.5
 
 #Evaluation config
 #Top k class recall score
