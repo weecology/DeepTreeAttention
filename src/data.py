@@ -259,27 +259,26 @@ class TreeDataset(Dataset):
     def __getitem__(self, index):
         inputs = {}
         individual = self.individuals[index]
+        ind_annotations = self.annotations[self.annotations.individualID==individual]        
         if self.config["preload_images"]:
             inputs["HSI"] = self.image_dict[individual]
         else:
-            for individual in self.annotations.individualID.unique():
-                images = []
-                ind_annotations = self.annotations[self.annotations.individualID==individual]
-                for year in self.years:
-                    year_annotations = ind_annotations[ind_annotations.tile_year==year]
-                    if year_annotations.empty:
-                        pad_image = torch.zeros((self.config["bands"], self.config["image_size"], self.config["image_size"]))
-                        images.append(pad_image)
-                    else:
-                        image_path = os.path.join(self.config["crop_dir"],year_annotations["image_path"].values[0])
-                        image = load_image(image_path, image_size=self.image_size)
-                        if self.train:
-                            image = self.transformer(image)   
-                        images.append(image)
+            images = []
+            for year in self.years:
+                year_annotations = ind_annotations[ind_annotations.tile_year==year]
+                if year_annotations.empty:
+                    pad_image = torch.zeros((self.config["bands"], self.config["image_size"], self.config["image_size"]))
+                    images.append(pad_image)
+                else:
+                    image_path = os.path.join(self.config["crop_dir"],year_annotations["image_path"].values[0])
+                    image = load_image(image_path, image_size=self.image_size)
+                    if self.train:
+                        image = self.transformer(image)   
+                    images.append(image)
             inputs["HSI"] = images
         
         if self.train:
-            label = self.annotations.label.iloc[index]
+            label = ind_annotations.label.values[0]
             label = torch.tensor(label, dtype=torch.long)
 
             return individual, inputs, label
