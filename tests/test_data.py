@@ -17,14 +17,11 @@ def test_TreeData_setup(config, ROOT):
     assert all([x in ["image_path","label","site","taxonID","siteID","plotID","individualID","point_id","box_id","RGB_tile","tile_year"] for x in train.columns])
     assert len(train.tile_year.unique()) > 1
     
-def test_TreeDataset(dm, config,tmpdir, ROOT):
+def test_TreeDataset(dm, config):
     #Train loader
-    data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/train.csv".format(ROOT), config=config)
-    year, individuals, inputs, label = data_loader[0]
-    image = inputs["HSI"]    
-    assert image.shape == (3, config["image_size"], config["image_size"])
+    data_loader = dm.train_dataloader()
+    individuals, inputs, label = next(iter(data_loader))
     
-    #Test loader
-    data_loader = data.TreeDataset(csv_file="{}/tests/data/processed/test.csv".format(ROOT), train=False, config=config)    
-    annotations = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
-    assert len(data_loader) == annotations.shape[0]
+    assert len(inputs["HSI"]) == len(dm.train.tile_year.unique())
+    assert inputs["HSI"][0].shape == (config["batch_size"],config["bands"], config["image_size"], config["image_size"])
+    

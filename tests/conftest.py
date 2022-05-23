@@ -65,7 +65,7 @@ def config(ROOT):
     config["HSI_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
     config["min_train_samples"] = 1
     config["min_test_samples"] = 1
-    config["crop_dir"] = "{}/tests/data/1d6a975b1018469f91dfae955ae2f6b3".format(ROOT)
+    config["crop_dir"] = "{}/tests/data/110ac77ae89043898f618466359c2a2e".format(ROOT)
     config["data_dir"] = "{}/tests/data/".format(ROOT)
     config["bands"] = 349
     config["classes"] = 3
@@ -76,21 +76,21 @@ def config(ROOT):
     config["dead_model"] = None
     config["dead_threshold"] = 0.95
     config["megaplot_dir"] = None
-    config["use_data_commit"] = "1d6a975b1018469f91dfae955ae2f6b3"
+    config["use_data_commit"] = "110ac77ae89043898f618466359c2a2e"
     config["dead"]["epochs"] = 1
     config["pretrain_state_dict"] = None
     config["preload_images"] = False
+    config["batch_size"] = 2
     
     return config
 
 #Data module
 @pytest.fixture(scope="session")
 def dm(config, ROOT):
-    csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)               
-    dm = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data/1d6a975b1018469f91dfae955ae2f6b3".format(ROOT), debug=True) 
-    dm.prepare_data()    
+    csv_file = "{}/tests/data/110ac77ae89043898f618466359c2a2e/train.csv".format(ROOT)
+    data_module = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data/110ac77ae89043898f618466359c2a2e".format(ROOT), debug=True) 
     
-    return dm
+    return data_module
 
 @pytest.fixture(scope="session")
 def experiment():
@@ -106,7 +106,8 @@ def experiment():
 #Training module
 @pytest.fixture(scope="session")
 def m(config, dm, ROOT):
-    m = year.YearEnsemble(classes=dm.num_classes, years=dm.train.tile_year.unique(), config=config, label_dict=dm.species_label_dict)
+    model = year.learned_ensemble(classes=dm.num_classes, config=config)
+    m = main.TreeModel(model, classes=dm.num_classes, label_dict=dm.species_label_dict, config=config)
     m.ROOT = "{}/tests/".format(ROOT)
     
     return m
