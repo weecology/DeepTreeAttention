@@ -245,12 +245,12 @@ class TreeDataset(Dataset):
                         pad_image = torch.zeros((self.config["bands"], self.config["image_size"], self.config["image_size"]))
                         images.append(pad_image)
                     else:
-                        image_path = os.path.join(self.config["crop_dir"],year_annotations["image_path"].iloc[0])
+                        image_path = os.path.join(self.config["crop_dir"], year_annotations["image_path"].iloc[0])
                         image = load_image(image_path, image_size=self.image_size)
                         if self.train:
                             image = self.transformer(image)
                         images.append(image)
-            self.image_dict[individual] = images
+                self.image_dict[individual] = images
             
     def __len__(self):
         # 0th based index
@@ -262,7 +262,6 @@ class TreeDataset(Dataset):
         if self.config["preload_images"]:
             inputs["HSI"] = self.image_dict[individual]
         else:
-            self.individual_dict = {}
             for individual in self.annotations.individualID.unique():
                 images = []
                 ind_annotations = self.annotations[self.annotations.individualID==individual]
