@@ -5,29 +5,26 @@ from torch import nn
 import torch
 import torchmetrics
 from src.models import Hang2020
-import numpy as np
-import pandas as pd
 
 class learned_ensemble(Module):
-    def __init__(self, classes, config):
+    def __init__(self, years, classes, config):
         super().__init__()
-        #Load from state dict of previous run
-        if config["pretrain_state_dict"]:
-            self.base_model = Hang2020.load_from_backbone(state_dict=config["pretrain_state_dict"], classes=classes, bands=config["bands"])
-        else:
-            self.base_model = Hang2020.spectral_network(bands=config["bands"], classes=classes)
         
-        micro_recall = torchmetrics.Accuracy(average="micro")
-        macro_recall = torchmetrics.Accuracy(average="macro", num_classes=classes)
-        self.metrics = torchmetrics.MetricCollection(
-            {"Micro Accuracy":micro_recall,
-             "Macro Accuracy":macro_recall,
-             })
+        self.year_models = nn.ModuleList()
+        self.years = years
+        for year in range(years):
+            #Load from state dict of previous run
+            if config["pretrain_state_dict"]:
+                base_model = Hang2020.load_from_backbone(state_dict=config["pretrain_state_dict"], classes=classes, bands=config["bands"])
+            else:
+                base_model = Hang2020.spectral_network(bands=config["bands"], classes=classes)
+            
+            self.year_models.append(base_model)
         
     def forward(self,images):
         year_scores = []
-        for x in images:
-            x = self.base_model(x)
+        for index, x in enumerate(images):
+            x = self.year_models[index](x)
             score = x[-1]            
             year_scores.append(score)
         

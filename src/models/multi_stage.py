@@ -13,10 +13,10 @@ import torchmetrics
 import torch
 
 class base_model(Module):
-    def __init__(self, classes, config):
+    def __init__(self, years, classes, config):
         super().__init__()
         #Load from state dict of previous run
-        self.model = learned_ensemble(classes=classes, config=config)
+        self.model = learned_ensemble(classes=classes, years=years, config=config)
         
         micro_recall = torchmetrics.Accuracy(average="micro")
         macro_recall = torchmetrics.Accuracy(average="macro", num_classes=classes)
@@ -52,7 +52,7 @@ class MultiStage(LightningModule):
         for index, ds in enumerate(self.train_datasets): 
             labels = torch.stack([x[2] for x in ds])
             classes = self.num_classes[index]
-            base = base_model(classes=classes, config=config)
+            base = base_model(classes=classes, years=len(self.years), config=config)
             loss_weight = []
             for x in range(classes):
                 try:
