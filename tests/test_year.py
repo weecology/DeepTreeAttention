@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 
 def test_YearEnsemble(dm, config):
-    m = year.learned_ensemble(classes=dm.num_classes, config=config)
+    m = year.learned_ensemble(classes=dm.num_classes, years=4, config=config)
     images = [torch.randn(1, 349, 11, 11) for x in range(4)]
     mean_score = m(images)
 

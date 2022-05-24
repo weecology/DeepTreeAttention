@@ -2,8 +2,6 @@
 from pytorch_lightning import Trainer
 from src.models import multi_stage
 from src.data import TreeDataset
-from src import visualize
-import torch
 import pandas as pd
 import numpy as np
 from functools import reduce
