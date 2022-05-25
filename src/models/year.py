@@ -24,12 +24,10 @@ class learned_ensemble(Module):
     def forward(self,images):
         year_scores = []
         for index, x in enumerate(images):
-            if x.sum() == 0:
-                continue
             x = self.year_models[index](x)
             score = x[-1]            
             year_scores.append(score)
         
-        return torch.stack(year_scores, axis=1).mean(axis=1)
+        return torch.stack(year_scores, axis=1).max(axis=1).values
                 
     
