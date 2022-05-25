@@ -28,6 +28,6 @@ class learned_ensemble(Module):
             score = x[-1]            
             year_scores.append(score)
         
-        return torch.stack(year_scores, axis=1).mean(axis=1).values
+        return torch.stack(year_scores, axis=1).mean(axis=1)
                 
     
