@@ -338,6 +338,9 @@ class MultiStage(LightningModule):
             for key, value in species_table.set_index("taxonID").accuracy.to_dict().items():
                 self.log("Epoch_{}_accuracy".format(key), value)
     
+            for key, value in species_table.set_index("taxonID").precision.to_dict().items():
+                self.log("Epoch_{}_precision".format(key), value)
+                    
     def gather_predictions(self, predict_df, return_features=False):
         """Post-process the predict method to create metrics"""
         if return_features: 
