@@ -48,7 +48,7 @@ cpu_client = start(cpus=30, mem_size="8GB")
 tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"])
 wait(tif_futures)
 
-species_model_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/91ba2dc9445547f48805ec60be0a2f2f"
+species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/1afdb5de011e4c1d8419a904e42d40bc.pl"
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/91ba2dc9445547f48805ec60be0a2f2f"
 
@@ -86,7 +86,7 @@ for i in pd.Series(geo_index).unique()[:2]:
         predict.predict_tile,
         HSI_paths,
         dead_model_path=dead_model_path,
-        species_model_dir=species_model_dir,
+        species_model_path=species_model_path,
         config=config,
         savedir=savedir,
         keep_year="2021"
