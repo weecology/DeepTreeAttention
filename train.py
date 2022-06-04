@@ -65,11 +65,11 @@ if not config["use_data_commit"]:
 m = multi_stage.MultiStage(data_module.train, data_module.test, config=data_module.config, crowns=data_module.crowns)
 
 #Save the train df for each level for inspection
-for index, train_df in [data_module.level_0_train,
-          data_module.level_2_train,
-          data_module.level_2_train,
-          data_module.level_3_train,
-          data_module.level_4_train]:
+for index, train_df in [m.level_0_train,
+          m.level_1_train,
+          m.level_2_train,
+          m.level_3_train,
+          m.level_4_train]:
     comet_logger.experiment.log_table("train_level_{}.csv".format(index), train_df)
 
 #Create trainer
