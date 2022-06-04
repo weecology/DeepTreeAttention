@@ -68,7 +68,7 @@ gpu_client = start(gpus=2, mem_size="10GB")
 config["workers"] = 0
 futures =  []
 #Save each file seperately in a dir named for the species model
-savedir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",os.path.basename(species_model_dir))
+savedir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",os.path.basename(species_model_path))
 try:
     os.mkdir(savedir)
 except:
