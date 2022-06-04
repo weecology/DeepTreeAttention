@@ -1,21 +1,24 @@
 #Predict
+from deepforest import main
+from deepforest.utilities import annotations_to_shapefile
 import glob
 import geopandas as gpd
 import numpy as np
 import os
 import rasterio
-from deepforest import main
-from deepforest.utilities import annotations_to_shapefile
+import re
 from src.main import TreeModel
 from src.models import dead
-from src.utils import preprocess_image, ensemble
+from src import data
+from src.utils import preprocess_image
 from src.CHM import postprocess_CHM
+from src.models import multi_stage
+from src import generate
 from torch.utils.data import Dataset
 from torchvision import transforms
 import torch
 from torch.utils.data.dataloader import default_collate
-import pandas as pd
-
+from pytorch_lightning import Trainer
 def RGB_transform(augment):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
@@ -87,22 +90,17 @@ def my_collate(batch):
     
     return default_collate(batch)
 
-def predict_tile(HSI_paths, species_model_dir, config, dead_model_path=None, savedir=None, keep_year=None):
-    """Generate species prediction from a HSI tile
-    Args:
-        HSI_paths: a dict of paths for a geoindex year->path_to_tif
-        species_model_dir: directory to load year models
-        keep_year: which year to keep, if None, all years are kept. 
-    """
-    #get rgb from HSI path, all names are the same from the RGB tile
-    HSI_basename = os.path.basename(HSI_paths[list(HSI_paths.keys())[0]])
-    if "hyperspectral" in HSI_basename:
-        rgb_name = "{}.tif".format(HSI_basename.split("_hyperspectral")[0])    
-    else:
-        rgb_name = HSI_basename           
+def predict_tile(HSI_paths, dead_model_path, species_model_path, config, savedir, RGB_year="2019"):
+    #get rgb from HSI path
+    HSI_basename = os.path.basename(HSI_paths[RGB_year])
+    geo_index = re.search("(\d+_\d+)_image", HSI_basename).group(1)
     rgb_pool = glob.glob(config["rgb_sensor_pool"], recursive=True)
-    rgb_path = [x for x in rgb_pool if rgb_name in x][0]
+    rgb_path = [x for x in rgb_pool if geo_index in x]
+    rgb_path = [x for x in rgb_path if RGB_year in x][0]
+    if len(rgb_path) == 0:
+        raise ValueError("No matching RGB from HSI basename {}".format(HSI_basename))
     crowns = predict_crowns(rgb_path)
+    crowns["tile"] = rgb_path
     
     #CHM filter
     if config["CHM_pool"]:
@@ -119,42 +117,29 @@ def predict_tile(HSI_paths, species_model_dir, config, dead_model_path=None, sav
         raise ValueError("No crowns left after CHM filter. {}".format(crowns.head(n=10)))
     
     if dead_model_path:
-        dead_label, dead_score = predict_dead(
-            crowns=filtered_crowns,
-            dead_model_path=dead_model_path,
-            rgb_tile=rgb_path,
-            config=config)
-        
+        dead_label, dead_score = predict_dead(crowns=filtered_crowns, dead_model_path=dead_model_path, rgb_tile=rgb_path, config=config)
         filtered_crowns["dead_label"] = dead_label
         filtered_crowns["dead_score"] = dead_score
+        
+    # Load species model
+    m = multi_stage.MultiStage.load_from_checkpoint(species_model_path)
     
-    # Load species models and index by year
-    model_paths = glob.glob(os.path.join(species_model_dir,"*.pl"))
-    models = {}
-    for x in model_paths:
-        prediction_model = TreeModel.load_from_checkpoint(x)       
-        year = os.path.splitext(x)[0].split("_")[-1]
-        models[year] = prediction_model
+    #Get all years from geo_index
+    HSI_tiles = [value for key, value in HSI_paths.items()]
     
-    # Predict
-    trees, features = predict_species(HSI_paths=HSI_paths, crowns=filtered_crowns, models=models, config=config)
+    trees = predict_species(HSI_paths=HSI_tiles, crowns=filtered_crowns, m=m, config=config)
 
     # Remove predictions for dead trees
     if dead_model_path:
         trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"pred_taxa_top1"] = "DEAD"
         trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"pred_label_top1"] = None
         trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"top1_score"] = None
-    
+        
     # Calculate crown area
     trees["crown_area"] = crowns.geometry.area
+    trees = gpd.GeoDataFrame(trees, geometry="geometry")    
+    trees.to_file(os.path.join(savedir, "{}.shp".format(os.path.splitext(HSI_basename)[0])))
     
-    #Latest year
-    trees = gpd.GeoDataFrame(trees, geometry="geometry")
-    if keep_year:
-        trees = trees[trees.year==str(keep_year)]    
-    if savedir:
-        trees.to_file(os.path.join(savedir,"{}.shp".format(os.path.splitext(HSI_basename)[0])))
-        
     return trees
 
 def predict_crowns(PATH):
@@ -179,67 +164,40 @@ def predict_crowns(PATH):
     gdf["plotID"] = None
     gdf["taxonID"] = None
     gdf["RGB_tile"] = PATH
-    gdf["tile_year"] = None
-    
     
     return gdf
 
-def predict_species(crowns, HSI_paths, models, config):
-    """Given a shapefile and HSI path, apply a model ensemble
-    Args:
-        crowns: a geodataframe of geospatial locations to predict
-        HSI_paths: a dict year->path for each HSI tile in a geo_index location
-        models: a dict year->model for pytorch lightning models
-        config: config.yml
-    """
-    # Prepare data for ensemble prediction
-    crowns["bbox_score"] = crowns["score"]
+def predict_species(crowns, HSI_paths, m, config):
+    #Generate crops
+    annotations = generate.generate_crops(
+        crowns,
+        savedir=config["crop_dir"],
+        sensor_glob=config["HSI_sensor_pool"],
+        convert_h5=config["convert_h5"],   
+        rgb_glob=config["rgb_sensor_pool"],
+        HSI_tif_dir=config["HSI_tif_dir"],
+        replace=config["replace"]
+    )
+
+    predict_datasets = []
+    for level in range(m.levels):
+        ds = data.TreeDataset(df=annotations, train=False, config=config)
+        predict_datasets.append(ds)
+
+    trainer = Trainer(gpus=config["gpus"])
+    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
+    results = m.gather_predictions(predictions)
+    results["individualID"] = results["individual"]
+    results = results.merge(crowns, on="individual")
+    ensemble_df = m.ensemble(results)
     
-    # Predict species for each year
-    year_individuals = {} 
-    year_results = []    
-    for year in HSI_paths:
-        ds = on_the_fly_dataset(crowns=crowns, image_path=HSI_paths[year], config=config)
-        data_loader = torch.utils.data.DataLoader(
-            ds,
-            batch_size=config["predict_batch_size"],
-            shuffle=False,
-            num_workers=config["workers"],
-            collate_fn=my_collate
-        )
-        try:
-            year_model = models[year]
-        except:
-            print("No model for year {}".format(year))
-            continue
-        
-        results, features = year_model.predict_dataloader(
-            data_loader=data_loader,
-            return_features=True,
-            train=False
-        )
-        
-        for index, row in enumerate(features):
-            try:
-                year_individuals[results.individual.iloc[index]].append(row)
-            except:
-                year_individuals[results.individual.iloc[index]] = [row]
-
-        results["year"] = year
-        results["tile"] = HSI_paths[year]
-        year_results.append(results)
-
-    # Ensemble and merge into original frame
-    year_results = pd.concat(year_results)
-    year_results = ensemble(year_results, year_individuals)
-    year_results["ensembleTaxonID"] = year_results.temporal_pred_label_top1.apply(lambda x: year_model.index_to_label[x])
-    crowns = crowns.loc[:,crowns.columns.isin(["geometry","dead_label","dead_score","CHM_height","bbox_score","box_id","individual"])]
-    year_results = year_results.merge(crowns, on="individual")
-               
-    return year_results, features
+    crowns = crowns.loc[:,crowns.columns.isin(["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score","RGB_tile"])]
+    crowns["individualID"] = crowns["individual"]
+    ensemble_df = ensemble_df.merge(crowns, on="individualID")
+    
+    return ensemble_df
 
 def predict_dead(crowns, dead_model_path, rgb_tile, config):
-    """Classify RGB crops as Alive/Dead"""
     dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path, config=config)
     ds = on_the_fly_dataset(crowns=crowns, image_path=rgb_tile, config=config, data_type="RGB")
     label, score = dead.predict_dead_dataloader(dead_model, ds, config)
@@ -247,4 +205,3 @@ def predict_dead(crowns, dead_model_path, rgb_tile, config):
     return label, score
 
 
-    

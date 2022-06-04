@@ -50,6 +50,7 @@ wait(tif_futures)
 
 species_model_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/91ba2dc9445547f48805ec60be0a2f2f"
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
+config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/91ba2dc9445547f48805ec60be0a2f2f"
 
 hsi_tifs = []
 for x in tif_futures:
@@ -61,7 +62,7 @@ for x in tif_futures:
         pass
 
 cpu_client.close()    
-gpu_client = start(gpus=12, mem_size="10GB")
+gpu_client = start(gpus=2, mem_size="10GB")
 
 #No daemonic dask children
 config["workers"] = 0
@@ -75,7 +76,7 @@ except:
 
 geo_index = [re.search("(\d+_\d+)_image", os.path.basename(x)).group(1) for x in hsi_tifs]
 
-for i in pd.Series(geo_index).unique():
+for i in pd.Series(geo_index).unique()[:2]:
     HSI_paths = {}
     tiles = [x for x in hsi_tifs if i in x] 
     for tile in tiles:

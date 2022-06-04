@@ -81,6 +81,7 @@ def config(ROOT):
     config["pretrain_state_dict"] = None
     config["preload_images"] = False
     config["batch_size"] = 2
+    config["gpus"] = 0
     
     return config
 
@@ -106,8 +107,7 @@ def experiment():
 #Training module
 @pytest.fixture(scope="session")
 def m(config, dm, ROOT):
-    model = year.learned_ensemble(classes=dm.num_classes, config=config)
-    m = main.TreeModel(model, classes=dm.num_classes, label_dict=dm.species_label_dict, config=config)
+    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)    
     m.ROOT = "{}/tests/".format(ROOT)
     
     return m

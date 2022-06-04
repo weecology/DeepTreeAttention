@@ -406,6 +406,10 @@ class MultiStage(LightningModule):
         results["ens_score"] = ensemble_score
         results["ens_label"] = ensemble_label
         
+        #Also add the broadleaf - conifer
+        results["leaf_type"] = row["pred_taxa_top1_level_1"]
+        results["leaf_type_score"] = row["top1_score_level_1"]
+        
         return results[["individualID","ens_score","ensembleTaxonID","ens_label"]]
             
     def evaluation_scores(self, ensemble_df, experiment):   
