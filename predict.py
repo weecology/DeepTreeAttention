@@ -88,8 +88,7 @@ for i in pd.Series(geo_index).unique()[:2]:
         dead_model_path=dead_model_path,
         species_model_path=species_model_path,
         config=config,
-        savedir=savedir,
-        keep_year="2021"
+        savedir=savedir
     )
     futures.append(future)
 
