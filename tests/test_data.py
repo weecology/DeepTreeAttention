@@ -4,7 +4,6 @@ import pandas as pd
 
 def test_TreeData_setup(config, ROOT):
     #One site's worth of data
-    config["use_data_commit"] = None 
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)               
     dm = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data".format(ROOT), debug=True) 
     
@@ -25,3 +24,5 @@ def test_TreeDataset(dm, config):
     assert len(inputs["HSI"]) == len(dm.train.tile_year.unique())
     assert inputs["HSI"][0].shape == (config["batch_size"],config["bands"], config["image_size"], config["image_size"])
     
+def test_sample_plots(dm, config):
+    train, test = data.sample_plots(shp=dm.crowns, min_test_samples=5, min_train_samples=5)

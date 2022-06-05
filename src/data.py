@@ -104,7 +104,7 @@ def filter_data(path, config):
 
     return shp
 
-def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
+def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1, ceiling=200):
     """Sample and split a pandas dataframe based on plotID
     Args:
         shp: pandas dataframe of filtered tree locations
@@ -141,10 +141,19 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
 
     # Remove fixed boxes from test
     test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]    
+
+    ids_to_keep = train.drop_duplicates(subset=["individualID"]).groupby("taxonID").apply(lambda x: x.head(ceiling)).reset_index(drop=True)            
+    send_to_test = train[~train.individualID.isin(ids_to_keep.individualID)]
+    train = train[train.individualID.isin(ids_to_keep.individualID)]
+    test = pd.concat([test, send_to_test])
+    test = test[~test.plotID.isin(train.plotID)]
+    
     test = test.groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples)
+    train = train.groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
+    
     train = train[train.taxonID.isin(test.taxonID)]    
     test = test[test.taxonID.isin(train.taxonID)]
-
+    
     return train, test
 
 
@@ -406,8 +415,6 @@ class TreeData(LightningDataModule):
                 replace=self.config["replace"]
             )
             
-            ids_to_keep = annotations.drop_duplicates(subset=["individualID"]).groupby("taxonID").apply(lambda x: x.head(self.config["sampling_ceiling"])).reset_index(drop=True)            
-            annotations = annotations[annotations.individualID.isin(ids_to_keep.individualID)]
             annotations.to_csv("{}/annotations.csv".format(self.data_dir))
             
             if self.comet_logger:

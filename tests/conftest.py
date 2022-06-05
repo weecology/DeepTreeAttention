@@ -82,6 +82,7 @@ def config(ROOT):
     config["preload_images"] = False
     config["batch_size"] = 2
     config["gpus"] = 0
+    config["existing_test_csv"] = None
     
     return config
 

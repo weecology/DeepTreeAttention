@@ -23,7 +23,9 @@ def test_gather_predictions(config, dm):
         predict_datasets.append(ds)
 
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
-    results = m.gather_predictions(predictions)    
+    results = m.gather_predictions(predictions)
+    assert len(np.unique(results.individual)) == len(np.unique(dm.test.individualID))
+    
     results["individualID"] = results["individual"]
     results = results.merge(dm.test, on=["individualID"])
     ensemble_df = m.ensemble(results)
@@ -31,3 +33,5 @@ def test_gather_predictions(config, dm):
         ensemble_df,
         experiment=None
     )    
+    
+    assert len(np.unique(ensemble_df.individualID)) == len(np.unique(dm.test.individualID))
