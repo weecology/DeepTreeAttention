@@ -175,7 +175,14 @@ def train_test_split(shp, config, client = None):
     if client:
         futures = [ ]
         for x in np.arange(config["iterations"]):
-            future = client.submit(sample_plots, shp=shp, min_train_samples=config["min_train_samples"], iteration=x, min_test_samples=config["min_test_samples"])
+            future = client.submit(
+                sample_plots,
+                shp=shp,
+                min_train_samples=config["min_train_samples"],
+                iteration=x,
+                min_test_samples=config["min_test_samples"],
+                ceiling=config["sampling_ceiling"]
+            )
             futures.append(future)
 
         wait(futures)
@@ -192,7 +199,12 @@ def train_test_split(shp, config, client = None):
                 ties.append([train, test])          
     else:
         for x in np.arange(config["iterations"]):
-            train, test = sample_plots(shp, min_train_samples=config["min_train_samples"], min_test_samples=config["min_test_samples"])
+            train, test = sample_plots(
+                shp=shp,
+                min_train_samples=config["min_train_samples"],
+                min_test_samples=config["min_test_samples"],
+                ceiling=config["sampling_ceiling"]
+            )
             if test.taxonID.nunique() > test_species:
                 print("Selected test has {} points and {} species".format(test.shape[0], test.taxonID.nunique()))
                 saved_train = train

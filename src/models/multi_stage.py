@@ -56,7 +56,7 @@ class MultiStage(LightningModule):
             loss_weight = []
             for x in range(classes):
                 try:
-                    w = 1/np.sum(labels==x)
+                    w = 1
                 except:
                     w = 1 
                 loss_weight.append(w)
