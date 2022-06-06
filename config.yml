@@ -42,7 +42,7 @@ new_train_test_split: True
 #How many samples from non-osbs sites can we use per species
 samples_from_other_sites: 0
 oaks_sampling_ceiling: 100
-PIPA2_sampling_ceiling: 200
+PIPA2_sampling_ceiling: 400
 
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
