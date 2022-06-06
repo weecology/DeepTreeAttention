@@ -118,7 +118,7 @@ rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 #Limit to 1 individual for confusion matrix
 ensemble_df = ensemble_df.reset_index(drop=True)
 ensemble_df = ensemble_df.groupby("individualID").apply(lambda x: x.head(1))
-test = data_module.test.groupby("individualID").apply(lambda x: x.head(1)).reset_index()
+test = data_module.test.groupby("individualID").apply(lambda x: x.head(1)).reset_index(drop=True)
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
     results=ensemble_df,
