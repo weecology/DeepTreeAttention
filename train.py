@@ -128,4 +128,3 @@ visualize.confusion_matrix(
     test_points=data_module.canopy_points,
     rgb_pool=rgb_pool
 )
-
