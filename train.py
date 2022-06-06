@@ -66,10 +66,7 @@ m = multi_stage.MultiStage(data_module.train, data_module.test, config=data_modu
 
 #Save the train df for each level for inspection
 for index, train_df in enumerate([m.level_0_train,
-          m.level_1_train,
-          m.level_2_train,
-          m.level_3_train,
-          m.level_4_train]):
+          m.level_1_train]):
     comet_logger.experiment.log_table("train_level_{}.csv".format(index), train_df)
 
 #Create trainer
