@@ -86,7 +86,7 @@ class MultiStage(LightningModule):
         self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[0].items()})
         
         self.level_0_train = self.train_df.copy()
-        PIPA2 = self.level_0_train[self.level_0_train.taxonID=="PIPA2"].head(15)
+        PIPA2 = self.level_0_train[self.level_0_train.taxonID=="PIPA2"].head(30)
         nonPIPA2 = self.level_0_train[~(self.level_0_train.taxonID=="PIPA2")]
         nonPIPA2ids = nonPIPA2.groupby("individualID").apply(lambda x: x.head(1)).groupby("taxonID").apply(lambda x: x.head(1)).individualID
         nonPIPA2 = nonPIPA2[nonPIPA2.individualID.isin(nonPIPA2ids)]
@@ -220,7 +220,7 @@ class MultiStage(LightningModule):
             data_loader = torch.utils.data.DataLoader(
                 ds,
                 batch_size=self.config["batch_size"],
-                shuffle=True,
+                shuffle=False,
                 num_workers=self.config["workers"],
             )
             data_loaders.append(data_loader)
@@ -295,7 +295,6 @@ class MultiStage(LightningModule):
         self.log("val_loss",loss)
         metric_dict = self.models[dataloader_idx].metrics(y_hat, y)
         self.log_dict(metric_dict, on_epoch=True, on_step=False)
-        y_hat = F.softmax(y_hat, dim=1)
         
         return {"individual":individual, "yhat":y_hat, "label":y}  
     
