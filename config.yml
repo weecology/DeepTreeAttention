@@ -60,7 +60,7 @@ bands: 349
 lr: 0.0001
 
 fast_dev_run: False
-accelerator: dp
+accelerator: ddp
 epochs: 150
 min_loss_weight: 0.5
 
