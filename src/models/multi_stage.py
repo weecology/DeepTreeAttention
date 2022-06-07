@@ -90,7 +90,6 @@ class MultiStage(LightningModule):
         nonPIPA2 = self.level_0_train[~(self.level_0_train.taxonID=="PIPA2")]
         nonPIPA2ids = nonPIPA2.groupby("individualID").apply(lambda x: x.head(1)).groupby("taxonID").apply(lambda x: x.head(100)).individualID
         nonPIPA2 = nonPIPA2[nonPIPA2.individualID.isin(nonPIPA2ids)]
-        
         self.level_0_train = pd.concat([PIPA2, nonPIPA2])
         self.level_0_train.loc[~(self.level_0_train.taxonID == "PIPA2"),"taxonID"] = "OTHER"
                 
@@ -99,12 +98,18 @@ class MultiStage(LightningModule):
         train_datasets.append(self.level_0_train_ds)
         self.num_classes.append(len(self.level_0_train.taxonID.unique()))
         
-        self.level_0_test = self.test_df.copy()
-        self.level_0_test.loc[~(self.level_0_test.taxonID == "PIPA2"),"taxonID"] = "OTHER"
-        self.level_0_test["label"]= [self.level_label_dicts[0][x] for x in self.level_0_test.taxonID]            
-        self.level_0_test_ds = TreeDataset(df=self.level_0_test, config=self.config)
+        #DUMMY OVERFIT
+        self.level_0_test = self.level_0_train        
+        self.level_0_test_ds = self.level_0_train_ds
         test_datasets.append(self.level_0_test_ds)
         self.level_id.append(0)
+        
+        #self.level_0_test = self.test_df.copy()
+        #self.level_0_test.loc[~(self.level_0_test.taxonID == "PIPA2"),"taxonID"] = "OTHER"
+        #self.level_0_test["label"]= [self.level_label_dicts[0][x] for x in self.level_0_test.taxonID]            
+        #self.level_0_test_ds = TreeDataset(df=self.level_0_test, config=self.config)
+        #test_datasets.append(self.level_0_test_ds)
+        #self.level_id.append(0)
         
         ## Level 1
         self.level_label_dicts.append({"CONIFER":0,"BROADLEAF":1})
