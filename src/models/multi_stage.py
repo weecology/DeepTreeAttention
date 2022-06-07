@@ -88,7 +88,7 @@ class MultiStage(LightningModule):
         self.level_0_train = self.train_df.copy()
         PIPA2 = self.level_0_train[self.level_0_train.taxonID=="PIPA2"]
         nonPIPA2 = self.level_0_train[~(self.level_0_train.taxonID=="PIPA2")]
-        nonPIPA2ids = nonPIPA2.groupby("individualID").apply(lambda x: x.head(1)).groupby("taxonID").apply(lambda x: x.head(20)).individualID
+        nonPIPA2ids = nonPIPA2.groupby("individualID").apply(lambda x: x.head(1)).groupby("taxonID").apply(lambda x: x.head(100)).individualID
         nonPIPA2 = nonPIPA2[nonPIPA2.individualID.isin(nonPIPA2ids)]
         
         self.level_0_train = pd.concat([PIPA2, nonPIPA2])
