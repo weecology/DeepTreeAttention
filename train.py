@@ -91,12 +91,6 @@ predict_datasets = []
 for level in range(m.levels):
     ds = data.TreeDataset(df=data_module.train.copy(), train=False, config=config)
     predict_datasets.append(ds)
-
-#new trainer
-trainer = Trainer(
-    gpus=data_module.config["gpus"],
-    fast_dev_run=data_module.config["fast_dev_run"],
-    logger=comet_logger)
     
 predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
 results = m.gather_predictions(predictions)
