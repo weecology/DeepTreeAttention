@@ -295,6 +295,7 @@ class MultiStage(LightningModule):
         self.log("val_loss",loss)
         metric_dict = self.models[dataloader_idx].metrics(y_hat, y)
         self.log_dict(metric_dict, on_epoch=True, on_step=False)
+        y_hat = F.softmax(y_hat, dim=1)
         
         return {"individual":individual, "yhat":y_hat, "label":y}  
     
@@ -325,8 +326,8 @@ class MultiStage(LightningModule):
                 num_classes=len(self.species_label_dict)
             )
             
-            self.log("Epoch Micro Accuracy", epoch_micro)
-            self.log("Epoch Macro Accuracy", epoch_macro)
+            self.log("Epoch Micro Accuracy level {}".format(level), epoch_micro)
+            self.log("Epoch Macro Accuracy level {}".format(level), epoch_macro)
             
             # Log results by species
             taxon_accuracy = torchmetrics.functional.accuracy(
