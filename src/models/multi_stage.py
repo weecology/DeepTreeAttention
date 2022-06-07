@@ -66,7 +66,7 @@ class MultiStage(LightningModule):
             #loss_weight[loss_weight < self.config["min_loss_weight"]] = self.config["min_loss_weight"]  
             
             if torch.cuda.is_available():
-                loss_weight = torch.tensor(loss_weight, device="cuda", dtype=torch.float)
+                loss_weight = torch.tensor(loss_weight, device=self.device, dtype=torch.float)
             else:
                 loss_weight = torch.tensor(loss_weight, dtype=torch.float)
                 
