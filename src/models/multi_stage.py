@@ -284,7 +284,7 @@ class MultiStage(LightningModule):
         individual, inputs, y = batch[optimizer_idx]
         images = inputs["HSI"]  
         y_hat = self.models[optimizer_idx].forward(images)
-        loss = F.cross_entropy(y_hat, y, weight=self.loss_weights[optimizer_idx])    
+        loss = F.cross_entropy(y_hat, y)    
         self.log("train_loss_{}".format(optimizer_idx),loss, on_epoch=True, on_step=False)
 
         return loss        
@@ -295,7 +295,7 @@ class MultiStage(LightningModule):
         individual, inputs, y = batch
         images = inputs["HSI"]  
         y_hat = self.models[dataloader_idx].forward(images)
-        loss = F.cross_entropy(y_hat, y, weight=self.loss_weights[dataloader_idx])   
+        loss = F.cross_entropy(y_hat, y)   
         
         self.log("val_loss",loss)
         metric_dict = self.models[dataloader_idx].metrics(y_hat, y)
