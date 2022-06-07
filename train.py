@@ -62,7 +62,7 @@ comet_logger.experiment.log_table("test.csv", data_module.test)
 if not config["use_data_commit"]:
     comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
 
-m = multi_stage.MultiStage(data_module.train.copy(), data_module.train.copy(), config=data_module.config, crowns=data_module.crowns)
+m = multi_stage.MultiStage(data_module.train.copy(), data_module.test.copy(), config=data_module.config, crowns=data_module.crowns)
 
 #Save the train df for each level for inspection
 for index, train_df in enumerate([m.level_0_train,
