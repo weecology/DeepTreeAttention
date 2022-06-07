@@ -50,7 +50,7 @@ class MultiStage(LightningModule):
         
         self.classes = len(self.train_df.label.unique())
         
-        for index, ds in enumerate([self.level_0_train, self.level_1_train]): 
+        for index, ds in enumerate([self.level_0_train, self.level_1_train, self.level_2_train, self.level_3_train, self.level_4_train]): 
             labels = ds.label
             classes = self.num_classes[index]
             base = base_model(classes=classes, years=len(self.years), config=config)
