@@ -101,7 +101,6 @@ class MultiStage(LightningModule):
         
         self.level_0_test = self.test_df.copy()
         self.level_0_test.loc[~(self.level_0_test.taxonID == "PIPA2"),"taxonID"] = "OTHER"
-        self.level_0_test.loc[(self.level_0_test.taxonID == "PIPA2"),"taxonID"] = "PIPA2"                        
         self.level_0_test["label"]= [self.level_label_dicts[0][x] for x in self.level_0_test.taxonID]            
         self.level_0_test_ds = TreeDataset(df=self.level_0_test, config=self.config)
         test_datasets.append(self.level_0_test_ds)
@@ -371,19 +370,19 @@ class MultiStage(LightningModule):
             
             #Create dataframe
             predictions_top1 = np.argmax(predictions, 1)    
-            #predictions_top2 = pd.DataFrame(predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
+            predictions_top2 = pd.DataFrame(predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
             top1_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[0], axis=1)
-            #top2_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[1], axis=1)
+            top2_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[1], axis=1)
             
             df = pd.DataFrame({
                 "pred_label_top1_level_{}".format(index):predictions_top1,
-                #"pred_label_top2_level_{}".format(index):predictions_top2,
+                "pred_label_top2_level_{}".format(index):predictions_top2,
                 "top1_score_level_{}".format(index):top1_score,
-                #"top2_score_level_{}".format(index):top2_score,
+                "top2_score_level_{}".format(index):top2_score,
                 "individual":individuals
             })
             df["pred_taxa_top1_level_{}".format(index)] = df["pred_label_top1_level_{}".format(index)].apply(lambda x: self.label_to_taxonIDs[index][x]) 
-            #df["pred_taxa_top2_level_{}".format(index)] = df["pred_label_top2_level_{}".format(index)].apply(lambda x: self.label_to_taxonIDs[index][x])        
+            df["pred_taxa_top2_level_{}".format(index)] = df["pred_label_top2_level_{}".format(index)].apply(lambda x: self.label_to_taxonIDs[index][x])        
             level_results.append(df)
         
         results = reduce(lambda  left,right: pd.merge(left,right,on=['individual'],
