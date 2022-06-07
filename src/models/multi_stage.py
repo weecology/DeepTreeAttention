@@ -239,7 +239,7 @@ class MultiStage(LightningModule):
             data_loader = torch.utils.data.DataLoader(
                 ds,
                 batch_size=self.config["batch_size"],
-                shuffle=True,
+                shuffle=False,
                 num_workers=self.config["workers"],
             )
             data_loaders.append(data_loader)

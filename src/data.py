@@ -267,8 +267,8 @@ class TreeDataset(Dataset):
                     else:
                         image_path = os.path.join(self.config["crop_dir"], year_annotations["image_path"].iloc[0])
                     image = load_image(image_path, image_size=self.image_size)
-                    if self.train:
-                        image = self.transformer(image)
+                    #if self.train:
+                        #image = self.transformer(image)
                     images.append(image)
                 self.image_dict[individual] = images
             
@@ -291,8 +291,8 @@ class TreeDataset(Dataset):
                 else:
                     image_path = os.path.join(self.config["crop_dir"], year_annotations["image_path"].values[0])
                 image = load_image(image_path, image_size=self.image_size)
-                if self.train:
-                    image = self.transformer(image)   
+                #if self.train:
+                    #image = self.transformer(image)   
                 images.append(image)
             inputs["HSI"] = images
         

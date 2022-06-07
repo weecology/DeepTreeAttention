@@ -2,20 +2,18 @@
 from pytorch_lightning import Trainer
 from src.models import multi_stage
 from src.data import TreeDataset
-import pandas as pd
 import numpy as np
-from functools import reduce
 
 def test_MultiStage(dm, config):
-    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test,crowns=dm.crowns, config=config)
+    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train,crowns=dm.crowns, config=config)
     
 def test_fit(config, dm):
-    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
+    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train, crowns=dm.crowns, config=config)
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m)
 
 def test_gather_predictions(config, dm):
-    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
+    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train, crowns=dm.crowns, config=config)
     trainer = Trainer(fast_dev_run=False)
     predict_datasets = []
     for level in range(m.levels):
