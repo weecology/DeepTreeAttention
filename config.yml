@@ -57,7 +57,11 @@ batch_size: 128
 bands: 349
 
 #LR for each level x year
-lr: 0.00005
+lr_0: 0.000001
+lr_1: 0.000001
+lr_3: 0.001
+lr_3: 0.001
+lr_4: 0.001
 
 fast_dev_run: False
 accelerator: ddp
