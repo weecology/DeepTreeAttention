@@ -24,6 +24,8 @@ class learned_ensemble(Module):
     def forward(self,images):
         year_scores = []
         for index, x in enumerate(images):
+            if x.sum() == 0:
+                continue
             x = self.year_models[index](x)
             score = x[-1]            
             year_scores.append(score)
