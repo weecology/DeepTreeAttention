@@ -35,7 +35,6 @@ class MultiStage(LightningModule):
         super().__init__()        
         # Generate each model
         self.years = train_df.tile_year.unique()
-        self.loss_weights = []
         self.config = config
         self.models = nn.ModuleList()
         self.species_label_dict = train_df[["taxonID","label"]].drop_duplicates().set_index("taxonID").to_dict()["label"]
@@ -49,11 +48,12 @@ class MultiStage(LightningModule):
         self.levels = len(self.train_datasets)       
         
         self.classes = len(self.train_df.label.unique())
-        
+        loss_weights = []        
         for index, ds in enumerate([self.level_0_train, self.level_1_train, self.level_2_train, self.level_3_train, self.level_4_train]): 
             labels = ds.label
             classes = self.num_classes[index]
             base = base_model(classes=classes, years=len(self.years), config=config)
+            self.models.append(base)            
             loss_weight = []
             for x in range(classes):
                 try:
@@ -63,13 +63,11 @@ class MultiStage(LightningModule):
                 loss_weight.append(w)
 
             loss_weight = np.array(loss_weight/np.max(loss_weight))
-            #loss_weight[loss_weight < self.config["min_loss_weight"]] = self.config["min_loss_weight"]  
-            
-            loss_weight = torch.tensor(loss_weight,  dtype=torch.float)
-                
-            self.loss_weights.append(torch.tensor(loss_weight))
-            self.models.append(base)
-            
+            #loss_weight[loss_weight < self.config["min_loss_weight"]] = self.config["min_loss_weight"] 
+            loss_weight = torch.tensor(loss_weight, dtype=torch.float)                        
+            pname = 'loss_weight_{}'.format(index)            
+            self.register_buffer(pname, loss_weight)
+                 
         self.save_hyperparameters(ignore=["loss_weight"])
         
     def create_datasets(self):
@@ -272,10 +270,12 @@ class MultiStage(LightningModule):
     def training_step(self, batch, batch_idx, optimizer_idx):
         """Calculate train_df loss
         """
+        #get loss weight
+        loss_weights = self.__getattr__('loss_weight_'+str(optimizer_idx))
         individual, inputs, y = batch[optimizer_idx]
         images = inputs["HSI"]  
         y_hat = self.models[optimizer_idx].forward(images)
-        loss = F.cross_entropy(y_hat, y, weight=self.loss_weights[optimizer_idx])    
+        loss = F.cross_entropy(y_hat, y, weight=loss_weights)    
         self.log("train_loss_{}".format(optimizer_idx),loss, on_epoch=True, on_step=False)
 
         return loss        
@@ -283,10 +283,11 @@ class MultiStage(LightningModule):
     def validation_step(self, batch, batch_idx, dataloader_idx):
         """Calculate val loss 
         """
+        loss_weight = self.__getattr__('loss_weight_'+str(dataloader_idx))        
         individual, inputs, y = batch
         images = inputs["HSI"]  
         y_hat = self.models[dataloader_idx].forward(images)
-        loss = F.cross_entropy(y_hat, y, weight=self.loss_weights[dataloader_idx])   
+        loss = F.cross_entropy(y_hat, y, weight=loss_weight)   
         
         self.log("val_loss",loss)
         metric_dict = self.models[dataloader_idx].metrics(y_hat, y)
