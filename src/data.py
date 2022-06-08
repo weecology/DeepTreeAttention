@@ -263,7 +263,7 @@ class TreeDataset(Dataset):
                 for year in self.years:
                     year_annotations = ind_annotations[ind_annotations.tile_year==year]
                     if year_annotations.empty:
-                        image = torch.zeros(1, self.config["bands"], self.config["image_size"], self.config["image_size"])                    
+                        image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                    
                     else:
                         image_path = os.path.join(self.config["crop_dir"], year_annotations["image_path"].iloc[0])
                         image = load_image(image_path, image_size=self.image_size)
@@ -287,7 +287,7 @@ class TreeDataset(Dataset):
             for year in self.years:
                 year_annotations = ind_annotations[ind_annotations.tile_year==year]
                 if year_annotations.empty:
-                    image = torch.zeros(1, self.config["bands"], self.config["image_size"], self.config["image_size"])                    
+                    image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                    
                 else:
                     image_path = os.path.join(self.config["crop_dir"], year_annotations["image_path"].values[0])
                     image = load_image(image_path, image_size=self.image_size)
