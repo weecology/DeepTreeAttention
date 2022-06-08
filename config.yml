@@ -43,6 +43,7 @@ new_train_test_split: True
 samples_from_other_sites: 0
 oaks_sampling_ceiling: 200
 PIPA2_sampling_ceiling: 10000
+other_sampling_ceiling: 100
 
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
