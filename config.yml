@@ -59,9 +59,9 @@ bands: 349
 #LR for each level x year
 lr_0: 0.000001
 lr_1: 0.000001
-lr_2: 0.001
-lr_3: 0.001
-lr_4: 0.001
+lr_2: 0.0001
+lr_3: 0.0001
+lr_4: 0.0001
 
 fast_dev_run: False
 accelerator: ddp
