@@ -41,7 +41,7 @@ new_train_test_split: True
 
 #How many samples from non-osbs sites can we use per species
 samples_from_other_sites: 0
-oaks_sampling_ceiling: 10000
+oaks_sampling_ceiling: 200
 PIPA2_sampling_ceiling: 10000
 
 # Data loader
