@@ -63,8 +63,7 @@ class MultiStage(LightningModule):
                 loss_weight.append(w)
 
             loss_weight = np.array(loss_weight/np.max(loss_weight))
-            if loss_weight < self.config["min_loss_weight"]:
-                loss_weight = self.config["min_loss_weight"] 
+            loss_weight[loss_weight < self.config["min_loss_weight"]] = self.config["min_loss_weight"] 
             loss_weight = torch.tensor(loss_weight, dtype=torch.float)                        
             pname = 'loss_weight_{}'.format(index)            
             self.register_buffer(pname, loss_weight)
