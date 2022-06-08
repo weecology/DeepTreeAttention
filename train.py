@@ -24,7 +24,7 @@ git_commit=sys.argv[2]
 
 #Create datamodule
 config = data.read_config("config.yml")
-comet_logger = CometLogger(project_name="DeepTreeAttention", workspace=config["comet_workspace"], auto_output_logging="simple")    
+comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
 
 #Generate new data or use previous run
 if config["use_data_commit"]:
