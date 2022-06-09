@@ -29,7 +29,7 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Checkout data artifact from comet
-use_data_commit:
+use_data_commit: 67ec871c49cf472c8e1ae70b185addb1
 
 #Make new dataset
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
@@ -49,7 +49,7 @@ other_sampling_ceiling: 500
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
 preload_images: True
-workers: 0
+workers: 1
 sampling_ceiling: 200
 #Network Parameters
 pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/3febd94f4aa64244bf91e6714b987106.pt
