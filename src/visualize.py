@@ -25,7 +25,7 @@ def index_to_example(index, test, test_crowns, test_points, rgb_pool, comet_expe
         sample_id: comet id
     """
     tmpdir = tempfile.gettempdir()
-    individual = os.path.splitext(os.path.basename(test.loc[index]["image_path"]))[0]
+    individual = test.loc[index]["individualID"]
     
     fig = plt.figure(0)
     ax = fig.add_subplot(1, 1, 1)                

@@ -112,7 +112,9 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1, ce
         min_samples: minimum number of samples per class
         iteration: a dummy parameter to make dask submission unique
     """
-    #split by plot level
+    #When splitting train/test, only use 1 sample per year for counts.
+    single_year = shp.groupby("individual").apply(lambda x: x.head(1))
+    
     plotIDs = list(shp.plotID.unique())
     if len(plotIDs) <=2:
         test = shp[shp.plotID == shp.plotID.unique()[0]]
@@ -124,30 +126,28 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1, ce
 
     np.random.shuffle(plotIDs)
     species_to_sample = shp.taxonID.unique()
+    
+    # Mimic natural sampling
+    species_floor = single_year.taxonID.value_counts() * 0.1
+    species_floor[species_floor < min_test_samples] = min_test_samples
+    species_floor = species_floor.to_dict()
+    
     test_plots = []
     for plotID in plotIDs:
-        selected_plot = shp[shp.plotID == plotID]
+        selected_plot = single_year[shp.plotID == plotID]
         # If any species is missing from min samples, include plot
-        for x in selected_plot.taxonID.unique():
-            if x in species_to_sample:
-                test_plots.append(plotID)
-                # Update species list                
-                counts = shp[shp.plotID.isin(test_plots)].taxonID.value_counts()                
-                species_completed = counts[counts > min_test_samples].index.tolist()
-                species_to_sample = [x for x in shp.taxonID.unique() if not x in species_completed]
-                
+        if any([x in species_to_sample for x in selected_plot.taxonID.unique()]):
+            test_plots.append(plotID)            
+            counts = single_year[single_year.plotID.isin(test_plots)].taxonID.value_counts().to_dict()
+            species_completed = [key for key, value in counts.items() if value > species_floor[key]]
+            species_to_sample = [x for x in shp.taxonID.unique() if not x in species_completed]
+    
+    #Sample from original multi_year data
     test = shp[shp.plotID.isin(test_plots)]
     train = shp[~shp.plotID.isin(test.plotID.unique())]
 
     # Remove fixed boxes from test
     test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]    
-
-    ids_to_keep = train.drop_duplicates(subset=["individualID"]).groupby("taxonID").apply(lambda x: x.sample(frac=1).head(ceiling)).reset_index(drop=True)            
-    send_to_test = train[~train.individualID.isin(ids_to_keep.individualID)]
-    train = train[train.individualID.isin(ids_to_keep.individualID)]
-    test = pd.concat([test, send_to_test])
-    test = test[~test.plotID.isin(train.plotID)]
-    
     test = test.groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples)
     train = train.groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
     
