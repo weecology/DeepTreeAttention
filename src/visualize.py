@@ -48,6 +48,8 @@ def index_to_example(index, test, test_crowns, test_points, rgb_pool, comet_expe
     stem.plot(ax=ax)
     
     image_name = "{}/{}_confusion.png".format(tmpdir,individual)
+    plt.title("{}".format(individual))
+    
     plt.savefig(image_name)
     results = comet_experiment.log_image(image_name, name = "{}".format(individual))
     src.close()
