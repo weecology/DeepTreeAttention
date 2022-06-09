@@ -128,7 +128,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1, ce
     species_to_sample = shp.taxonID.unique()
     
     # Mimic natural sampling
-    species_floor = single_year.taxonID.value_counts() * 0.1
+    species_floor = single_year.taxonID.value_counts() * 0.05
     species_floor[species_floor < min_test_samples] = min_test_samples
     species_floor = species_floor.to_dict()
     
@@ -148,8 +148,12 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1, ce
 
     # Remove fixed boxes from test
     test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]    
-    test = test.groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples)
-    train = train.groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
+    
+    testids = test.groupby("individualID").apply(lambda x: x.head(1)).groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples).individualID
+    test = test[test.individualID.isin(testids)]
+
+    trainids = train.groupby("individualID").apply(lambda x: x.head(1)).groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples).individualID
+    train = train[train.individualID.isin(trainids)]
     
     train = train[train.taxonID.isin(test.taxonID)]    
     test = test[test.taxonID.isin(train.taxonID)]
@@ -219,7 +223,7 @@ def train_test_split(shp, config, client = None):
     # The size of the datasets
     if len(ties) > 1:
         print("The size of tied datasets with {} species is {}".format(test_species, [x[1].shape[0] for x in ties]))        
-        saved_train, saved_test = ties[np.argmax([x[1].shape[0] for x in ties])]
+        saved_train, saved_test = ties[np.argmax([x[0].shape[0] for x in ties])]
         
     train = saved_train
     test = saved_test    
