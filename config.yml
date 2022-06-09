@@ -34,7 +34,7 @@ convert_h5: True
 #Overwrite existing crops
 replace: True
 #Use existing plotIDs for train/test split
-existing_test_csv: /blue/ewhite/b.weinstein/DeepTreeAttention/5f337932e7ac4ce1bfb2f2736df60976/test.csv
+existing_test_csv: /blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1/test.csv
 
 #How many samples from non-osbs sites can we use per species
 samples_from_other_sites: 0
