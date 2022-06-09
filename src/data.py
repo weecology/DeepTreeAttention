@@ -134,7 +134,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1, ce
     
     test_plots = []
     for plotID in plotIDs:
-        selected_plot = single_year[shp.plotID == plotID]
+        selected_plot = single_year[single_year.plotID == plotID]
         # If any species is missing from min samples, include plot
         if any([x in species_to_sample for x in selected_plot.taxonID.unique()]):
             test_plots.append(plotID)            
