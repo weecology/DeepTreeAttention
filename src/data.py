@@ -348,7 +348,7 @@ class TreeData(LightningDataModule):
                     
                 # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
-                    megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
+                    megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config, site="OSBS")
                     #Simplify MAGNOLIA's just at OSBS
                     megaplot_data.loc[megaplot_data.taxonID=="MAGR4","taxonID"] = "MAGNO"  
                     #Hold IFAS records seperarely to model on polygons
