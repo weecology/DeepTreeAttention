@@ -44,7 +44,7 @@ def index_to_example(index, test, test_crowns, test_points, rgb_pool, comet_expe
     ax.add_collection(PatchCollection(patches, match_original=True))
     
     #Plot field coordinate
-    stem = test_points[test_points.individual == individual]
+    stem = test_points[test_points.individualID == individual]
     stem.plot(ax=ax)
     
     image_name = "{}/{}_confusion.png".format(tmpdir,individual)

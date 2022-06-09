@@ -62,7 +62,11 @@ comet_logger.experiment.log_table("test.csv", data_module.test)
 if not config["use_data_commit"]:
     comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
 
-m = multi_stage.MultiStage(data_module.train.copy(), data_module.test.copy(), config=data_module.config, crowns=data_module.crowns)
+train = data_module.train.copy()
+test = data_module.test.copy()
+crowns = data_module.crowns.copy()
+
+m = multi_stage.MultiStage(train, test, config=data_module.config, crowns=crowns)
 
 #Save the train df for each level for inspection
 for index, train_df in enumerate([m.level_0_train,
@@ -92,15 +96,18 @@ trainer.fit(m)
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
 
 # Prediction datasets are indexed by year, but full data is given to each model before ensembling
+print("Before prediction, the taxonID value counts")
+print(test.taxonID.value_counts())
+
 predict_datasets = []
 for level in range(m.levels):
-    ds = data.TreeDataset(df=data_module.test.copy(), train=False, config=config)
+    ds = data.TreeDataset(df=test, train=False, config=config)
     predict_datasets.append(ds)
     
 predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
 results = m.gather_predictions(predictions)
 results["individualID"] = results["individual"]
-results = results.merge(data_module.crowns, on="individualID")
+results = results.merge(crowns, on="individualID")
 comet_logger.experiment.log_table("nested_predictions.csv", results)
 
 ensemble_df = m.ensemble(results)
@@ -120,12 +127,12 @@ rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 #Limit to 1 individual for confusion matrix
 ensemble_df = ensemble_df.reset_index(drop=True)
 ensemble_df = ensemble_df.groupby("individualID").apply(lambda x: x.head(1))
-test = data_module.test.groupby("individualID").apply(lambda x: x.head(1)).reset_index(drop=True)
+test = test.groupby("individualID").apply(lambda x: x.head(1)).reset_index(drop=True)
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
     results=ensemble_df,
     species_label_dict=data_module.species_label_dict,
-    test_crowns=data_module.crowns,
+    test_crowns=crowns,
     test=test,
     test_points=data_module.canopy_points,
     rgb_pool=rgb_pool
