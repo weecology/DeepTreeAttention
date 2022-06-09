@@ -89,7 +89,7 @@ def create_grid(gdf):
     
     return grid
     
-def load(directory, site=None, config):
+def load(directory, config, site=None):
     """Load all the megaplot data and generate crown predictions
     Args:
         directory: location of .csv files of megaplot data
