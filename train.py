@@ -89,7 +89,7 @@ trainer = Trainer(
     callbacks=[lr_monitor],
     logger=comet_logger)
 
-trainer.fit(m)
+trainer.fit(m, profiler="simple")
 
 #Save model checkpoint
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
