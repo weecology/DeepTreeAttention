@@ -139,10 +139,10 @@ visualize.confusion_matrix(
 )
 
 #plot confusion of each test dataset
-for index, ds in enumerate(m.test_datasets):
-    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
-    predictions = m.gather_predictions(predictions)
-    labels = np.concatenate([x[2] for x in ds])
+test_predictions = trainer.validate(m)
+for index, predictdf in enumerate(test_predictions):
+    predictions = m.gather_predictions(predictdf)
+    labels = np.concatenate([x[2] for x in m.test_datasets[index]])
     comet_experiment.log_confusion_matrix(
         labels,
         predictions.pred_label_top1_level_0.values,
