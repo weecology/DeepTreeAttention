@@ -10,8 +10,8 @@ def test_MultiStage(dm, config):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train,crowns=dm.crowns, config=config)
     
 def test_fit(config, dm):
-    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train, crowns=dm.crowns, config=config)
-    trainer = Trainer(fast_dev_run=True)
+    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
+    trainer = Trainer(fast_dev_run=True, profiler="simple")
     trainer.fit(m)
 
 def test_gather_predictions(config, dm, experiment):

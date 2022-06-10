@@ -11,6 +11,7 @@ from torch.nn import functional as F
 from torch import nn
 import torchmetrics
 import torch
+import math
 
 class base_model(Module):
     def __init__(self, years, classes, config):
@@ -113,7 +114,7 @@ class MultiStage(LightningModule):
         broadleaf_ids = self.level_1_train[self.level_1_train.taxonID=="BROADLEAF"].groupby("label").apply(
             lambda x: x.sample(frac=1).groupby(
                 "individualID").apply(lambda x: x.head(1)).head(
-            int(len(conifer_ids)/11)
+            math.ceil(len(conifer_ids)/11)
             )).individualID
         ids_to_keep = np.concatenate([broadleaf_ids, conifer_ids])
         self.level_1_train = self.level_1_train[self.level_1_train.individualID.isin(ids_to_keep)].reset_index(drop=True)
