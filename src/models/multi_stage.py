@@ -169,6 +169,7 @@ class MultiStage(LightningModule):
                     
         self.level_3_train = self.train_df.copy()
         self.level_3_train = self.level_3_train[self.level_3_train.taxonID.isin(["PICL","PIEL","PITA"])].reset_index(drop=True) 
+        self.level_3_train =  self.level_3_train.groupby("taxonID").apply(lambda x: x.head(self.config["evergreen_ceiling"])).reset_index(drop=True)
         self.level_3_train["label"] = [self.level_label_dicts[3][x] for x in self.level_3_train.taxonID]
         self.level_3_train_ds = TreeDataset(df=self.level_3_train, config=self.config)
         train_datasets.append(self.level_3_train_ds)
