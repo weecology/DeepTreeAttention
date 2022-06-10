@@ -87,9 +87,10 @@ trainer = Trainer(
     checkpoint_callback=False,
     num_sanity_val_steps=0,
     callbacks=[lr_monitor],
-    logger=comet_logger)
+    logger=comet_logger,
+    profiler="simple")
 
-trainer.fit(m, profiler="simple")
+trainer.fit(m)
 
 #Save model checkpoint
 trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
@@ -136,3 +137,13 @@ visualize.confusion_matrix(
     test_points=data_module.canopy_points,
     rgb_pool=rgb_pool
 )
+
+#plot confusion of each test dataset
+for index, ds in enumerate(m.test_datasets):
+    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
+    predictions = m.gather_predictions(predictions)
+    labels = np.concatenate([x[2] for x in ds])
+    comet_experiment.log_confusion_matrix(
+        labels,
+        predictions.pred_label_top1_level_0.values,
+        labels=list(m.level_label_dicts[x].keys()))
