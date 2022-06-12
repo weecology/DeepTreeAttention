@@ -1,6 +1,5 @@
 #Multiple stage model
 from functools import reduce
-import geopandas as gpd
 from src.models.year import learned_ensemble
 from src.data import TreeDataset
 from pytorch_lightning import LightningModule
