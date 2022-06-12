@@ -97,7 +97,7 @@ trainer = Trainer(
 trainer.fit(m)
 
 #Save model checkpoint
-trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pl".format(comet_logger.experiment.id))
+trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pt".format(comet_logger.experiment.id))
 
 # Prediction datasets are indexed by year, but full data is given to each model before ensembling
 print("Before prediction, the taxonID value counts")
