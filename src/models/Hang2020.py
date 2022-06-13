@@ -264,8 +264,9 @@ class Hang2020(Module):
         
     
 def load_from_backbone(state_dict, classes, bands):
+    
     train_state_dict = torch.load(state_dict, map_location="cpu")
-    dict_items = train_state_dict.model["state_dict"].items()
+    dict_items = train_state_dict["state_dict"].items()
     model = spectral_network(classes=classes, bands=bands)
     dict_to_update = model.state_dict()
     
