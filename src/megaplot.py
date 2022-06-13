@@ -11,7 +11,7 @@ def read_files(directory, site=None, config=None):
     """Read shapefiles and return a dict based on site name"""
     shapefiles = glob.glob("{}/*.shp".format(directory))
     if site:
-        shps = [x for x in shapefiles if site in x]            
+        shapefiles = [x for x in shapefiles if site in x]            
     shps = [gpd.read_file(x) for x in shapefiles]
     sites = [os.path.splitext(os.path.basename(x))[0] for x in shapefiles]
     
