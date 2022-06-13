@@ -321,7 +321,7 @@ class TreeData(LightningDataModule):
                     
                 # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
-                    megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config)
+                    megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config, site="OSBS")
                     #Simplify MAGNOLIA's just at OSBS
                     megaplot_data.loc[megaplot_data.taxonID=="MAGR4","taxonID"] = "MAGNO"  
                     #Hold IFAS records seperarely to model on polygons
@@ -354,7 +354,6 @@ class TreeData(LightningDataModule):
                 self.canopy_points = df
                 self.canopy_points.to_file("{}/canopy_points.shp".format(self.data_dir))
                 
-
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after CHM filter", len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after CHM filter", df.shape[0])
@@ -419,8 +418,7 @@ class TreeData(LightningDataModule):
                 self.test = annotations[annotations.individualID.isin(existing_test.individualID)]  
                 existing_train = pd.read_csv(os.path.join(os.path.dirname(self.config["existing_test_csv"]),"train.csv"))
                 self.train = annotations[annotations.individualID.isin(existing_train.individualID)]
-                self.train = self.train.groupby("taxonID").apply(lambda x: x.head(self.config["sampling_ceiling"])).reset_index(drop=True)   
-                
+                self.train = self.train[self.train.taxonID.isin(self.test.taxonID)]
             else:
                 self.train, self.test = train_test_split(annotations, config=self.config, client=self.client) 
             self.train.to_csv("{}/train.csv".format(self.data_dir))
