@@ -36,7 +36,7 @@ def convert(rgb_path, hyperspectral_pool, savedir):
     return tif_paths
 
 config = data.read_config("config.yml")
-tiles = find_rgb_files(site="OSBS", config=config)
+tiles = find_rgb_files(site="OSBS", config=config)[:5]
 
 #generate HSI_tif data if needed.
 hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
@@ -46,7 +46,7 @@ cpu_client = start(cpus=10, mem_size="8GB")
 tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"])
 wait(tif_futures)
 
-species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pl"
+species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt"
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/91ba2dc9445547f48805ec60be0a2f2f"
 
