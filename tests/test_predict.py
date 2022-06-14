@@ -9,6 +9,7 @@ import cProfile, pstats
 #Training module
 @pytest.fixture()
 def species_model_path(config, dm, ROOT, tmpdir):
+    config["batch_size"] = 16    
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)    
     m.ROOT = "{}/tests/".format(ROOT)
     trainer = Trainer(fast_dev_run=False, max_epochs=1)
@@ -22,7 +23,6 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     HSI_paths["2019"] = "{}/tests/data/hsi/2019_HARV_6_726000_4699000_image_crop_hyperspectral.tif".format(ROOT)
     config["HSI_sensor_pool"] = "{}/tests/data/hsi/*.tif".format(ROOT)
     config["CHM_pool"] = None
-    config["batch_size"] = 16
     
     profiler = cProfile.Profile()
     profiler.enable()
