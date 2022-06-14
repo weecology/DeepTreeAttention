@@ -35,8 +35,9 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
         config=config)
     
     profiler.disable()
-    stats = pstats.Stats(profiler).sort_stats('ncalls')
-    stats.print_stats()
+    with open('{}/tests/predict_profile.txt', 'w') as stream:
+        stats = pstats.Stats(profiler, stream=stream).sort_stats('cumtime')        
+        stats.print_stats()
 
     assert all([x in trees.columns for x in ["tile","geometry","ens_score","ensembleTaxonID"]])
     

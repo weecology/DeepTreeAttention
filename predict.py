@@ -3,7 +3,6 @@ from src import data
 from src import neon_paths
 from glob import glob
 import pandas as pd
-import geopandas as gpd
 from src.start_cluster import start
 from distributed import wait
 import os
@@ -11,11 +10,12 @@ import re
 import traceback
 
 
-def find_rgb_files(site, config):
+def find_rgb_files(site, config, year="2021"):
     tiles = glob(config["rgb_sensor_pool"], recursive=True)
     tiles = [x for x in tiles if site in x]
     tiles = [x for x in tiles if "neon-aop-products" not in x]
-
+    tiles = [x for x in tiles if "/{}/".format(year) in x]
+    
     return tiles
     
 def convert(rgb_path, hyperspectral_pool, savedir):
