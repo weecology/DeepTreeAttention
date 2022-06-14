@@ -104,7 +104,7 @@ def generate_crops(crowns, config, dead_model_path=None):
     
     return annotations
 
-def find_crowns(rgb_path, config):
+def find_crowns(rgb_path, config, dead_model_path=None):
     crowns = predict_crowns(rgb_path)
     crowns["tile"] = rgb_path
     
@@ -129,10 +129,10 @@ def find_crowns(rgb_path, config):
     
     return filtered_crowns
 
-def predict_tile(annotations, species_model_path, config, savedir, RGB_year="2019", filter_dead=False):        
+def predict_tile(crowns, annotations, species_model_path, config, savedir, RGB_year="2019", filter_dead=False):        
     # Load species model
     m = multi_stage.MultiStage.load_from_checkpoint(species_model_path)    
-    trees = predict_species(annotations=annotations, m=m, config=config)
+    trees = predict_species(crowns=crowns, annotations=annotations, m=m, config=config)
 
     # Remove predictions for dead trees
     if filter_dead:
@@ -172,7 +172,7 @@ def predict_crowns(PATH):
     
     return gdf
 
-def predict_species(annotations, m, config):
+def predict_species(crowns, annotations, m, config):
     predict_datasets = []
     for level in range(m.levels):
         ds = data.TreeDataset(df=annotations, train=False, config=config)
@@ -182,9 +182,8 @@ def predict_species(annotations, m, config):
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
     results = m.gather_predictions(predictions)
     results["individualID"] = results["individual"]
-    results = results.merge(crowns, on="individual")
+    crowns = results.merge(crowns, on="individual")
     ensemble_df = m.ensemble(results)
-    
     crowns = crowns.loc[:,crowns.columns.isin(["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score","RGB_tile"])]
     crowns["individualID"] = crowns["individual"]
     ensemble_df = ensemble_df.merge(crowns, on="individualID")
