@@ -59,8 +59,10 @@ if annotation_path is None:
     # Step 2 - Predict Crowns
     crown_futures = gpu_client.map(
         predict.find_crowns,
-        tiles, 
-        config)
+        rgb_path=tiles, 
+        config=config,
+        dead_model_path=dead_model_path
+    )
     
     # Step 3 - Crop Crowns
     crop_futures = []
