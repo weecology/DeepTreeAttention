@@ -19,17 +19,20 @@ def species_model_path(config, dm, ROOT, tmpdir):
     return "{}/model.pl".format(tmpdir)
     
 def test_predict_tile(species_model_path, config, ROOT, tmpdir):
-    HSI_paths = {}
-    HSI_paths["2019"] = "{}/tests/data/hsi/2019_HARV_6_726000_4699000_image_crop_hyperspectral.tif".format(ROOT)
+    rgb_path = "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop_2018.tif".format(ROOT)
     config["HSI_sensor_pool"] = "{}/tests/data/hsi/*.tif".format(ROOT)
     config["CHM_pool"] = None
     
     profiler = cProfile.Profile()
     profiler.enable()
     
+    crowns = predict.find_crowns(rgb_path, config)
+    annotations = predict.generate_crops(crowns, config)
+
     trees = predict.predict_tile(
-        HSI_paths=HSI_paths,
-        dead_model_path=None,
+        crowns=crowns,
+        annotations=annotations,
+        filter_dead=False,
         species_model_path=species_model_path,
         savedir=tmpdir,
         config=config)
