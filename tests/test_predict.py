@@ -4,6 +4,7 @@ from src import predict
 from src.models import dead
 from src.models import multi_stage
 from pytorch_lightning import Trainer
+import cProfile, pstats
 
 #Training module
 @pytest.fixture()
@@ -20,14 +21,23 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     HSI_paths = {}
     HSI_paths["2019"] = "{}/tests/data/hsi/2019_HARV_6_726000_4699000_image_crop_hyperspectral.tif".format(ROOT)
     config["HSI_sensor_pool"] = "{}/tests/data/hsi/*.tif".format(ROOT)
-    
     config["CHM_pool"] = None
+    config["batch_size"] = 16
+    
+    profiler = cProfile.Profile()
+    profiler.enable()
+    
     trees = predict.predict_tile(
         HSI_paths=HSI_paths,
         dead_model_path=None,
         species_model_path=species_model_path,
         savedir=tmpdir,
         config=config)
+    
+    profiler.disable()
+    stats = pstats.Stats(profiler).sort_stats('ncalls')
+    stats.print_stats()
+
     assert all([x in trees.columns for x in ["pred_taxa_top1","geometry","top1_score","ensembleTaxonID"]])
     assert all(trees.year.unique() == ["2018","2019"])
     assert trees.loc[trees.individual == trees.individual[0]].shape[0] == 2
