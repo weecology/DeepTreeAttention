@@ -38,8 +38,5 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     stats = pstats.Stats(profiler).sort_stats('ncalls')
     stats.print_stats()
 
-    assert all([x in trees.columns for x in ["pred_taxa_top1","geometry","top1_score","ensembleTaxonID"]])
-    assert all(trees.year.unique() == ["2018","2019"])
-    assert trees.loc[trees.individual == trees.individual[0]].shape[0] == 2
-    assert len(trees.loc[trees.individual == trees.individual[0]].ensembleTaxonID.unique()) == 1
+    assert all([x in trees.columns for x in ["tile","geometry","ens_score","ensembleTaxonID"]])
     
