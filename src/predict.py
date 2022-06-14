@@ -90,15 +90,21 @@ def my_collate(batch):
     
     return default_collate(batch)
 
-def predict_tile(HSI_paths, dead_model_path, species_model_path, config, savedir, RGB_year="2019"):
-    #get rgb from HSI path
-    HSI_basename = os.path.basename(HSI_paths[RGB_year])
-    geo_index = re.search("(\d+_\d+)_image", HSI_basename).group(1)
-    rgb_pool = glob.glob(config["rgb_sensor_pool"], recursive=True)
-    rgb_path = [x for x in rgb_pool if geo_index in x]
-    rgb_path = [x for x in rgb_path if RGB_year in x][0]
-    if len(rgb_path) == 0:
-        raise ValueError("No matching RGB from HSI basename {}".format(HSI_basename))
+def generate_crops(crowns, config, dead_model_path=None):
+    #Generate crops
+    annotations = generate.generate_crops(
+        crowns,
+        savedir=config["crop_dir"],
+        sensor_glob=config["HSI_sensor_pool"],
+        convert_h5=config["convert_h5"],   
+        rgb_glob=config["rgb_sensor_pool"],
+        HSI_tif_dir=config["HSI_tif_dir"],
+        replace=config["replace"]
+    )
+    
+    return annotations
+
+def find_crowns(rgb_path, config):
     crowns = predict_crowns(rgb_path)
     crowns["tile"] = rgb_path
     
@@ -120,17 +126,16 @@ def predict_tile(HSI_paths, dead_model_path, species_model_path, config, savedir
         dead_label, dead_score = predict_dead(crowns=filtered_crowns, dead_model_path=dead_model_path, rgb_tile=rgb_path, config=config)
         filtered_crowns["dead_label"] = dead_label
         filtered_crowns["dead_score"] = dead_score
-        
+    
+    return filtered_crowns
+
+def predict_tile(annotations, species_model_path, config, savedir, RGB_year="2019", filter_dead=False):        
     # Load species model
-    m = multi_stage.MultiStage.load_from_checkpoint(species_model_path)
-    
-    #Get all years from geo_index
-    HSI_tiles = [value for key, value in HSI_paths.items()]
-    
-    trees = predict_species(HSI_paths=HSI_tiles, crowns=filtered_crowns, m=m, config=config)
+    m = multi_stage.MultiStage.load_from_checkpoint(species_model_path)    
+    trees = predict_species(annotations=annotations, m=m, config=config)
 
     # Remove predictions for dead trees
-    if dead_model_path:
+    if filter_dead:
         trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"pred_taxa_top1"] = "DEAD"
         trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"pred_label_top1"] = None
         trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"top1_score"] = None
@@ -138,7 +143,7 @@ def predict_tile(HSI_paths, dead_model_path, species_model_path, config, savedir
     # Calculate crown area
     trees["crown_area"] = crowns.geometry.area
     trees = gpd.GeoDataFrame(trees, geometry="geometry")    
-    trees.to_file(os.path.join(savedir, "{}.shp".format(os.path.splitext(HSI_basename)[0])))
+    trees.to_file(os.path.join(savedir, "{}.shp".format(annotations.RGB_tile.unique()[0])))
     
     return trees
 
@@ -167,24 +172,13 @@ def predict_crowns(PATH):
     
     return gdf
 
-def predict_species(crowns, HSI_paths, m, config):
-    #Generate crops
-    annotations = generate.generate_crops(
-        crowns,
-        savedir=config["crop_dir"],
-        sensor_glob=config["HSI_sensor_pool"],
-        convert_h5=config["convert_h5"],   
-        rgb_glob=config["rgb_sensor_pool"],
-        HSI_tif_dir=config["HSI_tif_dir"],
-        replace=config["replace"]
-    )
-
+def predict_species(annotations, m, config):
     predict_datasets = []
     for level in range(m.levels):
         ds = data.TreeDataset(df=annotations, train=False, config=config)
         predict_datasets.append(ds)
 
-    trainer = Trainer(gpus=config["gpus"])
+    trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
     results = m.gather_predictions(predictions)
     results["individualID"] = results["individual"]
