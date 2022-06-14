@@ -4,11 +4,10 @@ from src import neon_paths
 from glob import glob
 import pandas as pd
 from src.start_cluster import start
-from distributed import wait
+from distributed import wait, as_completed
 import os
 import re
 import traceback
-
 
 def find_rgb_files(site, config, year="2021"):
     tiles = glob(config["rgb_sensor_pool"], recursive=True)
@@ -35,36 +34,45 @@ def convert(rgb_path, hyperspectral_pool, savedir):
     
     return tif_paths
 
-config = data.read_config("config.yml")
-tiles = find_rgb_files(site="OSBS", config=config)[:5]
-
+#Params
+#No daemonic dask children
+config["workers"] = 0
+gpu_client = start(gpus=2, mem_size="10GB")
+cpu_client = start(cpus=100, mem_size="8GB")
+species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/1afdb5de011e4c1d8419a904e42d40bc.pl"
+dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
+config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/91ba2dc9445547f48805ec60be0a2f2f"
 #generate HSI_tif data if needed.
 hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
 hyperspectral_pool = [x for x in hyperspectral_pool if not "neon-aop-products" in x]
 
-cpu_client = start(cpus=10, mem_size="8GB")
-tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"])
+# Step 1 Find RGB Tiles and convert HSI
+config = data.read_config("config.yml")
+tiles = find_rgb_files(site="OSBS", config=config)[:5]
+tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir=config["HSI_tif_dir"])
 wait(tif_futures)
 
-species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt"
-dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
-config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/91ba2dc9445547f48805ec60be0a2f2f"
+# Step 2 - Predict Crowns
+crown_futures = gpu_client.map(
+    predict.find_crowns,
+    tiles, 
+    config)
 
-hsi_tifs = []
-for x in tif_futures:
-    try:
-        for path in x.result():
-            hsi_tifs.append(path)
-    except Exception as e:
-        print(e)
-        pass
+# Step 3 - Crop Crowns
+crop_futures = []
+for x in as_completed(crown_futures):
+    crop_future = cpu_client(predict.generate_crops(x.result(), config, dead_model_path=dead_model_path))
+    crop_futures.append(crop_future)
 
-cpu_client.close()    
-gpu_client = start(gpus=2, mem_size="10GB")
+wait(crop_futures)    
 
-#No daemonic dask children
-config["workers"] = 0
-futures =  []
+df = []
+for x in crop_futures:
+    annotations = x.result()
+    df.append(annotations)
+
+df = pd.concat(df)
+
 #Save each file seperately in a dir named for the species model
 savedir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",os.path.basename(species_model_path))
 try:
@@ -73,17 +81,14 @@ except:
     pass
 
 geo_index = [re.search("(\d+_\d+)_image", os.path.basename(x)).group(1) for x in hsi_tifs]
+df["geo_index"] = df.RGB_tile.apply(lambda x: re.search("(\d+_\d+)_image", os.path.basename(x)).group(1))
 
+futures = []
 for i in pd.Series(geo_index).unique()[:2]:
-    HSI_paths = {}
-    tiles = [x for x in hsi_tifs if i in x] 
-    for tile in tiles:
-        year = os.path.splitext(tile)[0].split("_")[-1]
-        HSI_paths[year] = tile
+    tile_crowns = df[df.geo_index == i]
     future = gpu_client.submit(
         predict.predict_tile,
-        HSI_paths,
-        dead_model_path=dead_model_path,
+        filter_dead=True,
         species_model_path=species_model_path,
         config=config,
         savedir=savedir
@@ -98,3 +103,4 @@ for future in futures:
     except Exception as e:
         print(e)
         print(traceback.print_exc())
+
