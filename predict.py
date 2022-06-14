@@ -3,7 +3,6 @@ from src import data
 from src import neon_paths
 from glob import glob
 import pandas as pd
-import geopandas as gpd
 from src.start_cluster import start
 from distributed import wait
 import os
@@ -11,14 +10,12 @@ import re
 import traceback
 
 
-def find_rgb_files(site, config, year=None):
+def find_rgb_files(site, config, year="2021"):
     tiles = glob(config["rgb_sensor_pool"], recursive=True)
     tiles = [x for x in tiles if site in x]
     tiles = [x for x in tiles if "neon-aop-products" not in x]
+    tiles = [x for x in tiles if "/{}/".format(year) in x]
     
-    if year:
-        tiles = [x for x in tiles if "/{}/".format(year) in x]
-
     return tiles
     
 def convert(rgb_path, hyperspectral_pool, savedir):
@@ -39,11 +36,11 @@ def convert(rgb_path, hyperspectral_pool, savedir):
     return tif_paths
 
 config = data.read_config("config.yml")
-tiles = find_rgb_files(site="OSBS", config=config)
+tiles = find_rgb_files(site="OSBS", config=config)[:5]
 
 #generate HSI_tif data if needed.
 hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
-rgb_pool = glob(config["rgb_sensor_pool"], recursive=True)
+hyperspectral_pool = [x for x in hyperspectral_pool if not "neon-aop-products" in x]
 
 cpu_client = start(cpus=10, mem_size="8GB")
 tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir = config["HSI_tif_dir"])
