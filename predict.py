@@ -70,7 +70,11 @@ if annotation_path is None:
     crop_futures = []
     for x in as_completed(crown_futures):
         crowns = x.result()
-        crop_future = cpu_client.submit(predict.generate_crops, crowns=crowns, config=config, dead_model_path=dead_model_path)
+        crop_future = cpu_client.submit(
+            predict.generate_crops,
+            crowns=crowns[:10],
+            config=config,
+            dead_model_path=dead_model_path)
         crop_futures.append(crop_future)
         basename = os.path.splitext(os.path.basename(crowns.RGB_tile.unique()[0]))[0]
         crowns.to_file("{}/crowns_{}.shp".format(savedir,basename))
@@ -79,7 +83,7 @@ if annotation_path is None:
     
     for x in crop_futures:
         annotations = x.result()
-        annotations.to_csv("{}/annotations_{}.csv".format(savedir, annotations.RGB_tile.unique[0]))
+        annotations.to_csv("{}/annotations_{}.csv".format(savedir, annotations.RGB_tile.unique()[0]))
 else:
     pass
  
