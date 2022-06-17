@@ -83,7 +83,8 @@ if annotation_path is None:
     
     for x in crop_futures:
         annotations = x.result()
-        annotations.to_csv("{}/annotations_{}.csv".format(savedir, annotations.RGB_tile.unique()[0]))
+        basename = os.path.splitext(os.path.basename(annotations.RGB_tile.unique()[0]))[0]
+        annotations.to_csv("{}/annotations_{}.csv".format(savedir, basename))
 else:
     pass
  
