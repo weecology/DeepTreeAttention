@@ -178,7 +178,7 @@ def predict_species(crowns, annotations, m, config):
         ds = data.TreeDataset(df=annotations, train=False, config=config)
         predict_datasets.append(ds)
 
-    trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False)
+    trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
     results = m.gather_predictions(predictions)
     results["individualID"] = results["individual"]
