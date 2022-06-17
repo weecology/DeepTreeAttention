@@ -42,10 +42,18 @@ config = data.read_config("config.yml")
 config["workers"] = 0
 gpu_client = start(gpus=2, mem_size="10GB")
 cpu_client = start(cpus=10, mem_size="8GB")
-species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/1afdb5de011e4c1d8419a904e42d40bc.pl"
+species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pl"
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
-config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/91ba2dc9445547f48805ec60be0a2f2f"
+config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1"
 savedir = config["crop_dir"] 
+
+#Save each file seperately in a dir named for the species model
+prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
+                              os.path.splitext(os.path.basename(species_model_path))[0])
+try:
+    os.mkdir(prediction_dir)
+except:
+    pass
 
 #generate HSI_tif data if needed.
 hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
@@ -87,39 +95,28 @@ if annotation_path is None:
         annotations.to_csv("{}/annotations_{}.csv".format(savedir, basename))
 else:
     pass
- 
-df = dataframe.read_csv(savedir,"annotations*.csv")
 
-#Save each file seperately in a dir named for the species model
-savedir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",os.path.basename(species_model_path))
-try:
-    os.mkdir(savedir)
-except:
-    pass
+annotation_files = glob(savedir + "/annotations*.csv")
 
-geo_index = [re.search("(\d+_\d+)_image", os.path.basename(x)).group(1) for x in hsi_tifs]
-df["geo_index"] = df.RGB_tile.apply(lambda x: re.search("(\d+_\d+)_image", os.path.basename(x)).group(1))
-geo_indices = df.geo_index.unique()
-
-futures = []
-for geo_index in geo_indices:
-    tile_crowns = df[df.geo_index == geo_index]
-    crowns = gpd.read_file("{}/crowns_{}.shp".format(savedir, tile_crowns.RGB_tile.unique[0]))
+def species_wrapper(annotations_path, species_model_path, config, data_dir, prediction_dir):
+    annotations = pd.read_csv(annotations_path)
+    basename = os.path.splitext(os.path.basename(annotations.RGB_tile.unique()[0]))[0]    
+    crowns = gpd.read_file("{}/crowns_{}.shp".format(data_dir, basename))
+    ensemble_df = predict.predict_tile(crowns, annotations, species_model_path, config, prediction_dir, filter_dead=True)
+    basename = os.path.splitext(os.path.basename(annotations.RGB_tile.unique()[0]))[0]    
+    ensemble_df.to_csv("{}/predictions_{}.csv".format(prediction_dir, basename))
     
-    future = gpu_client.submit(
-        predict.predict_tile,
-        annotations=tile_crowns,
-        crowns=crowns,
-        filter_dead=True,
-        species_model_path=species_model_path,
-        config=config,
-        savedir=savedir
-    )
-    futures.append(future)
+    return ensemble_df
 
-wait(futures)
+futures = gpu_client.map(
+    species_wrapper, 
+    annotation_files, 
+    species_model_path=species_model_path, 
+    config=config, 
+    data_dir=savedir,
+    prediction_dir=prediction_dir)
 
-for future in futures:
+for future in as_completed(futures):
     try:
         trees = future.result()    
     except Exception as e:
