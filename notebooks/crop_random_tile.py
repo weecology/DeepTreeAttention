@@ -86,9 +86,10 @@ def random_crop(rgb_pool, hsi_pool, CHM_pool, config, iteration):
     selected_hsi = [x for index, x in enumerate(hsi_tifs) if index in hsi_index]
     chm_index = [index for index, value in enumerate(chm_years) if value in selected_years]
     selected_chm = [x for index, x in enumerate(chm_tiles) if index in chm_index]
-    if not all(np.array([len(selected_chm), len(hsi_tifs), len(selected_rgb)]) == [3,3,3]):
+    if not all(np.array([len(selected_chm), len(selected_hsi), len(selected_rgb)]) == [3,3,3]):
         print("Not enough years")
         return None
+    
     #Get window, mask out black areas
     src = rasterio.open(selected_rgb[0])   
     mask = src.read_masks(1)
@@ -130,7 +131,7 @@ def random_crop(rgb_pool, hsi_pool, CHM_pool, config, iteration):
              savedir=year_dir,
              basename="CHM")
     #HSI
-    for index, tile in enumerate(hsi_tifs):
+    for index, tile in enumerate(selected_hsi):
         year_dir = os.path.join(coord_dir,selected_years[index])                
         crop(bounds=bounds, sensor_path=tile,
              savedir=year_dir,
@@ -140,6 +141,8 @@ config = read_config("config.yml")
 rgb_pool = glob.glob(config["rgb_sensor_pool"], recursive=True)
 rgb_pool = [x for x in rgb_pool if not "classified" in x]
 hsi_pool = glob.glob(config["HSI_sensor_pool"], recursive=True)
+hsi_pool = [x for x in hsi_pool if not "neon-aop-products" in x]
+
 CHM_pool = glob.glob(config["CHM_pool"], recursive=True)
 
 random_crop(rgb_pool=rgb_pool, hsi_pool=hsi_pool, CHM_pool=CHM_pool, config=config, iteration=0)
