@@ -104,7 +104,7 @@ def species_wrapper(annotations_path, species_model_path, config, data_dir, pred
     crowns = gpd.read_file("{}/crowns_{}.shp".format(data_dir, basename))
     ensemble_df = predict.predict_tile(crowns, annotations, species_model_path, config, prediction_dir, filter_dead=True)
     basename = os.path.splitext(os.path.basename(annotations.RGB_tile.unique()[0]))[0]    
-    ensemble_df.to_csv("{}/predictions_{}.csv".format(prediction_dir, basename))
+    ensemble_df.to_file("{}/{}.shp".format(prediction_dir, basename))
     
     return ensemble_df
 
