@@ -40,6 +40,8 @@ def convert(rgb_path, hyperspectral_pool, savedir):
 #No daemonic dask children
 config = data.read_config("config.yml")
 config["workers"] = 0
+config["preload_images"] = False 
+
 gpu_client = start(gpus=2, mem_size="10GB")
 cpu_client = start(cpus=10, mem_size="8GB")
 species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt"
