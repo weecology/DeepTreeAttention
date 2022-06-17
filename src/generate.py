@@ -240,7 +240,7 @@ def points_to_crowns(
     
     return results
 
-def write_crop(row, img_path, savedir, replace=True):
+def write_crop(row, savedir, img_path, replace=True, rasterio_src=None):
     """Wrapper to write a crop based on size and savedir"""
     tile_year = os.path.splitext(os.path.basename(img_path))[0].split("_")[-1]
     if replace == False:
@@ -264,12 +264,14 @@ def write_crop(row, img_path, savedir, replace=True):
                 bounds=row["geometry"].bounds,
                 sensor_path=img_path,
                 savedir=savedir,
+                rasterio_src=rasterio_src,
                 basename="{}_{}".format(row["individual"], tile_year))
     else:
         filename = patches.crop(
             bounds=row["geometry"].bounds,
             sensor_path=img_path,
             savedir=savedir,
+            rasterio_src=rasterio_src,
             basename="{}_{}".format(row["individual"], tile_year))
         
         annotation = pd.DataFrame(
@@ -335,7 +337,6 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
                 img_path = tile_to_path[row["geo_index"]]
             except:
                 continue
-            
             for x in img_path:
                 future = client.submit(write_crop,row=row,img_path=x, savedir=savedir, replace=replace)
                 futures.append(future)
@@ -348,20 +349,24 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
             except:
                 print("Future failed with {}".format(traceback.print_exc()))
     else:
-        for index, row in gdf.iterrows():
-            try:
-                img_path = tile_to_path[row["geo_index"]]
-            except:
-                continue
+        #If no client is passed, loop through each tile and open then once in memory
+        for geo_index in gdf.geo_index.unique():
+            img_path = tile_to_path[geo_index]
             
+            #For each year 
             for x in img_path:
-                try:
-                    annotation = write_crop(row=row, img_path=x, savedir=savedir, replace=replace)   
-                    annotations.append(annotation)                                   
-                except Exception as e:
-                    print("index {} failed with {}".format(index,e))
-                    continue
-            
+                rasterio_src = rasterio.open(x)
+                tile_annotations = gdf[gdf.geo_index == geo_index]
+                
+                #Write available crops
+                for index, row in tile_annotations.iterrows():
+                    try:
+                        annotation = write_crop(row=row, savedir=savedir, img_path=x, replace=replace, rasterio_src=rasterio_src)   
+                        annotations.append(annotation)                                                   
+                    except Exception as e:
+                        print("index {} failed with {}".format(index,e))
+                        continue
+
     annotations = pd.concat(annotations)
         
     return annotations

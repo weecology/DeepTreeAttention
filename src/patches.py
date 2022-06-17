@@ -1,10 +1,13 @@
 #Patches
 import rasterio
 
-def crop(bounds, sensor_path, savedir = None, basename = None):
+def crop(bounds, sensor_path, savedir = None, basename = None, rasterio_src=None):
     """Given a 4 pointed bounding box, crop sensor data"""
     left, bottom, right, top = bounds 
-    src = rasterio.open(sensor_path)        
+    if rasterio_src is None:
+        src = rasterio.open(sensor_path)
+    else:
+        src = rasterio_src
     img = src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform)) 
     res = src.res[0]
     height = (top - bottom)/res

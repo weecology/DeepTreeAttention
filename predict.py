@@ -45,6 +45,8 @@ cpu_client = start(cpus=10, mem_size="8GB")
 species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/1afdb5de011e4c1d8419a904e42d40bc.pl"
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/91ba2dc9445547f48805ec60be0a2f2f"
+savedir = config["crop_dir"] 
+
 #generate HSI_tif data if needed.
 hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
 hyperspectral_pool = [x for x in hyperspectral_pool if not "neon-aop-products" in x]
@@ -58,8 +60,8 @@ if annotation_path is None:
     
     # Step 2 - Predict Crowns
     crown_futures = gpu_client.map(
-        predict.find_crowns,
-        rgb_path=tiles, 
+        predict.find_crowns,        
+        tiles,         
         config=config,
         dead_model_path=dead_model_path
     )
@@ -68,11 +70,12 @@ if annotation_path is None:
     crop_futures = []
     for x in as_completed(crown_futures):
         crowns = x.result()
-        crop_future = cpu_client(predict.generate_crops(crowns, config, dead_model_path=dead_model_path))
+        crop_future = cpu_client.submit(predict.generate_crops, crowns=crowns, config=config, dead_model_path=dead_model_path)
         crop_futures.append(crop_future)
-        crowns.to_file("{}/crowns_{}.shp".format(savedir, crowns.RGB_tile.unique[0]))
-         
-    wait(crop_futures)    
+        basename = os.path.splitext(os.path.basename(crowns.RGB_tile.unique()[0]))[0]
+        crowns.to_file("{}/crowns_{}.shp".format(savedir,basename))
+    
+    wait(crop_futures)
     
     for x in crop_futures:
         annotations = x.result()
