@@ -111,18 +111,27 @@ def species_wrapper(annotations_path, species_model_path, config, data_dir, pred
     
     return ensemble_df
 
-futures = gpu_client.map(
-    species_wrapper, 
-    annotation_files, 
-    species_model_path=species_model_path, 
-    config=config, 
-    data_dir=savedir,
-    prediction_dir=prediction_dir)
+# Without dask
+for x in annotation_files:
+    species_wrapper(
+        annotations_path=x, 
+        species_model_path=species_model_path,
+        config=config,
+        data_dir=savedir,
+        prediction_dir=prediction_dir)
 
-for future in as_completed(futures):
-    try:
-        trees = future.result()    
-    except Exception as e:
-        print(e)
-        print(traceback.print_exc())
+#futures = gpu_client.map(
+    #species_wrapper, 
+    #annotation_files, 
+    #species_model_path=species_model_path, 
+    #config=config, 
+    #data_dir=savedir,
+    #prediction_dir=prediction_dir)
+
+#for future in as_completed(futures):
+    #try:
+        #trees = future.result()    
+    #except Exception as e:
+        #print(e)
+        #print(traceback.print_exc())
 
