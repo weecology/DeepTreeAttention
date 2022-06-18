@@ -57,14 +57,21 @@ try:
 except:
     pass
 
+def check_file(x):
+    
+    
 #generate HSI_tif data if needed.
 hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
 hyperspectral_pool = [x for x in hyperspectral_pool if not "neon-aop-products" in x]
 regenerate = False
+overwrite = False
 
 # Step 1 Find RGB Tiles and convert HSI
 if regenerate:
     tiles = find_rgb_files(site="OSBS", config=config)[:2]
+    if not overwrite:
+        tiles = [x for x in tiles if not os.path.exists("{}/crowns_{}.shp".format(savedir, os.path.splitext(os.path.basename(x))[0]))]
+        
     tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir=config["HSI_tif_dir"])
     wait(tif_futures)
     
@@ -73,7 +80,7 @@ if regenerate:
         predict.find_crowns,        
         tiles,         
         config=config,
-        dead_model_path=dead_model_path
+        dead_model_path=dead_model_path,
     )
     
     # Step 3 - Crop Crowns

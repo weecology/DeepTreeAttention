@@ -106,6 +106,8 @@ def generate_crops(crowns, config, dead_model_path=None):
 
 def find_crowns(rgb_path, config, dead_model_path=None):
     crowns = predict_crowns(rgb_path)
+    if crowns is None:
+        return None
     crowns["tile"] = rgb_path
     
     #CHM filter
@@ -154,6 +156,8 @@ def predict_crowns(PATH):
         m.config["gpus"] = 1
     m.use_release(check_release=False)
     boxes = m.predict_tile(PATH)
+    if boxes is None:
+        return None
     r = rasterio.open(PATH)
     transform = r.transform     
     crs = r.crs
