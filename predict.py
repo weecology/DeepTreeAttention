@@ -84,6 +84,8 @@ if regenerate:
     crop_futures = []
     for x in as_completed(crown_futures):
         crowns = x.result()
+        if crowns is None:
+            continue
         crop_future = cpu_client.submit(
             predict.generate_crops,
             crowns=crowns,
