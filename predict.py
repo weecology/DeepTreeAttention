@@ -83,7 +83,11 @@ if regenerate:
     # Step 3 - Crop Crowns
     crop_futures = []
     for x in as_completed(crown_futures):
-        crowns = x.result()
+        try:
+            crowns = x.result()
+        except Exception as e:
+            print(e)
+            continue
         if crowns is None:
             continue
         crop_future = cpu_client.submit(
