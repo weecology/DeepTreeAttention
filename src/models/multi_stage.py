@@ -31,7 +31,7 @@ class base_model(Module):
         return score 
     
 class MultiStage(LightningModule):
-    def __init__(self, train_df, test_df, crowns, config):
+    def __init__(self, train_df, test_df, crowns, config, training=True):
         super().__init__()        
         # Generate each model
         self.years = train_df.tile_year.unique()
@@ -44,15 +44,16 @@ class MultiStage(LightningModule):
         self.label_to_taxonIDs = []   
         self.train_df = train_df
         self.test_df = test_df
+    
+    def prepare_training(self):
         self.train_datasets, self.test_datasets = self.create_datasets()
         self.levels = len(self.train_datasets)       
-        
+    
         self.classes = len(self.train_df.label.unique())
-        loss_weights = []        
         for index, ds in enumerate([self.level_0_train, self.level_1_train, self.level_2_train, self.level_3_train, self.level_4_train]): 
             labels = ds.label
             classes = self.num_classes[index]
-            base = base_model(classes=classes, years=len(self.years), config=config)
+            base = base_model(classes=classes, years=len(self.years), config=self.config)
             self.models.append(base)            
             loss_weight = []
             for x in range(classes):
@@ -61,15 +62,14 @@ class MultiStage(LightningModule):
                 except:
                     w = 1 
                 loss_weight.append(w)
-
+    
             loss_weight = np.array(loss_weight/np.max(loss_weight))
             loss_weight[loss_weight < self.config["min_loss_weight"]] = self.config["min_loss_weight"] 
             loss_weight = torch.tensor(loss_weight, dtype=torch.float)                        
             pname = 'loss_weight_{}'.format(index)            
             self.register_buffer(pname, loss_weight)
-                 
-        self.save_hyperparameters(ignore=["loss_weight"])
-        
+    
+        self.save_hyperparameters(ignore=["loss_weight"])        
     def create_datasets(self):
         #Create levels for each year
         ## Level 0     
