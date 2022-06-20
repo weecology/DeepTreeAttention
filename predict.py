@@ -122,7 +122,7 @@ def species_wrapper(annotations_path, species_model_path, config, data_dir, pred
     return ensemble_df
 
 # Without dask
-for x in annotation_files[:2]:
+for x in annotation_files[:1]:
     species_wrapper(
         annotations_path=x, 
         species_model_path=species_model_path,
