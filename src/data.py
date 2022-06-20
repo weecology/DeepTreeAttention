@@ -570,14 +570,15 @@ class TreeData(LightningDataModule):
         #Create dataloader
         ds = TreeDataset(
             df=df,
-            config=self.config
+            config=self.config,
         )
         
         data_loader = torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["batch_size"],
             shuffle=False,
-            num_workers=self.config["workers"]
+            num_workers=self.config["workers"],
+            pin_memory=True
             )
           
         return data_loader
