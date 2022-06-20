@@ -70,7 +70,6 @@ train = train[~train.individualID.str.contains("graves")].reset_index(drop=True)
 test = test[~test.individualID.str.contains("graves")].reset_index(drop=True)
 
 m = multi_stage.MultiStage(train, test, config=data_module.config, crowns=crowns)
-m.prepare_training()
 
 #Save the train df for each level for inspection
 for index, train_df in enumerate([m.level_0_train,

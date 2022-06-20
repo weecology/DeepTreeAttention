@@ -31,7 +31,7 @@ class base_model(Module):
         return score 
     
 class MultiStage(LightningModule):
-    def __init__(self, train_df, test_df, crowns, config, training=True):
+    def __init__(self, train_df, test_df, crowns, config):
         super().__init__()        
         # Generate each model
         self.years = train_df.tile_year.unique()
@@ -45,7 +45,6 @@ class MultiStage(LightningModule):
         self.train_df = train_df
         self.test_df = test_df
     
-    def prepare_training(self):
         self.train_datasets, self.test_datasets = self.create_datasets()
         self.levels = len(self.train_datasets)       
     
@@ -68,7 +67,7 @@ class MultiStage(LightningModule):
             loss_weight = torch.tensor(loss_weight, dtype=torch.float)                        
             pname = 'loss_weight_{}'.format(index)            
             self.register_buffer(pname, loss_weight)
-    
+
         self.save_hyperparameters(ignore=["loss_weight"])        
     def create_datasets(self):
         #Create levels for each year
