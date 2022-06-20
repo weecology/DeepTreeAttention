@@ -102,7 +102,11 @@ if regenerate:
     wait(crop_futures)
     
     for x in crop_futures:
-        annotations = x.result()
+        try:
+            annotations = x.result()
+        except Exception as e:
+            print(e)
+            continue
         basename = os.path.splitext(os.path.basename(annotations.RGB_tile.unique()[0]))[0]
         annotations.to_csv("{}/annotations_{}.csv".format(savedir, basename))
 else:
@@ -121,8 +125,10 @@ def species_wrapper(annotations_path, species_model_path, config, data_dir, pred
     
     return ensemble_df
 
+annotation_files = ["/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1/annotations_2021_OSBS_6_404000_3287000_image.csv"]
+
 # Without dask
-for x in annotation_files[:1]:
+for x in annotation_files:
     species_wrapper(
         annotations_path=x, 
         species_model_path=species_model_path,
