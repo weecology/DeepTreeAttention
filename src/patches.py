@@ -1,7 +1,7 @@
 #Patches
 import rasterio
 
-def crop(bounds, sensor_path, savedir = None, basename = None, rasterio_src=None):
+def crop(bounds, sensor_path=None, savedir = None, basename = None, rasterio_src=None):
     """Given a 4 pointed bounding box, crop sensor data"""
     left, bottom, right, top = bounds 
     if rasterio_src is None:
@@ -9,6 +9,8 @@ def crop(bounds, sensor_path, savedir = None, basename = None, rasterio_src=None
     else:
         src = rasterio_src
     img = src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform)) 
+    if img.size == 0:
+        return None
     res = src.res[0]
     height = (top - bottom)/res
     width = (right - left)/res      
