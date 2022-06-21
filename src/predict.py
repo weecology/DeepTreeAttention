@@ -158,8 +158,13 @@ def find_crowns(rgb_path, config, dead_model_path=None):
 def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_dead=False):        
     # Load species model
     m = multi_stage.MultiStage.load_from_checkpoint(species_model_path)
-    geo_index =  neon_paths.bounds_to_geoindex(crowns.geometry.iloc[0].bounds)
-    image_paths = neon_paths.find_sensor_path(lookup_pool = img_pool, geo_index=geo_index, all_years=True)
+    year_paths = []
+    for yr in m.years:
+        geo_index =  neon_paths.bounds_to_geoindex(crowns.geometry.iloc[0].bounds)
+        image_paths = neon_paths.find_sensor_path(lookup_pool = img_pool, geo_index=geo_index, all_years=True)
+        year_path = [x for x in image_paths if "_{}".format(yr) in x][0]
+        year_paths.append(year_path)
+        
     trees = predict_species(crowns=crowns, image_paths=image_paths, m=m, config=config)
 
     # Remove predictions for dead trees
