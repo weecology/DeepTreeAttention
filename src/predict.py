@@ -115,12 +115,15 @@ class predict_dataset(Dataset):
         individual = self.crowns.individual.iloc[index]
         images = []
         for x in self.tiles:
-            crop = patches.crop(bounds, rasterio_src=x)
-            if crop is None:
+            if x is None:
                 image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])      
             else:
-                image = preprocess_image(crop, channel_is_first=True)
-                image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
+                crop = patches.crop(bounds, rasterio_src=x)
+                if crop is None:
+                    image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])      
+                else:
+                    image = preprocess_image(crop, channel_is_first=True)
+                    image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
             images.append(image)
         
         inputs = {}
@@ -162,7 +165,10 @@ def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_d
     for yr in m.years:
         geo_index =  neon_paths.bounds_to_geoindex(crowns.geometry.iloc[0].bounds)
         image_paths = neon_paths.find_sensor_path(lookup_pool = img_pool, geo_index=geo_index, all_years=True)
-        year_path = [x for x in image_paths if "_{}".format(yr) in x][0]
+        try:
+            year_path = [x for x in image_paths if "_{}".format(yr) in x][0]
+        except:
+            year_path = None
         year_paths.append(year_path)
         
     trees = predict_species(crowns=crowns, image_paths=image_paths, m=m, config=config)
