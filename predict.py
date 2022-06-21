@@ -80,7 +80,7 @@ for x in as_completed(crown_futures):
     try:
         crowns = x.result()
         ensemble_df = predict.predict_tile(
-            crowns=crowns,
+            crowns=crowns[:10],
             img_pool=hyperspectral_pool,
             filter_dead=True,
             species_model_path=species_model_path,
@@ -88,6 +88,7 @@ for x in as_completed(crown_futures):
             config=config)
     except Exception as e:
         print(e)
+        traceback.print_exc()
         continue
     if crowns is None:
         continue
