@@ -11,11 +11,11 @@ def test_MultiStage(dm, config):
 
 def test_fit(config, dm):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
-    trainer = Trainer(fast_dev_run=True, profiler="simple")
+    trainer = Trainer(fast_dev_run=True)
     trainer.fit(m)
 
 def test_gather_predictions(config, dm, experiment):
-    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train, crowns=dm.crowns, config=config)
+    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
     trainer = Trainer(fast_dev_run=False)
     predict_datasets = []
     for level in range(m.levels):

@@ -60,94 +60,35 @@ except:
 #generate HSI_tif data if needed.
 hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
 hyperspectral_pool = [x for x in hyperspectral_pool if not "neon-aop-products" in x]
-regenerate = False
-overwrite = False
 
 # Step 1 Find RGB Tiles and convert HSI
-if regenerate:
-    tiles = find_rgb_files(site="OSBS", config=config)
-    if not overwrite:
-        tiles = [x for x in tiles if not os.path.exists("{}/crowns_{}.shp".format(savedir, os.path.splitext(os.path.basename(x))[0]))]
-    tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir=config["HSI_tif_dir"])
+tiles = find_rgb_files(site="OSBS", config=config)
+tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir=config["HSI_tif_dir"])
+wait(tif_futures)
+
+# Step 2 - Predict Crowns
+crown_futures = gpu_client.map(
+    predict.find_crowns,        
+    tiles,         
+    config=config,
+    dead_model_path=dead_model_path,
+)
     
-    wait(tif_futures)
-    
-    # Step 2 - Predict Crowns
-    crown_futures = gpu_client.map(
-        predict.find_crowns,        
-        tiles,         
-        config=config,
-        dead_model_path=dead_model_path,
-    )
-    
-    # Step 3 - Crop Crowns
-    crop_futures = []
-    for x in as_completed(crown_futures):
-        try:
-            crowns = x.result()
-        except Exception as e:
-            print(e)
-            continue
-        if crowns is None:
-            continue
-        crop_future = cpu_client.submit(
-            predict.generate_crops,
+# Step 3 - Crop Crowns
+crop_futures = []
+for x in as_completed(crown_futures):
+    try:
+        crowns = x.result()
+        ensemble_df = predict.predict_tile(
             crowns=crowns,
-            config=config,
-            dead_model_path=dead_model_path)
-        crop_futures.append(crop_future)
-        basename = os.path.splitext(os.path.basename(crowns.RGB_tile.unique()[0]))[0]
-        crowns.to_file("{}/crowns_{}.shp".format(savedir,basename))
-    
-    wait(crop_futures)
-    
-    for x in crop_futures:
-        try:
-            annotations = x.result()
-        except Exception as e:
-            print(e)
-            continue
-        basename = os.path.splitext(os.path.basename(annotations.RGB_tile.unique()[0]))[0]
-        annotations.to_csv("{}/annotations_{}.csv".format(savedir, basename))
-else:
-    pass
-
-annotation_files = glob(savedir + "/annotations*.csv")
-
-def species_wrapper(annotations_path, species_model_path, config, data_dir, prediction_dir):
-    annotations = pd.read_csv(annotations_path)
-    basename = os.path.splitext(os.path.basename(annotations.RGB_tile.unique()[0]))[0]    
-    crowns = gpd.read_file("{}/crowns_{}.shp".format(data_dir, basename))
-    ensemble_df = predict.predict_tile(crowns, annotations, species_model_path, config, prediction_dir, filter_dead=True)
-    basename = os.path.splitext(os.path.basename(annotations.RGB_tile.unique()[0]))[0]    
-    ensemble_df[["geometry","individual","ens_score",
-                 "ensembleTaxonID","crown_area","CHM_height","dead_label","dead_score","RGB_tile"]].to_file("{}/{}.shp".format(prediction_dir, basename))
-    
-    return ensemble_df
-
-annotation_files = ["/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1/annotations_2021_OSBS_6_404000_3287000_image.csv"]
-
-# Without dask
-for x in annotation_files:
-    species_wrapper(
-        annotations_path=x, 
-        species_model_path=species_model_path,
-        config=config,
-        data_dir=savedir,
-        prediction_dir=prediction_dir)
-
-#futures = gpu_client.map(
-    #species_wrapper, 
-    #annotation_files, 
-    #species_model_path=species_model_path, 
-    #config=config, 
-    #data_dir=savedir,
-    #prediction_dir=prediction_dir)
-
-#for future in as_completed(futures):
-    #try:
-        #trees = future.result()    
-    #except Exception as e:
-        #print(e)
-        #print(traceback.print_exc())
+            img_pool=hyperspectral_pool,
+            filter_dead=True,
+            species_model_path=species_model_path,
+            savedir=prediction_dir,
+            config=config)
+    except Exception as e:
+        print(e)
+        continue
+    if crowns is None:
+        continue
 

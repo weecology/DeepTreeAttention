@@ -7,18 +7,18 @@ import numpy as np
 import os
 import rasterio
 import re
-from src.main import TreeModel
 from src.models import dead
-from src import data
+from src import neon_paths
 from src.utils import preprocess_image
+from src import patches
 from src.CHM import postprocess_CHM
 from src.models import multi_stage
-from src import generate
 from torch.utils.data import Dataset
 from torchvision import transforms
 import torch
 from torch.utils.data.dataloader import default_collate
 from pytorch_lightning import Trainer
+
 def RGB_transform(augment):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
@@ -90,20 +90,44 @@ def my_collate(batch):
     
     return default_collate(batch)
 
-def generate_crops(crowns, config, dead_model_path=None):
-    #Generate crops
-    annotations = generate.generate_crops(
-        crowns,
-        savedir=config["crop_dir"],
-        sensor_glob=config["HSI_sensor_pool"],
-        convert_h5=config["convert_h5"],   
-        rgb_glob=config["rgb_sensor_pool"],
-        HSI_tif_dir=config["HSI_tif_dir"],
-        replace=config["replace"]
-    )
+class predict_dataset(Dataset):
+    """A csv file with a path to image crop and label
+    Args:
+       crowns: geodataframe of crown locations from a single rasterio src
+       image_paths: list of image_paths
+    """
+    def __init__(self, crowns, image_paths, config=None):
+        #Load each tile into memory
+        self.tiles = []
+        self.crowns = crowns
+        self.config = config
+        
+        for x in image_paths:
+            src = rasterio.open(x)
+            self.tiles.append(src)
     
-    return annotations
-
+    def __len__(self):
+        #0th based index
+        return self.crowns.shape[0]
+        
+    def __getitem__(self, index):
+        bounds = self.crowns.geometry.iloc[index].bounds
+        individual = self.crowns.individual.iloc[index]
+        images = []
+        for x in self.tiles:
+            crop = patches.crop(bounds, rasterio_src=x)
+            if crop is None:
+                image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])      
+            else:
+                image = preprocess_image(crop, channel_is_first=True)
+                image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
+            images.append(image)
+        
+        inputs = {}
+        inputs["HSI"] = images
+        
+        return individual, inputs
+        
 def find_crowns(rgb_path, config, dead_model_path=None):
     crowns = predict_crowns(rgb_path)
     if crowns is None:
@@ -131,10 +155,12 @@ def find_crowns(rgb_path, config, dead_model_path=None):
     
     return filtered_crowns
 
-def predict_tile(crowns, annotations, species_model_path, config, savedir, RGB_year="2019", filter_dead=False):        
+def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_dead=False):        
     # Load species model
-    m = multi_stage.MultiStage.load_from_checkpoint(species_model_path)    
-    trees = predict_species(crowns=crowns, annotations=annotations, m=m, config=config)
+    m = multi_stage.MultiStage.load_from_checkpoint(species_model_path)
+    geo_index =  neon_paths.bounds_to_geoindex(crowns.geometry.iloc[0].bounds)
+    image_paths = neon_paths.find_sensor_path(lookup_pool = img_pool, geo_index=geo_index, all_years=True)
+    trees = predict_species(crowns=crowns, image_paths=image_paths, m=m, config=config)
 
     # Remove predictions for dead trees
     if filter_dead:
@@ -145,7 +171,8 @@ def predict_tile(crowns, annotations, species_model_path, config, savedir, RGB_y
     # Calculate crown area
     trees["crown_area"] = crowns.geometry.area
     trees = gpd.GeoDataFrame(trees, geometry="geometry")    
-    trees.to_file(os.path.join(savedir, "{}.shp".format(annotations.RGB_tile.unique()[0])))
+    basename = os.path.splitext(os.path.basename(crowns.RGB_tile.unique()[0]))[0]
+    trees.to_file(os.path.join(savedir, "{}.shp".format(basename)))
     
     return trees
 
@@ -176,10 +203,10 @@ def predict_crowns(PATH):
     
     return gdf
 
-def predict_species(crowns, annotations, m, config):
+def predict_species(crowns, image_paths, m, config):
     predict_datasets = []
     for level in range(m.levels):
-        ds = data.TreeDataset(df=annotations, train=False, config=config)
+        ds = predict_dataset(crowns=crowns, image_paths=image_paths, config=config)
         predict_datasets.append(ds)
 
     trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False)
