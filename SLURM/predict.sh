@@ -18,4 +18,4 @@ source activate DeepTreeAttention
 
 cd ~/DeepTreeAttention/
 module load git gcc
-python -m cProfile -o pin_memory.pstats predict.py
+python -m cProfile -o 1gpu.pstats predict.py

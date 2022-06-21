@@ -42,7 +42,7 @@ config = data.read_config("config.yml")
 config["workers"] = 0
 config["preload_images"] = False 
 
-gpu_client = start(gpus=2, mem_size="10GB")
+#gpu_client = start(gpus=2, mem_size="10GB")
 cpu_client = start(cpus=10, mem_size="8GB")
 species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt"
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
@@ -62,7 +62,7 @@ hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
 hyperspectral_pool = [x for x in hyperspectral_pool if not "neon-aop-products" in x]
 
 # Step 1 Find RGB Tiles and convert HSI
-tiles = find_rgb_files(site="OSBS", config=config)
+tiles = find_rgb_files(site="OSBS", config=config)[:1]
 tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir=config["HSI_tif_dir"])
 wait(tif_futures)
 
