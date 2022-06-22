@@ -60,7 +60,7 @@ except:
 #generate HSI_tif data if needed.
 h5_pool = glob(config["HSI_sensor_pool"], recursive=True)
 h5_pool = [x for x in h5_pool if not "neon-aop-products" in x]
-hyperspectral_pool = glob(config["HSI_tif_dir"])
+hyperspectral_pool = glob(config["HSI_tif_dir"]+"*")
 
 # Step 1 Find RGB Tiles and convert HSI
 tiles = find_rgb_files(site="OSBS", config=config)
