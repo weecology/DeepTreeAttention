@@ -166,7 +166,7 @@ def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_d
     m = multi_stage.MultiStage.load_from_checkpoint(species_model_path)
     year_paths = []
     for yr in m.years:
-        geo_index =  neon_paths.bounds_to_geoindex(crowns.geometry.bounds)
+        geo_index =  neon_paths.bounds_to_geoindex(crowns.geometry.total_bounds)
         image_paths = neon_paths.find_sensor_path(lookup_pool = img_pool, geo_index=geo_index, all_years=True)
         try:
             year_path = [x for x in image_paths if "_{}".format(yr) in x][0]
