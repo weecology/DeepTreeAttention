@@ -118,7 +118,10 @@ class predict_dataset(Dataset):
                 image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])      
             else:
                 src = rasterio.open(x)
-                crop = patches.crop(bounds, rasterio_src=src)
+                try:
+                    crop = patches.crop(bounds, rasterio_src=src)
+                except Exception as e:
+                    raise ValueError("Bounds don't match {} between geom {} and tile {}, tile list is {}".format(e, bounds, src.bounds, self.tiles))
                 if crop is None:
                     image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])      
                 else:
@@ -163,7 +166,7 @@ def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_d
     m = multi_stage.MultiStage.load_from_checkpoint(species_model_path)
     year_paths = []
     for yr in m.years:
-        geo_index =  neon_paths.bounds_to_geoindex(crowns.geometry.iloc[0].bounds)
+        geo_index =  neon_paths.bounds_to_geoindex(crowns.geometry.bounds)
         image_paths = neon_paths.find_sensor_path(lookup_pool = img_pool, geo_index=geo_index, all_years=True)
         try:
             year_path = [x for x in image_paths if "_{}".format(yr) in x][0]
