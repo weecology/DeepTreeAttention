@@ -10,7 +10,7 @@
 #SBATCH --output=/home/b.weinstein/logs/DeepTreeAttention_%j.out   # Standard output and error log
 #SBATCH --error=/home/b.weinstein/logs/DeepTreeAttention_%j.err
 #SBATCH --partition=gpu
-#SBATCH --gpus=3
+#SBATCH --gpus=1
 
 ulimit -c 0
 
@@ -18,4 +18,4 @@ source activate DeepTreeAttention
 
 cd ~/DeepTreeAttention/
 module load git gcc
-python -m cProfile -o 3gpu.pstats predict.py
+python -m cProfile -o larger_predict_batch.pstats predict.py
