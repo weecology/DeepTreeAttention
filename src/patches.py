@@ -11,6 +11,7 @@ def crop(bounds, sensor_path=None, savedir = None, basename = None, rasterio_src
     img = src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform)) 
     if img.size == 0:
         return None
+    
     res = src.res[0]
     height = (top - bottom)/res
     width = (right - left)/res      
