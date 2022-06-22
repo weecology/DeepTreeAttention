@@ -18,4 +18,4 @@ source activate DeepTreeAttention
 
 cd ~/DeepTreeAttention/
 module load git gcc
-python -m cProfile -o larger_predict_batch.pstats predict.py
+python -m cProfile -o single_batch.pstats predict.py
