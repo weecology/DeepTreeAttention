@@ -58,12 +58,17 @@ except:
     pass
     
 #generate HSI_tif data if needed.
-hyperspectral_pool = glob(config["HSI_sensor_pool"], recursive=True)
-hyperspectral_pool = [x for x in hyperspectral_pool if not "neon-aop-products" in x]
+h5_pool = glob(config["HSI_sensor_pool"], recursive=True)
+h5 = [x for x in h5 if not "neon-aop-products" in x]
+hyperspectral_pool = glob(config["HSI_tif_dir"])
 
 # Step 1 Find RGB Tiles and convert HSI
 tiles = find_rgb_files(site="OSBS", config=config)[:1]
-tif_futures = cpu_client.map(convert, tiles, hyperspectral_pool=hyperspectral_pool, savedir=config["HSI_tif_dir"])
+tif_futures = cpu_client.map(
+    convert,
+    tiles,
+    hyperspectral_pool=h5_pool,
+    savedir=config["HSI_tif_dir"])
 wait(tif_futures)
 
 # Step 2 - Predict Crowns
