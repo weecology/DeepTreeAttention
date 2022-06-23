@@ -102,7 +102,8 @@ class predict_dataset(Dataset):
         self.config = config
         
         for x in image_paths:
-            self.tiles.append(x)
+            src = rasterio.open(x)            
+            self.tiles.append(src)
     
     def __len__(self):
         #0th based index
@@ -116,11 +117,10 @@ class predict_dataset(Dataset):
             if x is None:
                 image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])      
             else:
-                src = rasterio.open(x)
                 try:
-                    crop = patches.crop(bounds, rasterio_src=src)
+                    crop = patches.crop(bounds, rasterio_src=x)
                 except Exception as e:
-                    raise ValueError("Bounds don't match {} between geom {} and tile {}, tile list is {}".format(e, bounds, src.bounds, self.tiles))
+                    raise ValueError("Bounds don't match {} between geom {} and tile {}, tile list is {}".format(e, bounds, x.bounds, self.tiles))
                 if crop is None:
                     image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])      
                 else:
