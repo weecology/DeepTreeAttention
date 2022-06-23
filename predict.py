@@ -6,7 +6,6 @@ import geopandas as gpd
 import pandas as pd
 from src.start_cluster import start
 from distributed import wait, as_completed
-from dask import dataframe
 import os
 import re
 import traceback

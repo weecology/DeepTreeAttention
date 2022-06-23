@@ -70,7 +70,6 @@ class on_the_fly_dataset(Dataset):
             
             image = preprocess_image(crop, channel_is_first=True)
             image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
-
             inputs[self.data_type] = image
             
             return individual, inputs

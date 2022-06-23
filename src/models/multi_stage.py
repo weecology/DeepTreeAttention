@@ -45,6 +45,8 @@ class MultiStage(LightningModule):
         self.train_df = train_df
         self.test_df = test_df
     
+    def prepare_training(self):
+        """Divide train test split"""
         self.train_datasets, self.test_datasets = self.create_datasets()
         self.levels = len(self.train_datasets)       
     
@@ -68,7 +70,8 @@ class MultiStage(LightningModule):
             pname = 'loss_weight_{}'.format(index)            
             self.register_buffer(pname, loss_weight)
 
-        self.save_hyperparameters(ignore=["loss_weight"])        
+        self.save_hyperparameters(ignore=["loss_weight"]) 
+        
     def create_datasets(self):
         #Create levels for each year
         ## Level 0     
