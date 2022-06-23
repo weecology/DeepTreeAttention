@@ -43,7 +43,7 @@ config["preload_images"] = False
 
 gpu_client = start(gpus=2, mem_size="10GB")
 cpu_client = start(cpus=10, mem_size="8GB")
-species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt"
+species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ad5c8b0576a54071a1bed72662402fb2.pt"
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1"
 savedir = config["crop_dir"] 
