@@ -10,10 +10,15 @@ def test_MultiStage(dm, config):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train,crowns=dm.crowns, config=config)
     m.prepare_training()
     
-def test_fit(config, dm):
+def test_fit(config, dm, tmpdir):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
-    trainer = Trainer(fast_dev_run=True)
+    trainer = Trainer(fast_dev_run=True, limit_train_batches=1)
     trainer.fit(m)
+    
+    trainer.save_checkpoint("{}/test_model.pl".format(tmpdir))
+    config["preload_images"] = False
+    m2 = multi_stage.MultiStage.load_from_checkpoint("{}/test_model.pl".format(tmpdir), config=config)
+    assert m2.config["preload_images"] is False
 
 def test_gather_predictions(config, dm, experiment):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
