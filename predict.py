@@ -84,7 +84,7 @@ for x in as_completed(crown_futures):
     try:
         crowns = x.result()
         ensemble_df = predict.predict_tile(
-            crowns=crowns[:500],
+            crowns=crowns[:10000],
             img_pool=hyperspectral_pool,
             filter_dead=True,
             species_model_path=species_model_path,
