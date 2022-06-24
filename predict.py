@@ -9,6 +9,7 @@ from distributed import wait, as_completed
 import os
 import re
 import traceback
+from pytorch_lightning.loggers import CometLogger
 
 def find_rgb_files(site, config, year="2021"):
     tiles = glob(config["rgb_sensor_pool"], recursive=True)
@@ -38,10 +39,12 @@ def convert(rgb_path, hyperspectral_pool, savedir):
 #Params
 #No daemonic dask children
 config = data.read_config("config.yml")
-config["workers"] = 0
-config["preload_images"] = False 
 
-gpu_client = start(gpus=2, mem_size="10GB")
+comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
+comet_logger.experiment.add_tag("prediction")
+
+
+gpu_client = start(gpus=10, mem_size="10GB")
 cpu_client = start(cpus=10, mem_size="8GB")
 species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt"
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
@@ -79,17 +82,18 @@ crown_futures = gpu_client.map(
 )
     
 # Step 3 - Crop Crowns
-crop_futures = []
+predict_futures = []
 for x in as_completed(crown_futures):
     try:
         crowns = x.result()
-        ensemble_df = predict.predict_tile(
-            crowns=crowns[:1000],
+        predict_future = gpu_client.submit(predict.predict_tile,
+            crowns=crowns,
             img_pool=hyperspectral_pool,
             filter_dead=True,
             species_model_path=species_model_path,
             savedir=prediction_dir,
             config=config)
+        predict_futures.append(predict_future)
     except Exception as e:
         print(e)
         traceback.print_exc()
@@ -97,3 +101,4 @@ for x in as_completed(crown_futures):
     if crowns is None:
         continue
 
+wait(predict_futures)
