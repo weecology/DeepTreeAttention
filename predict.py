@@ -43,8 +43,7 @@ config = data.read_config("config.yml")
 comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
 comet_logger.experiment.add_tag("prediction")
 
-
-gpu_client = start(gpus=10, mem_size="10GB")
+gpu_client = start(gpus=1, mem_size="10GB")
 cpu_client = start(cpus=10, mem_size="8GB")
 species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt"
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
@@ -87,7 +86,7 @@ for x in as_completed(crown_futures):
     try:
         crowns = x.result()
         predict_future = gpu_client.submit(predict.predict_tile,
-            crowns=crowns,
+            crowns=crowns[:100],
             img_pool=hyperspectral_pool,
             filter_dead=True,
             species_model_path=species_model_path,

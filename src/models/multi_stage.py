@@ -297,7 +297,7 @@ class MultiStage(LightningModule):
         
         return {"individual":individual, "yhat":y_hat, "label":y}  
     
-    def predict_step(self, batch, batch_idx, dataloader_idx):
+    def predict_step(self, batch, batch_idx, dataloader_idx=0):
         """Calculate predictions
         """
         individual, inputs = batch
@@ -351,7 +351,29 @@ class MultiStage(LightningModule):
     
             for key, value in species_table.set_index("taxonID").precision.to_dict().items():
                 self.log("Epoch_{}_precision".format(key), value)
-                    
+    
+    def format_level(self, level, index, label_to_taxonIDs):
+        individuals = np.concatenate([x[0] for x in level])
+        predictions = np.concatenate([x[1] for x in level])
+        
+        #Create dataframe
+        predictions_top1 = np.argmax(predictions, 1)    
+        predictions_top2 = pd.DataFrame(predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
+        top1_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[0], axis=1)
+        top2_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[1], axis=1)
+        
+        df = pd.DataFrame({
+            "pred_label_top1_level_{}".format(index):predictions_top1,
+            "pred_label_top2_level_{}".format(index):predictions_top2,
+            "top1_score_level_{}".format(index):top1_score,
+            "top2_score_level_{}".format(index):top2_score,
+            "individual":individuals
+        })
+        df["pred_taxa_top1_level_{}".format(index)] = df["pred_label_top1_level_{}".format(index)].apply(lambda x: label_to_taxonIDs[x]) 
+        df["pred_taxa_top2_level_{}".format(index)] = df["pred_label_top2_level_{}".format(index)].apply(lambda x: label_to_taxonIDs[x]) 
+        
+        return df
+        
     def gather_predictions(self, predict_df, return_features=False):
         """Post-process the predict method to create metrics"""
         if return_features: 
@@ -362,25 +384,7 @@ class MultiStage(LightningModule):
         
         level_results = []
         for index, level in enumerate(predict_df):
-            # Concat batches            
-            individuals = np.concatenate([x[0] for x in level])
-            predictions = np.concatenate([x[1] for x in level])
-            
-            #Create dataframe
-            predictions_top1 = np.argmax(predictions, 1)    
-            predictions_top2 = pd.DataFrame(predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
-            top1_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[0], axis=1)
-            top2_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[1], axis=1)
-            
-            df = pd.DataFrame({
-                "pred_label_top1_level_{}".format(index):predictions_top1,
-                "pred_label_top2_level_{}".format(index):predictions_top2,
-                "top1_score_level_{}".format(index):top1_score,
-                "top2_score_level_{}".format(index):top2_score,
-                "individual":individuals
-            })
-            df["pred_taxa_top1_level_{}".format(index)] = df["pred_label_top1_level_{}".format(index)].apply(lambda x: self.label_to_taxonIDs[index][x]) 
-            df["pred_taxa_top2_level_{}".format(index)] = df["pred_label_top2_level_{}".format(index)].apply(lambda x: self.label_to_taxonIDs[index][x])        
+            df = self.format_level(level, index, label_to_taxonIDs=self.label_to_taxonIDs[index])            
             level_results.append(df)
         
         results = reduce(lambda  left,right: pd.merge(left,right,on=['individual'],
@@ -418,8 +422,12 @@ class MultiStage(LightningModule):
         results["ens_label"] = ensemble_label
         
         #Also add the broadleaf - conifer
-        results["leaf_type"] = row["pred_taxa_top1_level_1"]
-        results["leaf_type_score"] = row["top1_score_level_1"]
+        try:
+            results["leaf_type"] = row["pred_taxa_top1_level_1"]
+            results["leaf_type_score"] = row["top1_score_level_1"]
+        except:
+            results["leaf_type"] = None
+            results["leaf_type_score"] = None         
         
         return results[["individualID","ens_score","ensembleTaxonID","ens_label"]]
             
