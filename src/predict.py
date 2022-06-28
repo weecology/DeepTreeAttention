@@ -118,10 +118,7 @@ class predict_dataset(Dataset):
             if x is None:
                 image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])      
             else:
-                try:
-                    crop = patches.crop(bounds, rasterio_src=x)
-                except Exception as e:
-                    raise ValueError("Bounds don't match {} between geom {} and tile {}, tile list is {}".format(e, bounds, x.bounds, self.tiles))
+                crop = patches.crop(bounds, rasterio_src=x)
                 if crop is None:
                     image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])      
                 else:
@@ -178,9 +175,9 @@ def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_d
 
     # Remove predictions for dead trees
     if filter_dead:
-        trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"pred_taxa_top1"] = "DEAD"
-        trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"pred_label_top1"] = None
-        trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"top1_score"] = None
+        trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"ensembleTaxonID"] = "DEAD"
+        trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"ens_label"] = None
+        trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"ens_score"] = None
         
     # Calculate crown area
     trees["crown_area"] = crowns.geometry.area
@@ -240,7 +237,7 @@ def predict_species(crowns, image_paths, m, config):
 
     # Level 2 Within Broadleaf                
     try:
-        remaining_crowns = results_1[~(results_1["pred_taxa_top1_level_1"]=="BROADLEAF")].individual
+        remaining_crowns = results_1[results_1["pred_taxa_top1_level_1"]=="BROADLEAF"].individual
     except:
         remaining_crowns = []
         
@@ -280,8 +277,7 @@ def predict_species(crowns, image_paths, m, config):
     crowns = results.merge(crowns, on="individual")
     ensemble_df = m.ensemble(results)
     crowns = crowns.loc[:,crowns.columns.isin(["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score","RGB_tile"])]
-    crowns["individualID"] = crowns["individual"]
-    ensemble_df = ensemble_df.merge(crowns, on="individualID")
+    ensemble_df = ensemble_df.merge(crowns, on="individual")
     
     return ensemble_df
 

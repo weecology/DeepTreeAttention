@@ -429,7 +429,7 @@ class MultiStage(LightningModule):
             results["leaf_type"] = None
             results["leaf_type_score"] = None         
         
-        return results[["individualID","ens_score","ensembleTaxonID","ens_label"]]
+        return results[["individual","ens_score","ensembleTaxonID","ens_label"]]
             
     def evaluation_scores(self, ensemble_df, experiment):   
         ensemble_df = ensemble_df.merge(self.test_df, on="individualID")

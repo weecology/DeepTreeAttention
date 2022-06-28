@@ -95,6 +95,8 @@ for x in as_completed(crown_futures):
             config=config)
     except Exception as e:
         print(e)
+        traceback.print_exc()
+        
         #predict_futures.append(predict_future)
         
         #predict_future = gpu_client.submit(predict.predict_tile,
