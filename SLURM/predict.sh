@@ -18,4 +18,4 @@ source activate DeepTreeAttention
 
 cd ~/DeepTreeAttention/
 module load git gcc
-python -m cProfile -o 1gpu_1024_batch_deepforest_512.pstats predict.py
+python -m cProfile -o dask.pstats predict.py
