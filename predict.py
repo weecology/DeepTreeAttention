@@ -93,6 +93,8 @@ for x in as_completed(crown_futures):
             species_model_path=species_model_path,
             savedir=prediction_dir,
             config=config)
+    except Exception as e:
+        print(e)
         #predict_futures.append(predict_future)
         
         #predict_future = gpu_client.submit(predict.predict_tile,
@@ -110,4 +112,4 @@ for x in as_completed(crown_futures):
     #if crowns is None:
         #continue
 
-wait(predict_futures)
+#wait(predict_futures)
