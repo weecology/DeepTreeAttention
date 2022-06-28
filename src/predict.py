@@ -6,7 +6,7 @@ import geopandas as gpd
 import numpy as np
 import os
 import rasterio
-import re
+import pandas as pd
 from src.models import dead
 from src import neon_paths
 from src.utils import preprocess_image
@@ -18,6 +18,7 @@ from torchvision import transforms
 import torch
 from torch.utils.data.dataloader import default_collate
 from pytorch_lightning import Trainer
+from functools import reduce
 
 def RGB_transform(augment):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -218,15 +219,64 @@ def predict_crowns(PATH):
     return gdf
 
 def predict_species(crowns, image_paths, m, config):
-    predict_datasets = []
-    for level in range(m.levels):
-        ds = predict_dataset(crowns=crowns, image_paths=image_paths, config=config)
-        predict_datasets.append(ds)
-
+    """Compute hierarchical prediction without predicting unneeded levels"""
+    
+    #Recursive predict to avoid prediction levels that will be later ignored.
     trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False)
-    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
-    results = m.gather_predictions(predictions)
-    results["individualID"] = results["individual"]
+    
+    # Level 0 PIPA v all
+    ds = predict_dataset(crowns=crowns, image_paths=image_paths, config=config)   
+    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))    
+    results = m.gather_predictions([predictions])
+    
+    # Level 1 Needleleaf v Broadleaf
+    remaining_crowns = results[~(results["pred_taxa_top1_level_0"]=="PIPA2")].individual
+    if len(remaining_crowns) > 0:
+        level1_crowns = crowns[crowns.individual.isin(remaining_crowns)]
+        ds = predict_dataset(crowns=level1_crowns, image_paths=image_paths, config=config)    
+        predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
+        results_1 = m.format_level(predictions, index=1, label_to_taxonIDs=m.label_to_taxonIDs[1])
+        results = results.merge(results_1,on="individual", how="outer")
+
+    # Level 2 Within Broadleaf                
+    try:
+        remaining_crowns = results_1[~(results_1["pred_taxa_top1_level_1"]=="BROADLEAF")].individual
+    except:
+        remaining_crowns = []
+        
+    if len(remaining_crowns) > 0: 
+        level2_crowns = crowns[crowns.individual.isin(remaining_crowns)]
+        ds = predict_dataset(crowns=level2_crowns, image_paths=image_paths, config=config)    
+        predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
+        results_2 = m.format_level(predictions, index=2, label_to_taxonIDs=m.label_to_taxonIDs[2])
+        results = results.merge(results_2,on="individual", how="outer")
+        
+    # Level 3 Within CONFIFER    
+    try:
+        remaining_crowns = results_1[~(results_1["pred_taxa_top1_level_1"]=="CONIFER")].individual
+    except:
+        remaining_crowns = []
+        
+    if len(remaining_crowns) > 0:
+        level3_crowns = crowns[crowns.individual.isin(remaining_crowns)]
+        ds = predict_dataset(crowns=level3_crowns, image_paths=image_paths, config=config)    
+        predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
+        results_3 = m.format_level(predictions, index=3, label_to_taxonIDs=m.label_to_taxonIDs[3])
+        results = results.merge(results_3,on="individual", how="outer")
+
+    # Level 4 Within OAK
+    try:
+        remaining_crowns = results_2[~(results_2["pred_taxa_top1_level_2"]=="OAK")].individual
+    except:
+        remaining_crowns = []
+        
+    if len(remaining_crowns) > 0:
+        level4_crowns = crowns[crowns.individual.isin(remaining_crowns)]
+        ds = predict_dataset(crowns=level4_crowns, image_paths=image_paths, config=config)    
+        predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
+        results_4 = m.format_level(predictions, index=4, label_to_taxonIDs=m.label_to_taxonIDs[4])
+        results = results.merge(results_4,on="individual", how="outer")
+
     crowns = results.merge(crowns, on="individual")
     ensemble_df = m.ensemble(results)
     crowns = crowns.loc[:,crowns.columns.isin(["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score","RGB_tile"])]
