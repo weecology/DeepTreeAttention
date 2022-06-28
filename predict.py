@@ -64,7 +64,7 @@ h5_pool = [x for x in h5_pool if not "neon-aop-products" in x]
 hyperspectral_pool = glob(config["HSI_tif_dir"]+"*")
 
 # Step 1 Find RGB Tiles and convert HSI
-tiles = find_rgb_files(site="OSBS", config=config)[:2]
+tiles = find_rgb_files(site="OSBS", config=config)[:10]
 tif_futures = cpu_client.map(
     convert,
     tiles,
@@ -81,23 +81,33 @@ crown_futures = gpu_client.map(
 )
     
 # Step 3 - Crop Crowns
+
 predict_futures = []
 for x in as_completed(crown_futures):
     try:
         crowns = x.result()
-        predict_future = gpu_client.submit(predict.predict_tile,
-            crowns=crowns[:100],
+        predict.predict_tile(
+            crowns=crowns[:1000],
             img_pool=hyperspectral_pool,
             filter_dead=True,
             species_model_path=species_model_path,
             savedir=prediction_dir,
             config=config)
-        predict_futures.append(predict_future)
-    except Exception as e:
-        print(e)
-        traceback.print_exc()
-        continue
-    if crowns is None:
-        continue
+        #predict_futures.append(predict_future)
+        
+        #predict_future = gpu_client.submit(predict.predict_tile,
+            #crowns=crowns[:100],
+            #img_pool=hyperspectral_pool,
+            #filter_dead=True,
+            #species_model_path=species_model_path,
+            #savedir=prediction_dir,
+            #config=config)
+        #predict_futures.append(predict_future)
+    #except Exception as e:
+        #print(e)
+        #traceback.print_exc()
+        #continue
+    #if crowns is None:
+        #continue
 
 wait(predict_futures)
