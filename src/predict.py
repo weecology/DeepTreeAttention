@@ -224,7 +224,8 @@ def predict_species(crowns, image_paths, m, config):
     trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False)
     
     # Level 0 PIPA v all
-    ds = predict_dataset(crowns=crowns, image_paths=image_paths, config=config)   
+    ds = predict_dataset(crowns=crowns, image_paths=image_paths, config=config)
+    m.current_level = 0
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))    
     results = m.gather_predictions([predictions])
     print("{} crowns for level 0".format(len(ds)))
@@ -232,6 +233,7 @@ def predict_species(crowns, image_paths, m, config):
     # Level 1 Needleleaf v Broadleaf
     remaining_crowns = results[~(results["pred_taxa_top1_level_0"]=="PIPA2")].individual
     if len(remaining_crowns) > 0:
+        m.current_level = 1        
         print("{} crowns for level 1".format(len(remaining_crowns)))
         level1_crowns = crowns[crowns.individual.isin(remaining_crowns)]
         ds = predict_dataset(crowns=level1_crowns, image_paths=image_paths, config=config)    
@@ -246,6 +248,7 @@ def predict_species(crowns, image_paths, m, config):
         remaining_crowns = []
         
     if len(remaining_crowns) > 0: 
+        m.current_level = 2        
         print("{} crowns for level 2".format(len(remaining_crowns)))        
         level2_crowns = crowns[crowns.individual.isin(remaining_crowns)]
         ds = predict_dataset(crowns=level2_crowns, image_paths=image_paths, config=config)    
@@ -260,6 +263,7 @@ def predict_species(crowns, image_paths, m, config):
         remaining_crowns = []
         
     if len(remaining_crowns) > 0:
+        m.current_level = 3        
         print("{} crowns for level 3".format(len(remaining_crowns)))                
         level3_crowns = crowns[crowns.individual.isin(remaining_crowns)]
         ds = predict_dataset(crowns=level3_crowns, image_paths=image_paths, config=config)    
@@ -274,6 +278,7 @@ def predict_species(crowns, image_paths, m, config):
         remaining_crowns = []
         
     if len(remaining_crowns) > 0:
+        m.current_level = 4        
         print("{} crowns for level 4".format(len(remaining_crowns)))                
         level4_crowns = crowns[crowns.individual.isin(remaining_crowns)]
         ds = predict_dataset(crowns=level4_crowns, image_paths=image_paths, config=config)    
