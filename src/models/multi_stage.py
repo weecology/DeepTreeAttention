@@ -44,6 +44,7 @@ class MultiStage(LightningModule):
         self.label_to_taxonIDs = []   
         self.train_df = train_df
         self.test_df = test_df
+        self.current_level = None
         
         """Divide train test split"""
         self.train_datasets, self.test_datasets = self.create_datasets()
@@ -298,11 +299,16 @@ class MultiStage(LightningModule):
         return {"individual":individual, "yhat":y_hat, "label":y}  
     
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
-        """Calculate predictions
+        """Calculate predictions, optionally extract just one level. Set self.current level, else it will take the index from list of dataloader
         """
+        if self.current_level:
+            level = self.current_level
+        else:
+            level = dataloader_idx
+        
         individual, inputs = batch
         images = inputs["HSI"]  
-        y_hat = self.models[dataloader_idx].forward(images)
+        y_hat = self.models[level].forward(images)
         y_hat = F.softmax(y_hat, dim=1)
         
         return individual, y_hat
