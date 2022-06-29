@@ -49,7 +49,7 @@ evergreen_ceiling: 70
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
 preload_images: False
-workers: 10
+workers: 30
 sampling_ceiling: 200
 #Network Parameters
 pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e24fd72a0924c87a28dfb6c804d7b7c.pt
