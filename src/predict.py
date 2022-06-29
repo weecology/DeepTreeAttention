@@ -255,7 +255,7 @@ def predict_species(crowns, image_paths, m, config):
         
     # Level 3 Within CONFIFER    
     try:
-        remaining_crowns = results_1[~(results_1["pred_taxa_top1_level_1"]=="CONIFER")].individual
+        remaining_crowns = results_1[results_1["pred_taxa_top1_level_1"]=="CONIFER"].individual
     except:
         remaining_crowns = []
         
@@ -269,7 +269,7 @@ def predict_species(crowns, image_paths, m, config):
 
     # Level 4 Within OAK
     try:
-        remaining_crowns = results_2[~(results_2["pred_taxa_top1_level_2"]=="OAK")].individual
+        remaining_crowns = results_2[results_2["pred_taxa_top1_level_2"]=="OAK"].individual
     except:
         remaining_crowns = []
         
