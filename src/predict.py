@@ -103,8 +103,8 @@ class predict_dataset(Dataset):
         self.config = config
         
         for x in image_paths:
-            src = rasterio.open(x)            
-            self.tiles.append(src)
+            #src = rasterio.open(x)            
+            self.tiles.append(x)
     
     def __len__(self):
         #0th based index
@@ -118,7 +118,7 @@ class predict_dataset(Dataset):
             if x is None:
                 image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])      
             else:
-                crop = patches.crop(bounds, rasterio_src=x)
+                crop = patches.crop(bounds, sensor_path=x)
                 if crop is None:
                     image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])      
                 else:
