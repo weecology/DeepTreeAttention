@@ -173,7 +173,7 @@ def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_d
             year_path = None
         year_paths.append(year_path)
     
-    if not len(image_paths) == len(m.years):
+    if not len(year_paths) == len(m.years):
         raise ValueError("images paths {} does not match list of year models {}".format(image_paths, m.years))
     
     trees = predict_species(crowns=crowns, image_paths=year_paths, m=m, config=config)
