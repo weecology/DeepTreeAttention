@@ -166,13 +166,16 @@ def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_d
     year_paths = []
     for yr in m.years:
         geo_index =  neon_paths.bounds_to_geoindex(crowns.geometry.total_bounds)
-        image_paths = neon_paths.find_sensor_path(lookup_pool = img_pool, geo_index=geo_index, all_years=True)
+        image_paths = neon_paths.find_sensor_path(lookup_pool=img_pool, geo_index=geo_index, all_years=True)
         try:
             year_path = [x for x in image_paths if "_{}".format(yr) in x][0]
         except:
             year_path = None
         year_paths.append(year_path)
-        
+    
+    if not len(image_paths) == len(m.years):
+        raise ValueError("images paths {} does not match list of year models {}".format(image_paths, m.years))
+    
     trees = predict_species(crowns=crowns, image_paths=image_paths, m=m, config=config)
 
     # Remove predictions for dead trees
@@ -227,7 +230,7 @@ def predict_species(crowns, image_paths, m, config):
     ds = predict_dataset(crowns=crowns, image_paths=image_paths, config=config)
     m.current_level = 0
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))    
-    results = m.gather_predictions([predictions])
+    results = m.gather_predictions([predictions]).cd
     print("{} crowns for level 0".format(len(ds)))
     
     # Level 1 Needleleaf v Broadleaf
