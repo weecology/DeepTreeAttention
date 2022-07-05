@@ -8,6 +8,7 @@ from sklearn import preprocessing
 import torch
 import yaml
 import warnings
+from torch.utils.data.dataloader import default_collate
 
 def read_config(config_path):
     """Read config yaml file"""
@@ -64,3 +65,8 @@ def load_image(img_path, image_size):
     image = transforms.functional.resize(image, size=(image_size,image_size), interpolation=transforms.InterpolationMode.NEAREST)
     
     return image
+
+def my_collate(batch):
+    batch = [x for x in batch if x[1] is not None]
+    
+    return default_collate(batch)

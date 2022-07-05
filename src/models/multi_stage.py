@@ -2,6 +2,7 @@
 from functools import reduce
 from src.models.year import learned_ensemble
 from src.data import TreeDataset
+from src import utils
 from pytorch_lightning import LightningModule
 import pandas as pd
 import numpy as np
@@ -245,6 +246,7 @@ class MultiStage(LightningModule):
                 batch_size=self.config["predict_batch_size"],
                 shuffle=False,
                 num_workers=self.config["workers"],
+                collate_fn=utils.my_collate
             )
             data_loaders.append(data_loader)
         
@@ -308,6 +310,7 @@ class MultiStage(LightningModule):
         
         individual, inputs = batch
         images = inputs["HSI"]  
+                
         y_hat = self.models[level].forward(images)
         y_hat = F.softmax(y_hat, dim=1)
         

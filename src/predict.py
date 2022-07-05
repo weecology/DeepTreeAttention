@@ -16,7 +16,6 @@ from src.models import multi_stage
 from torch.utils.data import Dataset
 from torchvision import transforms
 import torch
-from torch.utils.data.dataloader import default_collate
 from pytorch_lightning import Trainer
 from functools import reduce
 
@@ -85,10 +84,6 @@ class on_the_fly_dataset(Dataset):
             
             return image
         
-def my_collate(batch):
-    batch = [x for x in batch if x[1] is not None]
-    
-    return default_collate(batch)
 
 class predict_dataset(Dataset):
     """A csv file with a path to image crop and label
@@ -128,6 +123,9 @@ class predict_dataset(Dataset):
         
         inputs = {}
         inputs["HSI"] = images
+        
+        if all([x.sum() == 0 for x in images]):
+            return individual, None
         
         return individual, inputs
         
