@@ -84,7 +84,9 @@ crown_futures = gpu_client.map(
 predict_futures = []
 for x in as_completed(crown_futures):
     try:
-        crowns = x.result()        
+        crowns = x.result()       
+        if crowns is None:
+            continue        
         predict_future = gpu_client.submit(predict.predict_tile,
             crowns=crowns,
             img_pool=hyperspectral_pool,
@@ -97,7 +99,14 @@ for x in as_completed(crown_futures):
         print(e)
         traceback.print_exc()
         continue
-    if crowns is None:
-        continue
 
 wait(predict_futures)
+
+for x in predict_futures:
+    try:
+        predicted_trees = x.result()
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        continue        
+        
