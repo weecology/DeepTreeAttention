@@ -81,37 +81,23 @@ crown_futures = gpu_client.map(
 )
     
 # Step 3 - Crop Crowns
-
 predict_futures = []
 for x in as_completed(crown_futures):
     try:
-        crowns = x.result()
-        predict.predict_tile(
+        crowns = x.result()        
+        predict_future = gpu_client.submit(predict.predict_tile,
             crowns=crowns,
             img_pool=hyperspectral_pool,
             filter_dead=True,
             species_model_path=species_model_path,
             savedir=prediction_dir,
             config=config)
+        predict_futures.append(predict_future)
     except Exception as e:
         print(e)
         traceback.print_exc()
-        
-        #predict_futures.append(predict_future)
-        
-        #predict_future = gpu_client.submit(predict.predict_tile,
-            #crowns=crowns[:100],
-            #img_pool=hyperspectral_pool,
-            #filter_dead=True,
-            #species_model_path=species_model_path,
-            #savedir=prediction_dir,
-            #config=config)
-        #predict_futures.append(predict_future)
-    #except Exception as e:
-        #print(e)
-        #traceback.print_exc()
-        #continue
-    #if crowns is None:
-        #continue
+        continue
+    if crowns is None:
+        continue
 
-#wait(predict_futures)
+wait(predict_futures)
