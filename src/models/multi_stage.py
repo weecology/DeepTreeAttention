@@ -428,15 +428,7 @@ class MultiStage(LightningModule):
         
         results["ensembleTaxonID"] = ensemble_taxonID
         results["ens_score"] = ensemble_score
-        results["ens_label"] = ensemble_label
-        
-        #Also add the broadleaf - conifer
-        try:
-            results["leaf_type"] = row["pred_taxa_top1_level_1"]
-            results["leaf_type_score"] = row["top1_score_level_1"]
-        except:
-            results["leaf_type"] = None
-            results["leaf_type_score"] = None         
+        results["ens_label"] = ensemble_label   
         
         return results
             
