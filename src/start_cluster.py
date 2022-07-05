@@ -65,7 +65,6 @@ def start(cpus=0, gpus=0, mem_size="10GB"):
                                walltime='24:00:00',
                                job_extra=extra_args,
                                extra=['--resources cpu=1'],
-                               nanny=False,
                                scheduler_options={"dashboard_address": ":8781"},
                                local_directory="/orange/idtrees-collab/tmp/",
                                death_timeout=300)
@@ -87,6 +86,7 @@ def start(cpus=0, gpus=0, mem_size="10GB"):
                                walltime='24:00:00',
                                job_extra=extra_args,
                                extra=['--resources gpu=1'],
+                               nanny=False,
                                scheduler_options={"dashboard_address": ":8787"},
                                local_directory="/orange/idtrees-collab/tmp/",
                                death_timeout=300)
