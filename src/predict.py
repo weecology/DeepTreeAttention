@@ -17,7 +17,6 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 import torch
 from pytorch_lightning import Trainer
-from functools import reduce
 
 def RGB_transform(augment):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
