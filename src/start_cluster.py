@@ -81,7 +81,7 @@ def start(cpus=0, gpus=0, mem_size="10GB"):
         ]
 
         cluster = SLURMCluster(processes=1,
-                               cores=1,
+                               cores=30,
                                memory=mem_size,
                                walltime='24:00:00',
                                job_extra=extra_args,
@@ -90,7 +90,7 @@ def start(cpus=0, gpus=0, mem_size="10GB"):
                                scheduler_options={"dashboard_address": ":8787"},
                                local_directory="/orange/idtrees-collab/tmp/",
                                death_timeout=300)
-
+        print(cluster.job_script())
         cluster.scale(gpus)
 
     dask_client = Client(cluster)
