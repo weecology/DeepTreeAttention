@@ -28,64 +28,7 @@ def RGB_transform(augment):
     if augment:
         data_transforms.append(transforms.RandomHorizontalFlip(0.5))
     return transforms.Compose(data_transforms)
-
-class on_the_fly_dataset(Dataset):
-    """A csv file with a path to image crop and label
-    Args:
-       crowns: geodataframe of crown locations from a single rasterio src
-       image_path: .tif file location
-    """
-    def __init__(self, crowns, image_path, data_type="HSI", config=None):
-        self.config = config 
-        self.crowns = crowns
-        self.image_size = config["image_size"]
-        self.data_type = data_type
         
-        if data_type == "HSI":
-            self.HSI_src = rasterio.open(image_path)
-        elif data_type == "RGB":
-
-        else:
-            raise ValueError("data_type is {}, only HSI and RGB data types are currently allowed".format(data_type))
-        
-    def __len__(self):
-        #0th based index
-        return self.crowns.shape[0]
-        
-    def __getitem__(self, index):
-        inputs = {}
-        #Load crown and crop
-        self.RGB_src = rasterio.open(image_path)
-        self.transform = RGB_transform(augment=False)
-        
-        geom = self.crowns.iloc[index].geometry
-        individual = self.crowns.iloc[index].individual
-        left, bottom, right, top = geom.bounds
-            
-        #preprocess and batch
-        if self.data_type =="HSI":
-            crop = self.HSI_src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=self.HSI_src.transform))             
-        
-            if crop.size == 0:
-                return individual, None
-            
-            image = preprocess_image(crop, channel_is_first=True)
-            image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)
-            inputs[self.data_type] = image
-            
-            return individual, inputs
-        
-        elif self.data_type=="RGB":
-            #Expand RGB
-            box = self.RGB_src.read(window=rasterio.windows.from_bounds(left-1, bottom-1, right+1, top+1, transform=self.RGB_src.transform))             
-            #Channels last
-            box = np.rollaxis(box,0,3)
-            image = self.transform(box.astype(np.float32))
-            image = image
-            
-            return image
-        
-
 class predict_dataset(Dataset):
     """A csv file with a path to image crop and label
     Args:
@@ -297,7 +240,7 @@ def predict_species(crowns, image_paths, m, config):
 
 def predict_dead(crowns, dead_model_path, rgb_tile, config):
     dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path, config=config)
-    ds = on_the_fly_dataset(crowns=crowns, image_path=rgb_tile, config=config, data_type="RGB")
+    ds = dead.utm_dataset(crowns=crowns, image_path=rgb_tile, config=config)
     label, score = dead.predict_dead_dataloader(dead_model, ds, config)
     
     return label, score
