@@ -192,8 +192,8 @@ def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_d
 def predict_crowns(PATH):
     """Predict a set of tree crowns from RGB data"""
     m = main.deepforest()
-    m.config["batch_size"] = 512
     if torch.cuda.is_available():
+        print("CUDA detected")
         m.config["gpus"] = 1
     m.use_release(check_release=False)
     boxes = m.predict_tile(PATH)
