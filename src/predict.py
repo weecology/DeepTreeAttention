@@ -44,8 +44,7 @@ class on_the_fly_dataset(Dataset):
         if data_type == "HSI":
             self.HSI_src = rasterio.open(image_path)
         elif data_type == "RGB":
-            self.RGB_src = rasterio.open(image_path)
-            self.transform = RGB_transform(augment=False)
+
         else:
             raise ValueError("data_type is {}, only HSI and RGB data types are currently allowed".format(data_type))
         
@@ -56,6 +55,9 @@ class on_the_fly_dataset(Dataset):
     def __getitem__(self, index):
         inputs = {}
         #Load crown and crop
+        self.RGB_src = rasterio.open(image_path)
+        self.transform = RGB_transform(augment=False)
+        
         geom = self.crowns.iloc[index].geometry
         individual = self.crowns.iloc[index].individual
         left, bottom, right, top = geom.bounds

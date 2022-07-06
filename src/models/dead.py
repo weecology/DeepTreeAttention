@@ -135,7 +135,6 @@ class utm_dataset(Dataset):
     """A csv file with a path to image crop and label
     Args:
        crowns: geodataframe of crown locations from a single rasterio src
-       image_path: .tif file location
     """
     def __init__(self, crowns, config=None):
         self.config = config 
