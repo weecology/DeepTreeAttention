@@ -64,7 +64,9 @@ h5_pool = [x for x in h5_pool if not "neon-aop-products" in x]
 hyperspectral_pool = glob(config["HSI_tif_dir"]+"*")
 
 # Step 1 Find RGB Tiles and convert HSI
-tiles = find_rgb_files(site="OSBS", config=config)[:2]
+#tiles = find_rgb_files(site="OSBS", config=config)[:2]
+tiles = ["/orange/ewhite/NeonData/OSBS/DP3.30010.001/2021/FullSite/D03/2021_OSBS_6/L3/Camera/Mosaic/2021_OSBS_6_401000_3282000_image.tif"]
+
 tif_futures = cpu_client.map(
     convert,
     tiles,
