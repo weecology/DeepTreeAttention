@@ -76,8 +76,13 @@ wait(tif_futures)
 # Step 2 - Predict Crowns
 tile_crowns = []
 for x in tiles:
-    crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)
-    tile_crowns.append(crowns)
+    try:
+        crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)
+        tile_crowns.append(crowns)
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        continue                
     
 # Step 3 - Crop Crowns
 predict_futures = []
