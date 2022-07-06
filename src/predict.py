@@ -94,9 +94,7 @@ def find_crowns(rgb_path, config, dead_model_path=None):
         raise ValueError("No crowns left after CHM filter. {}".format(crowns.head(n=10)))
     
     if dead_model_path:
-        dead_config = config.copy()
-        dead_config["workers"] = 0
-        dead_label, dead_score = predict_dead(crowns=filtered_crowns, dead_model_path=dead_model_path, rgb_tile=rgb_path, config=dead_config)
+        dead_label, dead_score = predict_dead(crowns=filtered_crowns, dead_model_path=dead_model_path, config=config)
         filtered_crowns["dead_label"] = dead_label
         filtered_crowns["dead_score"] = dead_score
     
