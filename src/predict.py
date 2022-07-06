@@ -238,9 +238,9 @@ def predict_species(crowns, image_paths, m, config):
     
     return ensemble_df
 
-def predict_dead(crowns, dead_model_path, rgb_tile, config):
+def predict_dead(crowns, dead_model_path, config):
     dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path, config=config)
-    ds = dead.utm_dataset(crowns=crowns, image_path=rgb_tile, config=config)
+    ds = dead.utm_dataset(crowns=crowns, config=config)
     label, score = dead.predict_dead_dataloader(dead_model, ds, config)
     
     return label, score
