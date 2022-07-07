@@ -87,8 +87,6 @@ def random_crop(rgb_pool, hsi_pool, CHM_pool, config, iteration):
         metadata = {}
         metadata["siteID"] = sitename
         reflArray = hdf5_file[sitename]['Reflectance']        
-        metadata['mapInfo'] = reflArray['Metadata']['Coordinate_System']['Map_Info'][()].decode()
-        #metadata['wavelength'] = reflArray['Metadata']['Spectral_Data']['Wavelength'][()]
         metadata_dicts.append(metadata)
     
     #year of each tile
@@ -146,7 +144,7 @@ def random_crop(rgb_pool, hsi_pool, CHM_pool, config, iteration):
     
     #crop rgb
     for tile in selected_rgb:
-        year = os.path.basename(tile).split("_")[0].format("01-01")
+        year = "{}-01-01".format(os.path.basename(tile).split("_")[0])
         year_dir = os.path.join(coord_dir, year)
         try:
             os.mkdir(year_dir)
@@ -167,7 +165,8 @@ def random_crop(rgb_pool, hsi_pool, CHM_pool, config, iteration):
             savedir=year_dir,
             basename="CHM")
         
-        year_dir = os.path.join(coord_dir,selected_years[index].format("-01-01"))
+        yr = "{}-01-01".format(selected_years[index])
+        year_dir = os.path.join(coord_dir,yr)
         selected_dict = metadata_dicts[index]
         selected_dict["bounds"] = projbounds           
         with open(os.path.join(year_dir,"metadata.json"), 'w') as convert_file:
@@ -175,7 +174,8 @@ def random_crop(rgb_pool, hsi_pool, CHM_pool, config, iteration):
     
     #HSI
     for index, tile in enumerate(selected_hsi):
-        year_dir = os.path.join(coord_dir,selected_years[index].format("-01-01"))                
+        yr = "{}-01-01".format(selected_years[index])        
+        year_dir = os.path.join(coord_dir, yr)
         filename = crop(
             bounds=bounds,
             sensor_path=tile,
@@ -193,7 +193,7 @@ CHM_pool = glob.glob(config["CHM_pool"], recursive=True)
 random_crop(rgb_pool=rgb_pool, hsi_pool=hsi_pool, CHM_pool=CHM_pool, config=config, iteration=0)
 
 futures = []
-for x in range(1000):
+for x in range(10000):
     future = client.submit(random_crop, rgb_pool=rgb_pool, hsi_pool=hsi_pool, CHM_pool=CHM_pool, config=config, iteration=x)
     futures.append(future)
 
