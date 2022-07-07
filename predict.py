@@ -76,30 +76,22 @@ cpu_client.close()
 
 # Step 2 - Predict Crowns
 tile_crowns = []
+predict_futures = []
 for x in tiles:
     try:
-        crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)
-        tile_crowns.append(crowns)
+        crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)        
+        predict_future = gpu_client.submit(predict.predict_tile,
+            crowns=crowns,
+            img_pool=hyperspectral_pool,
+            filter_dead=True,
+            species_model_path=species_model_path,
+            savedir=prediction_dir,
+            config=config)
+        predict_futures.append(predict_future)
     except Exception as e:
         print(e)
         traceback.print_exc()
-        continue                
-    
-# Step 3 - Crop Crowns
-predict_futures = []
-for crowns in tile_crowns:
-    if crowns is None:
         continue
-    predict_future = gpu_client.submit(predict.predict_tile,
-        crowns=crowns,
-        img_pool=hyperspectral_pool,
-        filter_dead=True,
-        species_model_path=species_model_path,
-        savedir=prediction_dir,
-        config=config)
-    predict_futures.append(predict_future)
-
-wait(predict_futures)
 
 for x in predict_futures:
     try:
