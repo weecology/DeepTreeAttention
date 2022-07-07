@@ -1,6 +1,8 @@
 #crop random dataset
 import glob
 import sys
+sys.path.append("/home/b.weinstein/DeepTreeAttention")
+
 from src.data import read_config
 import os
 from src import neon_paths
@@ -16,7 +18,6 @@ import h5py
 import json
 from rasterio.warp import calculate_default_transform, reproject, Resampling, transform_bounds
 
-sys.path.append("/home/b.weinstein/DeepTreeAttention")
 
 client = start(cpus=10, mem_size = "20GB")
 def crop(bounds, sensor_path, savedir = None, basename = None):
