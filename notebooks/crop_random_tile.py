@@ -14,21 +14,45 @@ from distributed import wait
 import pandas as pd
 import h5py
 import json
+from rasterio.warp import calculate_default_transform, reproject, Resampling, transform_bounds
+
+sys.path.append("/home/b.weinstein/DeepTreeAttention")
 
 client = start(cpus=10, mem_size = "20GB")
 def crop(bounds, sensor_path, savedir = None, basename = None):
     """Given a 4 pointed bounding box, crop sensor data"""
+    dst_crs = 'EPSG:4326'
+    
     left, bottom, right, top = bounds 
     src = rasterio.open(sensor_path)        
     img = src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform)) 
     res = src.res[0]
+    
     height = (top - bottom)/res
-    width = (right - left)/res      
+    width = (right - left)/res   
+    
+    transform, width, height = calculate_default_transform(
+        src.crs, dst_crs, width, height,*bounds)
+    
     if savedir:
         profile = src.profile
-        profile.update(height=height, width=width)
+        profile.update(
+            height=height,
+            width=width,
+            transform=transform,
+            crs=dst_crs
+        )
         filename = "{}/{}.tif".format(savedir, basename)
         with rasterio.open(filename, "w",**profile) as dst:
+            for i in range(1, src.count + 1):
+                reproject(
+                    source=rasterio.band(src, i),
+                    destination=rasterio.band(dst, i),
+                    src_transform=src.transform,
+                    src_crs=src.crs,
+                    dst_transform=transform,
+                    dst_crs=dst_crs,
+                    resampling=Resampling.nearest)
             dst.write(img)
     if savedir:
         return filename
@@ -100,7 +124,19 @@ def random_crop(rgb_pool, hsi_pool, CHM_pool, config, iteration):
     xmin, ymin = coordx[random_index,:]
     window = Window(xmin, ymin, xsize, ysize)
     bounds = rasterio.windows.bounds(window, src.transform)
-    center_coord = "{}_{}".format(int(np.mean([bounds[0], bounds[2]])), int(np.mean([bounds[1],bounds[3]])))
+    
+    #Project to web mercator
+    dst_crs = 'EPSG:4326'    
+    projbounds = transform_bounds(src.crs, dst_crs, *bounds)
+    projbounds = [abs(x) for x in projbounds]
+    center_x = np.mean([projbounds[0], projbounds[2]])
+    center_x = str(center_x)
+    center_x = center_x.replace(".","_")
+    center_y = np.mean([projbounds[1], projbounds[3]])
+    center_y = str(center_y)
+    center_y = center_y.replace(".","_")
+    center_coord = "{}N{}W".format(center_x, center_y)
+    
     coord_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/{}".format(center_coord)
     try:
         os.mkdir(coord_dir)
@@ -109,33 +145,41 @@ def random_crop(rgb_pool, hsi_pool, CHM_pool, config, iteration):
     
     #crop rgb
     for tile in selected_rgb:
-        year = os.path.basename(tile).split("_")[0]
+        year = os.path.basename(tile).split("_")[0].format("01-01")
         year_dir = os.path.join(coord_dir, year)
         try:
             os.mkdir(year_dir)
         except:
             pass
         
-        crop(bounds=bounds, sensor_path= tile,
-             savedir=year_dir,
-             basename="RGB")
+        filename = crop(
+            bounds=bounds,
+            sensor_path=tile,
+            savedir=year_dir,
+            basename="RGB")
         
     for index, tile in enumerate(selected_chm):
         #Dump metadata
+        filename = crop(
+            bounds=bounds,
+            sensor_path=tile,
+            savedir=year_dir,
+            basename="CHM")
+        
+        year_dir = os.path.join(coord_dir,selected_years[index].format("-01-01"))
         selected_dict = metadata_dicts[index]
-        selected_dict["bounds"] = bounds
-        year_dir = os.path.join(coord_dir,selected_years[index]) 
+        selected_dict["bounds"] = projbounds           
         with open(os.path.join(year_dir,"metadata.json"), 'w') as convert_file:
-            convert_file.write(json.dumps(selected_dict))
-        crop(bounds=bounds, sensor_path=tile,
-             savedir=year_dir,
-             basename="CHM")
+            convert_file.write(json.dumps(selected_dict, indent=4, sort_keys=True))
+    
     #HSI
     for index, tile in enumerate(selected_hsi):
-        year_dir = os.path.join(coord_dir,selected_years[index])                
-        crop(bounds=bounds, sensor_path=tile,
-             savedir=year_dir,
-             basename="HSI")
+        year_dir = os.path.join(coord_dir,selected_years[index].format("-01-01"))                
+        filename = crop(
+            bounds=bounds,
+            sensor_path=tile,
+            savedir=year_dir,
+            basename="HSI")
 
 config = read_config("config.yml")    
 rgb_pool = glob.glob(config["rgb_sensor_pool"], recursive=True)
