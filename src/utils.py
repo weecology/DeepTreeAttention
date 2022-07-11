@@ -8,6 +8,7 @@ from sklearn import preprocessing
 import torch
 import yaml
 import warnings
+import pandas as pd
 from torch.utils.data.dataloader import default_collate
 
 def read_config(config_path):
@@ -70,3 +71,12 @@ def my_collate(batch):
     batch = [x for x in batch if x[1] is not None]
     
     return default_collate(batch)
+
+def predictions_to_df(predictions):
+    """format a dataframe"""
+    individuals = np.concatenate([x[0] for x in predictions])
+    predictions = np.concatenate([x[1] for x in predictions])
+    predictions = pd.DataFrame(predictions.squeeze())
+    predictions["individual"] = individuals    
+    
+    return predictions

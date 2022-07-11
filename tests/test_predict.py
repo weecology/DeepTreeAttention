@@ -5,6 +5,7 @@ from src import predict
 from src.models import multi_stage
 from pytorch_lightning import Trainer
 import cProfile, pstats
+import pandas as pd
 
 #Training module
 @pytest.fixture()
@@ -24,9 +25,6 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     config["CHM_pool"] = None
     hsi_pool = glob.glob(config["HSI_sensor_pool"])
     
-    profiler = cProfile.Profile()
-    profiler.enable()
-    
     crowns = predict.find_crowns(rgb_path, config)
     trees = predict.predict_tile(
         crowns=crowns,
@@ -36,11 +34,6 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
         savedir=tmpdir,
         config=config)
     
-    profiler.disable()
-    profiler.dump_stats("{}/tests/predict_profile.prof".format(ROOT))
-    stats = pstats.Stats(profiler).sort_stats('cumtime')        
-    stats.print_stats()
-    
-
     assert all([x in trees.columns for x in ["tile","geometry","ens_score","ensembleTaxonID"]])
-    
+    output_dict = pd.read_csv(os.path.join(tmpdir,"2019_D01_HARV_DP3_726000_4699000_image_crop_2018_0.csv"))
+    assert output_dict.shape[0] == crowns.shape[0]

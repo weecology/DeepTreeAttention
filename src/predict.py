@@ -9,7 +9,7 @@ import rasterio
 import pandas as pd
 from src.models import dead
 from src import neon_paths
-from src.utils import preprocess_image
+from src.utils import preprocess_image, predictions_to_df
 from src import patches
 from src.CHM import postprocess_CHM
 from src.models import multi_stage
@@ -116,7 +116,7 @@ def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_d
     if not len(year_paths) == len(m.years):
         raise ValueError("images paths {} does not match list of year models {}".format(image_paths, m.years))
     
-    trees = predict_species(crowns=crowns, image_paths=year_paths, m=m, config=config)
+    trees, output_list = predict_species(crowns=crowns, image_paths=year_paths, m=m, config=config)
 
     # Remove predictions for dead trees
     if filter_dead:
@@ -127,8 +127,14 @@ def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_d
     # Calculate crown area
     trees["crown_area"] = crowns.geometry.area
     trees = gpd.GeoDataFrame(trees, geometry="geometry")    
+    
+    #Save .shp
     basename = os.path.splitext(os.path.basename(crowns.RGB_tile.unique()[0]))[0]
     trees.to_file(os.path.join(savedir, "{}.shp".format(basename)))
+    
+    #save .json
+    for level, predictions in enumerate(output_list):
+        predictions.to_csv(os.path.join(savedir, "{}_{}.csv".format(basename, level)))
     
     return trees
 
@@ -166,12 +172,15 @@ def predict_species(crowns, image_paths, m, config):
     #Recursive predict to avoid prediction levels that will be later ignored.
     trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False)
     
+    output_list = []
     # Level 0 PIPA v all
     ds = predict_dataset(crowns=crowns, image_paths=image_paths, config=config)
     m.current_level = 0
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))    
     results = m.gather_predictions([predictions])
-    print("{} crowns for level 0".format(len(ds)))
+    
+    #save to level dataframe
+    output_list.append(predictions_to_df(predictions))
     
     # Level 1 Needleleaf v Broadleaf
     remaining_crowns = results[~(results["pred_taxa_top1_level_0"]=="PIPA2")].individual
@@ -181,6 +190,9 @@ def predict_species(crowns, image_paths, m, config):
         level1_crowns = crowns[crowns.individual.isin(remaining_crowns)]
         ds = predict_dataset(crowns=level1_crowns, image_paths=image_paths, config=config)    
         predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
+        #save to level dataframe
+        output_list.append(predictions_to_df(predictions))
+        
         results_1 = m.format_level(predictions, index=1, label_to_taxonIDs=m.label_to_taxonIDs[1])
         results = results.merge(results_1,on="individual", how="outer")
 
@@ -196,6 +208,8 @@ def predict_species(crowns, image_paths, m, config):
         level2_crowns = crowns[crowns.individual.isin(remaining_crowns)]
         ds = predict_dataset(crowns=level2_crowns, image_paths=image_paths, config=config)    
         predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
+        #save to level dataframe
+        output_list.append(predictions_to_df(predictions))        
         results_2 = m.format_level(predictions, index=2, label_to_taxonIDs=m.label_to_taxonIDs[2])
         results = results.merge(results_2,on="individual", how="outer")
         
@@ -211,6 +225,8 @@ def predict_species(crowns, image_paths, m, config):
         level3_crowns = crowns[crowns.individual.isin(remaining_crowns)]
         ds = predict_dataset(crowns=level3_crowns, image_paths=image_paths, config=config)    
         predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
+        #save to level dataframe
+        output_list.append(predictions_to_df(predictions))        
         results_3 = m.format_level(predictions, index=3, label_to_taxonIDs=m.label_to_taxonIDs[3])
         results = results.merge(results_3,on="individual", how="outer")
 
@@ -227,14 +243,17 @@ def predict_species(crowns, image_paths, m, config):
         ds = predict_dataset(crowns=level4_crowns, image_paths=image_paths, config=config)    
         predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
         results_4 = m.format_level(predictions, index=4, label_to_taxonIDs=m.label_to_taxonIDs[4])
+        
+        #save to level dataframe
+        output_list.append(predictions_to_df(predictions))        
         results = results.merge(results_4,on="individual", how="outer")
 
     crowns = results.merge(crowns, on="individual")
     ensemble_df = m.ensemble(results)
     crowns = crowns.loc[:,crowns.columns.isin(["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score","RGB_tile"])]
     ensemble_df = ensemble_df.merge(crowns, on="individual")
-    
-    return ensemble_df
+        
+    return ensemble_df, output_list
 
 def predict_dead(crowns, dead_model_path, config):
     dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path, config=config)
