@@ -29,6 +29,7 @@ def run(tile, dirname):
     level4 =  pd.read_csv(os.path.join(dirname, "{}_4.csv".format(tile)))
     
     levels = [level0, level1, level2, level3, level4]
+    levels = [x.drop(columns="Unnamed: 0") for x in levels]
     
     level_results = []
     for level, df in enumerate(levels):
@@ -79,13 +80,11 @@ def format_level(df, level, label_to_taxonIDs):
     probs = df.drop(columns=["individual"])
     pred_label_top1 = np.argmax(np.vstack(probs.apply(lambda x: np.random.multinomial(1,x), axis=1).values),1)
     top1_score = np.max(np.vstack(probs.apply(lambda x: np.random.multinomial(1,x), axis=1).values),1)
-
     results = pd.DataFrame({
         "pred_label_top1_level_{}".format(level):pred_label_top1,
         "top1_score_level_{}".format(level):top1_score,
         "individual":df["individual"]        
     })
-    
     results["pred_taxa_top1_level_{}".format(level)] = results["pred_label_top1_level_{}".format(level)].apply(lambda x: label_to_taxonIDs[x]) 
     
     return results
