@@ -67,7 +67,7 @@ hyperspectral_pool = glob(config["HSI_tif_dir"]+"*")
 tiles = find_rgb_files(site="OSBS", config=config)
 tif_futures = cpu_client.map(
     convert,
-    tiles[:10],
+    tiles,
     hyperspectral_pool=h5_pool,
     savedir=config["HSI_tif_dir"])
 wait(tif_futures)
