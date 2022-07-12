@@ -50,24 +50,27 @@ def ensemble(results, species_label_dict):
     ensemble_score = []
     
     for index,row in results.iterrows():
-        if row["pred_taxa_top1_level_0"] == "PIPA2":
-            ensemble_taxonID.append("PIPA2")
-            ensemble_label.append(species_label_dict["PIPA2"])
-            ensemble_score.append(row["top1_score_level_0"])                
-        else:
-            if row["pred_taxa_top1_level_1"] == "BROADLEAF":
-                if row["pred_taxa_top1_level_2"] == "OAK":
-                    ensemble_taxonID.append(row["pred_taxa_top1_level_4"])
-                    ensemble_label.append(species_label_dict[row["pred_taxa_top1_level_4"]])
-                    ensemble_score.append(row["top1_score_level_4"])
-                else:
-                    ensemble_taxonID.append(row["pred_taxa_top1_level_2"])
-                    ensemble_label.append(species_label_dict[row["pred_taxa_top1_level_2"]])
-                    ensemble_score.append(row["top1_score_level_2"])                     
+        try:    
+            if row["pred_taxa_top1_level_0"] == "PIPA2":
+                ensemble_taxonID.append("PIPA2")
+                ensemble_label.append(species_label_dict["PIPA2"])
+                ensemble_score.append(row["top1_score_level_0"])                
             else:
-                ensemble_taxonID.append(row["pred_taxa_top1_level_3"])
-                ensemble_label.append(species_label_dict[row["pred_taxa_top1_level_3"]])
-                ensemble_score.append(row["top1_score_level_3"])
+                if row["pred_taxa_top1_level_1"] == "BROADLEAF":
+                    if row["pred_taxa_top1_level_2"] == "OAK":
+                        ensemble_taxonID.append(row["pred_taxa_top1_level_4"])
+                        ensemble_label.append(species_label_dict[row["pred_taxa_top1_level_4"]])
+                        ensemble_score.append(row["top1_score_level_4"])
+                    else:
+                        ensemble_taxonID.append(row["pred_taxa_top1_level_2"])
+                        ensemble_label.append(species_label_dict[row["pred_taxa_top1_level_2"]])
+                        ensemble_score.append(row["top1_score_level_2"])                     
+                else:
+                    ensemble_taxonID.append(row["pred_taxa_top1_level_3"])
+                    ensemble_label.append(species_label_dict[row["pred_taxa_top1_level_3"]])
+                    ensemble_score.append(row["top1_score_level_3"])
+        except Exception as e:
+            print("row {} failed with {}".format(row, e))            
     
     results["ensembleTaxonID"] = ensemble_taxonID
     results["ens_score"] = ensemble_score
