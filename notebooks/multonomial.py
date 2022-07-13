@@ -21,19 +21,20 @@ def run(tile, dirname):
     config = read_config("../config.yml")
     species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt"
     m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)
-    
+
     level0 =  pd.read_csv(os.path.join(dirname, "{}_0.csv".format(tile)), index_col=0)
     level1 =  pd.read_csv(os.path.join(dirname, "{}_1.csv".format(tile)), index_col=0)
     level2 =  pd.read_csv(os.path.join(dirname, "{}_2.csv".format(tile)), index_col=0)
     level3 =  pd.read_csv(os.path.join(dirname, "{}_3.csv".format(tile)), index_col=0)
     level4 =  pd.read_csv(os.path.join(dirname, "{}_4.csv".format(tile)), index_col=0)
-    
+        
     levels = [level0, level1, level2, level3, level4]
     
     level_results = []
     for level, df in enumerate(levels):
+        print(level)
         level_results.append(format_level(df=df, level=level, label_to_taxonIDs=m.label_to_taxonIDs[level]))
-    
+        
     results = reduce(lambda  left,right: pd.merge(left,right,on=['individual'],
                                                     how='outer'), level_results) 
     
@@ -80,8 +81,19 @@ def ensemble(results, species_label_dict):
 def format_level(df, level, label_to_taxonIDs):
     #Loop through each list and get multonial draw
     probs = df.drop(columns=["individual"])
-    pred_label_top1 = np.argmax(np.vstack(probs.apply(lambda x: np.random.multinomial(1,x), axis=1).values),1)
-    top1_score = np.max(np.vstack(probs.apply(lambda x: np.random.multinomial(1,x), axis=1).values),1)
+    #Sanitize prob vectors to sum to 1, rounding errors from .csv
+    a = np.round(probs.values,3)
+    a[a<0.05] = 0
+    a[:,-1] = 1-np.sum(a[:,0:-1], 1)
+    pred_label_top1 = []
+    top1_score = []
+        
+    # Sample multinomial
+    for x in a:
+        random_draw = np.random.multinomial(1,x)
+        pred_label_top1.append(np.argmax(random_draw))
+    top1_score = a[np.arange(len(a)),pred_label_top1]
+    
     results = pd.DataFrame({
         "pred_label_top1_level_{}".format(level):pred_label_top1,
         "top1_score_level_{}".format(level):top1_score,
