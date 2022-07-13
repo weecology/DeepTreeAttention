@@ -112,4 +112,4 @@ for ser in counts:
     total_counts = total_counts.add(ser, fill_value=0)
 
 total_counts.sort_values()
-total_counts.sum()
+total_counts.to_csv("abundance_permutation_1.csv")
