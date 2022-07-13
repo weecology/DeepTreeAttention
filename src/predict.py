@@ -183,7 +183,9 @@ def predict_species(crowns, image_paths, m, config):
     output_list.append(predictions_to_df(predictions))
     
     # Level 1 Needleleaf v Broadleaf
-    remaining_crowns = results[~(results["pred_taxa_top1_level_0"]=="PIPA2")].individual
+    #remaining_crowns = results[~(results["pred_taxa_top1_level_0"]=="PIPA2")].individual
+    remaining_crowns = results.individual
+    
     if len(remaining_crowns) > 0:
         m.current_level = 1        
         print("{} crowns for level 1".format(len(remaining_crowns)))
@@ -192,15 +194,14 @@ def predict_species(crowns, image_paths, m, config):
         predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
         #save to level dataframe
         output_list.append(predictions_to_df(predictions))
-        
         results_1 = m.format_level(predictions, index=1, label_to_taxonIDs=m.label_to_taxonIDs[1])
         results = results.merge(results_1,on="individual", how="outer")
 
     # Level 2 Within Broadleaf                
-    try:
-        remaining_crowns = results_1[results_1["pred_taxa_top1_level_1"]=="BROADLEAF"].individual
-    except:
-        remaining_crowns = []
+    #try:
+        #remaining_crowns = results_1[results_1["pred_taxa_top1_level_1"]=="BROADLEAF"].individual
+    #except:
+        #remaining_crowns = []
         
     if len(remaining_crowns) > 0: 
         m.current_level = 2        
@@ -214,10 +215,10 @@ def predict_species(crowns, image_paths, m, config):
         results = results.merge(results_2,on="individual", how="outer")
         
     # Level 3 Within CONFIFER    
-    try:
-        remaining_crowns = results_1[results_1["pred_taxa_top1_level_1"]=="CONIFER"].individual
-    except:
-        remaining_crowns = []
+    #try:
+        #remaining_crowns = results_1[results_1["pred_taxa_top1_level_1"]=="CONIFER"].individual
+    #except:
+        #remaining_crowns = []
         
     if len(remaining_crowns) > 0:
         m.current_level = 3        
@@ -231,10 +232,10 @@ def predict_species(crowns, image_paths, m, config):
         results = results.merge(results_3,on="individual", how="outer")
 
     # Level 4 Within OAK
-    try:
-        remaining_crowns = results_2[results_2["pred_taxa_top1_level_2"]=="OAK"].individual
-    except:
-        remaining_crowns = []
+    #try:
+        #remaining_crowns = results_2[results_2["pred_taxa_top1_level_2"]=="OAK"].individual
+    #except:
+        #remaining_crowns = []
         
     if len(remaining_crowns) > 0:
         m.current_level = 4        
