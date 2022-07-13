@@ -29,7 +29,6 @@ def run(tile, dirname):
     level4 =  pd.read_csv(os.path.join(dirname, "{}_4.csv".format(tile)), index_col=0)
     
     levels = [level0, level1, level2, level3, level4]
-    levels = [x.drop(columns="Unnamed: 0") for x in levels]
     
     level_results = []
     for level, df in enumerate(levels):
