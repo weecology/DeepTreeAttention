@@ -89,7 +89,7 @@ def format_level(df, level, label_to_taxonIDs):
         
     # Sample multinomial
     for x in a:
-        random_draw = np.random.multinomial(1,x)
+        random_draw = np.random.multinomial(1,x/x.sum())
         pred_label_top1.append(np.argmax(random_draw))
     top1_score = a[np.arange(len(a)),pred_label_top1]
     
@@ -106,6 +106,7 @@ def wrapper(iteration):
     files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/*.csv")
     tiles = np.unique(["_".join(os.path.splitext(os.path.basename(x))[0].split("_")[:-1]) for x in files])
     total_counts = pd.Series()
+    
     counts = []
     for tile in tiles:
         counts.append(run(tile, "/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/"))
