@@ -32,14 +32,13 @@ def run(tile, dirname):
     
     level_results = []
     for level, df in enumerate(levels):
-        print(level)
         level_results.append(format_level(df=df, level=level, label_to_taxonIDs=m.label_to_taxonIDs[level]))
         
     results = reduce(lambda  left,right: pd.merge(left,right,on=['individual'],
                                                     how='outer'), level_results) 
     
     ensemble_df = ensemble(results, m.species_label_dict)
-    tile_count = ensemble_df.ensembleTa.value_counts()
+    tile_count = ensemble_df.ensembleTaxonID.value_counts()
     
     return tile_count
 
