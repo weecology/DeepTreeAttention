@@ -1,7 +1,7 @@
 #Plot abundance distribution
 import dask
 import dask.dataframe as dd
-import distributed
+from distributed import wait
 import sys
 import numpy as np
 import pandas as pd
@@ -13,7 +13,7 @@ import os
 import glob
 from functools import reduce
 
-#client = start_cluster.start(cpus=2)
+client = start_cluster.start(cpus=25)
 #client = distributed.Client()
 
 def run(tile, dirname):
@@ -30,7 +30,6 @@ def run(tile, dirname):
     levels = [level0, level1, level2, level3, level4]
     level_results = []
     for level, df in enumerate(levels):
-        print(level)
         level_results.append(format_level(df=df, level=level, label_to_taxonIDs=m.label_to_taxonIDs[level]))
     results = reduce(lambda  left,right: pd.merge(left,right,on=['individual'],
                                                     how='outer'), level_results) 
@@ -92,7 +91,6 @@ def format_level(df, level, label_to_taxonIDs):
         pred_label_top1.append(np.argmax(random_draw))
     
     top1_score = a[np.arange(len(a)),pred_label_top1]
-    
     results = pd.DataFrame({
         "pred_label_top1_level_{}".format(level):pred_label_top1,
         "top1_score_level_{}".format(level):top1_score,
@@ -102,20 +100,23 @@ def format_level(df, level, label_to_taxonIDs):
     
     return results
 
-def wrapper(iteration):  
+def wrapper(client, iteration):  
     files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/*.csv")
     tiles = np.unique(["_".join(os.path.splitext(os.path.basename(x))[0].split("_")[:-1]) for x in files])
     total_counts = pd.Series()
         
     counts = []
     for tile in tiles:
-        print(tile)
-        counts.append(run(tile, "/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/"))
+        future = client.submit(run, dirname="/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/")
+        counts.append(future)
     
-        for ser in counts:
-            total_counts = total_counts.add(ser, fill_value=0)
-        total_counts.sort_values()
-        total_counts.to_csv("abundance_permutation_{}.csv".format(iteration))
+    wait(counts)
+    
+    for result in counts:
+        ser = result.result()
+        total_counts = total_counts.add(ser, fill_value=0)
+    total_counts.sort_values()
+    total_counts.to_csv("abundance_permutation_{}.csv".format(iteration))
 
 for x in range(10):
-    wrapper(x)
+    wrapper(iteration=x, client=client)
