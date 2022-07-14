@@ -17,7 +17,7 @@ client = start_cluster.start(cpus=25)
 #client = distributed.Client()
 
 def run(tile, dirname):
-    print(tile)
+    sys.path.append("/home/b.weinstein/DeepTreeAttention")    
     #Load model to get label dicts
     config = read_config("../config.yml")
     species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt"
