@@ -92,6 +92,7 @@ def format_level(df, level, label_to_taxonIDs):
 
 def wrapper(client, iteration, savedir):  
     files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/*.csv")
+    files = [x for x in files if "OSBS" in x]
     tiles = np.unique(["_".join(os.path.splitext(os.path.basename(x))[0].split("_")[:-1]) for x in files])
     total_counts = pd.Series()
         
@@ -103,7 +104,10 @@ def wrapper(client, iteration, savedir):
     wait(counts)
     
     for result in counts:
-        ser = result.result()
+        try:
+            ser = result.result()
+        except:
+            continue
         total_counts = total_counts.add(ser, fill_value=0)
     total_counts.sort_values()
     total_counts.to_csv("{}/abundance_permutation_{}.csv".format(savedir, iteration))
