@@ -90,7 +90,7 @@ def format_level(df, level, label_to_taxonIDs):
     
     return results
 
-def wrapper(client, iteration):  
+def wrapper(client, iteration, savedir):  
     files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/*.csv")
     tiles = np.unique(["_".join(os.path.splitext(os.path.basename(x))[0].split("_")[:-1]) for x in files])
     total_counts = pd.Series()
