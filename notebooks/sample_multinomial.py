@@ -1,3 +1,5 @@
+import sys
+sys.path.append("/home/b.weinstein/DeepTreeAttention")
 from src import start_cluster
 client = start_cluster.start(cpus=25)
 
