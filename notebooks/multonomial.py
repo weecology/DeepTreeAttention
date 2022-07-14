@@ -106,16 +106,16 @@ def wrapper(iteration):
     files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/*.csv")
     tiles = np.unique(["_".join(os.path.splitext(os.path.basename(x))[0].split("_")[:-1]) for x in files])
     total_counts = pd.Series()
+        
+    counts = []
+    for tile in tiles:
+        print(tile)
+        counts.append(run(tile, "/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/"))
     
-counts = []
-for tile in tiles:
-    print(tile)
-    counts.append(run(tile, "/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/"))
-
-    for ser in counts:
-        total_counts = total_counts.add(ser, fill_value=0)
-    total_counts.sort_values()
-    total_counts.to_csv("abundance_permutation_{}.csv".format(iteration))
+        for ser in counts:
+            total_counts = total_counts.add(ser, fill_value=0)
+        total_counts.sort_values()
+        total_counts.to_csv("abundance_permutation_{}.csv".format(iteration))
 
 for x in range(10):
     wrapper(x)
