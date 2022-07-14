@@ -97,7 +97,7 @@ def wrapper(client, iteration, savedir):
         
     counts = []
     for tile in tiles:
-        future = client.submit(run, dirname="/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/")
+        future = client.submit(run, tile=tile, dirname="/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/")
         counts.append(future)
     
     wait(counts)
