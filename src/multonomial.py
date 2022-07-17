@@ -82,9 +82,9 @@ def format_level(df, level, label_to_taxonIDs):
     
     top1_score = a[np.arange(len(a)),pred_label_top1]
     results = pd.DataFrame({
-        "pred_label_top1_level_{}".format(level):pred_label_top1,
-        "top1_score_level_{}".format(level):top1_score,
-        "individual":df["individual"]        
+        "pred_label_top1_level_{}".format(level): pred_label_top1,
+        "top1_score_level_{}".format(level): top1_score,
+        "individual": df["individual"]        
     })
     results["pred_taxa_top1_level_{}".format(level)] = results["pred_label_top1_level_{}".format(level)].apply(lambda x: label_to_taxonIDs[x]) 
     
@@ -95,7 +95,6 @@ def wrapper(client, iteration, savedir):
     files = [x for x in files if "OSBS" in x]
     tiles = np.unique(["_".join(os.path.splitext(os.path.basename(x))[0].split("_")[:-1]) for x in files])
     total_counts = pd.Series()
-        
     counts = []
     for tile in tiles:
         future = client.submit(run, tile=tile, dirname="/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/")
@@ -106,7 +105,8 @@ def wrapper(client, iteration, savedir):
     for result in counts:
         try:
             ser = result.result()
-        except:
+        except Exception as e:
+            print(e)
             continue
         total_counts = total_counts.add(ser, fill_value=0)
     total_counts.sort_values()
