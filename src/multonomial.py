@@ -7,9 +7,11 @@ from src.models import multi_stage
 import os
 import glob
 from functools import reduce
+import geopandas as gpd
 
 def run(tile, dirname):
     config = read_config("config.yml")
+    predicted_tile = gpd.read_file("/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/{}.shp".format(tile))
     species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt"
     m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)
     level0 =  pd.read_csv(os.path.join(dirname, "{}_0.csv".format(tile)), index_col=0)
@@ -23,8 +25,15 @@ def run(tile, dirname):
         level_results.append(format_level(df=df, level=level, label_to_taxonIDs=m.label_to_taxonIDs[level]))
     results = reduce(lambda  left,right: pd.merge(left,right,on=['individual'],
                                                     how='outer'), level_results) 
-    ensemble_df = ensemble(results, m.species_label_dict)
-    tile_count = ensemble_df.ensembleTaxonID.value_counts()
+    
+    trees = ensemble(results, m.species_label_dict)
+    
+    # Remove predictions for dead trees
+    trees = trees.merge(predicted_tile[["individual","dead_label","dead_score"]], on="individual")    
+    trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"ensembleTaxonID"] = "DEAD"
+    trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"ens_label"] = None
+    trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"ens_score"] = None    
+    tile_count = trees.ensembleTaxonID.value_counts()
     
     return tile_count
 
@@ -76,7 +85,7 @@ def format_level(df, level, label_to_taxonIDs):
             random_draw = np.random.multinomial(1,row/np.sum(row))
         except:
             print("multinomial prob do not sum to one")
-            random_draw = row
+            random_draw = row   
         pred_label_top1.append(np.argmax(random_draw))
     
     top1_score = a[np.arange(len(a)),pred_label_top1]
