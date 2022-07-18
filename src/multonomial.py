@@ -82,7 +82,8 @@ def format_level(df, level, label_to_taxonIDs):
     # Sample multinomial, ignore rare overflow errors
     for row in a:
         try:
-            random_draw = np.random.multinomial(1,row/np.sum(row))
+            #random_draw = np.random.multinomial(1,row/np.sum(row))
+            random_draw = row               
         except:
             print("multinomial prob do not sum to one")
             random_draw = row   
