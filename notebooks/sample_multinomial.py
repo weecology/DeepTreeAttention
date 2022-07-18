@@ -4,5 +4,5 @@ from src import start_cluster
 from src import multonomial
 client = start_cluster.start(cpus=50)
 
-for x in range(10):
+for x in range(100):
     multonomial.wrapper(iteration=x, client=client, savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83")
