@@ -76,17 +76,13 @@ def format_level(df, level, label_to_taxonIDs):
     #Loop through each list and get multonial draw
     a = df.drop(columns=["individual"]).values
     #Sanitize prob vectors to sum to 1, rounding errors from .csv
-    a[:,-1] = 1-np.sum(a[:,0:-1], 1)
+    #a[:,-1] = 1-np.sum(a[:,0:-1], 1)
     pred_label_top1 = []
             
-    # Sample multinomial, ignore rare overflow errors
+    # Sample multinomial, round rare overflow errors
     for row in a:
-        try:
-            #random_draw = np.random.multinomial(1,row/np.sum(row))
-            random_draw = row               
-        except:
-            print("multinomial prob do not sum to one")
-            random_draw = row   
+        p = np.floor(row*1000)/1000
+        random_draw = np.random.multinomial(1,p) 
         pred_label_top1.append(np.argmax(random_draw))
     
     top1_score = a[np.arange(len(a)),pred_label_top1]
