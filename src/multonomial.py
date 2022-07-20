@@ -20,6 +20,24 @@ def run(tile, dirname):
     level3 =  pd.read_csv(os.path.join(dirname, "{}_3.csv".format(tile)), index_col=0)
     level4 =  pd.read_csv(os.path.join(dirname, "{}_4.csv".format(tile)), index_col=0)
     levels = [level0, level1, level2, level3, level4]
+    
+    ##Multiple each species by the confidence scores propogated by each level 
+    ##PIPA 
+    #PIPA = level0["0"]
+    #NYSY = level0["1"] * level1["1"] * level2["0"]
+    #ACRU = level0["1"] * level1["1"] * level2["1"]
+    #CAGL8 = level0["1"] * level1["1"] * level2["2"]
+    #MAGNO = level0["1"] * level1["1"] * level2["3"]
+    #LIST2 = level0["1"] * level1["1"] * level2["4"]
+    #PICL = level0["1"] * level1["0"] * level3["0"]
+    #PIEL = level0["1"] * level1["0"] * level3["0"]
+    #PITA = level0["1"] * level1["0"] * level3["0"]
+    #QULA2 = level0["1"] * level1["1"] * level2["5"] * level4["0"]
+    #QUGE2 = level0["1"] * level1["1"] * level2["5"] * level4["1"]
+    #QUHE2 = level0["1"] * level1["1"] * level2["5"] * level4["2"]
+    #QUNI = level0["1"] * level1["1"] * level2["5"] * level4["3"]
+    #QUVI = level0["1"] * level1["1"] * level2["5"] * level4["4"]
+        
     level_results = []
     for level, df in enumerate(levels):
         level_results.append(format_level(df=df, level=level, label_to_taxonIDs=m.label_to_taxonIDs[level]))
@@ -80,8 +98,8 @@ def format_level(df, level, label_to_taxonIDs):
             
     # Sample multinomial, round rare overflow errors
     for row in a:
-        p = np.floor(row*1000)/1000
-        random_draw = np.random.multinomial(1,p) 
+        #p = np.floor(row*1000)/1000
+        random_draw = np.random.multinomial(1,row) 
         pred_label_top1.append(np.argmax(random_draw))
     
     top1_score = a[np.arange(len(a)),pred_label_top1]
