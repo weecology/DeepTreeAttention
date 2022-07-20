@@ -2,8 +2,8 @@
 
 ### Data Generation
 #glob path to sensor data, recursive wildcards allowed
-rgb_sensor_pool: /orange/ewhite/NeonData/OSBS/DP3.30010.001/**/Camera/**/*.tif 
-HSI_sensor_pool: /orange/ewhite/NeonData/OSBS/DP3.30006.001/**/Reflectance/*.h5
+rgb_sensor_pool: /orange/ewhite/NeonData/*/DP3.30010.001/**/Camera/**/*.tif 
+HSI_sensor_pool: /orange/ewhite/NeonData/*/DP3.30006.001/**/Reflectance/*.h5
 CHM_pool: /orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif
 HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/year/
 

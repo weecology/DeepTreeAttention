@@ -18,7 +18,7 @@ import h5py
 import json
 from rasterio.warp import calculate_default_transform, reproject, Resampling, transform_bounds
 
-client = start(cpus=10, mem_size = "20GB")
+client = start(cpus=100, mem_size = "12GB")
 def crop(bounds, sensor_path, savedir = None, basename = None):
     """Given a 4 pointed bounding box, crop sensor data"""
     dst_crs = 'EPSG:4326'
@@ -190,7 +190,7 @@ def random_crop(iteration):
             basename="HSI")
 
 futures = []
-for x in range(10000):
+for x in range(100000):
     future = client.submit(random_crop, iteration=x)
     futures.append(future)
 
