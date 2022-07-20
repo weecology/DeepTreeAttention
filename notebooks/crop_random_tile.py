@@ -59,9 +59,17 @@ def crop(bounds, sensor_path, savedir = None, basename = None):
     else:
         return img 
     
-def random_crop(rgb_pool, hsi_pool, CHM_pool, config, iteration):  
-    #Choose random tile
-    geo_index = re.search("(\d+_\d+)_image", os.path.basename(random.choice(rgb_pool))).group(1)
+def random_crop(iteration):  
+    config = read_config("config.yml")    
+    rgb_pool = glob.glob(config["rgb_sensor_pool"], recursive=True)
+    rgb_pool = [x for x in rgb_pool if not "classified" in x]
+    hsi_pool = glob.glob(config["HSI_sensor_pool"], recursive=True)
+    hsi_pool = [x for x in hsi_pool if not "neon-aop-products" in x]
+    CHM_pool = glob.glob(config["CHM_pool"], recursive=True)
+
+    #Choose random hsi tif tile
+    hsi_tif_pool = glob.glob(config["HSI_tif_dir"]+"*")
+    geo_index = re.search("(\d+_\d+)_image", os.path.basename(random.choice(hsi_tif_pool))).group(1)
     rgb_tiles = [x for x in rgb_pool if geo_index in x]
     if len(rgb_tiles) < 3:
         return None
@@ -181,17 +189,9 @@ def random_crop(rgb_pool, hsi_pool, CHM_pool, config, iteration):
             savedir=year_dir,
             basename="HSI")
 
-config = read_config("config.yml")    
-rgb_pool = glob.glob(config["rgb_sensor_pool"], recursive=True)
-rgb_pool = [x for x in rgb_pool if not "classified" in x]
-hsi_pool = glob.glob(config["HSI_sensor_pool"], recursive=True)
-hsi_pool = [x for x in hsi_pool if not "neon-aop-products" in x]
-
-CHM_pool = glob.glob(config["CHM_pool"], recursive=True)
-
 futures = []
 for x in range(10000):
-    future = client.submit(random_crop, rgb_pool=rgb_pool, hsi_pool=hsi_pool, CHM_pool=CHM_pool, config=config, iteration=x)
+    future = client.submit(random_crop, iteration=x)
     futures.append(future)
 
 wait(futures)
