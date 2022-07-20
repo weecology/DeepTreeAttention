@@ -41,6 +41,7 @@ def run(tile, dirname):
     level_results = []
     for level, df in enumerate(levels):
         level_results.append(format_level(df=df, level=level, label_to_taxonIDs=m.label_to_taxonIDs[level]))
+    
     results = reduce(lambda  left,right: pd.merge(left,right,on=['individual'],
                                                     how='outer'), level_results) 
     
@@ -98,8 +99,7 @@ def format_level(df, level, label_to_taxonIDs):
             
     # Sample multinomial, round rare overflow errors
     for row in a:
-        #p = np.floor(row*1000)/1000
-        random_draw = np.random.multinomial(1,row) 
+        random_draw = np.random.multinomial(1,row/np.sum(row)) 
         pred_label_top1.append(np.argmax(random_draw))
     
     top1_score = a[np.arange(len(a)),pred_label_top1]
