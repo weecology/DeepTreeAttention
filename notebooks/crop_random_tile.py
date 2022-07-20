@@ -18,7 +18,6 @@ import h5py
 import json
 from rasterio.warp import calculate_default_transform, reproject, Resampling, transform_bounds
 
-
 client = start(cpus=10, mem_size = "20GB")
 def crop(bounds, sensor_path, savedir = None, basename = None):
     """Given a 4 pointed bounding box, crop sensor data"""
@@ -189,8 +188,6 @@ hsi_pool = glob.glob(config["HSI_sensor_pool"], recursive=True)
 hsi_pool = [x for x in hsi_pool if not "neon-aop-products" in x]
 
 CHM_pool = glob.glob(config["CHM_pool"], recursive=True)
-
-random_crop(rgb_pool=rgb_pool, hsi_pool=hsi_pool, CHM_pool=CHM_pool, config=config, iteration=0)
 
 futures = []
 for x in range(10000):
