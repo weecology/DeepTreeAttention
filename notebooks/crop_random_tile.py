@@ -60,10 +60,10 @@ def crop(bounds, sensor_path, savedir = None, basename = None):
         return img 
     
 def random_crop(config, iteration): 
-    hsi_tif_pool = pd.read_csv("data/hsi_tif_pool.csv", index_col=0)
-    rgb_pool = pd.read_csv("data/rgb_pool.csv", index_col=0)
-    CHM_pool = pd.read_csv("data/CHM_pool.csv", index_col=0)
-    hsi_pool = pd.read_csv("data/hsi_pool.csv", index_col=0)
+    hsi_tif_pool = pd.read_csv("data/hsi_tif_pool.csv", index_col=0)["0"]
+    rgb_pool = pd.read_csv("data/rgb_pool.csv", index_col=0)["0"]
+    CHM_pool = pd.read_csv("data/CHM_pool.csv", index_col=0)["0"]
+    hsi_pool = pd.read_csv("data/hsi_pool.csv", index_col=0)["0"]
     
     geo_index = re.search("(\d+_\d+)_image", os.path.basename(random.choice(hsi_tif_pool))).group(1)
     rgb_tiles = [x for x in rgb_pool if geo_index in x]
