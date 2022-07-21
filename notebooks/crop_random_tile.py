@@ -189,13 +189,20 @@ CHM_pool = glob.glob(config["CHM_pool"], recursive=True)
 hsi_tif_pool = glob.glob(config["HSI_tif_dir"]+"*")
 futures = []
 
+#Scatter large objects to workers
+rgb_pool_future = client.scatter(rgb_pool)  # scatter data explicitly to worker, get future back
+hsi_pool_future = client.scatter(hsi_pool)  # scatter data explicitly to worker, get future back
+hsi_tif_pool_future = client.scatter(hsi_tif_pool_future)  # scatter data explicitly to worker, get future back
+CHM_pool_future = client.scatter(CHM_pool)  # scatter data explicitly to worker, get future back
+config_future = client.scatter(config)  # scatter data explicitly to worker, get future back
+
 for x in range(100000):
     future = client.submit(random_crop, 
-                           rgb_pool=rgb_pool, 
-                           hsi_pool=hsi_pool, 
-                           CHM_pool=CHM_pool, 
-                           hsi_tif_pool=hsi_tif_pool, 
-                           config=config, 
+                           rgb_pool=rgb_pool_future, 
+                           hsi_pool=hsi_pool_future, 
+                           CHM_pool=CHM_pool_future, 
+                           hsi_tif_pool=hsi_pool_future, 
+                           config=config_future, 
                            iteration=x)
     futures.append(future)
 
