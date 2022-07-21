@@ -3,15 +3,14 @@ from distributed import wait
 import numpy as np
 import pandas as pd
 from src.data import read_config
-from src.models import multi_stage
 import os
 import glob
 from functools import reduce
 import geopandas as gpd
 
-def run(tile, dirname):
+def run(tile, dirname="/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/"):
     config = read_config("config.yml")
-    predicted_tile = gpd.read_file("/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/{}.shp".format(tile))
+    predicted_tile = gpd.read_file("{}/{}.shp".format(dirname, tile))
     level0 =  pd.read_csv(os.path.join(dirname, "{}_0.csv".format(tile)), index_col=0)
     level1 =  pd.read_csv(os.path.join(dirname, "{}_1.csv".format(tile)), index_col=0)
     level2 =  pd.read_csv(os.path.join(dirname, "{}_2.csv".format(tile)), index_col=0)
@@ -21,21 +20,20 @@ def run(tile, dirname):
     ##Multiple each species by the confidence scores propogated by each level     
     ensembleTaxonID = []
     for i in range(level0.shape[0]):        
-        PIPA = level0["0"][i,:]
-        NYSY = level0["1"][i,:] * level1["1"][i,:] * level2["0"][i,:]
-        ACRU = level0["1"][i,:] * level1["1"][i,:] * level2["1"][i,:]
-        CAGL8 = level0["1"][i,:] * level1["1"][i,:] * level2["2"][i,:]
-        MAGNO = level0["1"][i,:] * level1["1"][i,:] * level2["3"][i,:]
-        LIST2 = level0["1"][i,:] * level1["1"][i,:] * level2["4"][i,:]
-        PICL = level0["1"][i,:] * level1["0"][i,:] * level3["0"][i,:]
-        PIEL = level0["1"][i,:] * level1["0"][i,:] * level3["0"][i,:]
-        PITA = level0["1"][i,:] * level1["0"][i,:] * level3["0"][i,:]
-        QULA2 = level0["1"][i,:] * level1["1"][i,:] * level2["5"][i,:] * level4["0"][i,:]
-        QUGE2 = level0["1"][i,:] * level1["1"][i,:] * level2["5"][i,:] * level4["1"][i,:]
-        QUHE2 = level0["1"][i,:] * level1["1"][i,:] * level2["5"][i,:] * level4["2"][i,:]
-        QUNI = level0["1"][i,:] * level1["1"][i,:] * level2["5"][i,:] * level4["3"][i,:]
-        QUVI = level0["1"][i,:] * level1["1"][i,:] * level2["5"][i,:] * level4["4"][i,:]
-    
+        PIPA = level0["0"][i]
+        NYSY = level0["1"][i] * level1["1"][i] * level2["0"][i]
+        ACRU = level0["1"][i] * level1["1"][i] * level2["1"][i]
+        CAGL8 = level0["1"][i] * level1["1"][i] * level2["2"][i]
+        MAGNO = level0["1"][i] * level1["1"][i] * level2["3"][i]
+        LIST2 = level0["1"][i] * level1["1"][i] * level2["4"][i]
+        PICL = level0["1"][i] * level1["0"][i] * level3["0"][i]
+        PIEL = level0["1"][i] * level1["0"][i] * level3["0"][i]
+        PITA = level0["1"][i] * level1["0"][i] * level3["0"][i]
+        QULA2 = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["0"][i]
+        QUGE2 = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["1"][i]
+        QUHE2 = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["2"][i]
+        QUNI = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["3"][i]
+        QUVI = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["4"][i]
         prob_dict = {"PIPA":PIPA,"NYSY":NYSY,"ACRU":ACRU,"CAGL8":CAGL8,"MAGNO":MAGNO,
          "LIST2":LIST2,"PICL":PICL,"PIEL":PIEL,"PITA":PITA,"QULA2":QULA2,"QUGE2":QUGE2,"QUHE2":QUHE2,"QUNI":QUNI,"QUVI":QUVI}
         probs = [value for key, value in prob_dict.items()]
