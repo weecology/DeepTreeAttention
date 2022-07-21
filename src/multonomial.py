@@ -20,7 +20,7 @@ def run(tile, dirname="/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e
     ##Multiple each species by the confidence scores propogated by each level     
     ensembleTaxonID = []
     for i in range(level0.shape[0]):        
-        PIPA = level0["0"][i]
+        PIPA2 = level0["0"][i]
         NYSY = level0["1"][i] * level1["1"][i] * level2["0"][i]
         ACRU = level0["1"][i] * level1["1"][i] * level2["1"][i]
         CAGL8 = level0["1"][i] * level1["1"][i] * level2["2"][i]
@@ -34,7 +34,7 @@ def run(tile, dirname="/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e
         QUHE2 = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["2"][i]
         QUNI = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["3"][i]
         QUVI = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["4"][i]
-        prob_dict = {"PIPA":PIPA,"NYSY":NYSY,"ACRU":ACRU,"CAGL8":CAGL8,"MAGNO":MAGNO,
+        prob_dict = {"PIPA2":PIPA2,"NYSY":NYSY,"ACRU":ACRU,"CAGL8":CAGL8,"MAGNO":MAGNO,
          "LIST2":LIST2,"PICL":PICL,"PIEL":PIEL,"PITA":PITA,"QULA2":QULA2,"QUGE2":QUGE2,"QUHE2":QUHE2,"QUNI":QUNI,"QUVI":QUVI}
         probs = [value for key, value in prob_dict.items()]
         labels = [key for key, value in prob_dict.items()]

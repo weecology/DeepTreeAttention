@@ -196,7 +196,7 @@ hsi_tif_pool_future = client.scatter(hsi_tif_pool_future)  # scatter data explic
 CHM_pool_future = client.scatter(CHM_pool)  # scatter data explicitly to worker, get future back
 config_future = client.scatter(config)  # scatter data explicitly to worker, get future back
 
-client.wait_for_workers(20)
+client.wait_for_workers(10)
 for x in range(100000):
     future = client.submit(random_crop, 
                            rgb_pool=rgb_pool_future, 
