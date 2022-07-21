@@ -193,7 +193,7 @@ futures = []
 client.wait_for_workers(10)
 rgb_pool_future = client.scatter(rgb_pool)  # scatter data explicitly to worker, get future back
 hsi_pool_future = client.scatter(hsi_pool)  # scatter data explicitly to worker, get future back
-hsi_tif_pool_future = client.scatter(hsi_tif_pool_future)  # scatter data explicitly to worker, get future back
+hsi_tif_pool_future = client.scatter(hsi_tif_pool)  # scatter data explicitly to worker, get future back
 CHM_pool_future = client.scatter(CHM_pool)  # scatter data explicitly to worker, get future back
 config_future = client.scatter(config)  # scatter data explicitly to worker, get future back
 
