@@ -59,7 +59,12 @@ def crop(bounds, sensor_path, savedir = None, basename = None):
     else:
         return img 
     
-def random_crop(rgb_pool, hsi_pool, CHM_pool, hsi_tif_pool, config, iteration):  
+def random_crop(config, iteration): 
+    hsi_tif_pool = pd.read_csv("data/hsi_tif_pool.csv", index_col=0)
+    rgb_pool = pd.read_csv("data/rgb_pool.csv", index_col=0)
+    CHM_pool = pd.read_csv("data/CHM_pool.csv", index_col=0)
+    hsi_pool = pd.read_csv("data/hsi_pool.csv", index_col=0)
+    
     geo_index = re.search("(\d+_\d+)_image", os.path.basename(random.choice(hsi_tif_pool))).group(1)
     rgb_tiles = [x for x in rgb_pool if geo_index in x]
     if len(rgb_tiles) < 3:
@@ -183,27 +188,23 @@ def random_crop(rgb_pool, hsi_pool, CHM_pool, hsi_tif_pool, config, iteration):
 config = read_config("config.yml")    
 rgb_pool = glob.glob(config["rgb_sensor_pool"], recursive=True)
 rgb_pool = [x for x in rgb_pool if not "classified" in x]
+pd.Series(rgb_pool).to_csv("data/rgb_pool.csv")
+
 hsi_pool = glob.glob(config["HSI_sensor_pool"], recursive=True)
 hsi_pool = [x for x in hsi_pool if not "neon-aop-products" in x]
-CHM_pool = glob.glob(config["CHM_pool"], recursive=True)
-hsi_tif_pool = glob.glob(config["HSI_tif_dir"]+"*")
-futures = []
+pd.Series(hsi_pool).to_csv("data/hsi_pool.csv")
 
-#Scatter large objects to workers
-client.wait_for_workers(10)
-rgb_pool_future = client.scatter(rgb_pool, broadcast=True)  # scatter data explicitly to worker, get future back
-hsi_pool_future = client.scatter(hsi_pool, broadcast=True)  # scatter data explicitly to worker, get future back
-hsi_tif_pool_future = client.scatter(hsi_tif_pool, broadcast=True)  # scatter data explicitly to worker, get future back
-CHM_pool_future = client.scatter(CHM_pool, broadcast=True)  # scatter data explicitly to worker, get future back
-config_future = client.scatter(config, broadcast=True)  # scatter data explicitly to worker, get future back
+CHM_pool = glob.glob(config["CHM_pool"], recursive=True)
+pd.Series(CHM_pool).to_csv("data/CHM_pool.csv")
+
+hsi_tif_pool = glob.glob(config["HSI_tif_dir"]+"*")
+pd.Series(hsi_tif_pool).to_csv("data/hsi_tif_pool.csv")
+
+futures = []
 
 for x in range(100000):
     future = client.submit(random_crop, 
-                           rgb_pool=rgb_pool_future, 
-                           hsi_pool=hsi_pool_future, 
-                           CHM_pool=CHM_pool_future, 
-                           hsi_tif_pool=hsi_pool_future, 
-                           config=config_future, 
+                           config=config, 
                            iteration=x)
     futures.append(future)
 
