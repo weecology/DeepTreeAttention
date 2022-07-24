@@ -8,7 +8,7 @@ import glob
 from functools import reduce
 import geopandas as gpd
 
-def run(tile, dirname="/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/"):
+def run(tile, dirname="/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/",iteration=0):
     config = read_config("config.yml")
     predicted_tile = gpd.read_file("{}/{}.shp".format(dirname, tile))
     level0 =  pd.read_csv(os.path.join(dirname, "{}_0.csv".format(tile)), index_col=0)
@@ -121,7 +121,7 @@ def wrapper(client, iteration, savedir):
     total_counts = pd.Series()
     counts = []
     for tile in tiles:
-        future = client.submit(run, tile=tile, dirname="/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/")
+        future = client.submit(run, tile=tile, dirname="/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e987b014a4d9b6b824ad6d28d83/", iteration=iteration)
         counts.append(future)
     
     wait(counts)
