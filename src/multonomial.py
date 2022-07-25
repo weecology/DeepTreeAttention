@@ -16,42 +16,43 @@ def run(tile, dirname="/blue/ewhite/b.weinstein/DeepTreeAttention/results/06ee8e
     level2 =  pd.read_csv(os.path.join(dirname, "{}_2.csv".format(tile)), index_col=0)
     level3 =  pd.read_csv(os.path.join(dirname, "{}_3.csv".format(tile)), index_col=0)
     level4 =  pd.read_csv(os.path.join(dirname, "{}_4.csv".format(tile)), index_col=0)
+    levels = [level0, level1, level2, level3, level4]
     
-    ##Multiple each species by the confidence scores propogated by each level     
-    ensembleTaxonID = []
-    for i in range(level0.shape[0]):        
-        PIPA2 = level0["0"][i]
-        NYSY = level0["1"][i] * level1["1"][i] * level2["0"][i]
-        ACRU = level0["1"][i] * level1["1"][i] * level2["1"][i]
-        CAGL8 = level0["1"][i] * level1["1"][i] * level2["2"][i]
-        MAGNO = level0["1"][i] * level1["1"][i] * level2["3"][i]
-        LIST2 = level0["1"][i] * level1["1"][i] * level2["4"][i]
-        PICL = level0["1"][i] * level1["0"][i] * level3["0"][i]
-        PIEL = level0["1"][i] * level1["0"][i] * level3["0"][i]
-        PITA = level0["1"][i] * level1["0"][i] * level3["0"][i]
-        QULA2 = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["0"][i]
-        QUGE2 = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["1"][i]
-        QUHE2 = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["2"][i]
-        QUNI = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["3"][i]
-        QUVI = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["4"][i]
-        prob_dict = {"PIPA2":PIPA2,"NYSY":NYSY,"ACRU":ACRU,"CAGL8":CAGL8,"MAGNO":MAGNO,
-         "LIST2":LIST2,"PICL":PICL,"PIEL":PIEL,"PITA":PITA,"QULA2":QULA2,"QUGE2":QUGE2,"QUHE2":QUHE2,"QUNI":QUNI,"QUVI":QUVI}
-        probs = [value for key, value in prob_dict.items()]
-        labels = [key for key, value in prob_dict.items()]
-        index = np.argmax(np.random.multinomial(1, probs/np.sum(probs)))
-        ensembleTaxonID.append(labels[index])
+    ###Multiple each species by the confidence scores propogated by each level     
+    #ensembleTaxonID = []
+    #for i in range(level0.shape[0]):        
+        #PIPA2 = level0["0"][i]
+        #NYSY = level0["1"][i] * level1["1"][i] * level2["0"][i]
+        #ACRU = level0["1"][i] * level1["1"][i] * level2["1"][i]
+        #CAGL8 = level0["1"][i] * level1["1"][i] * level2["2"][i]
+        #MAGNO = level0["1"][i] * level1["1"][i] * level2["3"][i]
+        #LIST2 = level0["1"][i] * level1["1"][i] * level2["4"][i]
+        #PICL = level0["1"][i] * level1["0"][i] * level3["0"][i]
+        #PIEL = level0["1"][i] * level1["0"][i] * level3["0"][i]
+        #PITA = level0["1"][i] * level1["0"][i] * level3["0"][i]
+        #QULA2 = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["0"][i]
+        #QUGE2 = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["1"][i]
+        #QUHE2 = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["2"][i]
+        #QUNI = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["3"][i]
+        #QUVI = level0["1"][i] * level1["1"][i] * level2["5"][i] * level4["4"][i]
+        #prob_dict = {"PIPA2":PIPA2,"NYSY":NYSY,"ACRU":ACRU,"CAGL8":CAGL8,"MAGNO":MAGNO,
+         #"LIST2":LIST2,"PICL":PICL,"PIEL":PIEL,"PITA":PITA,"QULA2":QULA2,"QUGE2":QUGE2,"QUHE2":QUHE2,"QUNI":QUNI,"QUVI":QUVI}
+        #probs = [value for key, value in prob_dict.items()]
+        #labels = [key for key, value in prob_dict.items()]
+        #index = np.argmax(np.random.multinomial(1, probs/np.sum(probs)))
+        #ensembleTaxonID.append(labels[index])
     
-    #level_results = []
-    #for level, df in enumerate(levels):
-        #level_results.append(format_level(df=df, level=level, label_to_taxonIDs=m.label_to_taxonIDs[level]))
+    level_results = []
+    for level, df in enumerate(levels):
+        level_results.append(format_level(df=df, level=level, label_to_taxonIDs=m.label_to_taxonIDs[level]))
     
-    #results = reduce(lambda  left,right: pd.merge(left,right,on=['individual'],
-                                                    #how='outer'), level_results) 
+    results = reduce(lambda  left,right: pd.merge(left,right,on=['individual'],
+                                                    how='outer'), level_results) 
     
-    #trees = ensemble(results, m.species_label_dict)
+    trees = ensemble(results, m.species_label_dict)
     
     # Remove predictions for dead trees
-    trees = pd.DataFrame({"individual":level0.individual,"ensembleTaxonID":ensembleTaxonID})
+    trees = pd.DataFrame({"individual":level0.individual,"ensembleTaxonID":trees.ensembleTaxonID})
     trees = trees.merge(predicted_tile[["individual","dead_label","dead_score"]], on="individual")    
     trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"ensembleTaxonID"] = "DEAD"
     tile_count = trees.ensembleTaxonID.value_counts()
