@@ -59,7 +59,11 @@ gpu_client = start(gpus=7, mem_size="20GB")
 cpu_client = start(cpus=5, mem_size="8GB")
 species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt",
                        "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/24bd8917f519410ab6dd2bd467d42a5c.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/485448fc3c3746389a899f01f08f3bcd.pt"
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/39a4fb41b83047579b5a1de2b0381e28.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/485448fc3c3746389a899f01f08f3bcd.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9b2472ab74644f4eb0e142457ec5b1a1.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/4a83ea2a75994f479448876b1ea19c3b.pt"
+                       
                        ]
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
