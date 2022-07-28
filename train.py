@@ -70,7 +70,6 @@ train = train[~train.individualID.str.contains("graves")].reset_index(drop=True)
 test = test[~test.individualID.str.contains("graves")].reset_index(drop=True)
 
 m = multi_stage.MultiStage(train, test, config=data_module.config, crowns=crowns)
-m.prepare_training()
 
 #Save the train df for each level for inspection
 for index, train_df in enumerate([m.level_0_train,
@@ -142,14 +141,3 @@ visualize.confusion_matrix(
     test_points=data_module.canopy_points,
     rgb_pool=rgb_pool
 )
-
-#plot confusion of each test dataset
-#test_predictions = trainer.validate(m)
-#for index, predictdf in enumerate(test_predictions):
-#    predictions = m.gather_predictions(predictdf)
-#    labels = np.concatenate([x[2] for x in m.test_datasets[index]])
-#    comet_experiment.log_confusion_matrix(
-#        labels,
-#        predictions.pred_label_top1_level_0.values,
-#        labels=list(m.level_label_dicts[x].keys()))
-

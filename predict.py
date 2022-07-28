@@ -57,19 +57,21 @@ comet_logger.experiment.add_tag("prediction")
 
 gpu_client = start(gpus=7, mem_size="20GB")
 cpu_client = start(cpus=5, mem_size="8GB")
-species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt"
+species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt"]
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1"
 savedir = config["crop_dir"] 
 
-#Save each file seperately in a dir named for the species model
-prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
-                              os.path.splitext(os.path.basename(species_model_path))[0])
-try:
-    os.mkdir(prediction_dir)
-except:
-    pass
-    
+#Create output folders
+for species_model_path in species_model_paths:
+    #Save each file seperately in a dir named for the species model
+    prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
+                                  os.path.splitext(os.path.basename(species_model_path))[0])
+    try:
+        os.mkdir(prediction_dir)
+    except:
+        pass
+
 #generate HSI_tif data if needed.
 h5_pool = glob(config["HSI_sensor_pool"], recursive=True)
 h5_pool = [x for x in h5_pool if not "neon-aop-products" in x]
@@ -85,26 +87,30 @@ tif_futures = cpu_client.map(
 wait(tif_futures)
 
 cpu_client.close()
-
+    
 # Step 2 - Predict Crowns
 tile_crowns = []
 predict_futures = []
 for x in tiles:
     try:
         crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)        
-        predict_future = gpu_client.submit(predict.predict_tile,
-            crowns=crowns,
-            img_pool=hyperspectral_pool,
-            filter_dead=True,
-            species_model_path=species_model_path,
-            savedir=prediction_dir,
-            config=config)
-        predict_futures.append(predict_future)
+        for species_model_path in species_model_paths:
+            prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
+                                          os.path.splitext(os.path.basename(species_model_path))[0])            
+            predict_future = gpu_client.submit(predict.predict_tile,
+                crowns=crowns,
+                img_pool=hyperspectral_pool,
+                filter_dead=True,
+                species_model_path=species_model_path,
+                savedir=prediction_dir,
+                config=config)
+            predict_futures.append(predict_future)
     except Exception as e:
         print(e)
         traceback.print_exc()
         continue
-
+    
+wait(predict_futures)
 for x in predict_futures:
     try:
         predicted_trees = x.result()
@@ -112,4 +118,28 @@ for x in predict_futures:
         print(e)
         traceback.print_exc()
         continue        
-        
+    
+#Gather outputs
+counts_across_models = []
+for species_model_path in species_model_paths:
+    prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
+                                  os.path.splitext(os.path.basename(species_model_path))[0])    
+    input_dir = os.path.join(prediction_dir,"*.shp")
+    files = glob(input_dir)
+    counts = []
+    for x in files:
+        gdf = gpd.read_file(x)
+        tile_count = gdf.ensembleTa.value_counts()
+        counts.append(tile_count)
+    
+    total_counts = pd.Series()
+    for ser in counts:
+        total_counts = total_counts.add(ser, fill_value=0)
+    
+    total_counts.sort_values()
+    total_counts.sum()
+    total_counts.to_csv("{}/abundance.csv".format(prediction_dir))    
+    total_counts["model"] = os.path.basename(species_model_path)
+    counts_across_models.append(total_counts)
+counts_across_models = pd.concat(counts_across_models)
+counts_across_models.to_csv("abundance.csv")
