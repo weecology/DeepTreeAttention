@@ -104,7 +104,10 @@ for species_model_path in species_model_paths:
         basename = os.path.splitext(os.path.basename(x))[0]                
         shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)        
         if not os.path.exists(shpname):
-            crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)     
+            try:
+                crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)   
+            except:
+                continue
             crowns.to_file(shpname)        
         crowns = gpd.read_file(shpname)
         predict_future = gpu_client.submit(predict.predict_tile,
