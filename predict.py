@@ -92,29 +92,28 @@ wait(tif_futures)
 
 cpu_client.close()
     
-# Step 2 - Predict Crowns
-tile_crowns = []
 predict_futures = []
-for x in tiles:
-    try:
-        crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)        
-        for species_model_path in species_model_paths:
-            prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
-                                          os.path.splitext(os.path.basename(species_model_path))[0])            
-            predict_future = gpu_client.submit(predict.predict_tile,
-                crowns=crowns,
-                img_pool=hyperspectral_pool,
-                filter_dead=True,
-                species_model_path=species_model_path,
-                savedir=prediction_dir,
-                config=config)
-            predict_futures.append(predict_future)
-    except Exception as e:
-        print(e)
-        traceback.print_exc()
-        continue
+for species_model_path in species_model_paths:
+    prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
+                                  os.path.splitext(os.path.basename(species_model_path))[0])       
+    for x in tiles:
+        basename = os.path.splitext(os.path.basename(x))[0]                
+        shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)        
+        if not os.path.exists(shpname):
+            crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)     
+            crowns.to_shp(shpname)        
+        crowns = gpd.read_file(shpname)
+        predict_future = gpu_client.submit(predict.predict_tile,
+            crowns=crowns,
+            img_pool=hyperspectral_pool,
+            filter_dead=True,
+            species_model_path=species_model_path,
+            savedir=prediction_dir,
+            config=config)
+        predict_futures.append(predict_future)
     
 wait(predict_futures)
+
 for x in predict_futures:
     try:
         predicted_trees = x.result()
