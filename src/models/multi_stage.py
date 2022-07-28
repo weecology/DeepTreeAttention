@@ -433,7 +433,7 @@ class MultiStage(LightningModule):
         return results
             
     def evaluation_scores(self, ensemble_df, experiment):   
-        ensemble_df = ensemble_df.merge(self.test_df, on="individualID")
+        ensemble_df = ensemble_df.drop(columns=["label"]).merge(self.test_df, on="individualID")
         ensemble_df = ensemble_df.groupby("individualID").apply(lambda x: x.head(1))
         
         taxon_accuracy = torchmetrics.functional.accuracy(
