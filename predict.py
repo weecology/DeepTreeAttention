@@ -55,15 +55,18 @@ config = data.read_config("config.yml")
 comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
 comet_logger.experiment.add_tag("prediction")
 
-gpu_client = start(gpus=7, mem_size="20GB")
-cpu_client = start(cpus=5, mem_size="8GB")
+gpu_client = start(gpus=10, mem_size="20GB")
+cpu_client = start(cpus=2, mem_size="8GB")
 species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/24bd8917f519410ab6dd2bd467d42a5c.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/39a4fb41b83047579b5a1de2b0381e28.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/485448fc3c3746389a899f01f08f3bcd.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9b2472ab74644f4eb0e142457ec5b1a1.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/4a83ea2a75994f479448876b1ea19c3b.pt"
-                       
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b629e5365a104320bcec03843e9dd6fd.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5ac9afabe3f6402a9c312ba4cee5160a.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/46aff76fe2974b72a5d001c555d7c03a.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/63bdab99d6874f038212ac301439e9cc.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/c871ed25dc1c4a3e97cf3b723cf88bb6.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6d45510824d6442c987b500a156b77d6.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/83f6ede4f90b44ebac6c1ac271ea0939.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/47ee5858b1104214be178389c13bd025.pt"
                        ]
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
