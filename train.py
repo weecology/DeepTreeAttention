@@ -111,8 +111,8 @@ for level in range(m.levels):
 predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
 results = m.gather_predictions(predictions)
 results["individualID"] = results["individual"]
-results = results.merge(crowns, on="individualID")
-comet_logger.experiment.log_table("nested_predictions.csv", results)
+results_with_data = results.merge(crowns, on="individualID")
+comet_logger.experiment.log_table("nested_predictions.csv", results_with_data)
 
 ensemble_df = m.ensemble(results)
 ensemble_df = m.evaluation_scores(
