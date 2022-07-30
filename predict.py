@@ -55,7 +55,7 @@ config = data.read_config("config.yml")
 comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
 comet_logger.experiment.add_tag("prediction")
 
-gpu_client = start(gpus=10, mem_size="20GB")
+gpu_client = start(gpus=10, mem_size="25GB")
 cpu_client = start(cpus=2, mem_size="8GB")
 species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt",
                        "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt",
@@ -107,12 +107,14 @@ for species_model_path in species_model_paths:
         basename = os.path.splitext(os.path.basename(x))[0]                
         shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)        
         if not os.path.exists(shpname):
+            print("{} does not exist, recreating".format(shpname))
             try:
                 crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)   
             except:
                 continue
-            crowns.to_file(shpname)        
-        crowns = gpd.read_file(shpname)
+            crowns.to_file(shpname)
+        else:
+            crowns = gpd.read_file(shpname)
         predict_future = gpu_client.submit(predict.predict_tile,
             crowns=crowns,
             img_pool=hyperspectral_pool,
