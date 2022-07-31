@@ -55,7 +55,7 @@ config = data.read_config("config.yml")
 comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
 comet_logger.experiment.add_tag("prediction")
 
-gpu_client = start(gpus=10, mem_size="25GB")
+#gpu_client = start(gpus=10, mem_size="25GB")
 cpu_client = start(cpus=2, mem_size="8GB")
 species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt",
                        #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt",
@@ -102,9 +102,11 @@ cpu_client.close()
 predict_futures = []
 tiles_to_ignore = []
 for species_model_path in species_model_paths:
+    print(species_model_path)
     prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
                                   os.path.splitext(os.path.basename(species_model_path))[0])       
     for x in tiles:
+        print(x)
         if x in tiles_to_ignore:
             continue
         basename = os.path.splitext(os.path.basename(x))[0]                
@@ -117,24 +119,31 @@ for species_model_path in species_model_paths:
                 tiles_to_ignore.append(x)
                 continue
             crowns.to_file(shpname)
-        predict_future = gpu_client.submit(predict.predict_tile,
-            crowns=shpname,
-            img_pool=hyperspectral_pool,
-            filter_dead=True,
-            species_model_path=species_model_path,
-            savedir=prediction_dir,
-            config=config)
-        predict_futures.append(predict_future)
+        predict.predict_tile(
+                    crowns=shpname,
+                    img_pool=hyperspectral_pool,
+                    filter_dead=True,
+                    species_model_path=species_model_path,
+                    savedir=prediction_dir,
+                    config=config)        
+        #predict_future = gpu_client.submit(predict.predict_tile,
+            #crowns=shpname,
+            #img_pool=hyperspectral_pool,
+            #filter_dead=True,
+            #species_model_path=species_model_path,
+            #savedir=prediction_dir,
+            #config=config)
+        #predict_futures.append(predict_future)
     
-wait(predict_futures)
+#wait(predict_futures)
 
-for x in predict_futures:
-    try:
-        predicted_trees = x.result()
-    except Exception as e:
-        print(e)
-        traceback.print_exc()
-        continue        
+#for x in predict_futures:
+    #try:
+        #predicted_trees = x.result()
+    #except Exception as e:
+        #print(e)
+        #traceback.print_exc()
+        #continue        
     
 #Gather outputs
 counts_across_models = []
