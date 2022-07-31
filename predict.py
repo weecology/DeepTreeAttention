@@ -51,91 +51,78 @@ def convert(rgb_path, hyperspectral_pool, savedir):
 #Params
 #No daemonic dask children
 config = data.read_config("config.yml")
-
 comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
 comet_logger.experiment.add_tag("prediction")
 
-gpu_client = start(gpus=10, mem_size="25GB")
-cpu_client = start(cpus=2, mem_size="8GB")
-species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b629e5365a104320bcec03843e9dd6fd.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5ac9afabe3f6402a9c312ba4cee5160a.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/46aff76fe2974b72a5d001c555d7c03a.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/63bdab99d6874f038212ac301439e9cc.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/c871ed25dc1c4a3e97cf3b723cf88bb6.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6d45510824d6442c987b500a156b77d6.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/83f6ede4f90b44ebac6c1ac271ea0939.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/47ee5858b1104214be178389c13bd025.pt"
-                       ]
-
+gpu_client = start(gpus=7, mem_size="20GB")
+species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt"
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1"
 savedir = config["crop_dir"] 
 
-#Create output folders
-for species_model_path in species_model_paths:
-    #Save each file seperately in a dir named for the species model
-    prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
-                                  os.path.splitext(os.path.basename(species_model_path))[0])
-    try:
-        os.mkdir(prediction_dir)
-    except:
-        pass
+#species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt",
+                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt",
+                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b629e5365a104320bcec03843e9dd6fd.pt",
+                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5ac9afabe3f6402a9c312ba4cee5160a.pt",
+                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/46aff76fe2974b72a5d001c555d7c03a.pt",
+                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/63bdab99d6874f038212ac301439e9cc.pt",
+                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/c871ed25dc1c4a3e97cf3b723cf88bb6.pt",
+                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6d45510824d6442c987b500a156b77d6.pt",
+                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/83f6ede4f90b44ebac6c1ac271ea0939.pt",
+                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/47ee5858b1104214be178389c13bd025.pt"
+                       #]
 
+
+#Save each file seperately in a dir named for the species model
+prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
+                              os.path.splitext(os.path.basename(species_model_path))[0])
+try:
+    os.mkdir(prediction_dir)
+except:
+    pass
+    
 #generate HSI_tif data if needed.
 h5_pool = glob(config["HSI_sensor_pool"], recursive=True)
 h5_pool = [x for x in h5_pool if not "neon-aop-products" in x]
 hyperspectral_pool = glob(config["HSI_tif_dir"]+"*")
 
-# Step 1 Find RGB Tiles and convert HSI
-tiles = find_rgb_files(site="OSBS", config=config)
-tif_futures = cpu_client.map(
-    convert,
-    tiles,
-    hyperspectral_pool=h5_pool,
-    savedir=config["HSI_tif_dir"])
-wait(tif_futures)
+## Step 1 Find RGB Tiles and convert HSI
+#tiles = find_rgb_files(site="OSBS", config=config)
+#tif_futures = cpu_client.map(
+    #convert,
+    #tiles,
+    #hyperspectral_pool=h5_pool,
+    #savedir=config["HSI_tif_dir"])
+#wait(tif_futures)
 
-cpu_client.close()
-    
+#for x in tiles:
+    #basename = os.path.splitext(os.path.basename(x))[0]                
+    #shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)      
+    #try:
+        #crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)   
+    #except:
+        #continue
+    #crowns.to_file(shpname)
+
+#cpu_client.close()
+
+# Step 2 - Predict Crowns
+tiles = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/*.shp")
 predict_futures = []
-tiles_to_ignore = []
-for species_model_path in species_model_paths:
-    print(species_model_path)
-    prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
-                                  os.path.splitext(os.path.basename(species_model_path))[0])       
-    for x in tiles:
-        print(x)
-        if x in tiles_to_ignore:
-            continue
-        basename = os.path.splitext(os.path.basename(x))[0]                
-        shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)        
-        if not os.path.exists(shpname):
-            print("{} does not exist, recreating".format(shpname))
-            try:
-                crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)   
-            except:
-                tiles_to_ignore.append(x)
-                continue
-            crowns.to_file(shpname)
-        #predict.predict_tile(
-                    #crowns=shpname,
-                    #img_pool=hyperspectral_pool,
-                    #filter_dead=True,
-                    #species_model_path=species_model_path,
-                    #savedir=prediction_dir,
-                    #config=config)        
+for x in tiles:
+    try:
         predict_future = gpu_client.submit(predict.predict_tile,
-            crowns=shpname,
+            crowns=x,
             img_pool=hyperspectral_pool,
             filter_dead=True,
             species_model_path=species_model_path,
             savedir=prediction_dir,
             config=config)
         predict_futures.append(predict_future)
-    
-wait(predict_futures)
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        continue
 
 for x in predict_futures:
     try:
@@ -144,28 +131,3 @@ for x in predict_futures:
         print(e)
         traceback.print_exc()
         continue        
-    
-#Gather outputs
-counts_across_models = []
-for species_model_path in species_model_paths:
-    prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
-                                  os.path.splitext(os.path.basename(species_model_path))[0])    
-    input_dir = os.path.join(prediction_dir,"*.shp")
-    files = glob(input_dir)
-    counts = []
-    for x in files:
-        gdf = gpd.read_file(x)
-        tile_count = gdf.ensembleTa.value_counts()
-        counts.append(tile_count)
-    
-    total_counts = pd.Series()
-    for ser in counts:
-        total_counts = total_counts.add(ser, fill_value=0)
-    
-    total_counts.sort_values()
-    total_counts.sum()
-    total_counts.to_csv("{}/abundance.csv".format(prediction_dir))    
-    total_counts["model"] = os.path.basename(species_model_path)
-    counts_across_models.append(total_counts)
-counts_across_models = pd.concat(counts_across_models)
-counts_across_models.to_csv("abundance.csv")
