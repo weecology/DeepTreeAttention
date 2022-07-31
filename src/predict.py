@@ -100,7 +100,9 @@ def find_crowns(rgb_path, config, dead_model_path=None):
     
     return filtered_crowns
 
-def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_dead=False):        
+def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_dead=False):
+    crowns = gpd.read_file(crowns)
+    
     # Load species model
     m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)
     year_paths = []

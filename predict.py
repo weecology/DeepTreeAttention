@@ -117,10 +117,8 @@ for species_model_path in species_model_paths:
                 tiles_to_ignore.append(x)
                 continue
             crowns.to_file(shpname)
-        else:
-            crowns = gpd.read_file(shpname)
         predict_future = gpu_client.submit(predict.predict_tile,
-            crowns=crowns,
+            crowns=shpname,
             img_pool=hyperspectral_pool,
             filter_dead=True,
             species_model_path=species_model_path,
