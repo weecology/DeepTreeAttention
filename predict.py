@@ -107,7 +107,7 @@ hyperspectral_pool = glob(config["HSI_tif_dir"]+"*")
 #cpu_client.close()
 
 # Step 2 - Predict Crowns
-tiles = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/*.shp")
+tiles = glob("/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/*.shp")
 predict_futures = []
 for x in tiles:
     try:
