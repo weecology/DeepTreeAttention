@@ -18,4 +18,4 @@ source activate DeepTreeAttention
 
 cd ~/DeepTreeAttention/
 module load git gcc
-python -m cProfile -o profile_predict_crowns.pstats predict.py
+python -m cProfile -o pinned_memory.pstats predict.py

@@ -578,7 +578,7 @@ class TreeData(LightningDataModule):
             batch_size=self.config["batch_size"],
             shuffle=False,
             num_workers=self.config["workers"],
-            pin_memory=False
+            pin_memory=True
             )
           
         return data_loader
