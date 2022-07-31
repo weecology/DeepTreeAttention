@@ -95,48 +95,48 @@ hyperspectral_pool = glob(config["HSI_tif_dir"]+"*")
     #savedir=config["HSI_tif_dir"])
 #wait(tif_futures)
 
-#for x in tiles:
-    #basename = os.path.splitext(os.path.basename(x))[0]                
-    #shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)      
-    #try:
-        #crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)   
-    #except:
-        #continue
-    #crowns.to_file(shpname)
+for x in tiles:
+    basename = os.path.splitext(os.path.basename(x))[0]                
+    shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)      
+    try:
+        crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)   
+    except:
+        continue
+    crowns.to_file(shpname)
 
 #cpu_client.close()
 
 # Step 2 - Predict Crowns
 tiles = glob("/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/*.shp")
 predict_futures = []
-#for x in tiles:
-    #predict.predict_tile(
-                #crowns=x,
-                #img_pool=hyperspectral_pool,
-                #filter_dead=True,
-                #species_model_path=species_model_path,
-                #savedir=prediction_dir,
-                #config=config)
-            
 for x in tiles:
-    try:
-        predict_future = gpu_client.submit(predict.predict_tile,
-            crowns=x,
-            img_pool=hyperspectral_pool,
-            filter_dead=True,
-            species_model_path=species_model_path,
-            savedir=prediction_dir,
-            config=config)
-        predict_futures.append(predict_future)
-    except Exception as e:
-        print(e)
-        traceback.print_exc()
-        continue
+    predict.predict_tile(
+                crowns=x,
+                img_pool=hyperspectral_pool,
+                filter_dead=True,
+                species_model_path=species_model_path,
+                savedir=prediction_dir,
+                config=config)
+            
+#for x in tiles:
+    #try:
+        #predict_future = gpu_client.submit(predict.predict_tile,
+            #crowns=x,
+            #img_pool=hyperspectral_pool,
+            #filter_dead=True,
+            #species_model_path=species_model_path,
+            #savedir=prediction_dir,
+            #config=config)
+        #predict_futures.append(predict_future)
+    #except Exception as e:
+        #print(e)
+        #traceback.print_exc()
+        #continue
 
-for x in predict_futures:
-    try:
-        predicted_trees = x.result()
-    except Exception as e:
-        print(e)
-        traceback.print_exc()
-        continue        
+#for x in predict_futures:
+    #try:
+        #predicted_trees = x.result()
+    #except Exception as e:
+        #print(e)
+        #traceback.print_exc()
+        #continue        
