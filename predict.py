@@ -113,7 +113,6 @@ predict_futures = []
 for x in tiles[:2]:
     predict.predict_tile(
                 crowns=x,
-                img_pool=hyperspectral_pool,
                 filter_dead=True,
                 species_model_path=species_model_path,
                 savedir=prediction_dir,
