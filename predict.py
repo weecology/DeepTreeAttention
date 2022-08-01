@@ -55,6 +55,7 @@ comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["
 comet_logger.experiment.add_tag("prediction")
 
 #gpu_client = start(gpus=7, mem_size="20GB")
+cpu_client = start(cpus=50)
 species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt"
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
@@ -110,10 +111,10 @@ for x in tiles[:2]:
     basename = os.path.splitext(os.path.basename(x))[0]                
     shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)    
     crowns = gpd.read_file(shpname)        
-    crown_annotations_path = predict.generate_prediction_crops(crowns, config, client=None)
+    crown_annotations_path = predict.generate_prediction_crops(crowns, config, client=cpu_client)
     crown_annotations_paths.append(crown_annotations_path)
     
-#cpu_client.close()
+cpu_client.close()
 
 # Step 2 - Predict Crowns
 predict_futures = []
