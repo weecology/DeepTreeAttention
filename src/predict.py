@@ -142,7 +142,7 @@ def generate_prediction_crops(crowns, config, client=None):
         convert_h5=config["convert_h5"],   
         rgb_glob=config["rgb_sensor_pool"],
         HSI_tif_dir=config["HSI_tif_dir"],
-        client=client,
+        client=client
     )
     
     #Write file alongside
