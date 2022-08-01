@@ -118,7 +118,10 @@ def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_d
     if not len(year_paths) == len(m.years):
         raise ValueError("images paths {} does not match list of year models {}".format(image_paths, m.years))
     
-    trees, output_list = predict_species(crowns=crowns, image_paths=year_paths, m=m, config=config)
+    #Recursive predict to avoid prediction levels that will be later ignored.
+    trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False)
+        
+    trees, output_list = predict_species(crowns=crowns, image_paths=year_paths, m=m, config=config, trainer=trainer)
 
     # Remove predictions for dead trees
     if filter_dead:
@@ -168,11 +171,8 @@ def predict_crowns(PATH):
     
     return gdf
 
-def predict_species(crowns, image_paths, m, config):
+def predict_species(crowns, image_paths, m, trainer, config):
     """Compute hierarchical prediction without predicting unneeded levels"""
-    
-    #Recursive predict to avoid prediction levels that will be later ignored.
-    trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False)
     
     output_list = []
     # Level 0 PIPA v all
@@ -185,8 +185,7 @@ def predict_species(crowns, image_paths, m, config):
     output_list.append(predictions_to_df(predictions))
     
     # Level 1 Needleleaf v Broadleaf
-    #remaining_crowns = results[~(results["pred_taxa_top1_level_0"]=="PIPA2")].individual
-    remaining_crowns = results.individual
+    remaining_crowns = results[~(results["pred_taxa_top1_level_0"]=="PIPA2")].individual
     
     if len(remaining_crowns) > 0:
         m.current_level = 1        
@@ -200,10 +199,10 @@ def predict_species(crowns, image_paths, m, config):
         results = results.merge(results_1,on="individual", how="outer")
 
     # Level 2 Within Broadleaf                
-    #try:
-        #remaining_crowns = results_1[results_1["pred_taxa_top1_level_1"]=="BROADLEAF"].individual
-    #except:
-        #remaining_crowns = []
+    try:
+        remaining_crowns = results_1[results_1["pred_taxa_top1_level_1"]=="BROADLEAF"].individual
+    except:
+        remaining_crowns = []
         
     if len(remaining_crowns) > 0: 
         m.current_level = 2        
@@ -217,10 +216,10 @@ def predict_species(crowns, image_paths, m, config):
         results = results.merge(results_2,on="individual", how="outer")
         
     # Level 3 Within CONFIFER    
-    #try:
-        #remaining_crowns = results_1[results_1["pred_taxa_top1_level_1"]=="CONIFER"].individual
-    #except:
-        #remaining_crowns = []
+    try:
+        remaining_crowns = results_1[results_1["pred_taxa_top1_level_1"]=="CONIFER"].individual
+    except:
+        remaining_crowns = []
         
     if len(remaining_crowns) > 0:
         m.current_level = 3        
@@ -234,10 +233,10 @@ def predict_species(crowns, image_paths, m, config):
         results = results.merge(results_3,on="individual", how="outer")
 
     # Level 4 Within OAK
-    #try:
-        #remaining_crowns = results_2[results_2["pred_taxa_top1_level_2"]=="OAK"].individual
-    #except:
-        #remaining_crowns = []
+    try:
+        remaining_crowns = results_2[results_2["pred_taxa_top1_level_2"]=="OAK"].individual
+    except:
+        remaining_crowns = []
         
     if len(remaining_crowns) > 0:
         m.current_level = 4        
