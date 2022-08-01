@@ -365,7 +365,7 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
                         annotations.append(annotation)                                                   
                     except Exception as e:
                         print("index {} failed with {}".format(index,e))
-                        raise
+                        continue
 
     annotations = pd.concat(annotations)
         
