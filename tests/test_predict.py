@@ -23,12 +23,11 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     rgb_path = "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop_2018.tif".format(ROOT)
     config["HSI_sensor_pool"] = "{}/tests/data/hsi/*.tif".format(ROOT)
     config["CHM_pool"] = None
-    hsi_pool = glob.glob(config["HSI_sensor_pool"])
-    
+    config["prediction_crop_dir"] = tmpdir    
     crowns = predict.find_crowns(rgb_path, config)
+    crowns.to_file("{}/crowns.shp".format(tmpdir))
     trees = predict.predict_tile(
-        crowns=crowns,
-        img_pool=hsi_pool,
+        crowns="{}/crowns.shp".format(tmpdir),
         filter_dead=False,
         species_model_path=species_model_path,
         savedir=tmpdir,

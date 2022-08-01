@@ -3,16 +3,14 @@ from deepforest import main
 from deepforest.utilities import annotations_to_shapefile
 import glob
 import geopandas as gpd
-import numpy as np
 import os
 import rasterio
-import pandas as pd
 from src.models import dead
-from src import neon_paths
-from src.utils import preprocess_image, predictions_to_df
+from src.utils import preprocess_image, predictions_to_df, load_image
 from src import patches
 from src.CHM import postprocess_CHM
 from src.models import multi_stage
+from src.generate import generate_crops
 from torch.utils.data import Dataset
 from torchvision import transforms
 import torch
@@ -72,7 +70,42 @@ class predict_dataset(Dataset):
             return individual, None
         
         return individual, inputs
+
+class predict_crops(Dataset):
+    """A csv file with a path to image crop and label
+    Args:
+       df: pandas df image locations
+       years: list of years to lookup in df
+    """
+    def __init__(self, crowns, years, config):
+        #Load each tile into memory
+        self.tiles = []
+        self.crowns = crowns
+        self.individuals = self.crowns.individualID.unique()
+        self.years = years
+        self.config = config
         
+    def __len__(self):
+        #0th based index
+        return len(self.individuals)
+        
+    def __getitem__(self, index):
+        images = []        
+        individual = self.individuals[index] 
+        ind_annotations = self.crowns[self.crowns.individualID == self.individuals[index]]
+        for yr in self.years:
+            yr_annotation = ind_annotations[ind_annotations.tile_year==str(yr)]
+            if yr_annotation.empty:
+                image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])
+            else:
+                image_path = os.path.join(self.config["prediction_crop_dir"], yr_annotation["image_path"].iloc[0])
+                image = load_image(image_path, image_size=self.config["image_size"])
+                images.append(image)
+        inputs = {}
+        inputs["HSI"] = images
+        
+        return individual, inputs
+    
 def find_crowns(rgb_path, config, dead_model_path=None):
     crowns = predict_crowns(rgb_path)
     if crowns is None:
@@ -100,28 +133,32 @@ def find_crowns(rgb_path, config, dead_model_path=None):
     
     return filtered_crowns
 
-def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_dead=False):
+def generate_prediction_crops(crowns, config, client=None):
+    """Create prediction crops for model.predict"""
+    annotations = generate_crops(
+        crowns,
+        savedir=config["prediction_crop_dir"],
+        sensor_glob=config["HSI_sensor_pool"],
+        convert_h5=config["convert_h5"],   
+        rgb_glob=config["rgb_sensor_pool"],
+        HSI_tif_dir=config["HSI_tif_dir"],
+        client=client,
+    )
+    
+    return annotations
+
+def predict_tile(crowns, species_model_path, config, savedir, filter_dead=False):
     crowns = gpd.read_file(crowns)
     
     # Load species model
     m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)
-    year_paths = []
-    for yr in m.years:
-        geo_index =  neon_paths.bounds_to_geoindex(crowns.geometry.total_bounds)
-        image_paths = neon_paths.find_sensor_path(lookup_pool=img_pool, geo_index=geo_index, all_years=True)
-        try:
-            year_path = [x for x in image_paths if "_{}.tif".format(yr) in x][0]
-        except:
-            year_path = None
-        year_paths.append(year_path)
-    
-    if not len(year_paths) == len(m.years):
-        raise ValueError("images paths {} does not match list of year models {}".format(image_paths, m.years))
+    crown_annotations = generate_prediction_crops(crowns, config)
+    crown_annotations["individual"] = crown_annotations["individualID"] 
     
     #Recursive predict to avoid prediction levels that will be later ignored.
     trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False)
         
-    trees, output_list = predict_species(crowns=crowns, image_paths=year_paths, m=m, config=config, trainer=trainer)
+    trees, output_list = predict_species(crowns=crown_annotations, years=m.years, m=m, config=config, trainer=trainer)
 
     # Remove predictions for dead trees
     if filter_dead:
@@ -131,6 +168,7 @@ def predict_tile(crowns, species_model_path, config, savedir, img_pool, filter_d
         
     # Calculate crown area
     trees["crown_area"] = crowns.geometry.area
+    trees["geometry"] = crowns.geometry
     trees = gpd.GeoDataFrame(trees, geometry="geometry")    
     
     #Save .shp
@@ -171,12 +209,11 @@ def predict_crowns(PATH):
     
     return gdf
 
-def predict_species(crowns, image_paths, m, trainer, config):
+def predict_species(crowns, years, m, trainer, config):
     """Compute hierarchical prediction without predicting unneeded levels"""
-    
     output_list = []
     # Level 0 PIPA v all
-    ds = predict_dataset(crowns=crowns, image_paths=image_paths, config=config)
+    ds = predict_crops(crowns=crowns, years=years, config=config)
     m.current_level = 0
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))    
     results = m.gather_predictions([predictions])
@@ -191,8 +228,9 @@ def predict_species(crowns, image_paths, m, trainer, config):
         m.current_level = 1        
         print("{} crowns for level 1".format(len(remaining_crowns)))
         level1_crowns = crowns[crowns.individual.isin(remaining_crowns)]
-        ds = predict_dataset(crowns=level1_crowns, image_paths=image_paths, config=config)    
+        ds = predict_crops(crowns=level1_crowns, years=m.years, config=config)
         predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
+        
         #save to level dataframe
         output_list.append(predictions_to_df(predictions))
         results_1 = m.format_level(predictions, index=1, label_to_taxonIDs=m.label_to_taxonIDs[1])
@@ -208,7 +246,7 @@ def predict_species(crowns, image_paths, m, trainer, config):
         m.current_level = 2        
         print("{} crowns for level 2".format(len(remaining_crowns)))        
         level2_crowns = crowns[crowns.individual.isin(remaining_crowns)]
-        ds = predict_dataset(crowns=level2_crowns, image_paths=image_paths, config=config)    
+        ds = predict_crops(crowns=level2_crowns, years=m.years, config=config)
         predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
         #save to level dataframe
         output_list.append(predictions_to_df(predictions))        
@@ -225,7 +263,7 @@ def predict_species(crowns, image_paths, m, trainer, config):
         m.current_level = 3        
         print("{} crowns for level 3".format(len(remaining_crowns)))                
         level3_crowns = crowns[crowns.individual.isin(remaining_crowns)]
-        ds = predict_dataset(crowns=level3_crowns, image_paths=image_paths, config=config)    
+        ds = predict_crops(crowns=level3_crowns, years=m.years, config=config)
         predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
         #save to level dataframe
         output_list.append(predictions_to_df(predictions))        
@@ -242,7 +280,7 @@ def predict_species(crowns, image_paths, m, trainer, config):
         m.current_level = 4        
         print("{} crowns for level 4".format(len(remaining_crowns)))                
         level4_crowns = crowns[crowns.individual.isin(remaining_crowns)]
-        ds = predict_dataset(crowns=level4_crowns, image_paths=image_paths, config=config)    
+        ds = predict_crops(crowns=level4_crowns, years=m.years, config=config)
         predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
         results_4 = m.format_level(predictions, index=4, label_to_taxonIDs=m.label_to_taxonIDs[4])
         
