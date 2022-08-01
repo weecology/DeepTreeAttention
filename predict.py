@@ -105,14 +105,21 @@ tiles = find_rgb_files(site="OSBS", config=config)
         #continue
     #crowns.to_file(shpname)
 
+crown_annotations_paths = []
+for x in tiles[:2]:
+    basename = os.path.splitext(os.path.basename(x))[0]                
+    shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)    
+    crowns = gpd.read_file(shpname)        
+    crown_annotations_path = predict.generate_prediction_crops(crowns, config, client=None)
+    crown_annotations_paths.append(crown_annotations_path)
+    
 #cpu_client.close()
 
 # Step 2 - Predict Crowns
-tiles = glob("/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/*.shp")
 predict_futures = []
-for x in tiles[:2]:
+for x in crown_annotations_paths:
     predict.predict_tile(
-                crowns=x,
+                crown_annotations=x,
                 filter_dead=True,
                 species_model_path=species_model_path,
                 savedir=prediction_dir,

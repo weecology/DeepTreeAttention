@@ -81,7 +81,7 @@ class predict_crops(Dataset):
         #Load each tile into memory
         self.tiles = []
         self.crowns = crowns
-        self.individuals = self.crowns.individualID.unique()
+        self.individuals = self.crowns.individual.unique()
         self.years = years
         self.config = config
         
@@ -92,7 +92,7 @@ class predict_crops(Dataset):
     def __getitem__(self, index):
         images = []        
         individual = self.individuals[index] 
-        ind_annotations = self.crowns[self.crowns.individualID == self.individuals[index]]
+        ind_annotations = self.crowns[self.crowns.individual == self.individuals[index]]
         for yr in self.years:
             yr_annotation = ind_annotations[ind_annotations.tile_year==str(yr)]
             if yr_annotation.empty:
@@ -135,7 +135,7 @@ def find_crowns(rgb_path, config, dead_model_path=None):
 
 def generate_prediction_crops(crowns, config, client=None):
     """Create prediction crops for model.predict"""
-    annotations = generate_crops(
+    crown_annotations = generate_crops(
         crowns,
         savedir=config["prediction_crop_dir"],
         sensor_glob=config["HSI_sensor_pool"],
@@ -145,16 +145,30 @@ def generate_prediction_crops(crowns, config, client=None):
         client=client,
     )
     
-    return annotations
+    #Write file alongside
+    crowns = crowns.loc[:,crowns.columns.isin(["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score","RGB_tile"])]    
+    crown_annotations = crown_annotations.merge(crowns)
+    rgb_path = crown_annotations.RGB_tile.unique()[0]
+    basename = os.path.splitext(os.path.basename(rgb_path))[0]         
+    crown_annotations = gpd.GeoDataFrame(crown_annotations, geometry="geometry")    
+    crown_annotations.to_file("{}/{}.shp".format(config["prediction_crop_dir"],basename))  
+    
+    return "{}/{}.shp".format(config["prediction_crop_dir"],basename)
 
-def predict_tile(crowns, species_model_path, config, savedir, filter_dead=False):
-    crowns = gpd.read_file(crowns)
+def predict_tile(crown_annotations, species_model_path, config, savedir, filter_dead=False):
+    """Predict a set of crown labels from a annotations.shp
+    Args:
+        crown_annotations: geodataframe from predict.generate_prediction_crops
+        species_model_path: pytorch model to predict data
+        config: config.yml
+        savedir: directory to save tile predictions
+        filter_dead: filter dead model
+    """
+    crown_annotations = gpd.read_file(crown_annotations)
     
     # Load species model
     m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)
-    crown_annotations = generate_prediction_crops(crowns, config)
-    crown_annotations["individual"] = crown_annotations["individualID"] 
-    
+
     #Recursive predict to avoid prediction levels that will be later ignored.
     trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False)
         
@@ -167,12 +181,12 @@ def predict_tile(crowns, species_model_path, config, savedir, filter_dead=False)
         trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"ens_score"] = None
         
     # Calculate crown area
-    trees["crown_area"] = crowns.geometry.area
-    trees["geometry"] = crowns.geometry
+    trees["crown_area"] = crown_annotations.geometry.area
+    trees["geometry"] = crown_annotations.geometry
     trees = gpd.GeoDataFrame(trees, geometry="geometry")    
     
     #Save .shp
-    basename = os.path.splitext(os.path.basename(crowns.RGB_tile.unique()[0]))[0]
+    basename = os.path.splitext(os.path.basename(crown_annotations.RGB_tile.unique()[0]))[0]
     trees.to_file(os.path.join(savedir, "{}.shp".format(basename)))
     
     #save .json
