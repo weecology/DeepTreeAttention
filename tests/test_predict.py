@@ -1,10 +1,9 @@
 import os
-import glob
 import pytest
 from src import predict
 from src.models import multi_stage
 from pytorch_lightning import Trainer
-import cProfile, pstats
+import geopandas as gpd
 import pandas as pd
 
 #Training module
@@ -24,10 +23,14 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     config["HSI_sensor_pool"] = "{}/tests/data/hsi/*.tif".format(ROOT)
     config["CHM_pool"] = None
     config["prediction_crop_dir"] = tmpdir    
+    
     crowns = predict.find_crowns(rgb_path, config)
     crowns.to_file("{}/crowns.shp".format(tmpdir))
+    
+    crown_annotations_path = predict.generate_prediction_crops(crowns, config)
+
     trees = predict.predict_tile(
-        crowns="{}/crowns.shp".format(tmpdir),
+        crown_annotations=crown_annotations_path,
         filter_dead=False,
         species_model_path=species_model_path,
         savedir=tmpdir,
