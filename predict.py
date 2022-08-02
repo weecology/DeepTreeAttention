@@ -123,7 +123,6 @@ wait(crown_annotations_futures)
 for x in crown_annotations_futures:
     crown_annotations_paths.append(x.result())
     
-cpu_client.scale_down(1)
 cpu_client.close()
 
 # Step 2 - Predict Crowns
