@@ -5,6 +5,8 @@ from src.models import multi_stage
 from pytorch_lightning import Trainer
 import geopandas as gpd
 import pandas as pd
+import cProfile
+import pstats
 
 #Training module
 @pytest.fixture()
@@ -28,7 +30,10 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     crowns.to_file("{}/crowns.shp".format(tmpdir))
     
     crown_annotations_path = predict.generate_prediction_crops(crowns, config)
-
+    
+    profiler = cProfile.Profile()
+    profiler.enable()    
+    
     trees = predict.predict_tile(
         crown_annotations=crown_annotations_path,
         filter_dead=False,
@@ -36,6 +41,11 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
         savedir=tmpdir,
         config=config)
     
+    profiler.disable()
+    profiler.dump_stats("{}/tests/predict_profile.prof".format(ROOT))
+    stats = pstats.Stats(profiler).sort_stats('cumtime')        
+    stats.print_stats()
+    
+    
     assert all([x in trees.columns for x in ["tile","geometry","ens_score","ensembleTaxonID"]])
     output_dict = pd.read_csv(os.path.join(tmpdir,"2019_D01_HARV_DP3_726000_4699000_image_crop_2018_0.csv"))
-    assert output_dict.shape[0] == crowns.shape[0]

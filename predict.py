@@ -123,7 +123,9 @@ wait(crown_annotations_futures)
 for x in crown_annotations_futures:
     crown_annotations_paths.append(x.result())
     
-cpu_client.close()
+cpu_client.loop.add_callback(cpu_client.scheduler.retire_workers, close_workers=True)
+cpu_client.loop.add_callback(cpu_client.scheduler.terminate)
+cpu_client.run_on_scheduler(lambda dask_scheduler: dask_scheduler.loop.stop())
 
 # Step 2 - Predict Crowns
 predict_futures = []
