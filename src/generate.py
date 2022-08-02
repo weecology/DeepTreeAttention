@@ -247,18 +247,7 @@ def write_crop(row, savedir, img_path, replace=True, rasterio_src=None):
         filename = "{}_{}.tif".format(savedir, row["individual"], tile_year)
         file_exists = os.path.exists(filename)
         if file_exists:
-            annotation = pd.DataFrame({
-                "image_path":[os.path.basename(filename)],
-                "taxonID":[row["taxonID"]],
-                "plotID":[row["plotID"]],
-                "individualID":[row["individual"]],
-                "tile_year":[tile_year],
-                "siteID":[row["siteID"]],
-                "box_id":[row["box_id"]],
-                "RGB_tile":[row["RGB_tile"]]
-            })            
-            
-            return annotation            
+            return os.path.basename(filename)            
         else:
             filename = patches.crop(
                 bounds=row["geometry"].bounds,
@@ -274,18 +263,9 @@ def write_crop(row, savedir, img_path, replace=True, rasterio_src=None):
             rasterio_src=rasterio_src,
             basename="{}_{}".format(row["individual"], tile_year))
         
-        annotation = pd.DataFrame(
-            {"image_path":[os.path.basename(filename)],
-             "taxonID":[row["taxonID"]], 
-             "plotID":[row["plotID"]],
-             "individualID":[row["individual"]], 
-             "siteID":[row["siteID"]],
-             "tile_year":[tile_year],
-             "box_id":[row["box_id"]],
-             "RGB_tile":[row["RGB_tile"]]
-             })
+    image_path = os.path.basename(filename)
     
-        return annotation
+    return image_path
 
 def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=False, HSI_tif_dir=None, replace=True):
     """
@@ -329,7 +309,9 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
             continue
         
         tile_to_path[geo_index] = img_path
-            
+    
+    filenames = []  
+    indexes = []
     if client:
         futures = []
         for index, row in gdf.iterrows():
@@ -340,12 +322,13 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
             for x in img_path:
                 future = client.submit(write_crop,row=row,img_path=x, savedir=savedir, replace=replace)
                 futures.append(future)
+                indexes.append(index)
             
         wait(futures)
         for x in futures:
             try:
-                annotation = x.result()
-                annotations.append(annotation)                
+                filename = x.result()
+                filenames.append(filename)                
             except:
                 print("Future failed with {}".format(traceback.print_exc()))
     else:
@@ -361,13 +344,15 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
                 #Write available crops
                 for index, row in tile_annotations.iterrows():
                     try:
-                        annotation = write_crop(row=row, savedir=savedir, img_path=x, replace=replace, rasterio_src=rasterio_src)   
-                        annotations.append(annotation)                                                   
+                        filename = write_crop(row=row, savedir=savedir, img_path=x, replace=replace, rasterio_src=rasterio_src)   
+                        indexes.append(index)
+                        filenames.append(filename)                                                   
                     except Exception as e:
                         print("index {} failed with {}".format(index,e))
                         continue
-
-    annotations = pd.concat(annotations)
-        
+    annotations = gdf.loc[indexes]
+    annotations["image_path"] = filenames       
+    annotations["tile_year"] = annotations.image_path.apply(lambda x: os.path.splitext(os.path.basename(x))[0].split("_")[-1] )
+    
     return annotations
         
