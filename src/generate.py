@@ -240,8 +240,11 @@ def points_to_crowns(
     
     return results
 
-def write_crop(row, savedir, img_path, replace=True, rasterio_src=None):
-    """Wrapper to write a crop based on size and savedir"""
+def write_crop(row, savedir, img_path, replace=True, rasterio_src=None, as_numpy=False):
+    """Wrapper to write a crop based on size and savedir
+    Args:
+        as_numpy: save as .npz files preprocessed, instead of .tif, useful for prediction
+    """
     tile_year = os.path.splitext(os.path.basename(img_path))[0].split("_")[-1]
     if replace == False:
         filename = "{}_{}.tif".format(savedir, row["individual"], tile_year)
@@ -254,20 +257,23 @@ def write_crop(row, savedir, img_path, replace=True, rasterio_src=None):
                 sensor_path=img_path,
                 savedir=savedir,
                 rasterio_src=rasterio_src,
-                basename="{}_{}".format(row["individual"], tile_year))
+                basename="{}_{}".format(row["individual"], tile_year),
+                as_numpy=as_numpy
+            )
     else:
         filename = patches.crop(
             bounds=row["geometry"].bounds,
             sensor_path=img_path,
             savedir=savedir,
             rasterio_src=rasterio_src,
+            as_numpy=as_numpy,
             basename="{}_{}".format(row["individual"], tile_year))
         
     image_path = os.path.basename(filename)
     
     return image_path
 
-def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=False, HSI_tif_dir=None, replace=True):
+def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=False, HSI_tif_dir=None, replace=True, as_numpy=False):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:
@@ -320,7 +326,7 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
             except:
                 continue
             for x in img_path:
-                future = client.submit(write_crop,row=row,img_path=x, savedir=savedir, replace=replace)
+                future = client.submit(write_crop,row=row,img_path=x, savedir=savedir, replace=replace, as_numpy=as_numpy)
                 futures.append(future)
                 indexes.append(index)
             
@@ -344,7 +350,7 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
                 #Write available crops
                 for index, row in tile_annotations.iterrows():
                     try:
-                        filename = write_crop(row=row, savedir=savedir, img_path=x, replace=replace, rasterio_src=rasterio_src)   
+                        filename = write_crop(row=row, savedir=savedir, img_path=x, replace=replace, rasterio_src=rasterio_src, as_numpy=as_numpy)   
                         indexes.append(index)
                         filenames.append(filename)                                                   
                     except Exception as e:

@@ -112,14 +112,14 @@ for x in tiles[:2]:
     shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)    
     crowns = gpd.read_file(shpname)        
     if not os.path.exists("/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/{}.shp".format(basename)):
-        future = cpu_client.submit(predict.generate_prediction_crops,crowns, config)
+        future = cpu_client.submit(predict.generate_prediction_crops,crowns, config, as_numpy=True)
         crown_annotations_futures.append(future)
     else:
         crown_annotations_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/{}.shp".format(basename)       
         crown_annotations_paths.append(crown_annotations_path)
 
 wait(crown_annotations_futures)
-
+ 
 for x in crown_annotations_futures:
     crown_annotations_paths.append(x.result())
     

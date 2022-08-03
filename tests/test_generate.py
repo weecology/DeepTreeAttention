@@ -77,6 +77,7 @@ def test_generate_crops(tmpdir, ROOT, rgb_path, sample_crowns):
         rgb_glob="{}/tests/data/*.tif".format(ROOT),
         convert_h5=False,
         sensor_glob="{}/tests/data/*.tif".format(ROOT),
+        as_numpy=True,
         savedir=tmpdir)
     
     annotations.tile_year.unique() == ["2018","2019"]

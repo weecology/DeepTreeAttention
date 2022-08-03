@@ -1,7 +1,8 @@
 #Patches
 import rasterio
+import numpy as np
 
-def crop(bounds, sensor_path=None, savedir = None, basename = None, rasterio_src=None):
+def crop(bounds, sensor_path=None, savedir = None, basename = None, rasterio_src=None, as_numpy=False):
     """Given a 4 pointed bounding box, crop sensor data"""
     left, bottom, right, top = bounds 
     if rasterio_src is None:
@@ -16,9 +17,13 @@ def crop(bounds, sensor_path=None, savedir = None, basename = None, rasterio_src
     height = (top - bottom)/res
     width = (right - left)/res      
     if savedir:
-        filename = "{}/{}.tif".format(savedir, basename)
-        with rasterio.open(filename, "w", driver="GTiff",height=height, width=width, count = img.shape[0], dtype=img.dtype) as dst:
-            dst.write(img)
+        if as_numpy:
+            filename = "{}/{}.npy".format(savedir, basename)            
+            np.save(filename, img)
+        else:
+            filename = "{}/{}.tif".format(savedir, basename)
+            with rasterio.open(filename, "w", driver="GTiff",height=height, width=width, count = img.shape[0], dtype=img.dtype) as dst:
+                dst.write(img)
     if savedir:
         return filename
     else:

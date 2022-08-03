@@ -135,6 +135,7 @@ def find_crowns(rgb_path, config, dead_model_path=None):
 
 def generate_prediction_crops(crowns, config, client=None):
     """Create prediction crops for model.predict"""
+    
     crown_annotations = generate_crops(
         crowns,
         savedir=config["prediction_crop_dir"],
