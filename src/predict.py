@@ -136,7 +136,7 @@ def find_crowns(rgb_path, config, dead_model_path=None):
     
     return filtered_crowns
 
-def generate_prediction_crops(crowns, config, client=None):
+def generate_prediction_crops(crowns, config, client=None, as_numpy=True):
     """Create prediction crops for model.predict"""
     
     crown_annotations = generate_crops(
@@ -147,7 +147,7 @@ def generate_prediction_crops(crowns, config, client=None):
         rgb_glob=config["rgb_sensor_pool"],
         HSI_tif_dir=config["HSI_tif_dir"],
         client=client,
-        as_numpy=True
+        as_numpy=as_numpy
     )
     
     #Write file alongside
