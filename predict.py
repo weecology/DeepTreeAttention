@@ -53,8 +53,8 @@ config = data.read_config("config.yml")
 comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
 comet_logger.experiment.add_tag("prediction")
 
-#gpu_client = start(gpus=7, mem_size="20GB")
-cpu_client = start(cpus=40, mem_size="15GB")
+gpu_client = start(gpus=2, mem_size="80GB")
+cpu_client = start(cpus=2, mem_size="15GB")
 species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt"
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
@@ -127,35 +127,35 @@ for x in crown_annotations_futures:
 #cpu_client.loop.add_callback(cpu_client.scheduler.terminate)
 #cpu_client.run_on_scheduler(lambda dask_scheduler: dask_scheduler.loop.stop())
 
-# Step 2 - Predict Crowns
-predict_futures = []
-for x in crown_annotations_paths:
-    predict.predict_tile(
-                crown_annotations=x,
-                filter_dead=True,
-                species_model_path=species_model_path,
-                savedir=prediction_dir,
-                config=config)
+## Step 2 - Predict Crowns
+#predict_futures = []
+#for x in crown_annotations_paths:
+    #predict.predict_tile(
+                #crown_annotations=x,
+                #filter_dead=True,
+                #species_model_path=species_model_path,
+                #savedir=prediction_dir,
+                #config=config)
             
-#for x in tiles:
-    #try:
-        #predict_future = gpu_client.submit(predict.predict_tile,
-            #crowns=x,
-            #img_pool=hyperspectral_pool,
-            #filter_dead=True,
-            #species_model_path=species_model_path,
-            #savedir=prediction_dir,
-            #config=config)
-        #predict_futures.append(predict_future)
-    #except Exception as e:
-        #print(e)
-        #traceback.print_exc()
-        #continue
+for x in tiles:
+    try:
+        predict_future = gpu_client.submit(predict.predict_tile,
+            crowns=x,
+            img_pool=hyperspectral_pool,
+            filter_dead=True,
+            species_model_path=species_model_path,
+            savedir=prediction_dir,
+            config=config)
+        predict_futures.append(predict_future)
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        continue
 
-#for x in predict_futures:
-    #try:
-        #predicted_trees = x.result()
-    #except Exception as e:
-        #print(e)
-        #traceback.print_exc()
-        #continue        
+for x in predict_futures:
+    try:
+        predicted_trees = x.result()
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        continue        
