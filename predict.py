@@ -124,7 +124,11 @@ for x in tiles:
 wait(crown_annotations_futures)
  
 for x in crown_annotations_futures:
-    crown_annotations_paths.append(x.result())
+    try:
+        crown_annotations_paths.append(x.result())
+    except Exception as e:
+        print(e)
+        
     
 #cpu_client.loop.add_callback(cpu_client.scheduler.retire_workers, close_workers=True)
 #cpu_client.loop.add_callback(cpu_client.scheduler.terminate)
