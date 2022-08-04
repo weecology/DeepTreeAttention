@@ -128,7 +128,6 @@ for x in crown_annotations_futures:
 #cpu_client.run_on_scheduler(lambda dask_scheduler: dask_scheduler.loop.stop())
 
 ## Step 2 - Predict Crowns
-#predict_futures = []
 #for x in crown_annotations_paths:
     #predict.predict_tile(
                 #crown_annotations=x,
@@ -136,7 +135,7 @@ for x in crown_annotations_futures:
                 #species_model_path=species_model_path,
                 #savedir=prediction_dir,
                 #config=config)
-            
+predict_futures = []        
 for x in tiles:
     try:
         predict_future = gpu_client.submit(predict.predict_tile,
