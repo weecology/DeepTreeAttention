@@ -136,11 +136,10 @@ for x in crown_annotations_futures:
                 #savedir=prediction_dir,
                 #config=config)
 predict_futures = []        
-for x in tiles:
+for x in crown_annotations_paths:
     try:
         predict_future = gpu_client.submit(predict.predict_tile,
-            crowns=x,
-            img_pool=hyperspectral_pool,
+            crown_annotations=x,
             filter_dead=True,
             species_model_path=species_model_path,
             savedir=prediction_dir,
