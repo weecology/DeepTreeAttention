@@ -107,7 +107,7 @@ tiles = find_rgb_files(site="OSBS", config=config)
 
 crown_annotations_paths = []
 crown_annotations_futures = []
-for x in tiles[:2]:
+for x in tiles:
     basename = os.path.splitext(os.path.basename(x))[0]                
     shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)    
     crowns = gpd.read_file(shpname)        
