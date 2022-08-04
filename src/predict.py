@@ -4,6 +4,7 @@ from deepforest.utilities import annotations_to_shapefile
 import glob
 import geopandas as gpd
 import os
+import numpy as np
 import rasterio
 from src.models import dead
 from src.utils import preprocess_image, predictions_to_df, load_image
@@ -99,7 +100,9 @@ class predict_crops(Dataset):
                 image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])
             else:
                 image_path = os.path.join(self.config["prediction_crop_dir"], yr_annotation["image_path"].iloc[0])
-                image = load_image(image_path, image_size=self.config["image_size"])
+                image = np.load(image_path)
+                image = preprocess_image(image=image, channel_is_first=True)
+                image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)                
                 images.append(image)
         inputs = {}
         inputs["HSI"] = images
@@ -143,7 +146,8 @@ def generate_prediction_crops(crowns, config, client=None):
         convert_h5=config["convert_h5"],   
         rgb_glob=config["rgb_sensor_pool"],
         HSI_tif_dir=config["HSI_tif_dir"],
-        client=client
+        client=client,
+        as_numpy=True
     )
     
     #Write file alongside
