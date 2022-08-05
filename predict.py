@@ -160,12 +160,12 @@ for species_model_path in species_model_paths:
             traceback.print_exc()
             continue
     
-    wait(predict_futures)
-    
-    for x in predict_futures:
-        try:
-            predicted_trees = x.result()
-        except Exception as e:
-            print(e)
-            traceback.print_exc()
-            continue        
+wait(predict_futures)
+
+for x in predict_futures:
+    try:
+        predicted_trees = x.result()
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        continue        
