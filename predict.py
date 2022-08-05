@@ -145,13 +145,15 @@ for x in crown_annotations_futures:
 predict_futures = []        
 for x in crown_annotations_paths:
     try:
-        predict_future = gpu_client.submit(predict.predict_tile,
-            crown_annotations=x,
-            filter_dead=True,
-            species_model_path=species_model_path,
-            savedir=prediction_dir,
-            config=config)
-        predict_futures.append(predict_future)
+        results_shp = os.path.join(prediction_dir, os.path.basename(x))  
+        if not os.path.exists(results_shp):
+            predict_future = gpu_client.submit(predict.predict_tile,
+                crown_annotations=x,
+                filter_dead=True,
+                species_model_path=species_model_path,
+                savedir=prediction_dir,
+                config=config)
+            predict_futures.append(predict_future)
     except Exception as e:
         print(e)
         traceback.print_exc()
