@@ -55,23 +55,23 @@ comet_logger.experiment.add_tag("prediction")
 
 gpu_client = start(gpus=10, mem_size="40GB")
 cpu_client = start(cpus=40, mem_size="10GB")
-species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt"
+#species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt"
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1"
 savedir = config["crop_dir"] 
 
-#species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt",
-                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt",
-                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b629e5365a104320bcec03843e9dd6fd.pt",
-                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5ac9afabe3f6402a9c312ba4cee5160a.pt",
-                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/46aff76fe2974b72a5d001c555d7c03a.pt",
-                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/63bdab99d6874f038212ac301439e9cc.pt",
-                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/c871ed25dc1c4a3e97cf3b723cf88bb6.pt",
-                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6d45510824d6442c987b500a156b77d6.pt",
-                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/83f6ede4f90b44ebac6c1ac271ea0939.pt",
-                       ##"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/47ee5858b1104214be178389c13bd025.pt"
-                       #]
+species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b629e5365a104320bcec03843e9dd6fd.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5ac9afabe3f6402a9c312ba4cee5160a.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/46aff76fe2974b72a5d001c555d7c03a.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/63bdab99d6874f038212ac301439e9cc.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/c871ed25dc1c4a3e97cf3b723cf88bb6.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6d45510824d6442c987b500a156b77d6.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/83f6ede4f90b44ebac6c1ac271ea0939.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/47ee5858b1104214be178389c13bd025.pt"
+                       ]
 
 
 #Save each file seperately in a dir named for the species model
@@ -142,28 +142,29 @@ for x in crown_annotations_futures:
                 #species_model_path=species_model_path,
                 #savedir=prediction_dir,
                 #config=config)
-predict_futures = []        
-for x in crown_annotations_paths:
-    try:
-        results_shp = os.path.join(prediction_dir, os.path.basename(x))  
-        if not os.path.exists(results_shp):
-            predict_future = gpu_client.submit(predict.predict_tile,
-                crown_annotations=x,
-                filter_dead=True,
-                species_model_path=species_model_path,
-                savedir=prediction_dir,
-                config=config,
-                resources={"gpu": 1})
-            predict_futures.append(predict_future)
-    except Exception as e:
-        print(e)
-        traceback.print_exc()
-        continue
-
-for x in predict_futures:
-    try:
-        predicted_trees = x.result()
-    except Exception as e:
-        print(e)
-        traceback.print_exc()
-        continue        
+for species_model_path in species_model_paths:
+    predict_futures = []        
+    for x in crown_annotations_paths:
+        try:
+            results_shp = os.path.join(prediction_dir, os.path.basename(x))  
+            if not os.path.exists(results_shp):
+                predict_future = gpu_client.submit(predict.predict_tile,
+                    crown_annotations=x,
+                    filter_dead=True,
+                    species_model_path=species_model_path,
+                    savedir=prediction_dir,
+                    config=config,
+                    resources={"gpu": 1})
+                predict_futures.append(predict_future)
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+            continue
+    
+    for x in predict_futures:
+        try:
+            predicted_trees = x.result()
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+            continue        
