@@ -53,7 +53,7 @@ config = data.read_config("config.yml")
 comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
 comet_logger.experiment.add_tag("prediction")
 
-gpu_client = start(gpus=2, mem_size="40GB")
+gpu_client = start(gpus=8, mem_size="70GB")
 cpu_client = start(cpus=1, mem_size="10GB")
 species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt"
 
