@@ -152,7 +152,8 @@ for x in crown_annotations_paths:
                 filter_dead=True,
                 species_model_path=species_model_path,
                 savedir=prediction_dir,
-                config=config)
+                config=config,
+                resources={"gpu": 1})
             predict_futures.append(predict_future)
     except Exception as e:
         print(e)
