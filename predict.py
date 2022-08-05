@@ -53,15 +53,8 @@ config = data.read_config("config.yml")
 comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
 comet_logger.experiment.add_tag("prediction")
 
-<<<<<<< HEAD
 gpu_client = start(gpus=8, mem_size="70GB")
 cpu_client = start(cpus=1, mem_size="10GB")
-species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt"
-=======
-gpu_client = start(gpus=10, mem_size="40GB")
-cpu_client = start(cpus=40, mem_size="10GB")
-#species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt"
->>>>>>> 71dcea50e041c7df115f91dff8aec4882678c5a4
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1"
