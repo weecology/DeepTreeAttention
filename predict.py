@@ -73,14 +73,6 @@ species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06e
                        "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/47ee5858b1104214be178389c13bd025.pt"
                        ]
 
-
-#Save each file seperately in a dir named for the species model
-prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
-                              os.path.splitext(os.path.basename(species_model_path))[0])
-try:
-    os.mkdir(prediction_dir)
-except:
-    pass
     
 #generate HSI_tif data if needed.
 h5_pool = glob(config["HSI_sensor_pool"], recursive=True)
@@ -143,6 +135,15 @@ for x in crown_annotations_futures:
                 #savedir=prediction_dir,
                 #config=config)
 for species_model_path in species_model_paths:
+    
+    #Save each file seperately in a dir named for the species model
+    prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
+                                  os.path.splitext(os.path.basename(species_model_path))[0])
+    try:
+        os.mkdir(prediction_dir)
+    except:
+        pass
+    
     predict_futures = []        
     for x in crown_annotations_paths:
         try:
