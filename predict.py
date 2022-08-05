@@ -134,7 +134,6 @@ for x in crown_annotations_futures:
                 #savedir=prediction_dir,
                 #config=config)
 for species_model_path in species_model_paths:
-    
     #Save each file seperately in a dir named for the species model
     prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
                                   os.path.splitext(os.path.basename(species_model_path))[0])
@@ -160,6 +159,8 @@ for species_model_path in species_model_paths:
             print(e)
             traceback.print_exc()
             continue
+    
+    wait(predict_futures)
     
     for x in predict_futures:
         try:
