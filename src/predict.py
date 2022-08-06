@@ -177,8 +177,11 @@ def predict_tile(crown_annotations, species_model_path, config, savedir, filter_
     #Recursive predict to avoid prediction levels that will be later ignored.
     trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False)
         
-    trees, output_list = predict_species(crowns=crown_annotations, years=m.years, m=m, config=config, trainer=trainer)
+    trees = predict_species(crowns=crown_annotations, years=m.years, m=m, config=config, trainer=trainer)
 
+    if trees is None:
+        return None
+    
     # Remove predictions for dead trees
     if filter_dead:
         trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"ensembleTaxonID"] = "DEAD"
@@ -193,10 +196,6 @@ def predict_tile(crown_annotations, species_model_path, config, savedir, filter_
     #Save .shp
     basename = os.path.splitext(os.path.basename(crown_annotations.RGB_tile.unique()[0]))[0]
     trees.to_file(os.path.join(savedir, "{}.shp".format(basename)))
-    
-    #save .json
-    for level, predictions in enumerate(output_list):
-        predictions.to_csv(os.path.join(savedir, "{}_{}.csv".format(basename, level)))
     
     return trees
 
@@ -230,15 +229,14 @@ def predict_crowns(PATH):
 
 def predict_species(crowns, years, m, trainer, config):
     """Compute hierarchical prediction without predicting unneeded levels"""
-    output_list = []
     # Level 0 PIPA v all
     ds = predict_crops(crowns=crowns, years=years, config=config)
     m.current_level = 0
-    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))    
+    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
+    if predictions is None:
+        print("No predictions made, skipping file.")
+        return None
     results = m.gather_predictions([predictions])
-    
-    #save to level dataframe
-    output_list.append(predictions_to_df(predictions))
     
     # Level 1 Needleleaf v Broadleaf
     remaining_crowns = results[~(results["pred_taxa_top1_level_0"]=="PIPA2")].individual
@@ -251,7 +249,6 @@ def predict_species(crowns, years, m, trainer, config):
         predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
         
         #save to level dataframe
-        output_list.append(predictions_to_df(predictions))
         results_1 = m.format_level(predictions, index=1, label_to_taxonIDs=m.label_to_taxonIDs[1])
         results = results.merge(results_1,on="individual", how="outer")
 
@@ -267,8 +264,8 @@ def predict_species(crowns, years, m, trainer, config):
         level2_crowns = crowns[crowns.individual.isin(remaining_crowns)]
         ds = predict_crops(crowns=level2_crowns, years=m.years, config=config)
         predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
+        
         #save to level dataframe
-        output_list.append(predictions_to_df(predictions))        
         results_2 = m.format_level(predictions, index=2, label_to_taxonIDs=m.label_to_taxonIDs[2])
         results = results.merge(results_2,on="individual", how="outer")
         
@@ -284,8 +281,6 @@ def predict_species(crowns, years, m, trainer, config):
         level3_crowns = crowns[crowns.individual.isin(remaining_crowns)]
         ds = predict_crops(crowns=level3_crowns, years=m.years, config=config)
         predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
-        #save to level dataframe
-        output_list.append(predictions_to_df(predictions))        
         results_3 = m.format_level(predictions, index=3, label_to_taxonIDs=m.label_to_taxonIDs[3])
         results = results.merge(results_3,on="individual", how="outer")
 
@@ -302,9 +297,6 @@ def predict_species(crowns, years, m, trainer, config):
         ds = predict_crops(crowns=level4_crowns, years=m.years, config=config)
         predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
         results_4 = m.format_level(predictions, index=4, label_to_taxonIDs=m.label_to_taxonIDs[4])
-        
-        #save to level dataframe
-        output_list.append(predictions_to_df(predictions))        
         results = results.merge(results_4,on="individual", how="outer")
 
     crowns = results.merge(crowns, on="individual")
@@ -312,7 +304,7 @@ def predict_species(crowns, years, m, trainer, config):
     crowns = crowns.loc[:,crowns.columns.isin(["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score","RGB_tile"])]
     ensemble_df = ensemble_df.merge(crowns, on="individual")
         
-    return ensemble_df, output_list
+    return ensemble_df
 
 def predict_dead(crowns, dead_model_path, config):
     dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path, config=config)
