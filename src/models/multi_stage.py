@@ -391,8 +391,13 @@ class MultiStage(LightningModule):
                 features.append(np.vstack(level[1]))             
             return features
         
+        print("prediction frame")
+        print(predict_df)
+        
         level_results = []
         for index, level in enumerate(predict_df):
+            print(index)
+            print(level)
             df = self.format_level(level, index, label_to_taxonIDs=self.label_to_taxonIDs[index])            
             level_results.append(df)
         
