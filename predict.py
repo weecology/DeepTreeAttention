@@ -132,13 +132,15 @@ for species_model_path in species_model_paths:
     prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
                                   os.path.splitext(os.path.basename(species_model_path))[0])    
     for x in crown_annotations_paths:
-        print(x)
-        predict.predict_tile(
-                    crown_annotations=x,
-                    filter_dead=True,
-                    species_model_path=species_model_path,
-                    savedir=prediction_dir,
-                    config=config)
+        results_shp = os.path.join(prediction_dir, os.path.basename(x))  
+        if not os.path.exists(results_shp):        
+            print(x)
+            predict.predict_tile(
+                        crown_annotations=x,
+                        filter_dead=True,
+                        species_model_path=species_model_path,
+                        savedir=prediction_dir,
+                        config=config)
 #for species_model_path in species_model_paths:
     ##Save each file seperately in a dir named for the species model
     #prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
