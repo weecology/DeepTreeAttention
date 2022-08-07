@@ -360,7 +360,6 @@ class MultiStage(LightningModule):
     
     def gather_predictions(self, predict_df):
         """Post-process the predict method to create metrics"""
-        
         individuals = []
         yhats = []
         levels = []

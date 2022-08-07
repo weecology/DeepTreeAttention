@@ -103,12 +103,7 @@ trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}
 print("Before prediction, the taxonID value counts")
 print(test.taxonID.value_counts())
 
-predict_datasets = []
-for level in range(m.levels):
-    ds = data.TreeDataset(df=test, train=False, config=config)
-    predict_datasets.append(ds)
-    
-predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
+predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
 results = m.gather_predictions(predictions)
 results["individualID"] = results["individual"]
 results_with_data = results.merge(crowns, on="individualID")
