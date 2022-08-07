@@ -130,6 +130,7 @@ prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/result
 trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False)
 trees = predict.predict_tile(crown_annotations="/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/2021_OSBS_6_406000_3284000_image.shp", filter_dead=True, trainer=trainer, m=m, savedir=prediction_dir, config=config)
 print(trees.head()) 
+print(trees.shape)
 
 ## Step 2 - Predict Crowns
 #for species_model_path in species_model_paths[-1:]:
