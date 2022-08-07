@@ -10,12 +10,10 @@ from src.models import dead
 from src.utils import preprocess_image, predictions_to_df, load_image
 from src import patches
 from src.CHM import postprocess_CHM
-from src.models import multi_stage
 from src.generate import generate_crops
 from torch.utils.data import Dataset
 from torchvision import transforms
 import torch
-from pytorch_lightning import Trainer
 
 def RGB_transform(augment):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -107,7 +105,7 @@ class predict_crops(Dataset):
                     image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                    
                 image = preprocess_image(image=image, channel_is_first=True)
                 image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)                
-                images.append(image)
+            images.append(image)
         inputs = {}
         inputs["HSI"] = images
         
@@ -164,23 +162,16 @@ def generate_prediction_crops(crowns, config, client=None, as_numpy=True):
     
     return "{}/{}.shp".format(config["prediction_crop_dir"],basename)
 
-def predict_tile(crown_annotations, species_model_path, config, savedir, filter_dead=False):
+def predict_tile(crown_annotations,m, trainer, config, savedir, filter_dead=False):
     """Predict a set of crown labels from a annotations.shp
     Args:
         crown_annotations: geodataframe from predict.generate_prediction_crops
-        species_model_path: pytorch model to predict data
+        m: pytorch model to predict data
         config: config.yml
         savedir: directory to save tile predictions
         filter_dead: filter dead model
     """
-    crown_annotations = gpd.read_file(crown_annotations)
-    
-    # Load species model
-    m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)
-
-    #Recursive predict to avoid prediction levels that will be later ignored.
-    trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False)
-        
+    crown_annotations = gpd.read_file(crown_annotations) 
     trees = predict_species(crowns=crown_annotations, years=m.years, m=m, config=config, trainer=trainer)
 
     if trees is None:
