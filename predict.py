@@ -131,12 +131,12 @@ for x in crown_annotations_futures:
 trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False, accelerator="dp")
 
 ## Step 2 - Predict Crowns
-for species_model_path in species_model_paths:
+for species_model_path in species_model_paths[-1:]:
     # Load species model
     m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)
     prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
                                   os.path.splitext(os.path.basename(species_model_path))[0])    
-    for x in crown_annotations_paths:
+    for x in crown_annotations_paths[-1:]:
         results_shp = os.path.join(prediction_dir, os.path.basename(x))  
         if not os.path.exists(results_shp):        
             print(x)
