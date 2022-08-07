@@ -100,7 +100,11 @@ class predict_crops(Dataset):
                 image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])
             else:
                 image_path = os.path.join(self.config["prediction_crop_dir"], yr_annotation["image_path"].iloc[0])
-                image = np.load(image_path)
+                try:
+                    image = np.load(image_path)
+                except Exception as e:
+                    print(e)
+                    image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                    
                 image = preprocess_image(image=image, channel_is_first=True)
                 image = transforms.functional.resize(image, size=(self.config["image_size"],self.config["image_size"]), interpolation=transforms.InterpolationMode.NEAREST)                
                 images.append(image)
