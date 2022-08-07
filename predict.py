@@ -124,14 +124,16 @@ savedir = config["crop_dir"]
         #print(e)
         
 #Recursive predict to avoid prediction levels that will be later ignored.
-trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False, accelerator="dp")
+species_model_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/83f6ede4f90b44ebac6c1ac271ea0939.pt"
+m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)
+prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",os.path.splitext(os.path.basename(species_model_path))[0]) 
+trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False)
 trees = predict.predict_tile(crown_annotations="/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/2021_OSBS_6_406000_3284000_image.shp", filter_dead=True, trainer=trainer, m=m, savedir=prediction_dir, config=config)
 print(trees.head()) 
 
 ## Step 2 - Predict Crowns
 #for species_model_path in species_model_paths[-1:]:
     ## Load species model
-    #m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)
     #prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
                                   #os.path.splitext(os.path.basename(species_model_path))[0])    
     #for x in crown_annotations_paths[-1:]:
