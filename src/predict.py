@@ -228,75 +228,8 @@ def predict_species(crowns, years, m, trainer, config):
     """Compute hierarchical prediction without predicting unneeded levels"""
     # Level 0 PIPA v all
     ds = predict_crops(crowns=crowns, years=years, config=config)
-    m.current_level = 0
-    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
-    if predictions is None:
-        print("No predictions made, skipping file.")
-        print("the length of the dataset was {}".format(len(ds)))
-        return None
-    results = m.gather_predictions([predictions])
-    
-    # Level 1 Needleleaf v Broadleaf
-    remaining_crowns = results[~(results["pred_taxa_top1_level_0"]=="PIPA2")].individual
-    
-    if len(remaining_crowns) > 0:
-        m.current_level = 1        
-        print("{} crowns for level 1".format(len(remaining_crowns)))
-        level1_crowns = crowns[crowns.individual.isin(remaining_crowns)]
-        ds = predict_crops(crowns=level1_crowns, years=m.years, config=config)
-        predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
-        
-        #save to level dataframe
-        results_1 = m.format_level(predictions, index=1, label_to_taxonIDs=m.label_to_taxonIDs[1])
-        results = results.merge(results_1,on="individual", how="outer")
-
-    # Level 2 Within Broadleaf                
-    try:
-        remaining_crowns = results_1[results_1["pred_taxa_top1_level_1"]=="BROADLEAF"].individual
-    except:
-        remaining_crowns = []
-        
-    if len(remaining_crowns) > 0: 
-        m.current_level = 2        
-        print("{} crowns for level 2".format(len(remaining_crowns)))        
-        level2_crowns = crowns[crowns.individual.isin(remaining_crowns)]
-        ds = predict_crops(crowns=level2_crowns, years=m.years, config=config)
-        predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
-        
-        #save to level dataframe
-        results_2 = m.format_level(predictions, index=2, label_to_taxonIDs=m.label_to_taxonIDs[2])
-        results = results.merge(results_2,on="individual", how="outer")
-        
-    # Level 3 Within CONFIFER    
-    try:
-        remaining_crowns = results_1[results_1["pred_taxa_top1_level_1"]=="CONIFER"].individual
-    except:
-        remaining_crowns = []
-        
-    if len(remaining_crowns) > 0:
-        m.current_level = 3        
-        print("{} crowns for level 3".format(len(remaining_crowns)))                
-        level3_crowns = crowns[crowns.individual.isin(remaining_crowns)]
-        ds = predict_crops(crowns=level3_crowns, years=m.years, config=config)
-        predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
-        results_3 = m.format_level(predictions, index=3, label_to_taxonIDs=m.label_to_taxonIDs[3])
-        results = results.merge(results_3,on="individual", how="outer")
-
-    # Level 4 Within OAK
-    try:
-        remaining_crowns = results_2[results_2["pred_taxa_top1_level_2"]=="OAK"].individual
-    except:
-        remaining_crowns = []
-        
-    if len(remaining_crowns) > 0:
-        m.current_level = 4        
-        print("{} crowns for level 4".format(len(remaining_crowns)))                
-        level4_crowns = crowns[crowns.individual.isin(remaining_crowns)]
-        ds = predict_crops(crowns=level4_crowns, years=m.years, config=config)
-        predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
-        results_4 = m.format_level(predictions, index=4, label_to_taxonIDs=m.label_to_taxonIDs[4])
-        results = results.merge(results_4,on="individual", how="outer")
-
+    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
+    results = m.gather_predictions(predictions)
     crowns = results.merge(crowns, on="individual")
     ensemble_df = m.ensemble(results)
     crowns = crowns.loc[:,crowns.columns.isin(["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score","RGB_tile"])]

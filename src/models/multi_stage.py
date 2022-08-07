@@ -45,7 +45,6 @@ class MultiStage(LightningModule):
         self.label_to_taxonIDs = []   
         self.train_df = train_df
         self.test_df = test_df
-        self.current_level = None
         
         """Divide train test split"""
         self.train_datasets, self.test_datasets = self.create_datasets()
@@ -238,19 +237,16 @@ class MultiStage(LightningModule):
         
         return data_loaders 
     
-    def predict_dataloader(self, ds_list):
-        data_loaders = []
-        for ds in ds_list:
-            data_loader = torch.utils.data.DataLoader(
-                ds,
-                batch_size=self.config["predict_batch_size"],
-                shuffle=False,
-                num_workers=self.config["workers"],
-                collate_fn=utils.my_collate
-            )
-            data_loaders.append(data_loader)
-        
-        return data_loaders
+    def predict_dataloader(self, ds):
+        data_loader = torch.utils.data.DataLoader(
+            ds,
+            batch_size=self.config["predict_batch_size"],
+            shuffle=False,
+            num_workers=self.config["workers"],
+            collate_fn=utils.my_collate
+        )
+
+        return data_loader
         
     def configure_optimizers(self):
         """Create a optimizer for each level"""
@@ -300,21 +296,19 @@ class MultiStage(LightningModule):
         
         return {"individual":individual, "yhat":y_hat, "label":y}  
     
-    def predict_step(self, batch, batch_idx, dataloader_idx=0):
-        """Calculate predictions, optionally extract just one level. Set self.current level, else it will take the index from list of dataloader
+    def predict_step(self, batch, batch_idx):
+        """Calculate predictions
         """
-        if self.current_level:
-            level = self.current_level
-        else:
-            level = dataloader_idx
-        
         individual, inputs = batch
         images = inputs["HSI"]  
-                
-        y_hat = self.models[level].forward(images)
-        y_hat = F.softmax(y_hat, dim=1)
         
-        return individual, y_hat
+        y_hats = []
+        for model in self.models:   
+            y_hat = model.forward(images)
+            y_hat = F.softmax(y_hat, dim=1)
+            y_hats.append(y_hat)
+        
+        return individual, y_hats
     
     def on_predict_epoch_end(self, outputs):
         outputs = self.all_gather(outputs)
@@ -364,43 +358,38 @@ class MultiStage(LightningModule):
             for key, value in species_table.set_index("taxonID").precision.to_dict().items():
                 self.log("Epoch_{}_precision".format(key), value)
     
-    def format_level(self, level, index, label_to_taxonIDs):
-        individuals = np.concatenate([x[0] for x in level])
-        predictions = np.concatenate([x[1] for x in level])
-        
-        #Create dataframe
-        predictions_top1 = np.argmax(predictions, 1)    
-        predictions_top2 = pd.DataFrame(predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
-        top1_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[0], axis=1)
-        top2_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[1], axis=1)
-        
-        df = pd.DataFrame({
-            "pred_label_top1_level_{}".format(index):predictions_top1,
-            "pred_label_top2_level_{}".format(index):predictions_top2,
-            "top1_score_level_{}".format(index):top1_score,
-            "top2_score_level_{}".format(index):top2_score,
-            "individual":individuals
-        })
-        df["pred_taxa_top1_level_{}".format(index)] = df["pred_label_top1_level_{}".format(index)].apply(lambda x: label_to_taxonIDs[x]) 
-        df["pred_taxa_top2_level_{}".format(index)] = df["pred_label_top2_level_{}".format(index)].apply(lambda x: label_to_taxonIDs[x]) 
-        
-        return df
-        
-    def gather_predictions(self, predict_df, return_features=False):
+    def gather_predictions(self, predict_df):
         """Post-process the predict method to create metrics"""
-        if return_features: 
-            features = []
-            for level in predict_df:
-                features.append(np.vstack(level[1]))             
-            return features
         
-        level_results = []
-        for index, level in enumerate(predict_df):
-            df = self.format_level(level, index, label_to_taxonIDs=self.label_to_taxonIDs[index])            
-            level_results.append(df)
+        individuals = []
+        yhats = []
+        levels = []
         
-        results = reduce(lambda  left,right: pd.merge(left,right,on=['individual'],
-                                                        how='outer'), level_results)                    
+        for output in predict_df:
+            for index, level_results in enumerate(output[1]):
+                individuals.append(output[0])                
+                yhats.append(level_results)
+                levels.append(index)
+                
+        temporal_average = pd.DataFrame({"individual":individuals,"level":levels,"yhat":yhats})
+                
+        #Argmax and score for each level
+        predicted_label = temporal_average.groupby(["individual","level"]).yhat.apply(
+            lambda x: np.argmax(np.vstack(x))).reset_index().pivot(
+                index=["individual"],columns="level",values="yhat").reset_index()
+        predicted_label.columns = ["individual","pred_label_top1_level_0","pred_label_top1_level_1",
+                                   "pred_label_top1_level_2","pred_label_top1_level_3","pred_label_top1_level_4"]
+        
+        predicted_score = temporal_average.groupby(["individual","level"]).yhat.apply(
+            lambda x: np.vstack(x).max()).reset_index().pivot(
+                index=["individual"],columns="level",values="yhat").reset_index()
+        predicted_score.columns = ["individual","top1_score_level_0","top1_score_level_1",
+                                   "top1_score_level_2","top1_score_level_3","top1_score_level_4"]
+        results = pd.merge(predicted_label,predicted_score)
+        
+        #Label taxa
+        for level, label_dict in enumerate(self.label_to_taxonIDs):
+            results["pred_taxa_top1_level_{}".format(level)] = results["pred_label_top1_level_{}".format(level)].apply(lambda x: label_dict[x])
         return results
     
     def ensemble(self, results):

@@ -14,7 +14,7 @@ def species_model_path(config, dm, ROOT, tmpdir):
     config["batch_size"] = 16    
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)    
     m.ROOT = "{}/tests/".format(ROOT)
-    trainer = Trainer(fast_dev_run=False, max_steps=1, limit_val_batches=1)
+    trainer = Trainer(fast_dev_run=False, max_steps=1, limit_val_batches=1, limit_train_batches=1)
     trainer.fit(m)
     trainer.save_checkpoint("{}/model.pl".format(tmpdir))
     
