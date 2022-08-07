@@ -124,7 +124,7 @@ for x in crown_annotations_futures:
         print(e)
         
 #Recursive predict to avoid prediction levels that will be later ignored.
-trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False)
+trainer = Trainer(gpus=config["gpus"], logger=False, enable_checkpointing=False)
 
 ## Step 2 - Predict Crowns
 for species_model_path in species_model_paths:

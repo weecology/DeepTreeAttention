@@ -6,6 +6,7 @@ from pytorch_lightning import Trainer
 import pandas as pd
 import cProfile
 import pstats
+from pytorch_lightning import Trainer
 
 #Training module
 @pytest.fixture()
@@ -32,11 +33,14 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     
     profiler = cProfile.Profile()
     profiler.enable()    
+    m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)        
+    trainer = Trainer(fast_dev_run=False, max_steps=1, limit_val_batches=1)
     
     trees = predict.predict_tile(
         crown_annotations=crown_annotations_path,
+        m=m,
+        trainer=trainer,
         filter_dead=False,
-        species_model_path=species_model_path,
         savedir=tmpdir,
         config=config)
     

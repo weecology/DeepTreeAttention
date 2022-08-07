@@ -316,6 +316,9 @@ class MultiStage(LightningModule):
         
         return individual, y_hat
     
+    def on_predict_epoch_end(self, outputs):
+        outputs = self.all_gather(outputs)
+        
     def validation_epoch_end(self, validation_step_outputs): 
         for level, results in enumerate(validation_step_outputs):
             yhat = torch.cat([x["yhat"] for x in results]).cpu().numpy()
