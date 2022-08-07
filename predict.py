@@ -54,6 +54,7 @@ def convert(rgb_path, hyperspectral_pool, savedir):
 config = data.read_config("config.yml")
 comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
 comet_logger.experiment.add_tag("prediction")
+comet_logger.experiment.log_parameters(config)
 
 #gpu_client = start(gpus=8, mem_size="70GB")
 cpu_client = start(cpus=1, mem_size="10GB")
