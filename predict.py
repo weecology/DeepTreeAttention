@@ -5,11 +5,13 @@ from glob import glob
 import geopandas as gpd
 import pandas as pd
 from src.start_cluster import start
+from src.models import multi_stage
 from distributed import wait, as_completed
 import os
 import re
 import traceback
 from pytorch_lightning.loggers import CometLogger
+from pytorch_lightning import Trainer
 
 def find_rgb_files(site, config, year="2021"):
     tiles = glob(config["rgb_sensor_pool"], recursive=True)
@@ -126,9 +128,13 @@ for x in crown_annotations_futures:
 #cpu_client.loop.add_callback(cpu_client.scheduler.terminate)
 #cpu_client.run_on_scheduler(lambda dask_scheduler: dask_scheduler.loop.stop())
 
+#Recursive predict to avoid prediction levels that will be later ignored.
+trainer = Trainer(gpus=config["gpus"], checkpoint_callback=False, logger=False, enable_checkpointing=False, accelerator="dp")
+
 ## Step 2 - Predict Crowns
 for species_model_path in species_model_paths:
-    print(species_model_path)
+    # Load species model
+    m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)
     prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
                                   os.path.splitext(os.path.basename(species_model_path))[0])    
     for x in crown_annotations_paths:
@@ -138,7 +144,8 @@ for species_model_path in species_model_paths:
             predict.predict_tile(
                         crown_annotations=x,
                         filter_dead=True,
-                        species_model_path=species_model_path,
+                        trainer=trainer,
+                        m=m,
                         savedir=prediction_dir,
                         config=config)
 #for species_model_path in species_model_paths:
