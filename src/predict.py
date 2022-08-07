@@ -188,6 +188,8 @@ def predict_tile(crown_annotations,m, trainer, config, savedir, filter_dead=Fals
     trees["geometry"] = crown_annotations.geometry
     trees = gpd.GeoDataFrame(trees, geometry="geometry")    
     
+    print("{} trees predicted".format(trees.shape[0]))
+    
     #Save .shp
     basename = os.path.splitext(os.path.basename(crown_annotations.RGB_tile.unique()[0]))[0]
     trees.to_file(os.path.join(savedir, "{}.shp".format(basename)))
@@ -230,6 +232,7 @@ def predict_species(crowns, years, m, trainer, config):
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=[ds]))
     if predictions is None:
         print("No predictions made, skipping file.")
+        print("the length of the dataset was {}".format(len(ds)))
         return None
     results = m.gather_predictions([predictions])
     
