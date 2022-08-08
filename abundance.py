@@ -20,10 +20,9 @@ species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06e
                        ]
 
 def read_shp(path):
-    return path
-    #gdf = gpd.read_file(path)
-    #tile_count = gdf.ensembleTa.value_counts()
-    #return tile_count
+    gdf = gpd.read_file(path)
+    tile_count = gdf.ensembleTa.value_counts()
+    return tile_count
         
 futures = []
 for species_model_path in species_model_paths:
@@ -33,7 +32,7 @@ for species_model_path in species_model_paths:
     files = glob(input_dir)
     print(files)
     counts = []
-    futures = dask.delayed([read_shp(x) for x in files])
+    futures = dask.delayed([read_shp(x) for x in files[:5]])
     counts = futures.compute()
     print(counts)
     for x in futures:
