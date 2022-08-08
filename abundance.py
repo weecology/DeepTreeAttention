@@ -26,7 +26,7 @@ def read_shp(path):
     #tile_count = gdf.ensembleTa.value_counts()
     #return tile_count
         
-#futures = []
+futures = []
 for species_model_path in species_model_paths:
     print(species_model_path)
     basename = os.path.splitext(os.path.basename(species_model_path))[0]
