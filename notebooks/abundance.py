@@ -3,8 +3,6 @@ from glob import glob
 import os
 import pandas as pd
 import geopandas as gpd
-import sys
-sys.path.append("/home/b.weinstein/DeepTreeAttention")
 from src import start_cluster
 from distributed import wait
 
