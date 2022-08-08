@@ -366,9 +366,11 @@ class MultiStage(LightningModule):
         
         for output in predict_df:
             for index, level_results in enumerate(output[1]):
-                individuals.append(output[0])                
-                yhats.append(level_results)
-                levels.append(index)
+                batch_individuals = np.stack(output[0])
+                for individual, yhat in zip(batch_individuals, level_results):
+                    individuals.append(individual)                
+                    yhats.append(yhat)
+                    levels.append(index)
                 
         temporal_average = pd.DataFrame({"individual":individuals,"level":levels,"yhat":yhats})
                 
@@ -389,6 +391,7 @@ class MultiStage(LightningModule):
         #Label taxa
         for level, label_dict in enumerate(self.label_to_taxonIDs):
             results["pred_taxa_top1_level_{}".format(level)] = results["pred_label_top1_level_{}".format(level)].apply(lambda x: label_dict[x])
+        
         return results
     
     def ensemble(self, results):
