@@ -32,8 +32,8 @@ for species_model_path in species_model_paths:
     files = glob(input_dir)
     print(files)
     counts = []
-    futures = dask.delayed([read_shp(x) for x in files])
-    counts = futures.compute()
+    futures = client.map(read_shp,files)
+    counts = [x.result for x in futures]
     total_counts = pd.Series()
     for ser in counts:
         total_counts = total_counts.add(ser, fill_value=0)
