@@ -3,6 +3,12 @@ from glob import glob
 import os
 import pandas as pd
 import geopandas as gpd
+import sys
+sys.path.append("/home/b.weinstein/DeepTreeAttention")
+from src import start_cluster
+from distributed import wait
+
+client = start_cluster.start(cpus=100,mem_size="8GB")
 
 species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt",
                        "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt",
@@ -16,16 +22,25 @@ species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06e
                        "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/47ee5858b1104214be178389c13bd025.pt"
                        ]
 
+def read(path):
+    gdf = gpd.read_file(path)
+    tile_count = gdf.ensembleTa.value_counts()
+    return tile_count
+        
+futures = []
 for species_model_path in species_model_paths:
+    print(species_model_path)
     basename = os.path.splitext(os.path.basename(species_model_path))[0]
     input_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/{}/*.shp".format(basename)
     files = glob(input_dir)
     counts = []
     for x in files:
-        gdf = gpd.read_file(x)
-        tile_count = gdf.ensembleTa.value_counts()
-        counts.append(tile_count)
-    
+        future = client.submit(read, x)
+        futures.append(futures)
+    wait(futures)
+    for x in futures:
+        counts.append(x.result())
+        
     total_counts = pd.Series()
     for ser in counts:
         total_counts = total_counts.add(ser, fill_value=0)
