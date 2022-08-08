@@ -33,7 +33,7 @@ for species_model_path in species_model_paths:
     print(files)
     counts = []
     futures = client.map(read_shp,files)
-    counts = [x.result for x in futures]
+    counts = [x.result() for x in futures]
     total_counts = pd.Series()
     for ser in counts:
         total_counts = total_counts.add(ser, fill_value=0)
