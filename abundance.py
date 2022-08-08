@@ -33,7 +33,7 @@ for species_model_path in species_model_paths:
     files = glob(input_dir)
     print(files)
     counts = []
-    futures = dask.delayed([read_shp for x in files])
+    futures = dask.delayed([read_shp(x) for x in files])
     counts = futures.compute()
     print(counts)
     for x in futures:
