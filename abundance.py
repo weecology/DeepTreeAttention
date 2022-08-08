@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import geopandas as gpd
 from src import start_cluster
-client = start_cluster.start(cpus=5,mem_size="20GB")
+client = start_cluster.start(cpus=80,mem_size="5GB")
 
 species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt",
                        "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt",
@@ -50,3 +50,4 @@ for species_model_path in species_model_paths:
 
 all_abundance = pd.concat(all_abundance)
 all_abundance.columns = ["taxonID","count","model"]
+all_abundance.to_csv("results/abundance.csv")
