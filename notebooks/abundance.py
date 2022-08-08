@@ -8,7 +8,7 @@ sys.path.append("/home/b.weinstein/DeepTreeAttention")
 from src import start_cluster
 from distributed import wait
 
-client = start_cluster.start(cpus=100,mem_size="8GB")
+client = start_cluster.start(cpus=5,mem_size="20GB")
 
 species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt",
                        "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt",
@@ -22,10 +22,11 @@ species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06e
                        "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/47ee5858b1104214be178389c13bd025.pt"
                        ]
 
-def read(path):
-    gdf = gpd.read_file(path)
-    tile_count = gdf.ensembleTa.value_counts()
-    return tile_count
+def read_shp(path):
+    return path
+    #gdf = gpd.read_file(path)
+    #tile_count = gdf.ensembleTa.value_counts()
+    #return tile_count
         
 futures = []
 for species_model_path in species_model_paths:
@@ -35,15 +36,16 @@ for species_model_path in species_model_paths:
     files = glob(input_dir)
     counts = []
     for x in files:
-        future = client.submit(read, x)
+        future = client.submit(read_shp, x)
         futures.append(futures)
     wait(futures)
+    
     for x in futures:
         counts.append(x.result())
         
-    total_counts = pd.Series()
-    for ser in counts:
-        total_counts = total_counts.add(ser, fill_value=0)
-    total_counts.sort_values()
-    total_counts.sum()
-    total_counts.to_csv("/blue/ewhite/b.weinstein/DeepTreeAttention/results/{}/abundance.csv".format(basename))
+    #total_counts = pd.Series()
+    #for ser in counts:
+        #total_counts = total_counts.add(ser, fill_value=0)
+    #total_counts.sort_values()
+    #total_counts.sum()
+    #total_counts.to_csv("/blue/ewhite/b.weinstein/DeepTreeAttention/results/{}/abundance.csv".format(basename))
