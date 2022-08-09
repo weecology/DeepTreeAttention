@@ -328,7 +328,7 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
                 continue
             
             for x in img_path:
-                future = client.submit(write_crop,row=row,img_path=x, savedir=savedir, replace=replace, as_numpy=as_numpy)
+                future = client.submit(write_crop, row=row,img_path=x, savedir=savedir, replace=replace, as_numpy=as_numpy)
                 futures.append(future)
                 geo_indexes.append(index)                
             
