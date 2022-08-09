@@ -317,6 +317,7 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
         tile_to_path[geo_index] = img_path
     
     filenames = []  
+    geo_indexes = []
     indexes = []
     if client:
         futures = []
@@ -329,12 +330,13 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
             for x in img_path:
                 future = client.submit(write_crop,row=row,img_path=x, savedir=savedir, replace=replace, as_numpy=as_numpy)
                 futures.append(future)
-                indexes.append(index)
+                geo_indexes.append(index)                
             
         wait(futures)
-        for x in futures:
+        for index, x in enumerate(futures):
             try:
                 filename = x.result()
+                indexes.append(geo_indexes[index])
                 filenames.append(filename)                
             except:
                 print("Future failed with {}".format(traceback.print_exc()))
