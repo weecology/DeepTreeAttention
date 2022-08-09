@@ -88,7 +88,6 @@ trainer = Trainer(
     fast_dev_run=data_module.config["fast_dev_run"],
     max_epochs=data_module.config["epochs"],
     accelerator=data_module.config["accelerator"],
-    checkpoint_callback=False,
     num_sanity_val_steps=0,
     callbacks=[lr_monitor],
     logger=comet_logger,
