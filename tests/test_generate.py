@@ -8,6 +8,7 @@ import rasterio
 import pytest
 import os
 import distributed
+import numpy as np
 
 def test_predict_trees(rgb_path, plot_data):
     m = main.deepforest()
@@ -80,11 +81,9 @@ def test_generate_crops_dask(tmpdir, ROOT, rgb_path, sample_crowns):
         rgb_glob="{}/tests/data/*.tif".format(ROOT),
         convert_h5=False,
         sensor_glob="{}/tests/data/*.tif".format(ROOT),
-        as_numpy=True,
         savedir=tmpdir)
     
-    annotations.tile_year.unique() == ["2018","2019"]
-    assert all([x in ["image_path","label","site","siteID","plotID","individualID","taxonID","point_id","box_id","RGB_tile","tile_year"] for x in annotations.columns])
+    assert all([x in annotations.tile_year.unique() for x in ["2018","2019"]])
     assert annotations.shape[0] == (gdf.shape[0] * 2)
     
     #make sure the correct resolution, should be a large image
@@ -103,11 +102,9 @@ def test_generate_crops(tmpdir, ROOT, rgb_path, sample_crowns):
         rgb_glob="{}/tests/data/*.tif".format(ROOT),
         convert_h5=False,
         sensor_glob="{}/tests/data/*.tif".format(ROOT),
-        as_numpy=True,
         savedir=tmpdir)
     
     annotations.tile_year.unique() == ["2018","2019"]
-    assert all([x in ["image_path","label","site","siteID","plotID","individualID","taxonID","point_id","box_id","RGB_tile","tile_year"] for x in annotations.columns])
     assert annotations.shape[0] == (gdf.shape[0] * 2)
     
     #make sure the correct resolution, should be a large image
