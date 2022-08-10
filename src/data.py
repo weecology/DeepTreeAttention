@@ -448,12 +448,12 @@ class TreeData(LightningDataModule):
                 previous_train = pd.read_csv("{}/train.csv".format(self.data_dir))
                 previous_test = pd.read_csv("{}/test.csv".format(self.data_dir))
                 
-                self.train = annotations[annotations.individualID.isin(previous_train.individualID)]
-                self.test = annotations[annotations.individualID.isin(previous_test.individualID)]
+                self.train = annotations[annotations.individual.isin(previous_train.individual)]
+                self.test = annotations[annotations.individual.isin(previous_test.individual)]
                 
             # Capture discarded species
-            individualIDs = np.concatenate([self.train.individualID.unique(), self.test.individualID.unique()])
-            self.novel = annotations[~annotations.individualID.isin(individualIDs)]
+            individualIDs = np.concatenate([self.train.individual.unique(), self.test.individual.unique()])
+            self.novel = annotations[~annotations.individual.isin(individualIDs)]
             self.novel = self.novel[~self.novel.taxonID.isin(np.concatenate([self.train.taxonID.unique(), self.test.taxonID.unique()]))]
             self.novel.to_csv("{}/novel_species.csv".format(self.data_dir))
             
