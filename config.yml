@@ -15,7 +15,7 @@ min_train_samples: 10
 min_test_samples: 10
 
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
-iterations: 1000
+iterations: 100
 
 #minimum CHM height, leave blank to skip CHM filtering
 min_CHM_height: 1
@@ -29,7 +29,7 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Checkout data artifact from comet
-use_data_commit:
+use_data_commit: 74f5d654a0804a22a72887fa88df6f44
 
 #Make new dataset
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
