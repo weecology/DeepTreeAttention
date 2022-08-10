@@ -113,7 +113,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
         iteration: a dummy parameter to make dask submission unique
     """
     #When splitting train/test, only use 1 sample per year for counts.
-    single_year = shp.groupby("individualID").apply(lambda x: x.head(1))
+    single_year = shp.groupby("individual").apply(lambda x: x.head(1))
     
     plotIDs = list(shp.plotID.unique())
     if len(plotIDs) <=2:
