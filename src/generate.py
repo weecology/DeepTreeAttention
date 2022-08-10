@@ -288,7 +288,8 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
        annotations: pandas dataframe of filenames and individual IDs to link with data
     """
     print("There are {} rows in gdf".format(gdf.shape))
-    gdf = gdf.reset_index()
+    gdf = gdf.reset_index(drop=True)
+    
     annotations = []
     img_pool = glob.glob(sensor_glob, recursive=True)
     rgb_pool = glob.glob(rgb_glob, recursive=True)
