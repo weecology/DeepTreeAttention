@@ -149,10 +149,10 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     ## Remove fixed boxes from test
     test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]    
     
-    testids = test.groupby("individualID").apply(lambda x: x.head(1)).groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples).individual
+    testids = test.groupby("individual").apply(lambda x: x.head(1)).groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples).individual
     test = test[test.individual.isin(testids)]
 
-    trainids = train.groupby("individualID").apply(lambda x: x.head(1)).groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples).individual
+    trainids = train.groupby("individual").apply(lambda x: x.head(1)).groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples).individual
     train = train[train.individual.isin(trainids)]
     
     train = train[train.taxonID.isin(test.taxonID)]    
