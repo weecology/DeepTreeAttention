@@ -104,7 +104,7 @@ def filter_data(path, config):
 
     return shp
 
-def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1, ceiling=600):
+def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     """Sample and split a pandas dataframe based on plotID
     Args:
         shp: pandas dataframe of filtered tree locations
@@ -185,7 +185,6 @@ def train_test_split(shp, config, client = None):
                 min_train_samples=config["min_train_samples"],
                 iteration=x,
                 min_test_samples=config["min_test_samples"],
-                ceiling=config["sampling_ceiling"]
             )
             futures.append(future)
 
@@ -207,7 +206,6 @@ def train_test_split(shp, config, client = None):
                 shp=shp,
                 min_train_samples=config["min_train_samples"],
                 min_test_samples=config["min_test_samples"],
-                ceiling=config["sampling_ceiling"]
             )
             if test.taxonID.nunique() > test_species:
                 print("Selected test has {} points and {} species".format(test.shape[0], test.taxonID.nunique()))
@@ -222,7 +220,9 @@ def train_test_split(shp, config, client = None):
     
     # The size of the datasets
     if len(ties) > 1:
-        print("The size of tied datasets with {} species is {}".format(test_species, [x[1].shape[0] for x in ties]))        
+        print("The size of tied train datasets with {} species is {}".format(test_species, [x[0].shape[0] for x in ties]))  
+        print("The size of tied test datasets with {} species is {}".format(test_species, [x[1].shape[0] for x in ties]))        
+        
         saved_train, saved_test = ties[np.argmax([x[0].shape[0] for x in ties])]
         
     train = saved_train
