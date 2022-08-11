@@ -367,7 +367,7 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
     annotations["image_path"] = filenames       
     annotations["tile_year"] = annotations.image_path.apply(lambda x: os.path.splitext(os.path.basename(x))[0].split("_")[-1] )
     
-    annotations = annotations[["individual","geo_index","CHM_height","plotID","height","geometry","taxonID","RGB_tile","filename","siteID","image_path","score","box_id"]]
+    annotations = annotations[["individual","geo_index","tile_year","CHM_height","plotID","height","geometry","taxonID","RGB_tile","filename","siteID","image_path","score","box_id"]]
 
     return annotations
         
