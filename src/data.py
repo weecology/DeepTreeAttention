@@ -252,7 +252,7 @@ class TreeDataset(Dataset):
         self.config = config         
         self.image_size = config["image_size"]
         self.years = self.annotations.tile_year.unique()
-        self.individuals = self.annotations.individualID.unique()
+        self.individuals = self.annotations.individual.unique()
         
         # Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=self.image_size)
@@ -263,7 +263,7 @@ class TreeDataset(Dataset):
             self.individual_dict = {}
             for individual in self.individuals:
                 images = []
-                ind_annotations = self.annotations[self.annotations.individualID==individual]
+                ind_annotations = self.annotations[self.annotations.individual==individual]
                 for year in self.years:
                     year_annotations = ind_annotations[ind_annotations.tile_year==year]
                     if year_annotations.empty:
@@ -283,7 +283,7 @@ class TreeDataset(Dataset):
     def __getitem__(self, index):
         inputs = {}
         individual = self.individuals[index]
-        ind_annotations = self.annotations[self.annotations.individualID==individual]        
+        ind_annotations = self.annotations[self.annotations.individual==individual]        
         if self.config["preload_images"]:
             inputs["HSI"] = self.image_dict[individual]
         else:
@@ -508,9 +508,7 @@ class TreeData(LightningDataModule):
             self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
             
             #mimic schema due to abbreviation when .shp is saved
-            self.crowns["individualID"] = self.crowns["individual"]
             self.canopy_points = gpd.read_file("{}/canopy_points.shp".format(self.data_dir))
-            self.canopy_points["individualID"] = self.canopy_points["individual"]
             
             #Store class labels
             unique_species_labels = np.concatenate([self.train.taxonID.unique(), self.test.taxonID.unique()])

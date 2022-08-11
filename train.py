@@ -66,8 +66,8 @@ test = data_module.test.copy()
 crowns = data_module.crowns.copy()
 
 #remove graves
-train = train[~train.individualID.str.contains("graves")].reset_index(drop=True)
-test = test[~test.individualID.str.contains("graves")].reset_index(drop=True)
+train = train[~train.individual.str.contains("graves")].reset_index(drop=True)
+test = test[~test.individual.str.contains("graves")].reset_index(drop=True)
 
 m = multi_stage.MultiStage(train, test, config=data_module.config, crowns=crowns)
 
@@ -105,8 +105,8 @@ print(test.taxonID.value_counts())
 ds = data.TreeDataset(df=test, train=False, config=config)
 predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
 results = m.gather_predictions(predictions)
-results["individualID"] = results["individual"]
-results_with_data = results.merge(crowns, on="individualID")
+results["individual"] = results["individual"]
+results_with_data = results.merge(crowns, on="individual")
 comet_logger.experiment.log_table("nested_predictions.csv", results_with_data)
 
 ensemble_df = m.ensemble(results)
@@ -125,8 +125,8 @@ rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 
 #Limit to 1 individual for confusion matrix
 ensemble_df = ensemble_df.reset_index(drop=True)
-ensemble_df = ensemble_df.groupby("individualID").apply(lambda x: x.head(1))
-test = test.groupby("individualID").apply(lambda x: x.head(1)).reset_index(drop=True)
+ensemble_df = ensemble_df.groupby("individual").apply(lambda x: x.head(1))
+test = test.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
 visualize.confusion_matrix(
     comet_experiment=comet_logger.experiment,
     results=ensemble_df,
