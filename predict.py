@@ -52,6 +52,7 @@ def convert(rgb_path, hyperspectral_pool, savedir):
 
 #Params
 config = data.read_config("config.yml")
+config["preload_images"] = False
 comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
 comet_logger.experiment.add_tag("prediction")
 comet_logger.experiment.log_parameters(config)
@@ -63,16 +64,9 @@ dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1"
 savedir = config["crop_dir"] 
 
-species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b629e5365a104320bcec03843e9dd6fd.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5ac9afabe3f6402a9c312ba4cee5160a.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/46aff76fe2974b72a5d001c555d7c03a.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/63bdab99d6874f038212ac301439e9cc.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/c871ed25dc1c4a3e97cf3b723cf88bb6.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6d45510824d6442c987b500a156b77d6.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/83f6ede4f90b44ebac6c1ac271ea0939.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/47ee5858b1104214be178389c13bd025.pt"
+species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/2a5d33bd7d824ca890d6215c29f8da89.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/97a4efac43d24becb18a07a0dd1dd6d3.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/bcb6f8f6d8ba4eb5a767cdc1f4e108e5.pt"
                        ]
 
     
