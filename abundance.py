@@ -44,7 +44,10 @@ for species_model_path in species_model_paths:
 all_abundance = []
 for species_model_path in species_model_paths:
     basename = os.path.splitext(os.path.basename(species_model_path))[0]    
-    df = pd.read_csv("/blue/ewhite/b.weinstein/DeepTreeAttention/results/{}/abundance.csv".format(basename))
+    try:
+        df = pd.read_csv("/blue/ewhite/b.weinstein/DeepTreeAttention/results/{}/abundance.csv".format(basename))
+    except:
+        continue
     df["path"] = basename
     all_abundance.append(df)
 
