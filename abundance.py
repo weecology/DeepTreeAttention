@@ -30,6 +30,8 @@ for species_model_path in species_model_paths:
     input_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/{}/*.shp".format(basename)
     files = glob(input_dir)
     print(files)
+    if len(files) == 0:
+        continue
     counts = []
     futures = client.map(read_shp,files)
     counts = [x.result() for x in futures]
