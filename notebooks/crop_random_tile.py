@@ -123,13 +123,14 @@ def random_crop(config, iteration):
     coordx = np.argwhere(mask==255)
     
     #Get random coordinate away from edge, try 20 times
-    
+    counter=0
     while counter < 20:
         xsize, ysize = 640, 640
         random_index = random.randint(0, coordx.shape[0])
         xmin, ymin = coordx[random_index,:]
         window = Window(xmin, ymin, xsize, ysize)
         bounds = rasterio.windows.bounds(window, src.transform)
+        print(bounds)
         if bounds[20] - bounds[0] == 640:
             break
         else:
@@ -195,15 +196,15 @@ def random_crop(config, iteration):
             basename="HSI")
 
 config = read_config("config.yml")    
-rgb_pool = glob.glob(config["rgb_sensor_pool"], recursive=True)
+rgb_pool = glob.glob("/orange/ewhite/NeonData/*/DP3.30010.001/**/Camera/**/*.tif", recursive=True)
 rgb_pool = [x for x in rgb_pool if not "classified" in x]
 pd.Series(rgb_pool).to_csv("data/rgb_pool.csv")
 
-hsi_pool = glob.glob(config["HSI_sensor_pool"], recursive=True)
+hsi_pool = glob.glob("/orange/ewhite/NeonData/*/DP3.30006.001/**/Reflectance/*.h5", recursive=True)
 hsi_pool = [x for x in hsi_pool if not "neon-aop-products" in x]
 pd.Series(hsi_pool).to_csv("data/hsi_pool.csv")
 
-CHM_pool = glob.glob(config["CHM_pool"], recursive=True)
+CHM_pool = glob.glob("/orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif", recursive=True)
 pd.Series(CHM_pool).to_csv("data/CHM_pool.csv")
 
 hsi_tif_pool = glob.glob(config["HSI_tif_dir"]+"*")
