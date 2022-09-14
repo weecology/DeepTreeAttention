@@ -74,6 +74,7 @@ def random_crop(config, iteration):
         return None    
     if len([x for x in hsi_pool if geo_index in x]) < 3:
         return None
+    
     #Get .tif from the .h5
     hsi_tifs = neon_paths.lookup_and_convert(rgb_pool=rgb_pool, hyperspectral_pool=hsi_pool, savedir=config["HSI_tif_dir"], geo_index=geo_index, all_years=True)           
     hsi_tifs = [x for x in hsi_tifs if not "neon-aop-products" in x]
@@ -120,24 +121,32 @@ def random_crop(config, iteration):
     src = rasterio.open(selected_rgb[0])   
     mask = src.read_masks(1)
     coordx = np.argwhere(mask==255)
-    #Get random coordiante
-    xsize, ysize = 640, 640
-    random_index = random.randint(0, coordx.shape[0])
-    xmin, ymin = coordx[random_index,:]
-    window = Window(xmin, ymin, xsize, ysize)
-    bounds = rasterio.windows.bounds(window, src.transform)
+    
+    #Get random coordinate away from edge, try 20 times
+    
+    while counter < 20:
+        xsize, ysize = 640, 640
+        random_index = random.randint(0, coordx.shape[0])
+        xmin, ymin = coordx[random_index,:]
+        window = Window(xmin, ymin, xsize, ysize)
+        bounds = rasterio.windows.bounds(window, src.transform)
+        if bounds[20] - bounds[0] == 640:
+            break
+        else:
+            counter = counter + 1
+    
     
     #Project to web mercator
     dst_crs = 'EPSG:4326'    
-    projbounds = transform_bounds(src.crs, dst_crs, *bounds)
-    projbounds = [abs(x) for x in projbounds]
+    orijbounds = transform_bounds(src.crs, dst_crs, *bounds)
+    projbounds = [abs(x) for x in orijbounds]
     center_x = np.mean([projbounds[0], projbounds[2]])
     center_x = str(center_x)
     center_x = center_x.replace(".","_")
     center_y = np.mean([projbounds[1], projbounds[3]])
     center_y = str(center_y)
     center_y = center_y.replace(".","_")
-    center_coord = "{}N{}W".format(center_x, center_y)
+    center_coord = "{}N{}W".format(center_y, center_x)
     
     coord_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/{}".format(center_coord)
     try:
@@ -171,7 +180,7 @@ def random_crop(config, iteration):
         yr = "{}-01-01".format(selected_years[index])
         year_dir = os.path.join(coord_dir,yr)
         selected_dict = metadata_dicts[index]
-        selected_dict["bounds"] = projbounds           
+        selected_dict["bounds"] = orijbounds           
         with open(os.path.join(year_dir,"metadata.json"), 'w') as convert_file:
             convert_file.write(json.dumps(selected_dict, indent=4, sort_keys=True))
     
@@ -202,7 +211,7 @@ pd.Series(hsi_tif_pool).to_csv("data/hsi_tif_pool.csv")
 
 futures = []
 
-for x in range(100000):
+for x in range(100):
     future = client.submit(random_crop, 
                            config=config, 
                            iteration=x)
@@ -219,7 +228,8 @@ for x in futures:
 # post process cleanup
 files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/**/*.tif",recursive=True)
 counts = pd.DataFrame({"basename":[os.path.basename(x) for x in files],"path":files}) 
-less_than_3 = counts.basename.value_counts()
-to_remove = less_than_3[less_than_3 < 3].index
+counts["geo_index"] = counts.path.apply(lambda x: os.path.dirname(os.path.dirname(x)))
+less_than_3 = counts.groupby("geo_index").basename.value_counts().reset_index(name="geo")
+to_remove = less_than_3[less_than_3.geo < 3].geo_index
 for x in counts[counts.basename.isin(to_remove)].path:
     os.remove(x)
