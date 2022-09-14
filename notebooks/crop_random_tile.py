@@ -131,11 +131,10 @@ def random_crop(config, iteration):
         window = Window(xmin, ymin, xsize, ysize)
         bounds = rasterio.windows.bounds(window, src.transform)
         print(bounds)
-        if bounds[20] - bounds[0] == 640:
+        if all([(bounds[2] - bounds[0] == 64), (bounds[3] - bounds[1])==64]):
             break
         else:
             counter = counter + 1
-    
     
     #Project to web mercator
     dst_crs = 'EPSG:4326'    
@@ -147,7 +146,7 @@ def random_crop(config, iteration):
     center_y = np.mean([projbounds[1], projbounds[3]])
     center_y = str(center_y)
     center_y = center_y.replace(".","_")
-    center_coord = "{}N{}W".format(center_y, center_x)
+    center_coord = "{}N{}W".format(center_x, center_y)
     
     coord_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/{}".format(center_coord)
     try:
@@ -169,16 +168,16 @@ def random_crop(config, iteration):
             sensor_path=tile,
             savedir=year_dir,
             basename="RGB")
-        
+    
+    #Crop CHM
     for index, tile in enumerate(selected_chm):
-        #Dump metadata
+        yr = "{}-01-01".format(selected_years[index])                
         filename = crop(
             bounds=bounds,
             sensor_path=tile,
             savedir=year_dir,
             basename="CHM")
         
-        yr = "{}-01-01".format(selected_years[index])
         year_dir = os.path.join(coord_dir,yr)
         selected_dict = metadata_dicts[index]
         selected_dict["bounds"] = orijbounds           
