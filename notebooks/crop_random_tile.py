@@ -110,7 +110,7 @@ def random_crop(config, iteration):
     selected_rgb = [x for index, x in enumerate(rgb_tiles) if index in rgb_index]
     hsi_index = [index for index, value in enumerate(hsi_years) if value in selected_years]
     selected_hsi = [x for index, x in enumerate(hsi_tifs) if index in hsi_index]
-    chm_index = [index for index, vsealue in enumerate(chm_years) if value in selected_years]
+    chm_index = [index for index, value in enumerate(chm_years) if value in selected_years]
     selected_chm = [x for index, x in enumerate(chm_tiles) if index in chm_index]
     
     #Ensure same order
@@ -218,14 +218,16 @@ if __name__ == "__main__":
     pd.Series(hsi_tif_pool).to_csv("data/hsi_tif_pool.csv")
     
     futures = []
+    random_crop(config, iteration=0)
+    random_crop(config, iteration=1)
     
-    for x in range(100):
-        future = client.submit(random_crop, 
-                               config=config, 
-                               iteration=x)
-        futures.append(future)
+    #for x in range(100):
+        #future = client.submit(random_crop, 
+                               #config=config, 
+                               #iteration=x)
+        #futures.append(future)
     
-    wait(futures)
+    #wait(futures)
     
     for x in futures:
         try:
