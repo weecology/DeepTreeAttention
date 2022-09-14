@@ -146,7 +146,7 @@ def random_crop(config, iteration):
     center_y = np.mean([projbounds[1], projbounds[3]])
     center_y = str(center_y)
     center_y = center_y.replace(".","_")
-    center_coord = "{}N{}W".format(center_x, center_y)
+    center_coord = "{}N{}W".format(center_y, center_x)
     
     coord_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/{}".format(center_coord)
     try:
@@ -171,14 +171,14 @@ def random_crop(config, iteration):
     
     #Crop CHM
     for index, tile in enumerate(selected_chm):
-        yr = "{}-01-01".format(selected_years[index])                
+        yr = "{}-01-01".format(selected_years[index])  
+        year_dir = os.path.join(coord_dir,yr)        
         filename = crop(
             bounds=bounds,
             sensor_path=tile,
             savedir=year_dir,
             basename="CHM")
         
-        year_dir = os.path.join(coord_dir,yr)
         selected_dict = metadata_dicts[index]
         selected_dict["bounds"] = orijbounds           
         with open(os.path.join(year_dir,"metadata.json"), 'w') as convert_file:
