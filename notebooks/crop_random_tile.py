@@ -18,7 +18,6 @@ import h5py
 import json
 from rasterio.warp import calculate_default_transform, reproject, Resampling, transform_bounds
 
-client = start(cpus=100, mem_size = "12GB")
 def crop(bounds, sensor_path, savedir = None, basename = None):
     """Given a 4 pointed bounding box, crop sensor data"""
     dst_crs = 'EPSG:4326'
@@ -111,8 +110,14 @@ def random_crop(config, iteration):
     selected_rgb = [x for index, x in enumerate(rgb_tiles) if index in rgb_index]
     hsi_index = [index for index, value in enumerate(hsi_years) if value in selected_years]
     selected_hsi = [x for index, x in enumerate(hsi_tifs) if index in hsi_index]
-    chm_index = [index for index, value in enumerate(chm_years) if value in selected_years]
+    chm_index = [index for index, vsealue in enumerate(chm_years) if value in selected_years]
     selected_chm = [x for index, x in enumerate(chm_tiles) if index in chm_index]
+    
+    #Ensure same order
+    selected_rgb.sort()
+    selected_chm.sort()
+    selected_hsi.sort()
+    
     if not all(np.array([len(selected_chm), len(selected_hsi), len(selected_rgb)]) == [3,3,3]):
         print("Not enough years")
         return None
@@ -143,6 +148,7 @@ def random_crop(config, iteration):
     center_x = np.mean([projbounds[0], projbounds[2]])
     center_x = str(center_x)
     center_x = center_x.replace(".","_")
+    
     center_y = np.mean([projbounds[1], projbounds[3]])
     center_y = str(center_y)
     center_y = center_y.replace(".","_")
@@ -194,42 +200,44 @@ def random_crop(config, iteration):
             savedir=year_dir,
             basename="HSI")
 
-config = read_config("config.yml")    
-rgb_pool = glob.glob("/orange/ewhite/NeonData/*/DP3.30010.001/**/Camera/**/*.tif", recursive=True)
-rgb_pool = [x for x in rgb_pool if not "classified" in x]
-pd.Series(rgb_pool).to_csv("data/rgb_pool.csv")
-
-hsi_pool = glob.glob("/orange/ewhite/NeonData/*/DP3.30006.001/**/Reflectance/*.h5", recursive=True)
-hsi_pool = [x for x in hsi_pool if not "neon-aop-products" in x]
-pd.Series(hsi_pool).to_csv("data/hsi_pool.csv")
-
-CHM_pool = glob.glob("/orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif", recursive=True)
-pd.Series(CHM_pool).to_csv("data/CHM_pool.csv")
-
-hsi_tif_pool = glob.glob(config["HSI_tif_dir"]+"*")
-pd.Series(hsi_tif_pool).to_csv("data/hsi_tif_pool.csv")
-
-futures = []
-
-for x in range(100):
-    future = client.submit(random_crop, 
-                           config=config, 
-                           iteration=x)
-    futures.append(future)
-
-wait(futures)
-
-for x in futures:
-    try:
-        x.result()
-    except Exception as e:
-        print(e)
-        
-# post process cleanup
-files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/**/*.tif",recursive=True)
-counts = pd.DataFrame({"basename":[os.path.basename(x) for x in files],"path":files}) 
-counts["geo_index"] = counts.path.apply(lambda x: os.path.dirname(os.path.dirname(x)))
-less_than_3 = counts.groupby("geo_index").basename.value_counts().reset_index(name="geo")
-to_remove = less_than_3[less_than_3.geo < 3].geo_index
-for x in counts[counts.basename.isin(to_remove)].path:
-    os.remove(x)
+if __name__ == "__main__":
+    client = start(cpus=100, mem_size = "12GB")    
+    config = read_config("config.yml")    
+    rgb_pool = glob.glob("/orange/ewhite/NeonData/*/DP3.30010.001/**/Camera/**/*.tif", recursive=True)
+    rgb_pool = [x for x in rgb_pool if not "classified" in x]
+    pd.Series(rgb_pool).to_csv("data/rgb_pool.csv")
+    
+    hsi_pool = glob.glob("/orange/ewhite/NeonData/*/DP3.30006.001/**/Reflectance/*.h5", recursive=True)
+    hsi_pool = [x for x in hsi_pool if not "neon-aop-products" in x]
+    pd.Series(hsi_pool).to_csv("data/hsi_pool.csv")
+    
+    CHM_pool = glob.glob("/orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif", recursive=True)
+    pd.Series(CHM_pool).to_csv("data/CHM_pool.csv")
+    
+    hsi_tif_pool = glob.glob(config["HSI_tif_dir"]+"*")
+    pd.Series(hsi_tif_pool).to_csv("data/hsi_tif_pool.csv")
+    
+    futures = []
+    
+    for x in range(100):
+        future = client.submit(random_crop, 
+                               config=config, 
+                               iteration=x)
+        futures.append(future)
+    
+    wait(futures)
+    
+    for x in futures:
+        try:
+            x.result()
+        except Exception as e:
+            print(e)
+            
+    # post process cleanup
+    files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/**/*.tif",recursive=True)
+    counts = pd.DataFrame({"basename":[os.path.basename(x) for x in files],"path":files}) 
+    counts["geo_index"] = counts.path.apply(lambda x: os.path.dirname(os.path.dirname(x)))
+    less_than_3 = counts.groupby("geo_index").basename.value_counts().reset_index(name="geo")
+    to_remove = less_than_3[less_than_3.geo < 3].geo_index
+    for x in counts[counts.basename.isin(to_remove)].path:
+        os.remove(x)
