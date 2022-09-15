@@ -190,7 +190,7 @@ def random_crop(config, iteration):
         
         selected_dict = metadata_dicts[index]
         selected_dict["bounds"] = orijbounds   
-        selected_dict["epsg"]:src.crs
+        selected_dict["epsg"] = src.crs
         
         with open(os.path.join(year_dir,"metadata.json"), 'w') as convert_file:
             convert_file.write(json.dumps(selected_dict, indent=4, sort_keys=True))
