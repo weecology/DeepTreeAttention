@@ -20,18 +20,18 @@ from rasterio.warp import calculate_default_transform, reproject, Resampling, tr
 
 def crop(bounds, sensor_path, savedir = None, basename = None):
     """Given a 4 pointed bounding box, crop sensor data"""
-    dst_crs = 'EPSG:4326'
+    #dst_crs = 'EPSG:4326'
     
     left, bottom, right, top = bounds 
     src = rasterio.open(sensor_path)        
-    img = src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform)) 
+    img = src.read(window=rasterio.windows.from_bounds(left, bottom, left, top, transform=src.transform)) 
     res = src.res[0]
     
     height = (top - bottom)/res
     width = (right - left)/res   
     
-    transform, width, height = calculate_default_transform(
-        src.crs, dst_crs, width, height,*bounds)
+    #transform, width, height = calculate_default_transform(
+        #src.crs, dst_crs, width, height,*bounds)
     
     if savedir:
         profile = src.profile
@@ -39,7 +39,7 @@ def crop(bounds, sensor_path, savedir = None, basename = None):
             height=height,
             width=width,
             transform=transform,
-            crs=dst_crs
+            crs=src.crs
         )
         filename = "{}/{}.tif".format(savedir, basename)
         with rasterio.open(filename, "w",**profile) as dst:
@@ -50,7 +50,7 @@ def crop(bounds, sensor_path, savedir = None, basename = None):
                     src_transform=src.transform,
                     src_crs=src.crs,
                     dst_transform=transform,
-                    dst_crs=dst_crs,
+                    dst_crs=src.crs,
                     resampling=Resampling.nearest)
             dst.write(img)
     if savedir:
@@ -127,6 +127,9 @@ def random_crop(config, iteration):
     mask = src.read_masks(1)
     coordx = np.argwhere(mask==255)
     
+    #Project bounds to web mercator
+    #dst_crs = 'EPSG:4326'    
+    
     #Get random coordinate away from edge, try 20 times
     counter=0
     while counter < 20:
@@ -135,15 +138,15 @@ def random_crop(config, iteration):
         xmin, ymin = coordx[random_index,:]
         window = Window(xmin, ymin, xsize, ysize)
         bounds = rasterio.windows.bounds(window, src.transform)
-        print(bounds)
         if all([(bounds[2] - bounds[0] == 64), (bounds[3] - bounds[1])==64]):
             break
         else:
             counter = counter + 1
     
-    #Project to web mercator
-    dst_crs = 'EPSG:4326'    
-    orijbounds = transform_bounds(src.crs, dst_crs, *bounds)
+    #Project bounds to web mercator
+    #dst_crs = 'EPSG:4326'    
+    #orijbounds = transform_bounds(src.crs, dst_crs, *bounds)
+    orijbounds = bounds 
     projbounds = [abs(x) for x in orijbounds]
     center_x = np.mean([projbounds[0], projbounds[2]])
     center_x = str(center_x)
@@ -152,7 +155,7 @@ def random_crop(config, iteration):
     center_y = np.mean([projbounds[1], projbounds[3]])
     center_y = str(center_y)
     center_y = center_y.replace(".","_")
-    center_coord = "{}N{}W".format(center_y, center_x)
+    center_coord = "{}_{}".format(center_y, center_x)
     
     coord_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/{}".format(center_coord)
     try:
@@ -218,8 +221,6 @@ if __name__ == "__main__":
     pd.Series(hsi_tif_pool).to_csv("data/hsi_tif_pool.csv")
     
     futures = []
-    random_crop(config, iteration=0)
-    random_crop(config, iteration=1)
     
     #for x in range(100):
         #future = client.submit(random_crop, 
