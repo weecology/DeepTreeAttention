@@ -38,7 +38,7 @@ def crop(bounds, sensor_path, savedir = None, basename = None):
         profile.update(
             height=height,
             width=width,
-            transform=transform,
+            transform=src.transform,
             crs=src.crs
         )
         filename = "{}/{}.tif".format(savedir, basename)
@@ -49,7 +49,7 @@ def crop(bounds, sensor_path, savedir = None, basename = None):
                     destination=rasterio.band(dst, i),
                     src_transform=src.transform,
                     src_crs=src.crs,
-                    dst_transform=transform,
+                    dst_transform=src.transform,
                     dst_crs=src.crs,
                     resampling=Resampling.nearest)
             dst.write(img)
@@ -189,7 +189,9 @@ def random_crop(config, iteration):
             basename="CHM")
         
         selected_dict = metadata_dicts[index]
-        selected_dict["bounds"] = orijbounds           
+        selected_dict["bounds"] = orijbounds   
+        selected_dict["epsg"]:src.crs
+        
         with open(os.path.join(year_dir,"metadata.json"), 'w') as convert_file:
             convert_file.write(json.dumps(selected_dict, indent=4, sort_keys=True))
     
