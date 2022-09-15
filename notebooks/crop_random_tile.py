@@ -148,11 +148,11 @@ def random_crop(config, iteration):
     #orijbounds = transform_bounds(src.crs, dst_crs, *bounds)
     orijbounds = bounds 
     projbounds = [abs(x) for x in orijbounds]
-    center_x = np.mean([projbounds[0], projbounds[2]])
+    center_x = int(np.mean([projbounds[0], projbounds[2]]))
     center_x = str(center_x)
     center_x = center_x.replace(".","_")
     
-    center_y = np.mean([projbounds[1], projbounds[3]])
+    center_y = int(np.mean([projbounds[1], projbounds[3]]))
     center_y = str(center_y)
     center_y = center_y.replace(".","_")
     center_coord = "{}_{}".format(center_y, center_x)
