@@ -222,13 +222,13 @@ if __name__ == "__main__":
     
     futures = []
     
-    #for x in range(100):
-        #future = client.submit(random_crop, 
-                               #config=config, 
-                               #iteration=x)
-        #futures.append(future)
+    for x in range(100):
+        future = client.submit(random_crop, 
+                               config=config, 
+                               iteration=x)
+        futures.append(future)
     
-    #wait(futures)
+    wait(futures)
     
     for x in futures:
         try:
