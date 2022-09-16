@@ -5,7 +5,7 @@ import pandas as pd
 import geopandas as gpd
 from src import start_cluster
 
-client = start_cluster.start(cpus=80,mem_size="5GB")
+client = start_cluster.start(cpus=200,mem_size="5GB")
 
 species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt",
                        "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt",
