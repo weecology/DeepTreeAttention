@@ -21,7 +21,7 @@ species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/2a5
 def read_shp(path):
     gdf = gpd.read_file(path)
     #limit by OSBS polygon
-    boundary = gpd.read_file("/blue/ewhite/b.weinstein/DeepTreeAttention/data/OSBSBoundary/OSBS_boundary.shp")
+    boundary = gpd.read_file("/blue/ewhite/b.weinstein/DeepTreeAttention/data/raw/OSBSBoundary/OSBS_boundary.shp")
     intersects = gpd.overlay(gdf, boundary)
     tile_count = intersects.ensembleTa.value_counts()
     
