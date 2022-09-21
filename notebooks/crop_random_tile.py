@@ -144,9 +144,9 @@ def random_crop(config, iteration):
             counter = counter + 1
     
     #Project bounds to web mercator
-    #dst_crs = 'EPSG:4326'    
-    #orijbounds = transform_bounds(src.crs, dst_crs, *bounds)
-    orijbounds = bounds 
+    dst_crs = 'EPSG:4326'    
+    orijbounds = transform_bounds(src.crs, dst_crs, *bounds)
+    #orijbounds = bounds 
     projbounds = [abs(x) for x in orijbounds]
     center_x = int(np.mean([projbounds[0], projbounds[2]]))
     center_x = str(center_x)
