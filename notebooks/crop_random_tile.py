@@ -155,7 +155,7 @@ def random_crop(config, iteration):
     center_y = np.mean([projbounds[1], projbounds[3]])
     center_y = str(center_y)
     center_y = center_y.replace(".","_")
-    center_coord = "{}N_{}W".format(center_x, center_y)
+    center_coord = "{}N_{}W".format(center_y, center_x)
     
     coord_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/{}".format(center_coord)
     try:
