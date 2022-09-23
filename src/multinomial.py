@@ -58,8 +58,8 @@ def sample_confusion(taxonID, confusion):
         
         return np.argmax(random_draw)
 
-def wrapper(client, iteration, experiment_key, savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results"):  
-    tiles = glob.glob("{}/{}/*.shp".format(savedir, experiment_key))
+def wrapper(client, iteration, experiment_key, shp_dir="/blue/ewhite/b.weinstein/DeepTreeAttention/", savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results"):  
+    tiles = glob.glob("{}/{}/*.shp".format(shp_dir, experiment_key))
     total_counts = pd.Series()
     counts = []
     for tile in tiles:
