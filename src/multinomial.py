@@ -15,10 +15,8 @@ def run(tile, confusion_path="data/processed/confusion_matrix.csv", iteration=0)
     confusion = load_confusion(confusion_path)
     
     #Create label dictionary and assign sampled label
-    label_dict = {}
-    for name, group in predicted_tile.groupby("ens_label"):
-        label_dict[name] = group.ensembleTa.unique()[0]
-        
+    label_dict = {key: value for key, value in enumerate(confusion.keys())}
+
     # Add dead class
     label_dict["DEAD"] = "DEAD"
     
@@ -73,7 +71,7 @@ def wrapper(client, iteration, experiment_key, shp_dir="/blue/ewhite/b.weinstein
         try:
             ser = result.result()
         except Exception as e:
-            traceback.print_exception(e)
+            traceback.print_exc(e)
             print(e)
             continue
         total_counts = total_counts.add(ser, fill_value=0)
