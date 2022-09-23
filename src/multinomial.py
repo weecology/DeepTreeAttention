@@ -6,7 +6,7 @@ import geopandas as gpd
 
 from distributed import wait
 
-def run(tile, confusion_path):
+def run(tile, confusion_path="data/processed/confusion.csv"):
     """Load a shapefile and confusion .csv and sample the confidence probabilities"""
     predicted_tile = gpd.read_file(tile)
 
