@@ -40,11 +40,11 @@ def format_confusion_json(path):
     return df
     
 def load_confusion(path):
-    df = pd.read_csv(path)
-    as_dict = df.set_index("predicted").to_dict()
+    df = pd.read_csv(path, index_col=0)
     flat_dict = {}
-    for key, value in as_dict.items():
-        flat_dict[key] = [j for i,j in value.items()]
+    df = df.set_index("predicted")
+    for taxonID in df:
+        flat_dict[taxonID] = df.loc[taxonID].values
     
     return flat_dict
     
