@@ -3,10 +3,11 @@ import numpy as np
 import pandas as pd
 import glob
 import geopandas as gpd
+import traceback
 
 from distributed import wait
 
-def run(tile, confusion_path="data/processed/confusion_matrix.csv"):
+def run(tile, confusion_path="data/processed/confusion_matrix.csv", iteration=0):
     """Load a shapefile and confusion .csv and sample the confidence probabilities"""
     predicted_tile = gpd.read_file(tile)
 
@@ -63,7 +64,7 @@ def wrapper(client, iteration, experiment_key, shp_dir="/blue/ewhite/b.weinstein
     total_counts = pd.Series()
     counts = []
     for tile in tiles:
-        future = client.submit(run, tile=tile)
+        future = client.submit(run, tile=tile, iteration=iteration)
         counts.append(future)
     
     wait(counts)
@@ -72,6 +73,7 @@ def wrapper(client, iteration, experiment_key, shp_dir="/blue/ewhite/b.weinstein
         try:
             ser = result.result()
         except Exception as e:
+            traceback.print_exception(e)
             print(e)
             continue
         total_counts = total_counts.add(ser, fill_value=0)
