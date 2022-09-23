@@ -15,7 +15,7 @@ def run(tile, confusion_path="data/processed/confusion_matrix.csv"):
     
     #Create label dictionary and assign sampled label
     label_dict = {}
-    for name, group in predicted_tile.groupby("ensemble_l"):
+    for name, group in predicted_tile.groupby("ens_label"):
         label_dict[name] = group.ensembleTa.unique()[0]
         
     # Add dead class
