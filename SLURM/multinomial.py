@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=selfsupervised   # Job name
+#SBATCH --job-name=multinomial   # Job name
 #SBATCH --mail-type=END               # Mail events
 #SBATCH --mail-user=benweinstein2010@gmail.com  # Where to send mail
 #SBATCH --account=ewhite

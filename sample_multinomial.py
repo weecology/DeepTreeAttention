@@ -1,4 +1,4 @@
-from src.multonomial import wrapper
+from src.multinomial import wrapper
 from src import start_cluster
 
 client = start_cluster.start(cpus=50, mem_size="5GB")
