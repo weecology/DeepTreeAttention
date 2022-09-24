@@ -3,12 +3,12 @@ import pytest
 import geopandas as gpd
 import pandas as pd
 from shapely import geometry
-from src import multonomial
+from src import multinomial
 
 def test_run(tmpdir):
     #Create predictions
     boxes = [geometry.box(0, 0, 5, 5),geometry.box(0, 0, 5, 5),geometry.box(0, 0, 5, 5), geometry.box(0, 0, 5, 5)]
-    p = gpd.GeoDataFrame({"ens_label":[0,0,1,None],"ensembleTa":["A","A","B","DEAD"],"ensemble_score":[0.9999,0.05,0.9999,None],"geometry":boxes})
+    p = gpd.GeoDataFrame({"ens_label":[0,0,1,None],"ensembleTa":["A","A","B","DEAD"],"ens_score":[0.9999,0.05,0.9999,None],"geometry":boxes})
     p.to_file("{}/example.shp".format(tmpdir))
     
     #Create confusion matrix
@@ -16,4 +16,4 @@ def test_run(tmpdir):
     confusion["predicted"] = ["A","B"]
     confusion.to_csv("{}/confusion.csv".format(tmpdir), index=False)
     
-    counts = multonomial.run(tile="{}/example.shp".format(tmpdir), confusion_path="{}/confusion.csv".format(tmpdir))
+    counts = multinomial.run(tile="{}/example.shp".format(tmpdir), confusion_path="{}/confusion.csv".format(tmpdir))

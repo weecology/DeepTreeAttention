@@ -4,6 +4,7 @@ import pandas as pd
 import glob
 import geopandas as gpd
 import traceback
+import math
 
 from distributed import wait
 
@@ -16,12 +17,16 @@ def run(tile, confusion_path="data/processed/confusion_matrix.csv", iteration=0)
     
     #Create label dictionary and assign sampled label
     label_dict = {key: value for key, value in enumerate(confusion.keys())}
-
+    
+    # Which individuals to sample
+    predicted_tile["binomial_sample"] = predicted_tile.ens_score.apply(lambda x: sample_binomial(x))
+    
     # Add dead class
     label_dict["DEAD"] = "DEAD"
     
     predicted_tile["sampled_label"] = predicted_tile.ensembleTa.apply(lambda x: sample_confusion(x, confusion))
     predicted_tile["sampled_taxonID"] = predicted_tile.sampled_label.apply(lambda x: label_dict[x])
+    predicted_tile.loc[predicted_tile.binomial_sample == 1,"sampled_taxonID"] =  predicted_tile.loc[predicted_tile.binomial_sample == 1].ensembleTa
     
     tile_count = predicted_tile.sampled_taxonID.value_counts()
     
@@ -46,6 +51,14 @@ def load_confusion(path):
         flat_dict[taxonID] = df.loc[taxonID].values
     
     return flat_dict
+
+def sample_binomial(x):
+    if x is None:
+        return 1
+    elif math.isnan(x):
+        return 1
+    else:
+        return np.random.binomial(1, x)
     
 def sample_confusion(taxonID, confusion):
     if taxonID == "DEAD":
