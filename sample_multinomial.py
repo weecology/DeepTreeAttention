@@ -8,7 +8,7 @@ import pandas as pd
     #wrapper(client=client, iteration=x, experiment_key="209ca047ed004d778c0f0e728e126bda")
 
 for x in range(100):  
-    tiles = glob.glob("{}/{}/*.shp".format("/blue/ewhite/b.weinstein/DeepTreeAttention/results/", experiment_key="06ee8e987b014a4d9b6b824ad6d28d83"))
+    tiles = glob.glob("{}/{}/*.shp".format("/blue/ewhite/b.weinstein/DeepTreeAttention/results/", "06ee8e987b014a4d9b6b824ad6d28d83"))
     total_counts = pd.Series()
     counts = []
     for tile in tiles:
