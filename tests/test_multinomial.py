@@ -16,4 +16,4 @@ def test_run(tmpdir):
     confusion["predicted"] = ["A","B"]
     confusion.to_csv("{}/confusion.csv".format(tmpdir), index=False)
     
-    counts = multinomial.run(tile="{}/example.shp".format(tmpdir), confusion_path="{}/confusion.csv".format(tmpdir))
+    counts = multinomial.run(tile="{}/example.shp".format(tmpdir), confusion_path="{}/confusion.csv".format(tmpdir), overlay_bounds=None)
