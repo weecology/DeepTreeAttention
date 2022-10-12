@@ -6,8 +6,9 @@ import numpy as np
 import pandas as pd
 from src import CHM
 import shapely
+from distributed import wait
 
-def read_files(directory, site=None, config=None):
+def read_files(directory, site=None, config=None, client=None):
     """Read shapefiles and return a dict based on site name"""
     shapefiles = glob.glob("{}/*.shp".format(directory))
     if site:
@@ -16,10 +17,22 @@ def read_files(directory, site=None, config=None):
     sites = [os.path.splitext(os.path.basename(x))[0] for x in shapefiles]
     
     sitedf = []
-    for index, x in enumerate(sites):
-        print(x)
-        formatted_data = format(site=x, gdf=shps[index], config=config)
-        sitedf.append(formatted_data)
+    
+    if client:
+        futures = []
+        for index, x in enumerate(sites):
+            future = client.submit(format, site=x, gdf=shps[index], config=config)
+            futures.append(future)
+        wait(futures)
+        for x in futures:
+            print(x)            
+            formatted_data = x.result()
+            sitedf.append(formatted_data)        
+    else: 
+        for index, x in enumerate(sites):
+            print(x)
+            formatted_data = format(site=x, gdf=shps[index], config=config)
+            sitedf.append(formatted_data)
 
     sitedf = pd.concat(sitedf)
     
@@ -85,11 +98,11 @@ def create_grid(gdf):
     
     #give grid cells a plot ID
     grid["plotID"] = grid.index
-    grid["plotID"] = grid.plotID.apply(lambda x: "{}_contrib".format(x))
+    grid["plotID"] = grid.plotID.apply(lambda x: "{}_contrib_{}".format(gdf.filename.unique()[0], int(x)))
     
     return grid
     
-def load(directory, config, site=None):
+def load(directory, config, client=None):
     """Load all the megaplot data and generate crown predictions
     Args:
         directory: location of .csv files of megaplot data
@@ -97,6 +110,6 @@ def load(directory, config, site=None):
     Returns:
         crowndf: a geopandas dataframe of crowns for all sites
     """
-    formatted_data = read_files(directory=directory, config=config, site=site)
+    formatted_data = read_files(directory=directory, config=config, client=client)
     
     return formatted_data

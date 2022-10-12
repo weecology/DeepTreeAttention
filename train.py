@@ -128,12 +128,17 @@ rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
 ensemble_df = ensemble_df.reset_index(drop=True)
 ensemble_df = ensemble_df.groupby("individual").apply(lambda x: x.head(1))
 test = test.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
-visualize.confusion_matrix(
-    comet_experiment=comet_logger.experiment,
-    results=ensemble_df,
-    species_label_dict=data_module.species_label_dict,
-    test_crowns=crowns,
-    test=test,
-    test_points=data_module.canopy_points,
-    rgb_pool=rgb_pool
-)
+
+for site in results.siteID.unique():
+    site_result = results[results.siteID==site]
+    with comet_logger.experiment.context_manager(site):
+        visualize.confusion_matrix(
+            comet_experiment=comet_logger.experiment,
+            results=site_result,
+            species_label_dict=data_module.species_label_dict,
+            test_crowns=data_module.crowns,
+            test=data_module.test,
+            test_points=data_module.canopy_points,
+            rgb_pool=rgb_pool,
+            name=site
+        )

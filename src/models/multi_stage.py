@@ -78,135 +78,60 @@ class MultiStage(LightningModule):
         test_datasets = []
         self.num_classes = []
         self.level_id = []
-        self.level_label_dicts.append({"PIPA2":0,"OTHER":1})
-        self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[0].items()})
-        
+   
+        # Level 0, the most common species at each site
         self.level_0_train = self.train_df.copy()
-        PIPA2 = self.level_0_train[self.level_0_train.taxonID=="PIPA2"]
-        nonPIPA2 = self.level_0_train[~(self.level_0_train.taxonID=="PIPA2")]
-        nonPIPA2ids = nonPIPA2.groupby("individual").apply(lambda x: x.head(1)).groupby("taxonID").apply(lambda x: x.head(self.config["other_sampling_ceiling"])).individual
-        nonPIPA2 = nonPIPA2[nonPIPA2.individual.isin(nonPIPA2ids)]
-        self.level_0_train = pd.concat([PIPA2, nonPIPA2])
-        self.level_0_train.loc[~(self.level_0_train.taxonID == "PIPA2"),"taxonID"] = "OTHER"
-                
+        common_species = self.level_0_train.groupby(["siteID"]).apply(lambda x: x.taxonID.value_counts().index[0])
+        self.level_label_dicts[0]  = {key:value for key, value in enumerate(common_species)}
+        self.level_label_dicts[len(self.level_label_dicts[0]) + 1] = "OTHER" 
+        self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[0].items()})
+     
+        head_classes = self.level_0_train[self.level_0_train.taxonID.isin(common_species)]
+        tail_classes = self.level_0_train[~self.level_0_train.taxonID.isin(common_species)]
+        tail_classes["taxonID"] = "OTHER"
+        self.level_0_train = pd.concat([head_classes, tail_classes])                
         self.level_0_train["label"] = [self.level_label_dicts[0][x] for x in self.level_0_train.taxonID]
         self.level_0_train_ds = TreeDataset(df=self.level_0_train, config=self.config)
         train_datasets.append(self.level_0_train_ds)
         self.num_classes.append(len(self.level_0_train.taxonID.unique()))
         
         self.level_0_test = self.test_df.copy()
-        self.level_0_test.loc[~(self.level_0_test.taxonID == "PIPA2"),"taxonID"] = "OTHER"
+        head_classes = self.level_0_test[self.level_0_test.taxonID.isin(common_species)]
+        tail_classes = self.level_0_test[~self.level_0_test.taxonID.isin(common_species)]
+        tail_classes["taxonID"] = "OTHER"
+        self.level_0_train = pd.concat([head_classes, tail_classes]) 
+        
         self.level_0_test["label"]= [self.level_label_dicts[0][x] for x in self.level_0_test.taxonID]            
         self.level_0_test_ds = TreeDataset(df=self.level_0_test, config=self.config)
         test_datasets.append(self.level_0_test_ds)
         self.level_id.append(0)
         
-        ## Level 1
-        self.level_label_dicts.append({"CONIFER":0,"BROADLEAF":1})
-        self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[1].items()})
-        self.level_1_train = self.train_df.copy()
-        self.level_1_train = self.level_1_train[~(self.level_1_train.taxonID=="PIPA2")]    
-        self.level_1_train.loc[~self.level_1_train.taxonID.isin(["PICL","PIEL","PITA"]),"taxonID"] = "BROADLEAF"   
-        self.level_1_train.loc[self.level_1_train.taxonID.isin(["PICL","PIEL","PITA"]),"taxonID"] = "CONIFER" 
+        # Level 0, the most common species at each site
+        self.level_0_train = self.train_df.copy()
+        common_species = self.level_0_train.groupby(["siteID"]).apply(lambda x: x.taxonID.value_counts().index[0])
+        self.level_label_dicts[0]  = {key:value for key, value in enumerate(common_species)}
+        self.level_label_dicts[len(self.level_label_dicts[0]) + 1] = "OTHER" 
+        self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[0].items()})
+     
+        head_classes = self.level_0_train[self.level_0_train.taxonID.isin(common_species)]
+        tail_classes = self.level_0_train[~self.level_0_train.taxonID.isin(common_species)]
+        tail_classes["taxonID"] = "OTHER"
+        self.level_0_train = pd.concat([head_classes, tail_classes])                
+        self.level_0_train["label"] = [self.level_label_dicts[0][x] for x in self.level_0_train.taxonID]
+        self.level_0_train_ds = TreeDataset(df=self.level_0_train, config=self.config)
+        train_datasets.append(self.level_0_train_ds)
+        self.num_classes.append(len(self.level_0_train.taxonID.unique()))
         
-        #subsample broadleaf, labels have not been converted, relate to original taxonID
-        conifer_ids = self.level_1_train[self.level_1_train.taxonID=="CONIFER"].individual        
-        broadleaf_ids = self.level_1_train[self.level_1_train.taxonID=="BROADLEAF"].groupby("label").apply(
-            lambda x: x.sample(frac=1).groupby(
-                "individual").apply(lambda x: x.head(1)).head(
-            math.ceil(len(conifer_ids)/11)
-            )).individual
-        ids_to_keep = np.concatenate([broadleaf_ids, conifer_ids])
-        self.level_1_train = self.level_1_train[self.level_1_train.individual.isin(ids_to_keep)].reset_index(drop=True)
-        self.level_1_train["label"] = [self.level_label_dicts[1][x] for x in self.level_1_train.taxonID]
-        self.level_1_train_ds = TreeDataset(df=self.level_1_train, config=self.config)
-        train_datasets.append(self.level_1_train_ds)
-        self.num_classes.append(len(self.level_1_train.taxonID.unique()))
+        self.level_0_test = self.test_df.copy()
+        head_classes = self.level_0_test[self.level_0_test.taxonID.isin(common_species)]
+        tail_classes = self.level_0_test[~self.level_0_test.taxonID.isin(common_species)]
+        tail_classes["taxonID"] = "OTHER"
+        self.level_0_train = pd.concat([head_classes, tail_classes]) 
         
-        self.level_1_test = self.test_df.copy()
-        self.level_1_test = self.level_1_test[~(self.level_1_test.taxonID=="PIPA2")].reset_index(drop=True)    
-        self.level_1_test.loc[~self.level_1_test.taxonID.isin(["PICL","PIEL","PITA"]),"taxonID"] = "BROADLEAF"   
-        self.level_1_test.loc[self.level_1_test.taxonID.isin(["PICL","PIEL","PITA"]),"taxonID"] = "CONIFER"            
-        self.level_1_test["label"] = [self.level_label_dicts[1][x] for x in self.level_1_test.taxonID]
-        self.level_1_test_ds = TreeDataset(df=self.level_1_test, config=self.config)
-        test_datasets.append(self.level_1_test_ds)
-        self.level_id.append(1)
-        
-        ## Level 2
-        broadleaf = [x for x in list(self.species_label_dict.keys()) if (not x in ["PICL","PIEL","PITA","PIPA2"]) & (not "QU" in x)]     
-        broadleaf = {v:k for k, v in enumerate(broadleaf)}
-        broadleaf["OAK"] = len(broadleaf)
-        self.level_label_dicts.append(broadleaf)
-        self.label_to_taxonIDs.append({v: k  for k, v in broadleaf.items()})
-        self.level_2_train = self.train_df.copy()
-        self.level_2_train = self.level_2_train[~self.level_2_train.taxonID.isin(["PICL","PIEL","PITA","PIPA2"])].reset_index(drop=True)
-        self.level_2_train.loc[self.level_2_train.taxonID.str.contains("QU"),"taxonID"] = "OAK"
-        
-        non_oakid = self.level_2_train[~(self.level_2_train.taxonID=="OAK")].individual        
-        oak_ids = self.level_2_train[self.level_2_train.taxonID=="OAK"].groupby("label").apply(lambda x: x.sample(frac=1).head(
-            int(len(non_oakid)/5))
-            ).individual
-        ids_to_keep = np.concatenate([oak_ids, non_oakid])
-        self.level_2_train = self.level_2_train[self.level_2_train.individual.isin(ids_to_keep)].reset_index(drop=True)
-        self.level_2_train["label"] = [self.level_label_dicts[2][x] for x in self.level_2_train.taxonID]
-        self.level_2_train_ds = TreeDataset(df=self.level_2_train, config=self.config)
-        train_datasets.append(self.level_2_train_ds)
-        self.num_classes.append(len(self.level_2_train.taxonID.unique()))
-        
-        self.level_2_test = self.test_df.copy()
-        self.level_2_test = self.level_2_test[~self.level_2_test.taxonID.isin(["PICL","PIEL","PITA","PIPA2"])].reset_index(drop=True) 
-        self.level_2_test.loc[self.level_2_test.taxonID.str.contains("QU"),"taxonID"] = "OAK"
-        self.level_2_test["label"] = [self.level_label_dicts[2][x] for x in self.level_2_test.taxonID]
-        self.level_2_test_ds = TreeDataset(df=self.level_2_test, config=self.config)
-        test_datasets.append(self.level_2_test_ds)
-        self.level_id.append(2)
-        
-        ## Level 3
-        evergreen = [x for x in list(self.species_label_dict.keys()) if x in ["PICL","PIEL","PITA"]]         
-        evergreen = {v:k for k, v in enumerate(evergreen)}
-        self.level_label_dicts.append(evergreen)  
-        self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[3].items()})
-                    
-        self.level_3_train = self.train_df.copy()
-        self.level_3_train = self.level_3_train[self.level_3_train.taxonID.isin(["PICL","PIEL","PITA"])].reset_index(drop=True) 
-        self.level_3_train =  self.level_3_train.groupby("taxonID").apply(lambda x: x.head(self.config["evergreen_ceiling"])).reset_index(drop=True)
-        self.level_3_train["label"] = [self.level_label_dicts[3][x] for x in self.level_3_train.taxonID]
-        self.level_3_train_ds = TreeDataset(df=self.level_3_train, config=self.config)
-        train_datasets.append(self.level_3_train_ds)
-        self.num_classes.append(len(self.level_3_train.taxonID.unique()))
-        
-        self.level_3_test = self.test_df.copy()
-        self.level_3_test = self.level_3_test[self.level_3_test.taxonID.isin(["PICL","PIEL","PITA"])].reset_index(drop=True) 
-        self.level_3_test["label"] = [self.level_label_dicts[3][x] for x in self.level_3_test.taxonID]
-        self.level_3_test_ds = TreeDataset(df=self.level_3_test, config=self.config)
-        test_datasets.append(self.level_3_test_ds)
-        self.level_id.append(3)
-        
-        ## Level 4
-        oak = [x for x in list(self.species_label_dict.keys()) if "QU" in x]
-        self.level_label_dicts.append({v:k for k, v in enumerate(oak)})
-        self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[4].items()})
-        
-        #Balance the train in OAKs
-        self.level_4_train = self.train_df.copy()
-        self.level_4_train = self.level_4_train[self.level_4_train.taxonID.str.contains("QU")].reset_index(drop=True)
-        self.level_4_train["label"] = [self.level_label_dicts[4][x] for x in self.level_4_train.taxonID]
-        ids_to_keep = self.level_4_train.groupby("taxonID").apply(
-            lambda x: x.sample(frac=1).groupby("individual").apply(
-            lambda x: x.head(1)).head(
-            self.config["oaks_sampling_ceiling"])).individual
-        self.level_4_train = self.level_4_train[self.level_4_train.individual.isin(ids_to_keep)].reset_index(drop=True)
-        
-        self.level_4_train_ds = TreeDataset(df=self.level_4_train, config=self.config)
-        train_datasets.append(self.level_4_train_ds)
-        self.num_classes.append(len(self.level_4_train.taxonID.unique()))
-
-        self.level_4_test = self.test_df.copy()
-        self.level_4_test = self.level_4_test[self.level_4_test.taxonID.str.contains("QU")].reset_index(drop=True)
-        self.level_4_test["label"] = [self.level_label_dicts[4][x] for x in self.level_4_test.taxonID]
-        self.level_4_test_ds = TreeDataset(df=self.level_4_test, config=self.config)
-        test_datasets.append(self.level_4_test_ds)
-        self.level_id.append(4)
+        self.level_0_test["label"]= [self.level_label_dicts[0][x] for x in self.level_0_test.taxonID]            
+        self.level_0_test_ds = TreeDataset(df=self.level_0_test, config=self.config)
+        test_datasets.append(self.level_0_test_ds)
+        self.level_id.append(0)
 
         return train_datasets, test_datasets
     
