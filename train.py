@@ -66,8 +66,8 @@ test = data_module.test.copy()
 crowns = data_module.crowns.copy()
 
 #remove graves
-train = train[~train.individual.str.contains("graves")].reset_index(drop=True)
-test = test[~test.individual.str.contains("graves")].reset_index(drop=True)
+train = train[~train.individualID.str.contains("graves")].reset_index(drop=True)
+test = test[~test.individualID.str.contains("graves")].reset_index(drop=True)
 
 m = multi_stage.MultiStage(train, test, config=data_module.config, crowns=crowns)
 
