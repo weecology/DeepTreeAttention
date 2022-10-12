@@ -61,7 +61,6 @@ def index_to_example(index, test, test_crowns, test_points, rgb_pool, comet_expe
 def confusion_matrix(comet_experiment, results, species_label_dict, test, test_points, test_crowns, rgb_pool, name):
     #Confusion matrix
     comet_experiment.log_confusion_matrix(
-        name=name,
         results.label.values,
         results.pred_label_top1.values,
         labels=list(species_label_dict.keys()),
@@ -71,5 +70,7 @@ def confusion_matrix(comet_experiment, results, species_label_dict, test, test_p
         test_points=test_points,
         test_crowns=test_crowns,
         rgb_pool=rgb_pool,
-        comet_experiment=comet_experiment)
+        comet_experiment=comet_experiment,
+        title=name
+    )
     
