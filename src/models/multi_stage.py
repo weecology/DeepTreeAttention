@@ -1,5 +1,4 @@
 #Multiple stage model
-from functools import reduce
 from src.models.year import learned_ensemble
 from src.data import TreeDataset
 from src import utils
@@ -11,7 +10,6 @@ from torch.nn import functional as F
 from torch import nn
 import torchmetrics
 import torch
-import math
 
 class base_model(Module):
     def __init__(self, years, classes, config):
