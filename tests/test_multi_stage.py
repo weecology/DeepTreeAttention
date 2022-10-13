@@ -8,7 +8,6 @@ import glob
 
 def test_MultiStage(dm, config):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train,crowns=dm.crowns, config=config)
-    m.prepare_training()
     
 def test_fit(config, dm, tmpdir):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
@@ -23,18 +22,14 @@ def test_fit(config, dm, tmpdir):
 def test_gather_predictions(config, dm, experiment):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
     trainer = Trainer(fast_dev_run=False)
-    predict_datasets = []
-    for level in range(m.levels):
-        ds = TreeDataset(df=dm.test, train=False, config=config)
-        predict_datasets.append(ds)
-
-    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
+    ds = TreeDataset(df=dm.test, train=False, config=config)
+    predictions = trainer.predict(m,m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)
-    assert len(np.unique(results.individual)) == len(np.unique(dm.test.individualID))
+    assert len(np.unique(results.individual)) == len(np.unique(dm.test.individual))
     
-    results["individualID"] = results["individual"]
-    results = results.merge(dm.test, on=["individualID"])
-    assert len(np.unique(results.individual)) == len(np.unique(dm.test.individualID))
+    results["individual"] = results["individual"]
+    results = results.merge(dm.test, on=["individual"])
+    assert len(np.unique(results.individual)) == len(np.unique(dm.test.individual))
     
     ensemble_df = m.ensemble(results)
     ensemble_df = m.evaluation_scores(
@@ -42,9 +37,9 @@ def test_gather_predictions(config, dm, experiment):
         experiment=None
     )    
     
-    assert len(np.unique(ensemble_df.individualID)) == len(np.unique(dm.test.individualID))
+    assert len(np.unique(ensemble_df.individual)) == len(np.unique(dm.test.individual))
     rgb_pool = glob.glob(dm.config["rgb_sensor_pool"], recursive=True)
-    test = dm.test.groupby("individualID").apply(lambda x: x.head(1)).reset_index(drop=True)
+    test = dm.test.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
     visualize.confusion_matrix(
         comet_experiment=experiment,
         results=ensemble_df,

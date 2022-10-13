@@ -99,7 +99,7 @@ def novel_prediction(model, csv_file, config):
     top_scores = np.concatenate(top_scores)  
     individuals = np.concatenate(individuals)              
     softmax_scores = np.concatenate(softmax_scores)  
-    features = pd.DataFrame({"individualID":individuals, "top_score": top_scores,"softmax_score":softmax_scores})
+    features = pd.DataFrame({"individual":individuals, "top_score": top_scores,"softmax_score":softmax_scores})
     
     original = pd.read_csv(csv_file)
     mergeddf = features.merge(original)
