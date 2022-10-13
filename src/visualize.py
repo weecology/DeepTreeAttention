@@ -1,16 +1,53 @@
-#visualize
 from descartes import PolygonPatch
-import geopandas as gpd
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.collections import PatchCollection
-import os
-import pandas as pd
+import glob
 import rasterio
-from rasterio.plot import show
-from src import neon_paths
 import tempfile
+import matplotlib.pyplot as plt
 
+from matplotlib.collections import PatchCollection
+from rasterio.plot import show
+
+from src import neon_paths
+
+def plot_examples(df, test_crowns, plot_n_individuals, test_points, rgb_sensor_pool, experiment):
+    """Create a visualization of crowns and points overlaid on RGB"""
+    tmpdir = tempfile.gettempdir()
+    #load image pool and crown predicrions
+    rgb_pool = glob.glob(rgb_sensor_pool, recursive=True)  
+    plt.ion()
+    for index, row in df.sample(n=plot_n_individuals).iterrows():
+        fig = plt.figure(0)
+        ax = fig.add_subplot(1, 1, 1)                
+        individual = row["individual"]
+        try:
+            geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
+        except Exception as e:
+            print("Cannot find individual {} in crowns.shp with schema {}".format(individual, test_crowns.head()))
+            break
+            
+        left, bottom, right, top = geom.bounds
+        
+        #Find image
+        img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
+        src = rasterio.open(img_path)
+        img = src.read(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
+        img_transform = src.window_transform(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
+        
+        #Plot crown
+        patches = [PolygonPatch(geom, edgecolor='red', facecolor='none')]
+        show(img, ax=ax, transform=img_transform)                
+        ax.add_collection(PatchCollection(patches, match_original=True))
+        
+        #Plot field coordinate
+        stem = test_points[test_points.individual == individual]
+        stem.plot(ax=ax)
+        
+        plt.savefig("{}/{}.png".format(tmpdir, row["individual"]))
+        experiment.log_image("{}/{}.png".format(tmpdir, row["individual"]), name = "crown: {}, True: {}, Predicted {}".format(row["individual"], row.true_taxa,row.pred_taxa_top1))
+        src.close()
+        plt.close("all")
+    plt.ioff()
+            
 def index_to_example(index, test, test_crowns, test_points, rgb_pool, comet_experiment):
     """Function to plot an RGB image, the NEON field point and the deepforest crown given a test index
     Args:

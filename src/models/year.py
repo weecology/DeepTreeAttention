@@ -1,12 +1,9 @@
 #Year model
-from torch.nn import Module
-from torch.nn import functional as F
 from torch import nn
 import torch
-import torchmetrics
 from src.models import Hang2020
 
-class learned_ensemble(Module):
+class learned_ensemble(nn.Module):
     def __init__(self, years, classes, config):
         super().__init__()
         
