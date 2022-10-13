@@ -80,6 +80,7 @@ class MultiStage(LightningModule):
         # Level 0, the most common species at each site
         self.level_0_train = self.train_df.copy()
         common_species = self.level_0_train.groupby(["siteID"]).apply(lambda x: x.taxonID.value_counts().index[0])
+        common_species = np.unique(common_species)
         self.level_label_dicts.append({value:key for key, value in enumerate(common_species)})
         self.level_label_dicts[0]["OTHER"] = len(self.level_label_dicts[0])
         self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[0].items()})
@@ -339,7 +340,6 @@ class MultiStage(LightningModule):
         return results
             
     def evaluation_scores(self, ensemble_df, experiment):   
-        ensemble_df = ensemble_df.merge(self.test_df, on="individual")
         ensemble_df = ensemble_df.groupby("individual").apply(lambda x: x.head(1))
         
         taxon_accuracy = torchmetrics.functional.accuracy(
