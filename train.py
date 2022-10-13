@@ -4,7 +4,6 @@ import glob
 import geopandas as gpd
 import os
 import numpy as np
-from src import main
 from src import data
 from src import start_cluster
 from src.models import multi_stage
