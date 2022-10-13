@@ -304,14 +304,12 @@ class MultiStage(LightningModule):
         predicted_label = temporal_average.groupby(["individual","level"]).yhat.apply(
             lambda x: np.argmax(np.vstack(x))).reset_index().pivot(
                 index=["individual"],columns="level",values="yhat").reset_index()
-        predicted_label.columns = ["individual","pred_label_top1_level_0","pred_label_top1_level_1",
-                                   "pred_label_top1_level_2","pred_label_top1_level_3","pred_label_top1_level_4"]
+        predicted_label.columns = ["individual","pred_label_top1_level_0","pred_label_top1_level_1"]
         
         predicted_score = temporal_average.groupby(["individual","level"]).yhat.apply(
             lambda x: np.vstack(x).max()).reset_index().pivot(
                 index=["individual"],columns="level",values="yhat").reset_index()
-        predicted_score.columns = ["individual","top1_score_level_0","top1_score_level_1",
-                                   "top1_score_level_2","top1_score_level_3","top1_score_level_4"]
+        predicted_score.columns = ["individual","top1_score_level_0","top1_score_level_1"]
         results = pd.merge(predicted_label,predicted_score)
         
         #Label taxa
