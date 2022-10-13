@@ -47,5 +47,6 @@ def test_gather_predictions(config, dm, experiment):
         test_crowns=dm.crowns,
         test=test,
         test_points=dm.canopy_points,
-        rgb_pool=rgb_pool
+        rgb_pool=rgb_pool,
+        name="Test"
     )
