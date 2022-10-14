@@ -99,7 +99,7 @@ def confusion_matrix(comet_experiment, results, species_label_dict, test, test_p
     #Confusion matrix
     comet_experiment.log_confusion_matrix(
         results.label.values,
-        results.pred_label_top1.values,
+        results.ensembleTaxonID.values,
         labels=list(species_label_dict.keys()),
         max_categories=len(species_label_dict.keys()),
         index_to_example_function=index_to_example,
