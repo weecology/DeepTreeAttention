@@ -109,6 +109,7 @@ results["individual"] = results["individual"]
 results_with_data = results.merge(crowns, on="individual")
 comet_logger.experiment.log_table("nested_predictions.csv", results_with_data)
 
+results = results.merge(data_module.test, on=["individual"])
 ensemble_df = m.ensemble(results)
 ensemble_df = m.evaluation_scores(
     ensemble_df,
