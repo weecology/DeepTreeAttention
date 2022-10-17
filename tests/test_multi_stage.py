@@ -10,12 +10,12 @@ def test_MultiStage(dm, config):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train,crowns=dm.crowns, config=config)
     
 def test_fit(config, dm, tmpdir):
+    config["preload_images"] = True    
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
-    trainer = Trainer(fast_dev_run=False, limit_train_batches=2, limit_val_batches=2, profiler="simple", max_epochs=1)
+    trainer = Trainer(fast_dev_run=False, limit_train_batches=2, limit_val_batches=2, profiler="simple", max_epochs=1, enable_checkpointing=False)
     trainer.fit(m)
     
     trainer.save_checkpoint("{}/test_model.pl".format(tmpdir))
-    config["preload_images"] = False
     m2 = multi_stage.MultiStage.load_from_checkpoint("{}/test_model.pl".format(tmpdir), config=config)
     assert m2.config["preload_images"] is False
 
