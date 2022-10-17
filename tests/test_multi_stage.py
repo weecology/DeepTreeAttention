@@ -11,7 +11,7 @@ def test_MultiStage(dm, config):
     
 def test_fit(config, dm, tmpdir):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
-    trainer = Trainer(fast_dev_run=True, limit_train_batches=1, profiler="simple")
+    trainer = Trainer(fast_dev_run=False, limit_train_batches=2, limit_val_batches=2, profiler="simple", max_epochs=1)
     trainer.fit(m)
     
     trainer.save_checkpoint("{}/test_model.pl".format(tmpdir))

@@ -202,7 +202,7 @@ class MultiStage(LightningModule):
         loss = F.cross_entropy(y_hat, y)    
         self.log("train_loss_{}".format(optimizer_idx),loss, on_epoch=True, on_step=False)
 
-        return loss        
+        return loss
     
     def validation_step(self, batch, batch_idx, dataloader_idx):
         """Calculate val loss 

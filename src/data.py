@@ -236,7 +236,7 @@ class TreeDataset(Dataset):
         # Pin data to memory if desired
         if self.config["preload_images"]:
             self.individual_dict = {}
-            for individual in self.individuals:
+            for individual in self.individuals[:1]:
                 images = []
                 ind_annotations = self.annotations[self.annotations.individual==individual]
                 for year in self.years:
@@ -257,7 +257,7 @@ class TreeDataset(Dataset):
 
     def __getitem__(self, index):
         inputs = {}
-        individual = self.individuals[index]
+        individual = self.individuals[0]
         ind_annotations = self.annotations[self.annotations.individual==individual]        
         if self.config["preload_images"]:
             inputs["HSI"] = self.image_dict[individual]
