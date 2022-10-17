@@ -49,12 +49,12 @@ evergreen_ceiling: 70
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
 preload_images: False
-workers: 40
+workers: 20
 sampling_ceiling: 200
 #Network Parameters
 pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e24fd72a0924c87a28dfb6c804d7b7c.pt
 
-gpus: 3
+gpus: 1
 batch_size: 256
 bands: 349
 
@@ -67,7 +67,7 @@ lr_4: 0.000005
 
 fast_dev_run: False
 accelerator: auto
-epochs: 200
+epochs: 1
 min_loss_weight: 10
 
 #Evaluation config
