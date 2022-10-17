@@ -321,14 +321,15 @@ class MultiStage(LightningModule):
         ensemble_label = []
         ensemble_score = []
         
+        #For each level, select the predicted taxonID and retrieve the original label order
         for index,row in results.iterrows():
             if not row["pred_taxa_top1_level_0"] == "OTHER":
                 ensemble_taxonID.append(row["pred_taxa_top1_level_0"])
-                ensemble_label.append(row["pred_label_top1_level_0"])
+                ensemble_label.append(self.label_to_taxonIDs[row["pred_taxa_top1_level_0"]])
                 ensemble_score.append(row["top1_score_level_0"])                
             else:
                 ensemble_taxonID.append(row["pred_taxa_top1_level_1"])
-                ensemble_label.append(row["pred_label_top1_level_1"])
+                ensemble_label.append(self.label_to_taxonIDs[row["pred_taxa_top1_level_1"]])
                 ensemble_score.append(row["top1_score_level_1"])                   
 
         results["ensembleTaxonID"] = ensemble_taxonID
@@ -340,6 +341,35 @@ class MultiStage(LightningModule):
     def evaluation_scores(self, ensemble_df, experiment):   
         ensemble_df = ensemble_df.groupby("individual").apply(lambda x: x.head(1))
         
+        #Ensemble accuracy
+        ensemble_accuracy = torchmetrics.functional.accuracy(
+            preds=torch.tensor(ensemble_df.ens_label.values),
+            target=torch.tensor(ensemble_df.label.values),
+            average="micro",
+            num_classes=len(self.species_label_dict)
+        )
+            
+        ensemble_macro_accuracy = torchmetrics.functional.accuracy(
+            preds=torch.tensor(ensemble_df.ens_label.values),
+            target=torch.tensor(ensemble_df.label.values),
+            average="micro",
+            num_classes=len(self.species_label_dict)
+        )
+        
+        ensemble_precision = torchmetrics.functional.precision(
+            preds=torch.tensor(ensemble_df.ens_label.values),
+            target=torch.tensor(ensemble_df.label.values),
+            average="micro",
+            num_classes=len(self.species_label_dict)
+        )        
+
+                        
+        if experiment:
+            experiment.log_metric("ensemble_macro", ensemble_macro_accuracy)
+            experiment.log_metric("ensemble_micro", ensemble_accuracy) 
+            experiment.log_metric("ensemble_precision", ensemble_precision) 
+        
+        #Species Accuracy
         taxon_accuracy = torchmetrics.functional.accuracy(
             preds=torch.tensor(ensemble_df.ens_label.values),
             target=torch.tensor(ensemble_df.label.values),
