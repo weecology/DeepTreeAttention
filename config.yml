@@ -48,7 +48,7 @@ evergreen_ceiling: 70
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
-preload_images: True
+preload_images: False
 workers: 20
 sampling_ceiling: 200
 #Network Parameters
