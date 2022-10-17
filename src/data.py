@@ -236,7 +236,7 @@ class TreeDataset(Dataset):
         # Pin data to memory if desired
         if self.config["preload_images"]:
             self.individual_dict = {}
-            for individual in self.individuals[:1]:
+            for individual in self.individuals:
                 images = []
                 ind_annotations = self.annotations[self.annotations.individual==individual]
                 for year in self.years:
@@ -257,24 +257,24 @@ class TreeDataset(Dataset):
 
     def __getitem__(self, index):
         inputs = {}
-        individual = self.individuals[0]
+        individual = self.individuals[index]
         ind_annotations = self.annotations[self.annotations.individual==individual]        
         if self.config["preload_images"]:
             inputs["HSI"] = self.image_dict[individual]
         else:
             images = []
-            #for year in self.years:
-                #year_annotations = ind_annotations[ind_annotations.tile_year==year]
-                #if year_annotations.empty:
-                    #image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                    
-                #else:
-                    #image_path = os.path.join(self.config["crop_dir"], year_annotations["image_path"].values[0])
-                    #image = load_image(image_path, image_size=self.image_size)
+            for year in self.years:
+                year_annotations = ind_annotations[ind_annotations.tile_year==year]
+                if year_annotations.empty:
+                    image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                    
+                else:
+                    image_path = os.path.join(self.config["crop_dir"], year_annotations["image_path"].values[0])
+                    image = load_image(image_path, image_size=self.image_size)
                     
-                #if self.train:
-                    #image = self.transformer(image)   
-                #images.append(image)
-            #inputs["HSI"] = images
+                if self.train:
+                    image = self.transformer(image)   
+                images.append(image)
+            inputs["HSI"] = images
         
         if self.train:
             label = ind_annotations.label.values[0]
