@@ -85,7 +85,7 @@ def main():
         
     #Create trainer
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
-    profiler = AdvancedProfiler(dirpath="/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pt".format(comet_logger.experiment.id), filename="perf_logs")    
+    profiler = AdvancedProfiler(dirpath="/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/".format(comet_logger.experiment.id), filename="perf_logs")    
     trainer = Trainer(
         gpus=data_module.config["gpus"],
         fast_dev_run=data_module.config["fast_dev_run"],
@@ -94,6 +94,7 @@ def main():
         num_sanity_val_steps=0,
         enable_checkpointing=False,
         callbacks=[lr_monitor],
+        profiler=profiler,
         logger=comet_logger)
     
     trainer.fit(m)

@@ -325,11 +325,11 @@ class MultiStage(LightningModule):
         for index,row in results.iterrows():
             if not row["pred_taxa_top1_level_0"] == "OTHER":
                 ensemble_taxonID.append(row["pred_taxa_top1_level_0"])
-                ensemble_label.append(self.label_to_taxonIDs[row["pred_taxa_top1_level_0"]])
+                ensemble_label.append(self.label_to_taxonIDs[0][row["pred_taxa_top1_level_0"]])
                 ensemble_score.append(row["top1_score_level_0"])                
             else:
                 ensemble_taxonID.append(row["pred_taxa_top1_level_1"])
-                ensemble_label.append(self.label_to_taxonIDs[row["pred_taxa_top1_level_1"]])
+                ensemble_label.append(self.label_to_taxonIDs[1][row["pred_taxa_top1_level_1"]])
                 ensemble_score.append(row["top1_score_level_1"])                   
 
         results["ensembleTaxonID"] = ensemble_taxonID
