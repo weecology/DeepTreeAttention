@@ -14,6 +14,8 @@ import sys
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
+from pytorch_lightning.profiler import AdvancedProfiler
+
 import pandas as pd
 from pandas.util import hash_pandas_object
 
@@ -83,6 +85,7 @@ def main():
         
     #Create trainer
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
+    profiler = AdvancedProfiler(dirpath="/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pt".format(comet_logger.experiment.id), filename="perf_logs")    
     trainer = Trainer(
         gpus=data_module.config["gpus"],
         fast_dev_run=data_module.config["fast_dev_run"],
@@ -91,8 +94,7 @@ def main():
         num_sanity_val_steps=0,
         enable_checkpointing=False,
         callbacks=[lr_monitor],
-        logger=comet_logger,
-        profiler="simple")
+        logger=comet_logger)
     
     trainer.fit(m)
     
