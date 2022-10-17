@@ -94,7 +94,6 @@ def main():
         num_sanity_val_steps=0,
         enable_checkpointing=False,
         callbacks=[lr_monitor],
-        profiler=profiler,
         logger=comet_logger)
     
     trainer.fit(m)
