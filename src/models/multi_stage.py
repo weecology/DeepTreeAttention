@@ -325,11 +325,11 @@ class MultiStage(LightningModule):
         for index,row in results.iterrows():
             if not row["pred_taxa_top1_level_0"] == "OTHER":
                 ensemble_taxonID.append(row["pred_taxa_top1_level_0"])
-                ensemble_label.append(self.level_label_dicts[0][row["pred_taxa_top1_level_0"]])
+                ensemble_label.append(self.species_label_dict[row["pred_taxa_top1_level_0"]])
                 ensemble_score.append(row["top1_score_level_0"])                
             else:
                 ensemble_taxonID.append(row["pred_taxa_top1_level_1"])
-                ensemble_label.append(self.level_label_dicts[1][row["pred_taxa_top1_level_1"]])
+                ensemble_label.append(self.species_label_dict[row["pred_taxa_top1_level_1"]])
                 ensemble_score.append(row["top1_score_level_1"])                   
 
         results["ensembleTaxonID"] = ensemble_taxonID
@@ -352,14 +352,13 @@ class MultiStage(LightningModule):
         ensemble_macro_accuracy = torchmetrics.functional.accuracy(
             preds=torch.tensor(ensemble_df.ens_label.values),
             target=torch.tensor(ensemble_df.label.values),
-            average="micro",
+            average="macro",
             num_classes=len(self.species_label_dict)
         )
         
         ensemble_precision = torchmetrics.functional.precision(
             preds=torch.tensor(ensemble_df.ens_label.values),
             target=torch.tensor(ensemble_df.label.values),
-            average="micro",
             num_classes=len(self.species_label_dict)
         )        
 
