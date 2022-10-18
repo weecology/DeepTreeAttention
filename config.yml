@@ -54,8 +54,8 @@ sampling_ceiling: 200
 #Network Parameters
 pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e24fd72a0924c87a28dfb6c804d7b7c.pt
 
-gpus: 2
-batch_size: 64
+gpus: 1
+batch_size: 8
 bands: 349
 
 #LR for each level x year
