@@ -32,7 +32,7 @@ def filter_data(path, config):
     field = field[~field.plantStatus.isnull()]        
     field = field[field.plantStatus.str.contains("Live")]    
     
-    groups = field.groupby("individual")
+    groups = field.groupby("individualID")
     shaded_ids = []
     for name, group in groups:
         shaded = any([x in ["Full shade", "Mostly shaded"] for x in group.canopyPosition.values])
@@ -40,9 +40,9 @@ def filter_data(path, config):
             if any([x in ["Open grown", "Full sun"] for x in group.canopyPosition.values]):
                 continue
             else:
-                shaded_ids.append(group.individual.unique()[0])
+                shaded_ids.append(group.individualID.unique()[0])
         
-    field = field[~(field.individual.isin(shaded_ids))]
+    field = field[~(field.individualID.isin(shaded_ids))]
     field = field[(field.height > 3) | (field.height.isnull())]
     field = field[field.stemDiameter > config["min_stem_diameter"]]
     
@@ -66,20 +66,20 @@ def filter_data(path, config):
     field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
     field = field[~(field.eventID.str.contains("2014"))]
     with_heights = field[~field.height.isnull()]
-    with_heights = with_heights.loc[with_heights.groupby('individual')['height'].idxmax()]
+    with_heights = with_heights.loc[with_heights.groupby('individualID')['height'].idxmax()]
     
     missing_heights = field[field.height.isnull()]
-    missing_heights = missing_heights[~missing_heights.individual.isin(with_heights.individual)]
-    missing_heights = missing_heights.groupby("individual").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1)).reset_index(drop=True)
+    missing_heights = missing_heights[~missing_heights.individualID.isin(with_heights.individualID)]
+    missing_heights = missing_heights.groupby("individualID").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1)).reset_index(drop=True)
   
     field = pd.concat([with_heights,missing_heights])
     
     # Remove multibole
-    field = field[~(field.individual.str.contains('[A-Z]$',regex=True))]
+    field = field[~(field.individualID.str.contains('[A-Z]$',regex=True))]
 
     # List of hand cleaned errors
     known_errors = ["NEON.PLA.D03.OSBS.03422","NEON.PLA.D03.OSBS.03422","NEON.PLA.D03.OSBS.03382", "NEON.PLA.D17.TEAK.01883"]
-    field = field[~(field.individual.isin(known_errors))]
+    field = field[~(field.individualID.isin(known_errors))]
     field = field[~(field.plotID == "SOAP_054")]
     
     #Create shapefile
@@ -228,6 +228,8 @@ class TreeDataset(Dataset):
         self.image_size = config["image_size"]
         self.years = self.annotations.tile_year.unique()
         self.individuals = self.annotations.individual.unique()
+        self.image_paths = self.annotations.groupby("individual").apply(lambda x: x.set_index('tile_year').image_path.to_dict())
+        self.labels = self.annotations.set_index("individual").label.to_dict()
         
         # Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=self.image_size)
@@ -235,19 +237,18 @@ class TreeDataset(Dataset):
         
         # Pin data to memory if desired
         if self.config["preload_images"]:
-            self.individual_dict = {}
-            for individual in self.individuals[:1]:
+            for individual in self.individuals:
                 images = []
-                ind_annotations = self.annotations[self.annotations.individual==individual]
+                ind_annotations = self.image_paths[individual]
                 for year in self.years:
-                    year_annotations = ind_annotations[ind_annotations.tile_year==year]
-                    if year_annotations.empty:
-                        image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                    
-                    else:
-                        image_path = os.path.join(self.config["crop_dir"], year_annotations["image_path"].iloc[0])
-                        image = load_image(image_path, image_size=self.image_size)
+                    try:
+                        year_annotations = ind_annotations[year]
+                        image_path = os.path.join(self.config["crop_dir"], year_annotations)
+                        image = load_image(image_path, image_size=self.image_size)                        
+                    except KeyError:
+                        image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
                     if self.train:
-                        image = self.transformer(image)
+                        image = self.transformer(image)   
                     images.append(image)
                 self.image_dict[individual] = images
             
@@ -257,27 +258,28 @@ class TreeDataset(Dataset):
 
     def __getitem__(self, index):
         inputs = {}
-        individual = self.individuals[0]
-        ind_annotations = self.annotations[self.annotations.individual==individual]        
+        individual = self.individuals[index]
+        ind_annotations = self.image_paths[individual]
+        
         if self.config["preload_images"]:
             inputs["HSI"] = self.image_dict[individual]
         else:
             images = []
+            ind_annotations = self.image_paths[individual]
             for year in self.years:
-                year_annotations = ind_annotations[ind_annotations.tile_year==year]
-                if year_annotations.empty:
-                    image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                    
-                else:
-                    image_path = os.path.join(self.config["crop_dir"], year_annotations["image_path"].values[0])
-                    image = load_image(image_path, image_size=self.image_size)
-                    
+                try:
+                    year_annotations = ind_annotations[year]
+                    image_path = os.path.join(self.config["crop_dir"], year_annotations)
+                    image = load_image(image_path, image_size=self.image_size)                        
+                except KeyError:
+                    image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
                 if self.train:
                     image = self.transformer(image)   
                 images.append(image)
             inputs["HSI"] = images
         
         if self.train:
-            label = ind_annotations.label.values[0]
+            label = self.labels[individual]
             label = torch.tensor(label, dtype=torch.long)
 
             return individual, inputs, label
@@ -459,13 +461,13 @@ class TreeData(LightningDataModule):
             print("There are {} records for {} species for {} sites in filtered train".format(
                 self.train.shape[0],
                 len(self.train.label.unique()),
-                len(self.train.site.unique())
+                len(self.train.siteID.unique())
             ))
             
             print("There are {} records for {} species for {} sites in test".format(
                 self.test.shape[0],
                 len(self.test.label.unique()),
-                len(self.test.site.unique()))
+                len(self.test.siteID.unique()))
             )
              
             #Create dataloaders

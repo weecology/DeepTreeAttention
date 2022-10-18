@@ -1,6 +1,7 @@
 #Test data module
 from src import data
 import pandas as pd
+import cProfile
 
 def test_TreeData_setup(config, ROOT):
     #One site's worth of data
@@ -21,6 +22,8 @@ def test_TreeDataset(dm, config):
     #Train loader
     data_loader = dm.train_dataloader()
     individuals, inputs, label = next(iter(data_loader))
+    
+    cProfile.run('main()', sort="cumtime")
     
     assert len(inputs["HSI"]) == len(dm.train.tile_year.unique())
     assert inputs["HSI"][0].shape == (config["batch_size"],config["bands"], config["image_size"], config["image_size"])
