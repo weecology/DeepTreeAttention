@@ -258,9 +258,7 @@ class TreeDataset(Dataset):
 
     def __getitem__(self, index):
         inputs = {}
-        individual = self.individuals[index]
-        ind_annotations = self.image_paths[individual]
-        
+        individual = self.individuals[index]        
         if self.config["preload_images"]:
             inputs["HSI"] = self.image_dict[individual]
         else:
@@ -412,7 +410,8 @@ class TreeData(LightningDataModule):
                 rgb_glob=self.config["rgb_sensor_pool"],
                 HSI_tif_dir=self.config["HSI_tif_dir"],
                 client=self.client,
-                replace=self.config["replace"]
+                replace=self.config["replace"],
+                as_numpy=True
             )
             
             #hard sampling cutoff
