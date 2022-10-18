@@ -10,6 +10,7 @@ import yaml
 import warnings
 import pandas as pd
 from torch.utils.data.dataloader import default_collate
+import os
 
 def read_config(config_path):
     """Read config yaml file"""
@@ -57,9 +58,15 @@ def preprocess_image(image, channel_is_first=False):
 
 def load_image(img_path, image_size):
     """Load and preprocess an image for training/prediction"""
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', rio.errors.NotGeoreferencedWarning)
-        image = rio.open(img_path).read()       
+    if os.path.splitext(img_path)[-1] == ".npy":
+        image = np.load(img_path)
+    elif os.path.splitext(img_path)[-1] == ".tif":   
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', rio.errors.NotGeoreferencedWarning)
+            image = rio.open(img_path).read()
+    else:
+        raise ValueError("image path must be .npy or .tif, found {}".format(img_path))
+        
     image = preprocess_image(image, channel_is_first=True)
     
     #resize image

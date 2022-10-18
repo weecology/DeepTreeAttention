@@ -12,15 +12,14 @@ def crop(bounds, sensor_path=None, savedir = None, basename = None, rasterio_src
     img = src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform)) 
     if img.size == 0:
         return None
-    
-    res = src.res[0]
-    height = (top - bottom)/res
-    width = (right - left)/res      
     if savedir:
         if as_numpy:
             filename = "{}/{}.npy".format(savedir, basename)            
             np.save(filename, img)
         else:
+            res = src.res[0]
+            height = (top - bottom)/res
+            width = (right - left)/res                 
             filename = "{}/{}.tif".format(savedir, basename)
             with rasterio.open(filename, "w", driver="GTiff",height=height, width=width, count = img.shape[0], dtype=img.dtype) as dst:
                 dst.write(img)
