@@ -144,6 +144,7 @@ class MultiStage(LightningModule):
                 batch_size=self.config["batch_size"],
                 shuffle=True,
                 num_workers=self.config["workers"],
+                pin_memory=True
             )
             data_loaders.append(data_loader)
         
@@ -157,6 +158,7 @@ class MultiStage(LightningModule):
                 batch_size=self.config["batch_size"],
                 shuffle=False,
                 num_workers=self.config["workers"],
+                pin_memory=True
             )
             data_loaders.append(data_loader)
         
