@@ -14,6 +14,7 @@ def run(tile, confusion_path="data/processed/confusion_matrix.csv", overlay_boun
     
     if overlay_bounds:
         boundary = gpd.read_file(overlay_bounds)
+        boundary = boundary.to_crs("epsg:32617")        
         predicted_tile = gpd.overlay(predicted_tile, boundary)
     
     #Load confusion matrix
