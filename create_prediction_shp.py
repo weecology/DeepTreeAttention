@@ -39,9 +39,8 @@ def read_shp(path):
     boundary = gpd.read_file("/home/b.weinstein/DeepTreeAttention/data/raw/OSBSBoundary/OSBS_boundary.shp")
     boundary = boundary.to_crs("epsg:32617")
     intersects = gpd.overlay(gdf, boundary)
-    tile_count = intersects.ensembleTa.value_counts()
     
-    return tile_count
+    return intersects
 
 futures = []
 for species_model_path in species_model_paths:
