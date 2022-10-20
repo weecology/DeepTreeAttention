@@ -11,6 +11,7 @@ from distributed import wait
 def run(tile, confusion_path="data/processed/confusion_matrix.csv", overlay_bounds="/home/b.weinstein/DeepTreeAttention/data/raw/OSBSBoundary/OSBS_boundary.shp", iteration=0):
     """Load a shapefile and confusion .csv and sample the confidence probabilities"""
     predicted_tile = gpd.read_file(tile)
+    predicted_tile = predicted_tile.groupby("individual").apply(lambda x: x.head(1))
     
     if overlay_bounds:
         boundary = gpd.read_file(overlay_bounds)

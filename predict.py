@@ -19,6 +19,9 @@ def find_rgb_files(site, config, year="2021"):
     tiles = [x for x in tiles if "neon-aop-products" not in x]
     tiles = [x for x in tiles if "/{}/".format(year) in x]
     
+    #DEBUG only do a test tile
+    tiles = [x for x in tiles if "404000_3286000" in x]
+
     #Only allow tiles that are within OSBS station boundary
     osbs_tiles = []
     for rgb_path in tiles:
@@ -31,7 +34,7 @@ def find_rgb_files(site, config, year="2021"):
             osbs_tiles.append(rgb_path)
             
     return osbs_tiles
-    
+
 def convert(rgb_path, hyperspectral_pool, savedir):
     #convert .h5 hyperspec tile if needed
     basename = os.path.basename(rgb_path)
@@ -57,24 +60,14 @@ comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["
 comet_logger.experiment.add_tag("prediction")
 comet_logger.experiment.log_parameters(config)
 
-#gpu_client = start(gpus=8, mem_size="70GB")
 cpu_client = start(cpus=5, mem_size="10GB")
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1"
 savedir = config["crop_dir"] 
 
-species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/2a5d33bd7d824ca890d6215c29f8da89.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/97a4efac43d24becb18a07a0dd1dd6d3.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/bcb6f8f6d8ba4eb5a767cdc1f4e108e5.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/1ccdc11bdb9a4ae897377e3e97ce88b9.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/3c7b7fe01eaa4d1b8a1187b792b8de40.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/3b6d9f2367584b3691de2c2beec47beb.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/509ef67c6050471e83199d2e9f4f3f6a.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ae7abdd50de04bc9970295920f0b9603.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/d2180f54487b45269c1d86398d7f0fb8.pt",
-                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6f9730cbe9ba4541816f32f297b536cd.pt"]
-    
+species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt"]
+
 #generate HSI_tif data if needed.
 h5_pool = glob(config["HSI_sensor_pool"], recursive=True)
 h5_pool = [x for x in h5_pool if not "neon-aop-products" in x]
