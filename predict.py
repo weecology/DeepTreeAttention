@@ -66,7 +66,7 @@ dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1"
 savedir = config["crop_dir"] 
 
-species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt"]
+species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/1ccdc11bdb9a4ae897377e3e97ce88b9.pt"]
 
 #generate HSI_tif data if needed.
 h5_pool = glob(config["HSI_sensor_pool"], recursive=True)
@@ -121,8 +121,7 @@ trainer = Trainer(gpus=config["gpus"], logger=False, enable_checkpointing=False)
 ## Step 2 - Predict Crowns
 for species_model_path in species_model_paths:
     # Load species model
-    m = multi_stage.MultiStage(train_df=train, test_df=test, crowns=None, config = config, train_mode=False)
-    m.models.load_state_dict(species_model_path)    
+    m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config, train_mode=False)
     prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
                                   os.path.splitext(os.path.basename(species_model_path))[0])    
     try:
