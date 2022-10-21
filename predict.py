@@ -121,7 +121,8 @@ trainer = Trainer(gpus=config["gpus"], logger=False, enable_checkpointing=False)
 ## Step 2 - Predict Crowns
 for species_model_path in species_model_paths:
     # Load species model
-    m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config, train_mode=False)    
+    m = multi_stage.MultiStage(train_df=train, test_df=test, crowns=None, config = config, train_mode=False)
+    m.models.load_state_dict(species_model_path)    
     prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
                                   os.path.splitext(os.path.basename(species_model_path))[0])    
     try:

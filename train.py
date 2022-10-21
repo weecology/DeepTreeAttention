@@ -65,6 +65,9 @@ train = data_module.train.copy()
 test = data_module.test.copy()
 crowns = data_module.crowns.copy()
 
+train["individual"] = train["individualID"]
+test["individual"] = test["individualID"]
+
 #remove graves
 train = train[~train.individual.str.contains("graves")].reset_index(drop=True)
 test = test[~test.individual.str.contains("graves")].reset_index(drop=True)
