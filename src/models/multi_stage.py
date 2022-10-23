@@ -85,8 +85,8 @@ class MultiStage(LightningModule):
         self.level_0_train = self.train_df.copy()
         PIPA2 = self.level_0_train[self.level_0_train.taxonID=="PIPA2"]
         nonPIPA2 = self.level_0_train[~(self.level_0_train.taxonID=="PIPA2")]
-        nonPIPA2ids = nonPIPA2.groupby("individualID").apply(lambda x: x.head(1)).groupby("taxonID").apply(lambda x: x.head(self.config["other_sampling_ceiling"])).individualID
-        nonPIPA2 = nonPIPA2[nonPIPA2.individualID.isin(nonPIPA2ids)]
+        nonPIPA2ids = nonPIPA2.groupby("individual").apply(lambda x: x.head(1)).groupby("taxonID").apply(lambda x: x.head(self.config["other_sampling_ceiling"])).individual
+        nonPIPA2 = nonPIPA2[nonPIPA2.individual.isin(nonPIPA2ids)]
         self.level_0_train = pd.concat([PIPA2, nonPIPA2])
         self.level_0_train.loc[~(self.level_0_train.taxonID == "PIPA2"),"taxonID"] = "OTHER"
                 
@@ -111,14 +111,14 @@ class MultiStage(LightningModule):
         self.level_1_train.loc[self.level_1_train.taxonID.isin(["PICL","PIEL","PITA"]),"taxonID"] = "CONIFER" 
         
         #subsample broadleaf, labels have not been converted, relate to original taxonID
-        conifer_ids = self.level_1_train[self.level_1_train.taxonID=="CONIFER"].individualID        
+        conifer_ids = self.level_1_train[self.level_1_train.taxonID=="CONIFER"].individual        
         broadleaf_ids = self.level_1_train[self.level_1_train.taxonID=="BROADLEAF"].groupby("label").apply(
             lambda x: x.sample(frac=1).groupby(
-                "individualID").apply(lambda x: x.head(1)).head(
+                "individual").apply(lambda x: x.head(1)).head(
             math.ceil(len(conifer_ids)/11)
-            )).individualID
+            )).individual
         ids_to_keep = np.concatenate([broadleaf_ids, conifer_ids])
-        self.level_1_train = self.level_1_train[self.level_1_train.individualID.isin(ids_to_keep)].reset_index(drop=True)
+        self.level_1_train = self.level_1_train[self.level_1_train.individual.isin(ids_to_keep)].reset_index(drop=True)
         self.level_1_train["label"] = [self.level_label_dicts[1][x] for x in self.level_1_train.taxonID]
         self.level_1_train_ds = TreeDataset(df=self.level_1_train, config=self.config)
         train_datasets.append(self.level_1_train_ds)
@@ -143,12 +143,12 @@ class MultiStage(LightningModule):
         self.level_2_train = self.level_2_train[~self.level_2_train.taxonID.isin(["PICL","PIEL","PITA","PIPA2"])].reset_index(drop=True)
         self.level_2_train.loc[self.level_2_train.taxonID.str.contains("QU"),"taxonID"] = "OAK"
         
-        non_oakid = self.level_2_train[~(self.level_2_train.taxonID=="OAK")].individualID        
+        non_oakid = self.level_2_train[~(self.level_2_train.taxonID=="OAK")].individual        
         oak_ids = self.level_2_train[self.level_2_train.taxonID=="OAK"].groupby("label").apply(lambda x: x.sample(frac=1).head(
             int(len(non_oakid)/5))
-            ).individualID
+            ).individual
         ids_to_keep = np.concatenate([oak_ids, non_oakid])
-        self.level_2_train = self.level_2_train[self.level_2_train.individualID.isin(ids_to_keep)].reset_index(drop=True)
+        self.level_2_train = self.level_2_train[self.level_2_train.individual.isin(ids_to_keep)].reset_index(drop=True)
         self.level_2_train["label"] = [self.level_label_dicts[2][x] for x in self.level_2_train.taxonID]
         self.level_2_train_ds = TreeDataset(df=self.level_2_train, config=self.config)
         train_datasets.append(self.level_2_train_ds)
@@ -193,10 +193,10 @@ class MultiStage(LightningModule):
         self.level_4_train = self.level_4_train[self.level_4_train.taxonID.str.contains("QU")].reset_index(drop=True)
         self.level_4_train["label"] = [self.level_label_dicts[4][x] for x in self.level_4_train.taxonID]
         ids_to_keep = self.level_4_train.groupby("taxonID").apply(
-            lambda x: x.sample(frac=1).groupby("individualID").apply(
+            lambda x: x.sample(frac=1).groupby("individual").apply(
             lambda x: x.head(1)).head(
-            self.config["oaks_sampling_ceiling"])).individualID
-        self.level_4_train = self.level_4_train[self.level_4_train.individualID.isin(ids_to_keep)].reset_index(drop=True)
+            self.config["oaks_sampling_ceiling"])).individual
+        self.level_4_train = self.level_4_train[self.level_4_train.individual.isin(ids_to_keep)].reset_index(drop=True)
         
         self.level_4_train_ds = TreeDataset(df=self.level_4_train, config=self.config)
         train_datasets.append(self.level_4_train_ds)

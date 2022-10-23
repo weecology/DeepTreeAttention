@@ -505,6 +505,9 @@ class TreeData(LightningDataModule):
             print("Loading previous run")            
             self.train = pd.read_csv("{}/train.csv".format(self.data_dir))
             self.test = pd.read_csv("{}/test.csv".format(self.data_dir))
+            
+            self.train["individual"] = self.train["individualID"]
+            self.test["individual"] = self.test["individualID"]
             self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
             
             #mimic schema due to abbreviation when .shp is saved
