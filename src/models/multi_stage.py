@@ -50,7 +50,9 @@ class MultiStage(LightningModule):
         try:
             self.test_df["individual"] = self.test_df["individualID"]
             self.train_df["individual"] = self.train_df["individualID"]
-            
+        except:
+            pass
+        
         if train_mode:
             self.train_datasets, self.test_datasets = self.create_datasets()
             self.levels = len(self.train_datasets)       
