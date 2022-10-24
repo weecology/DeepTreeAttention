@@ -32,7 +32,9 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     crown_annotations_path = predict.generate_prediction_crops(crowns, config)
     
     profiler = cProfile.Profile()
-    profiler.enable()    
+    profiler.enable()
+    
+    species_model_path = "/Users/benweinstein/Downloads/91ba2dc9445547f48805ec60be0a2f2f/209ca047ed004d778c0f0e728e126bda.pl"
     m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)        
     trainer = Trainer(fast_dev_run=False, max_steps=1, limit_val_batches=1)
     
