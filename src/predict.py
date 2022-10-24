@@ -142,6 +142,10 @@ def predict_species(crowns, m, trainer, config):
     config["crop_dir"] = config["prediction_crop_dir"]
     ds = TreeDataset(df=crowns, train=False, config=config)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
+    
+    print("Output object is len {}".format(len(predictions)))
+    print(predictions)
+    
     results = m.gather_predictions(predictions)
     crowns = results.merge(crowns, on="individual")
     ensemble_df = m.ensemble(results)
