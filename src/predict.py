@@ -2,19 +2,17 @@
 from deepforest import main
 from deepforest.utilities import annotations_to_shapefile
 import glob
-import geopandas as gpd
 import os
+import geopandas as gpd
 import rasterio
 
+from torchvision import transforms
+import torch
+
 from src.models import dead
-from src import patches
 from src.CHM import postprocess_CHM
 from src.generate import generate_crops
 from src.data import TreeDataset
-
-from torch.utils.data import Dataset
-from torchvision import transforms
-import torch
 
 def RGB_transform(augment):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -56,7 +54,6 @@ def find_crowns(rgb_path, config, dead_model_path=None):
 
 def generate_prediction_crops(crowns, config, client=None, as_numpy=True):
     """Create prediction crops for model.predict"""
-    
     crown_annotations = generate_crops(
         crowns,
         savedir=config["prediction_crop_dir"],
@@ -141,7 +138,8 @@ def predict_crowns(PATH):
     return gdf
 
 def predict_species(crowns, m, trainer, config):
-    """Compute hierarchical prediction without predicting unneeded levels"""    
+    """Compute hierarchical prediction without predicting unneeded levels""" 
+    config["crop_dir"] = config["prediction_crop_dir"]
     ds = TreeDataset(df=crowns, train=False, config=config)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)

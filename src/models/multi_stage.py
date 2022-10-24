@@ -46,7 +46,11 @@ class MultiStage(LightningModule):
         self.train_df = train_df
         self.test_df = test_df
         
-        """Divide train test split"""
+        #hotfix for old naming schema
+        try:
+            self.test_df["individual"] = self.test_df["individualID"]
+            self.train_df["individual"] = self.train_df["individualID"]
+            
         if train_mode:
             self.train_datasets, self.test_datasets = self.create_datasets()
             self.levels = len(self.train_datasets)       
