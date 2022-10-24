@@ -235,8 +235,6 @@ def train_test_split(shp, config, client = None):
     
     return train, test
 
-
-# Dataset class
 # Dataset class
 class TreeDataset(Dataset):
     """A csv file with a path to image crop and label
@@ -254,6 +252,9 @@ class TreeDataset(Dataset):
         self.image_size = config["image_size"]
         self.years = self.annotations.tile_year.unique()
         self.individuals = self.annotations.individual.unique()
+        self.image_paths = self.annotations.groupby("individual").apply(lambda x: x.set_index('tile_year').image_path.to_dict())
+        if train:
+            self.labels = self.annotations.set_index("individual").label.to_dict()
         
         # Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=self.image_size)
@@ -261,19 +262,18 @@ class TreeDataset(Dataset):
         
         # Pin data to memory if desired
         if self.config["preload_images"]:
-            self.individual_dict = {}
             for individual in self.individuals:
                 images = []
-                ind_annotations = self.annotations[self.annotations.individual==individual]
+                ind_annotations = self.image_paths[individual]
                 for year in self.years:
-                    year_annotations = ind_annotations[ind_annotations.tile_year==year]
-                    if year_annotations.empty:
-                        image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                    
-                    else:
-                        image_path = os.path.join(self.config["crop_dir"], year_annotations["image_path"].iloc[0])
-                        image = load_image(image_path, image_size=self.image_size)
+                    try:
+                        year_annotations = ind_annotations[year]
+                        image_path = os.path.join(self.config["crop_dir"], year_annotations)
+                        image = load_image(image_path, image_size=self.image_size)                        
+                    except KeyError:
+                        image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
                     if self.train:
-                        image = self.transformer(image)
+                        image = self.transformer(image)   
                     images.append(image)
                 self.image_dict[individual] = images
             
@@ -283,27 +283,26 @@ class TreeDataset(Dataset):
 
     def __getitem__(self, index):
         inputs = {}
-        individual = self.individuals[index]
-        ind_annotations = self.annotations[self.annotations.individual==individual]        
+        individual = self.individuals[index]        
         if self.config["preload_images"]:
             inputs["HSI"] = self.image_dict[individual]
         else:
             images = []
+            ind_annotations = self.image_paths[individual]
             for year in self.years:
-                year_annotations = ind_annotations[ind_annotations.tile_year==year]
-                if year_annotations.empty:
-                    image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                    
-                else:
-                    image_path = os.path.join(self.config["crop_dir"], year_annotations["image_path"].values[0])
-                    image = load_image(image_path, image_size=self.image_size)
-                    
+                try:
+                    year_annotations = ind_annotations[year]
+                    image_path = os.path.join(self.config["crop_dir"], year_annotations)
+                    image = load_image(image_path, image_size=self.image_size)                        
+                except KeyError:
+                    image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
                 if self.train:
                     image = self.transformer(image)   
                 images.append(image)
             inputs["HSI"] = images
         
         if self.train:
-            label = ind_annotations.label.values[0]
+            label = self.labels[individual]
             label = torch.tensor(label, dtype=torch.long)
 
             return individual, inputs, label
@@ -505,8 +504,12 @@ class TreeData(LightningDataModule):
             print("Loading previous run")            
             self.train = pd.read_csv("{}/train.csv".format(self.data_dir))
             self.test = pd.read_csv("{}/test.csv".format(self.data_dir))
-            self.train["individual"] = self.train["individualID"]
-            self.test["individual"] = self.test["individualID"]
+            
+            try:
+                self.train["individual"] = self.train["individualID"]
+                self.test["individual"] = self.test["individualID"]
+            except:
+                pass
             
             self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
             

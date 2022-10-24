@@ -50,4 +50,3 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     stats.print_stats()
     
     assert all([x in trees.columns for x in ["tile","geometry","ens_score","ensembleTaxonID"]])
-    output_dict = pd.read_csv(os.path.join(tmpdir,"2019_D01_HARV_DP3_726000_4699000_image_crop_2018_0.csv"))
