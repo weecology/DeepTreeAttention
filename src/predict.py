@@ -129,7 +129,7 @@ def predict_crowns(PATH):
     individual = ["{}_{}".format(x, basename) for x in range(gdf.shape[0])]
     gdf["individual"] = individual
     gdf["plotID"] = None
-    gdf["siteID"] = None #TODO
+    gdf["siteID"] = None
     gdf["box_id"] = None
     gdf["plotID"] = None
     gdf["taxonID"] = None
@@ -144,7 +144,6 @@ def predict_species(crowns, m, trainer, config):
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     
     print("Output object is len {}".format(len(predictions)))
-    print(predictions)
     
     results = m.gather_predictions(predictions)
     crowns = results.merge(crowns, on="individual")
