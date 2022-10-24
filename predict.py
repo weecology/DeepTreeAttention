@@ -58,6 +58,7 @@ config = data.read_config("config.yml")
 config["preload_images"] = False
 comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
 comet_logger.experiment.add_tag("prediction")
+
 comet_logger.experiment.log_parameters(config)
 
 cpu_client = start(cpus=5, mem_size="10GB")
