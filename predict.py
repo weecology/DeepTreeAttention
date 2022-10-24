@@ -102,7 +102,7 @@ for x in tiles:
     except:
         continue
     if not os.path.exists("/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/{}.shp".format(basename)):
-        future = cpu_client.submit(predict.generate_prediction_crops,crowns, config, as_numpy=True)
+        future = cpu_client.submit(predict.generate_prediction_crops,crowns, config, as_numpy=False)
         crown_annotations_futures.append(future)
     else:
         crown_annotations_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/{}.shp".format(basename)       
