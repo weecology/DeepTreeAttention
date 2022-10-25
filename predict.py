@@ -137,7 +137,7 @@ for species_model_path in species_model_paths:
             print(x)
             predict.predict_tile(
                         crown_annotations=x,
-                        filter_dead=True,
+                        filter_dead=False,
                         trainer=trainer,
                         m=m,
                         savedir=prediction_dir,
