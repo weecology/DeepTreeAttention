@@ -86,11 +86,12 @@ wait(tif_futures)
 for x in tiles:
     basename = os.path.splitext(os.path.basename(x))[0]                
     shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)      
-    try:
-        crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=None)   
-    except:
-        continue
-    crowns.to_file(shpname)
+    if not os.path.exists(shpname):
+        try:
+            crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)   
+            crowns.to_file(shpname)            
+        except:
+            continue
 
 crown_annotations_paths = []
 crown_annotations_futures = []
@@ -102,7 +103,7 @@ for x in tiles:
     except:
         continue
     if not os.path.exists("/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/{}.shp".format(basename)):
-        future = cpu_client.submit(predict.generate_prediction_crops,crowns, config, as_numpy=False)
+        future = cpu_client.submit(predict.generate_prediction_crops,crowns, config, as_numpy=True)
         crown_annotations_futures.append(future)
     else:
         crown_annotations_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/{}.shp".format(basename)       
@@ -137,7 +138,7 @@ for species_model_path in species_model_paths:
             print(x)
             predict.predict_tile(
                         crown_annotations=x,
-                        filter_dead=False,
+                        filter_dead=True,
                         trainer=trainer,
                         m=m,
                         savedir=prediction_dir,

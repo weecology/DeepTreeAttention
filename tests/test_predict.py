@@ -26,10 +26,9 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     config["HSI_sensor_pool"] = "{}/tests/data/hsi/*.tif".format(ROOT)
     config["CHM_pool"] = None
     config["prediction_crop_dir"] = tmpdir    
-    
+
     crowns = predict.find_crowns(rgb_path, config)
     assert len(crowns.individual.unique()) == crowns.shape[0]
-    
         
     crowns.to_file("{}/crowns.shp".format(tmpdir))
     
@@ -37,7 +36,7 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     crown_annotations = gpd.read_file(crown_annotations_path)
     
     # Assert that the geometry is correctly mantained
-    assert crown_annotations.iloc[0].geometry.bounds == crowns[crowns.individual==crown_annotations.iloc[0].individual].iloc[1].geometry.bounds
+    assert crown_annotations.iloc[0].geometry.bounds == crowns[crowns.individual==crown_annotations.iloc[0].individual].iloc[0].geometry.bounds
     
     #There should be two of each individual, with the same geoemetry
     assert crown_annotations[crown_annotations.individual == crown_annotations.iloc[0].individual].shape[0] == 2
@@ -63,5 +62,5 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     stats = pstats.Stats(profiler).sort_stats('cumtime')        
     stats.print_stats()
     
-    assert all([x in trees.columns for x in ["tile","geometry","ens_score","ensembleTaxonID"]])
+    assert all([x in trees.columns for x in ["geometry","ens_score","ensembleTaxonID"]])
     assert trees.iloc[0].geometry.bounds == trees[trees.individual==trees.iloc[0].individual].iloc[1].geometry.bounds

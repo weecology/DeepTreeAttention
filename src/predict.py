@@ -8,6 +8,7 @@ import rasterio
 
 from torchvision import transforms
 import torch
+from pytorch_lightning import Trainer
 
 from src.models import dead
 from src.CHM import postprocess_CHM
@@ -150,8 +151,13 @@ def predict_species(crowns, m, trainer, config):
 
 def predict_dead(crowns, dead_model_path, config):
     dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path, config=config)
+    #The batch norm statistics are not helpful in generalization, turn off.
+    dead_model.train()
+        
     ds = dead.utm_dataset(crowns=crowns, config=config)
-    label, score = dead.predict_dead_dataloader(dead_model, ds, config)
+    dead_dataloader = dead.predict_dataloader(ds)
+    trainer = Trainer(gpus=config["gpus"], enable_checkpointing=False)
+    label, score = trainer.predict(dead_model, dead_dataloader)
     
     return label, score
 
