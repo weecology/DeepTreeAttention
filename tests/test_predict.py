@@ -37,7 +37,7 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     crown_annotations = gpd.read_file(crown_annotations_path)
     
     # Assert that the geometry is correctly mantained
-    assert crown_annotations.iloc[0].geometry.bounds == crowns[crowns.individual==crown_annotations.iloc[0].individual].iloc[0].geometry.bounds
+    assert crown_annotations.iloc[0].geometry.bounds == crowns[crowns.individual==crown_annotations.iloc[0].individual].iloc[1].geometry.bounds
     
     #There should be two of each individual, with the same geoemetry
     assert crown_annotations[crown_annotations.individual == crown_annotations.iloc[0].individual].shape[0] == 2
@@ -64,3 +64,4 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     stats.print_stats()
     
     assert all([x in trees.columns for x in ["tile","geometry","ens_score","ensembleTaxonID"]])
+    assert trees.iloc[0].geometry.bounds == trees[trees.individual==trees.iloc[0].individual].iloc[1].geometry.bounds
