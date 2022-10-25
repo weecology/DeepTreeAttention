@@ -114,8 +114,11 @@ class AliveDead(pl.LightningModule):
     
     def validation_epoch_end(self, outputs):
         val_metrics = self.metrics.compute()
-        self.log_dict(val_metrics)
-    
+        self.log("Alive Accuracy",val_metrics["Class Accuracy"][0])
+        self.log("Dead Accuracy",val_metrics["Class Accuracy"][1])  
+        self.log("Accuracy",val_metrics["Accuracy"])
+        self.log("Accuracy",val_metrics["Precision"])
+        
     def on_predict_epoch_end(self, outputs):
         gather_predictions = np.concatenate(outputs)
         label = np.argmax(gather_predictions,1)

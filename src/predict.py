@@ -155,7 +155,7 @@ def predict_dead(crowns, dead_model_path, config):
     dead_model.train()
         
     ds = dead.utm_dataset(crowns=crowns, config=config)
-    dead_dataloader = dead.predict_dataloader(ds)
+    dead_dataloader = dead_model.predict_dataloader(ds)
     trainer = Trainer(gpus=config["gpus"], enable_checkpointing=False)
     label, score = trainer.predict(dead_model, dead_dataloader)
     
