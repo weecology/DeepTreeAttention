@@ -83,14 +83,14 @@ tif_futures = cpu_client.map(
     savedir=config["HSI_tif_dir"])
 wait(tif_futures)
 
-#for x in tiles:
-    #basename = os.path.splitext(os.path.basename(x))[0]                
-    #shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)      
-    #try:
-        #crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)   
-    #except:
-        #continue
-    #crowns.to_file(shpname)
+for x in tiles:
+    basename = os.path.splitext(os.path.basename(x))[0]                
+    shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)      
+    try:
+        crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=None)   
+    except:
+        continue
+    crowns.to_file(shpname)
 
 crown_annotations_paths = []
 crown_annotations_futures = []
