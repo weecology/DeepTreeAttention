@@ -146,10 +146,11 @@ def predict_species(crowns, m, trainer, config):
     print("Output object is len {}".format(len(predictions)))
     
     results = m.gather_predictions(predictions)
-    crowns = results.merge(crowns, on="individual")
     ensemble_df = m.ensemble(results)
-    crowns = crowns.loc[:,crowns.columns.isin(["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score","RGB_tile"])]
-    ensemble_df = ensemble_df.merge(crowns, on="individual")
+    ensemble_df = results.merge(crowns, on="individual")
+    
+    #crowns = crowns.loc[:,crowns.columns.isin(["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score","RGB_tile"])]
+    #ensemble_df = ensemble_df.merge(crowns, on="individual")
         
     return ensemble_df
 
