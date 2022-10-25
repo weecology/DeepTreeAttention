@@ -71,7 +71,7 @@ def generate_prediction_crops(crowns, config, client=None, as_numpy=True):
     crown_annotations = gpd.GeoDataFrame(crown_annotations, geometry="geometry")    
     crown_annotations.to_file("{}/{}.shp".format(config["prediction_crop_dir"],basename))  
     
-    return "{}/{}.shp".format(config["prediction_crop_dir"],basename)
+    return "{}/{}.shp".format(config["prediction_crop_dir"], basename)
 
 def predict_tile(crown_annotations,m, trainer, config, savedir, filter_dead=False):
     """Predict a set of crown labels from a annotations.shp
