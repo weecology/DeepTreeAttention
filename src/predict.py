@@ -95,8 +95,7 @@ def predict_tile(crown_annotations,m, trainer, config, savedir, filter_dead=Fals
         trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"ens_score"] = None
         
     # Calculate crown area
-    trees["crown_area"] = crown_annotations.geometry.area
-    trees["geometry"] = crown_annotations.geometry
+    trees["crown_area"] = trees.geometry.area
     trees = gpd.GeoDataFrame(trees, geometry="geometry")    
     
     print("{} trees predicted".format(trees.shape[0]))
@@ -146,10 +145,7 @@ def predict_species(crowns, m, trainer, config):
     results = m.gather_predictions(predictions)
     ensemble_df = m.ensemble(results)
     ensemble_df = results.merge(crowns, on="individual")
-    
-    #crowns = crowns.loc[:,crowns.columns.isin(["individual","geometry","bbox_score","tile","CHM_height","dead_label","dead_score","RGB_tile"])]
-    #ensemble_df = ensemble_df.merge(crowns, on="individual")
-        
+            
     return ensemble_df
 
 def predict_dead(crowns, dead_model_path, config):

@@ -362,6 +362,7 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
                     except Exception as e:
                         print("index {} failed with {}".format(index,e))
                         continue
+                    
     annotations = gdf.loc[indexes]
     print("shape of annotations is {}".format(annotations.shape))
     annotations["image_path"] = filenames       

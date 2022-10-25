@@ -1,6 +1,7 @@
 import os
 import pytest
 from src import predict
+import geopandas as gpd
 from src.models import multi_stage
 from pytorch_lightning import Trainer
 import pandas as pd
@@ -27,9 +28,20 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     config["prediction_crop_dir"] = tmpdir    
     
     crowns = predict.find_crowns(rgb_path, config)
+    assert len(crowns.individual.unique()) == crowns.shape[0]
+    
+        
     crowns.to_file("{}/crowns.shp".format(tmpdir))
     
     crown_annotations_path = predict.generate_prediction_crops(crowns, config)
+    crown_annotations = gpd.read_file(crown_annotations_path)
+    
+    # Assert that the geometry is correctly mantained
+    assert crown_annotations.iloc[0].geometry.bounds == crowns[crowns.individual==crown_annotations.iloc[0].individual].iloc[0].geometry.bounds
+    
+    #There should be two of each individual, with the same geoemetry
+    assert crown_annotations[crown_annotations.individual == crown_annotations.iloc[0].individual].shape[0] == 2
+    assert len(crown_annotations[crown_annotations.individual == crown_annotations.iloc[0].individual].bounds.minx.unique()) == 1
     
     profiler = cProfile.Profile()
     profiler.enable()
@@ -46,7 +58,7 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
         savedir=tmpdir,
         config=config)
     
-    profiler.disable()
+    profiler.disable()  
     profiler.dump_stats("{}/tests/predict_profile.prof".format(ROOT))
     stats = pstats.Stats(profiler).sort_stats('cumtime')        
     stats.print_stats()
