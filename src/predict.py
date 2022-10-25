@@ -95,7 +95,7 @@ def predict_tile(crown_annotations,m, trainer, config, savedir, filter_dead=Fals
         trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"ens_score"] = None
         
     # Calculate crown area
-    trees["crown_area"] = trees.geometry.area
+    trees["crown_area"] = trees.geometry.apply(lambda x: x.area)
     trees = gpd.GeoDataFrame(trees, geometry="geometry")    
     
     print("{} trees predicted".format(trees.shape[0]))
