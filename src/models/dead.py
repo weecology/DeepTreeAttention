@@ -94,8 +94,7 @@ class AliveDead(pl.LightningModule):
         return loss
       
     def predict_step(self, batch, batch_idx):
-        x,y = batch
-        outputs = self.forward(x)
+        outputs = self.forward(batch)
         yhat = F.softmax(outputs, 1)
         
         return yhat
@@ -120,9 +119,9 @@ class AliveDead(pl.LightningModule):
         self.log("Accuracy",val_metrics["Precision"])
         
     def on_predict_epoch_end(self, outputs):
-        gather_predictions = np.concatenate(outputs)
-        label = np.argmax(gather_predictions,1)
-        score = np.max(gather_predictions, 1)     
+        stacked_outputs = np.vstack(np.concatenate(outputs))
+        label = np.argmax(stacked_outputs,1)
+        score = np.max(stacked_outputs, 1)     
         
         return label, score
     
