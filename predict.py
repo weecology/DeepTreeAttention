@@ -19,6 +19,7 @@ def find_rgb_files(site, config, year="2021"):
     tiles = [x for x in tiles if "neon-aop-products" not in x]
     tiles = [x for x in tiles if "/{}/".format(year) in x]
     
+    tiles = [x for x in tiles if "404000_3286000" in x]
     #Only allow tiles that are within OSBS station boundary
     osbs_tiles = []
     for rgb_path in tiles:
@@ -29,8 +30,8 @@ def find_rgb_files(site, config, year="2021"):
         (float(geo_index.split("_")[1]) > 3282308) &
         (float( geo_index.split("_")[1]) < 3290124)):
             osbs_tiles.append(rgb_path)
-            
     return osbs_tiles
+
 
 def convert(rgb_path, hyperspectral_pool, savedir):
     #convert .h5 hyperspec tile if needed
