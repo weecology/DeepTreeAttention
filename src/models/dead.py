@@ -117,13 +117,6 @@ class AliveDead(pl.LightningModule):
         self.log("Dead Accuracy",val_metrics["Class Accuracy"][1])  
         self.log("Accuracy",val_metrics["Accuracy"])
         self.log("Accuracy",val_metrics["Precision"])
-        
-    def on_predict_epoch_end(self, outputs):
-        stacked_outputs = np.vstack(np.concatenate(outputs))
-        label = np.argmax(stacked_outputs,1)
-        score = np.max(stacked_outputs, 1)     
-        
-        return label, score
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.config["dead"]["lr"])

@@ -3,7 +3,8 @@ from src import data
 from src import neon_paths
 from glob import glob
 import geopandas as gpd
-import pandas as pd
+
+import traceback
 from src.start_cluster import start
 from src.models import multi_stage
 from distributed import wait
@@ -58,6 +59,7 @@ comet_logger.experiment.add_tag("prediction")
 comet_logger.experiment.log_parameters(config)
 
 cpu_client = start(cpus=5, mem_size="10GB")
+gpu_client = start(gpus=5, mem_size="20GB")
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1"
@@ -87,9 +89,6 @@ species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06e
                         "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b9c0111b1dc0420b84e3b6b79da4e166.pt"]                       
                        
 
-species_model_paths = [
-                       ]
-
 #generate HSI_tif data if needed.
 h5_pool = glob(config["HSI_sensor_pool"], recursive=True)
 h5_pool = [x for x in h5_pool if not "neon-aop-products" in x]
@@ -97,12 +96,12 @@ hyperspectral_pool = glob(config["HSI_tif_dir"]+"*")
 
 ### Step 1 Find RGB Tiles and convert HSI
 tiles = find_rgb_files(site="OSBS", config=config)
-tif_futures = cpu_client.map(
-    convert,
-    tiles,
-    hyperspectral_pool=h5_pool,
-    savedir=config["HSI_tif_dir"])
-wait(tif_futures)
+#tif_futures = cpu_client.map(
+    #convert,
+    #tiles,
+    #hyperspectral_pool=h5_pool,
+    #savedir=config["HSI_tif_dir"])
+#wait(tif_futures)
 
 for x in tiles:
     basename = os.path.splitext(os.path.basename(x))[0]                
@@ -111,7 +110,9 @@ for x in tiles:
         try:
             crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)   
             crowns.to_file(shpname)            
-        except:
+        except Exception as e:
+            traceback.print_exc()
+            print("{} failed to build crowns with {}".format(shpname, e))
             continue
 
 crown_annotations_paths = []
@@ -155,7 +156,7 @@ for species_model_path in species_model_paths:
         pass
     for x in crown_annotations_paths:
         results_shp = os.path.join(prediction_dir, os.path.basename(x))  
-        if not os.path.exists(results_shp):        
+        if not os.path.exists(results_shp):  
             print(x)
             predict.predict_tile(
                         crown_annotations=x,

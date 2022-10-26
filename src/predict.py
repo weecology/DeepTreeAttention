@@ -5,7 +5,7 @@ import glob
 import os
 import geopandas as gpd
 import rasterio
-
+import numpy as np
 from torchvision import transforms
 import torch
 from pytorch_lightning import Trainer
@@ -157,7 +157,10 @@ def predict_dead(crowns, dead_model_path, config):
     ds = dead.utm_dataset(crowns=crowns, config=config)
     dead_dataloader = dead_model.predict_dataloader(ds)
     trainer = Trainer(gpus=config["gpus"], enable_checkpointing=False)
-    label, score = trainer.predict(dead_model, dead_dataloader)
+    outputs = trainer.predict(dead_model, dead_dataloader)
+    stacked_outputs = np.vstack(np.concatenate(outputs))
+    label = np.argmax(stacked_outputs,1)
+    score = np.max(stacked_outputs, 1)  
     
     return label, score
 
