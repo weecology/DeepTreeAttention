@@ -582,7 +582,7 @@ class TreeData(LightningDataModule):
             batch_size=self.config["batch_size"],
             shuffle=False,
             num_workers=self.config["workers"],
-            pin_memory=True
-            )
+            collate_fn=my_collate
+        )
           
         return data_loader
