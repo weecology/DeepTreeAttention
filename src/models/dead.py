@@ -177,7 +177,7 @@ class utm_dataset(Dataset):
         box = np.rollaxis(box,0,3)
         
         # Preprocess
-        image = self.transform(box.astype(np.float32))
+        image = self.transform(box)
             
         return image
 

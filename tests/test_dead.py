@@ -27,3 +27,6 @@ def test_predict(ROOT, config):
     predictions = trainer.predict(m, m.predict_dataloader(ds))
     predictions = np.concatenate(predictions)
     assert predictions.shape[1] == 2
+    
+    #Produces non-unique predictions
+    assert not len(np.unique(predictions[:,1])) == 1
