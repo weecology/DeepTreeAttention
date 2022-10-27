@@ -52,9 +52,9 @@ preload_images: True
 workers: 10
 sampling_ceiling: 200
 #Network Parameters
-pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e24fd72a0924c87a28dfb6c804d7b7c.pt
+pretrain_state_dict:
 
-gpus: 2
+gpus: 1
 batch_size: 128
 bands: 349
 
@@ -92,5 +92,5 @@ dead:
     lr: 0.0001
     savedir: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/
     batch_size: 128
-    num_workers: 30
+    num_workers: 5
     predict_batch_size: 128

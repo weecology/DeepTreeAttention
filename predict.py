@@ -86,7 +86,6 @@ species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06e
                         "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/71f8ba53af2b46049906554457cd5429.pt",
                         "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6a28224a2dba4e4eb7f528d19444ec4e.pt",
                         "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b9c0111b1dc0420b84e3b6b79da4e166.pt"]                       
-                       
 
 #generate HSI_tif data if needed.
 h5_pool = glob(config["HSI_sensor_pool"], recursive=True)
