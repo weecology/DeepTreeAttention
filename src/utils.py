@@ -78,7 +78,7 @@ def load_image(img_path, image_size):
     return image
 
 def my_collate(batch):
-    batch = [x for x in batch if x[1] is not None]
+    batch = [x for x in batch if x is not None]
     
     return default_collate(batch)
 
