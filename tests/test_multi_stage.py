@@ -22,13 +22,9 @@ def test_fit(config, dm, tmpdir):
 
 def test_gather_predictions(config, dm, experiment):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
-    trainer = Trainer(fast_dev_run=False)
-    predict_datasets = []
-    for level in range(m.levels):
-        ds = TreeDataset(df=dm.test, train=False, config=config)
-        predict_datasets.append(ds)
-
-    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds_list=predict_datasets))
+    trainer = Trainer(fast_dev_run=True)
+    ds = TreeDataset(df=dm.test, train=False, config=config)
+    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)
     assert len(np.unique(results.individual)) == len(np.unique(dm.test.individualID))
     

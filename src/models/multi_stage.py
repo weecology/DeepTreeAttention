@@ -3,15 +3,16 @@ from functools import reduce
 from src.models.year import learned_ensemble
 from src.data import TreeDataset
 from src import utils
+
 from pytorch_lightning import LightningModule
 import pandas as pd
+import math
 import numpy as np
 from torch.nn import Module
 from torch.nn import functional as F
 from torch import nn
 import torchmetrics
 import torch
-import math
 
 class base_model(Module):
     def __init__(self, years, classes, config):
@@ -249,8 +250,7 @@ class MultiStage(LightningModule):
             ds,
             batch_size=self.config["predict_batch_size"],
             shuffle=False,
-            num_workers=self.config["workers"],
-            collate_fn=utils.my_collate
+            num_workers=self.config["workers"]
         )
 
         return data_loader
