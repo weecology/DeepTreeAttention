@@ -56,7 +56,7 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
         crown_annotations=crown_annotations_path,
         m=m,
         trainer=trainer,
-        filter_dead=False,
+        filter_dead=True,
         savedir=tmpdir,
         config=config)
     
