@@ -20,6 +20,7 @@ def find_rgb_files(site, config, year="2021"):
     tiles = [x for x in tiles if "/{}/".format(year) in x]
     
     tiles = [x for x in tiles if "404000_3286000" in x]
+    
     #Only allow tiles that are within OSBS station boundary
     osbs_tiles = []
     for rgb_path in tiles:
@@ -64,8 +65,6 @@ cpu_client = start(cpus=5, mem_size="10GB")
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1"
 savedir = config["crop_dir"] 
-
-#species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/1ccdc11bdb9a4ae897377e3e97ce88b9.pt"]
 
 species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06ee8e987b014a4d9b6b824ad6d28d83.pt",
                        "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ac7b4194811c4bdd9291892bccc4e661.pt",
@@ -144,6 +143,7 @@ trainer = Trainer(gpus=config["gpus"], logger=False, enable_checkpointing=False)
 
 ## Step 2 - Predict Crowns
 for species_model_path in species_model_paths:
+    print(species_model_path)
     # Load species model
     #Do not preload weights
     config["pretrained_state_dict"] = None
