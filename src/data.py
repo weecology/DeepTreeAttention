@@ -294,7 +294,7 @@ class TreeDataset(Dataset):
                     year_annotations = ind_annotations[year]
                     image_path = os.path.join(self.config["crop_dir"], year_annotations)
                     image = load_image(image_path, image_size=self.image_size)                        
-                except KeyError:
+                except Exception:
                     image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
                 if self.train:
                     image = self.transformer(image)   
