@@ -19,7 +19,7 @@ def find_rgb_files(site, config, year="2021"):
     tiles = [x for x in tiles if "neon-aop-products" not in x]
     tiles = [x for x in tiles if "/{}/".format(year) in x]
     
-    tiles = [x for x in tiles if "404000_3286000" in x]
+    #tiles = [x for x in tiles if "404000_3286000" in x]
     #Only allow tiles that are within OSBS station boundary
     osbs_tiles = []
     for rgb_path in tiles:
@@ -100,17 +100,17 @@ tiles = find_rgb_files(site="OSBS", config=config)
     #savedir=config["HSI_tif_dir"])
 #wait(tif_futures)
 
-for x in tiles:
-    basename = os.path.splitext(os.path.basename(x))[0]                
-    shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)      
-    if not os.path.exists(shpname):
-        try:
-            crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)   
-            crowns.to_file(shpname)            
-        except Exception as e:
-            traceback.print_exc()
-            print("{} failed to build crowns with {}".format(shpname, e))
-            continue
+#for x in tiles:
+#    basename = os.path.splitext(os.path.basename(x))[0]                
+#    shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)      
+#    if not os.path.exists(shpname):
+#        try:
+#            crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)   
+#            crowns.to_file(shpname)            
+#        except Exception as e:
+#            traceback.print_exc()
+#            print("{} failed to build crowns with {}".format(shpname, e))
+#            continue
 
 crown_annotations_paths = []
 crown_annotations_futures = []
