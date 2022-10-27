@@ -158,6 +158,8 @@ def predict_dead(crowns, dead_model_path, config):
     dead_dataloader = dead_model.predict_dataloader(ds)
     trainer = Trainer(gpus=config["gpus"], enable_checkpointing=False)
     outputs = trainer.predict(dead_model, dead_dataloader)
+    print("len of predict is {}".format(len(outputs)))
+    
     stacked_outputs = np.vstack(np.concatenate(outputs))
     label = np.argmax(stacked_outputs,1)
     score = np.max(stacked_outputs, 1)  

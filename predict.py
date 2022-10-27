@@ -19,7 +19,7 @@ def find_rgb_files(site, config, year="2021"):
     tiles = [x for x in tiles if "neon-aop-products" not in x]
     tiles = [x for x in tiles if "/{}/".format(year) in x]
     
-    #tiles = [x for x in tiles if "404000_3286000" in x]
+    #tiles = [x for x in tiles if "404000_3286000" in x] 
     #Only allow tiles that are within OSBS station boundary
     osbs_tiles = []
     for rgb_path in tiles:
@@ -141,6 +141,7 @@ trainer = Trainer(gpus=config["gpus"], logger=False, enable_checkpointing=False)
 
 ## Step 2 - Predict Crowns
 for species_model_path in species_model_paths:
+    print(species_model_path)
     # Load species model
     #Do not preload weights
     config["pretrained_state_dict"] = None
