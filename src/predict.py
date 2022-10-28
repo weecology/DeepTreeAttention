@@ -141,7 +141,9 @@ def predict_species(crowns, m, trainer, config):
     """Compute hierarchical prediction without predicting unneeded levels""" 
     config["crop_dir"] = config["prediction_crop_dir"]
     ds = TreeDataset(df=crowns, train=False, config=config)
-    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))    
+    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
+    if predictions is None:
+        return None
     results = m.gather_predictions(predictions)
     ensemble_df = m.ensemble(results)
     ensemble_df = results.merge(crowns, on="individual")
