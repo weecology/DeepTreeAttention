@@ -54,7 +54,7 @@ sampling_ceiling: 200
 #Network Parameters
 pretrain_state_dict:
 
-gpus: 1
+gpus: 2
 batch_size: 128
 bands: 349
 

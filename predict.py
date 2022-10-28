@@ -19,7 +19,7 @@ def find_rgb_files(site, config, year="2021"):
     tiles = [x for x in tiles if "neon-aop-products" not in x]
     tiles = [x for x in tiles if "/{}/".format(year) in x]
     
-    tiles = [x for x in tiles if "404000_3286000" in x] 
+    #tiles = [x for x in tiles if "404000_3286000" in x] 
     #Only allow tiles that are within OSBS station boundary
     osbs_tiles = []
     for rgb_path in tiles:
