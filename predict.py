@@ -148,10 +148,14 @@ for species_model_path in species_model_paths:
         results_shp = os.path.join(prediction_dir, os.path.basename(x))  
         if not os.path.exists(results_shp):  
             print(x)
-            predict.predict_tile(
+            try:
+                predict.predict_tile(
                         crown_annotations=x,
                         filter_dead=True,
                         trainer=trainer,
                         m=m,
                         savedir=prediction_dir,
                         config=config)
+            except Exception as e:
+                traceback.print_exc()
+                continue
