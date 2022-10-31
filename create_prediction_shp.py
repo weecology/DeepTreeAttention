@@ -32,10 +32,11 @@ species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/06e
 
 def read_shp(path):
     gdf = gpd.read_file(path)
+    gdf = gdf.groupby("individual").apply(lambda x: x.head(1))    
     #limit by OSBS polygon
     boundary = gpd.read_file("/home/b.weinstein/DeepTreeAttention/data/raw/OSBSBoundary/OSBS_boundary.shp")
     boundary = boundary.to_crs("epsg:32617")
-    intersects = gpd.overlay(gdf, boundary)
+    intersects = gpd.clip(gdf, boundary)
     
     return intersects
 

@@ -29,7 +29,7 @@ def read_shp(path):
     gdf = gdf.groupby("individual").apply(lambda x: x.head(1))
     
     boundary = boundary.to_crs("epsg:32617")
-    intersects = gpd.overlay(gdf, boundary)
+    intersects = gpd.clip(gdf, boundary)
     tile_count = intersects.ensembleTa.value_counts()
     
     return tile_count
