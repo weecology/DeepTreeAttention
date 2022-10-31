@@ -49,12 +49,12 @@ evergreen_ceiling: 70
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
 preload_images: True
-workers: 10
+workers: 20
 sampling_ceiling: 200
 #Network Parameters
 pretrain_state_dict:
 
-gpus: 2
+gpus: 1
 batch_size: 128
 bands: 349
 
