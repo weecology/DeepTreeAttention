@@ -86,6 +86,7 @@ for species_model_path in species_model_paths:
     basename = os.path.splitext(os.path.basename(species_model_path))[0]
     input_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/{}/*.shp".format(basename)
     files = glob(input_dir)
+    files = [x for x in files if not "predictions.shp" in x]
     print(files)
     if len(files) == 0:
         continue
