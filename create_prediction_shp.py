@@ -44,7 +44,7 @@ futures = []
 for species_model_path in species_model_paths:
     print(species_model_path)
     basename = os.path.splitext(os.path.basename(species_model_path))[0]
-    input_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/{}/*.shp".format(basename)
+    input_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/{}/*_image.shp".format(basename)
     files = glob(input_dir)
     print(files)
     if len(files) == 0:
