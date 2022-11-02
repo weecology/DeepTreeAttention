@@ -21,18 +21,18 @@ client = start_cluster.start(cpus=70,mem_size="12GB")
                        #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b9c0111b1dc0420b84e3b6b79da4e166.pt"
                        #]
 
-#def read_shp(path):
-    #gdf = gpd.read_file(path)
-    ##limit by OSBS polygon
-    #boundary = gpd.read_file("/home/b.weinstein/DeepTreeAttention/data/raw/OSBSBoundary/OSBS_boundary.shp")
-    ##One individual per time slice
-    #gdf = gdf[gdf.tile_year == "2021"]
+def read_shp(path):
+    gdf = gpd.read_file(path)
+    #limit by OSBS polygon
+    boundary = gpd.read_file("/home/b.weinstein/DeepTreeAttention/data/raw/OSBSBoundary/OSBS_boundary.shp")
+    #One individual per time slice
+    gdf = gdf[gdf.tile_year == "2021"]
     
-    #boundary = boundary.to_crs("epsg:32617")
-    #intersects = gpd.clip(gdf, boundary)
-    #tile_count = intersects.ensembleTa.value_counts()
+    boundary = boundary.to_crs("epsg:32617")
+    intersects = gpd.clip(gdf, boundary)
+    tile_count = intersects.ensembleTa.value_counts()
     
-    #return tile_count
+    return tile_count
 
 #futures = []
 #for species_model_path in species_model_paths:
