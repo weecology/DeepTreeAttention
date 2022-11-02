@@ -26,7 +26,7 @@ def read_shp(path):
     #limit by OSBS polygon
     boundary = gpd.read_file("/home/b.weinstein/DeepTreeAttention/data/raw/OSBSBoundary/OSBS_boundary.shp")
     #One individual per time slice
-    gdf = gdf[gdf.tile_year == "2021"]
+    gdf = gdf.groupby("individual").apply(lambda x: x.head(1))
     
     boundary = boundary.to_crs("epsg:32617")
     intersects = gpd.clip(gdf, boundary)
