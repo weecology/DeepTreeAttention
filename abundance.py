@@ -9,17 +9,17 @@ client = start_cluster.start(cpus=75,mem_size="10GB")
 
 ##Same data
 
-#species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/1ccdc11bdb9a4ae897377e3e97ce88b9.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/3c7b7fe01eaa4d1b8a1187b792b8de40.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/3b6d9f2367584b3691de2c2beec47beb.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/509ef67c6050471e83199d2e9f4f3f6a.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ae7abdd50de04bc9970295920f0b9603.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/d2180f54487b45269c1d86398d7f0fb8.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6f9730cbe9ba4541816f32f297b536cd.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/71f8ba53af2b46049906554457cd5429.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6a28224a2dba4e4eb7f528d19444ec4e.pt",
-                       #"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b9c0111b1dc0420b84e3b6b79da4e166.pt"
-                       #]
+species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/1ccdc11bdb9a4ae897377e3e97ce88b9.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/3c7b7fe01eaa4d1b8a1187b792b8de40.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/3b6d9f2367584b3691de2c2beec47beb.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/509ef67c6050471e83199d2e9f4f3f6a.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ae7abdd50de04bc9970295920f0b9603.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/d2180f54487b45269c1d86398d7f0fb8.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6f9730cbe9ba4541816f32f297b536cd.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/71f8ba53af2b46049906554457cd5429.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6a28224a2dba4e4eb7f528d19444ec4e.pt",
+                       "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b9c0111b1dc0420b84e3b6b79da4e166.pt"
+                       ]
 
 def read_shp(path):
     gdf = gpd.read_file(path)
