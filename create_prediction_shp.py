@@ -54,4 +54,5 @@ for species_model_path in species_model_paths:
     shps = [x.result() for x in futures]
     combined_shps = pd.concat(shps)
     gpd_boundary = gpd.GeoDataFrame(combined_shps, geometry="geometry")
+    gpd_boundary = gpd_boundary.reset_index(drop=True)
     gpd_boundary.to_file("/blue/ewhite/b.weinstein/DeepTreeAttention/results/{}/predictions.shp".format(basename))
