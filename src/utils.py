@@ -2,6 +2,7 @@
 import argparse
 import rasterio as rio
 import json
+import os
 import numpy as np
 from torchvision import transforms
 from sklearn import preprocessing
@@ -59,7 +60,11 @@ def preprocess_image(image, channel_is_first=False):
 def load_image(img_path, image_size):
     """Load and preprocess an image for training/prediction"""
     if os.path.splitext(img_path)[-1] == ".npy":
-        image = np.load(img_path)
+        try:
+            image = np.load(img_path)
+        except:
+            raise ValueError("Cannot load {}".format(img_path))
+        
     elif os.path.splitext(img_path)[-1] == ".tif":   
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', rio.errors.NotGeoreferencedWarning)
@@ -75,7 +80,7 @@ def load_image(img_path, image_size):
     return image
 
 def my_collate(batch):
-    batch = [x for x in batch if x[1] is not None]
+    batch = [x for x in batch if x[1]["HSI"] is not None]
     
     return default_collate(batch)
 

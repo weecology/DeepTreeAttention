@@ -46,7 +46,7 @@ def format(site, gdf, config):
         gdf: site data
     """
     #give each an individual ID
-    gdf["individualID"] = gdf.index.to_series().apply(lambda x: "{}.contrib.{}".format(site,x)) 
+    gdf["individual"] = gdf.index.to_series().apply(lambda x: "{}.contrib.{}".format(site,x)) 
     gdf["filename"] = site
     gdf["siteID"] = site.split("_")[0]
     
@@ -58,7 +58,7 @@ def format(site, gdf, config):
         gdf = buffer_plots(gdf)
     
     #Make sure any points sitting on the line are assigned only to one grid. Rare edge case
-    gdf = gdf.groupby("individualID").apply(lambda x: x.head(1)).reset_index(drop=True)
+    gdf = gdf.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
     
     if "height" in gdf.columns: 
         #Height filter 

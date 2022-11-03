@@ -362,13 +362,12 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
                     except Exception as e:
                         print("index {} failed with {}".format(index,e))
                         continue
+                    
     annotations = gdf.loc[indexes]
     print("shape of annotations is {}".format(annotations.shape))
     annotations["image_path"] = filenames       
     annotations["tile_year"] = annotations.image_path.apply(lambda x: os.path.splitext(os.path.basename(x))[0].split("_")[-1] )
-    
     annotations = annotations.loc[:,annotations.columns.isin(
         ["individual","geo_index","tile_year","CHM_height","plotID","height","geometry","taxonID","RGB_tile","filename","siteID","image_path","score","box_id"])]
 
     return annotations
-        
