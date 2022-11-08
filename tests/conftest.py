@@ -7,7 +7,7 @@ import glob
 import rasterio as rio
 from src import data
 from src.models import year
-from src.models import dead
+from src.models import dead, multi_stage
 from src import main
 from src import utils
 import tempfile
