@@ -84,6 +84,8 @@ def config(ROOT):
     config["gpus"] = 0
     config["existing_test_csv"] = None
     config["workers"] = 0
+    config["dead"]["num_workers"] = 0
+    config["dead"]["batch_size"] = 2
     
     return config
 
