@@ -88,8 +88,8 @@ class MultiStage(LightningModule):
    
         # Level 0, the most common species at each site
         self.level_0_train = self.train_df.copy()
-        common_species = self.level_0_train.groupby(["siteID"]).apply(lambda x: x.taxonID.value_counts().index[0])
-        common_species = np.unique(common_species)
+        common_species = self.level_0_train.taxonID.value_counts().reset_index()
+        common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]].index
         self.level_label_dicts.append({value:key for key, value in enumerate(common_species)})
         self.level_label_dicts[0]["OTHER"] = len(self.level_label_dicts[0])
         self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[0].items()})
@@ -368,8 +368,7 @@ class MultiStage(LightningModule):
             preds=torch.tensor(ensemble_df.ens_label.values),
             target=torch.tensor(ensemble_df.label.values),
             num_classes=len(self.species_label_dict)
-        )        
-
+        )
                         
         if experiment:
             experiment.log_metric("ensemble_macro", ensemble_macro_accuracy)
