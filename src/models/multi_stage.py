@@ -46,33 +46,6 @@ class MultiStage(LightningModule):
         self.train_df = train_df
         self.test_df = test_df
         
-<<<<<<< HEAD
-        """Divide train test split"""
-        self.train_datasets, self.test_datasets = self.create_datasets()
-        self.levels = len(self.train_datasets)       
-    
-        self.classes = len(self.train_df.label.unique())
-        for index, ds in enumerate([self.level_0_train, self.level_0_train]): 
-            labels = ds.label
-            classes = self.num_classes[index]
-            base = base_model(classes=classes, years=len(self.years), config=self.config)
-            self.models.append(base)            
-            #loss_weight = []
-            #for x in range(classes):
-                #try:
-                    #w = 1/np.sum(labels==x)
-                #except:
-                    #w = 1 
-                #loss_weight.append(w)
-    
-            #loss_weight = np.array(loss_weight/np.max(loss_weight))
-            #loss_weight[loss_weight < self.config["min_loss_weight"]] = self.config["min_loss_weight"] 
-            #loss_weight = torch.tensor(loss_weight, dtype=torch.float)                        
-            #pname = 'loss_weight_{}'.format(index)            
-            #self.register_buffer(pname, loss_weight)
-        self.save_hyperparameters()        
-        
-=======
         #hotfix for old naming schema
         try:
             self.test_df["individual"] = self.test_df["individualID"]
@@ -105,7 +78,6 @@ class MultiStage(LightningModule):
                 self.register_buffer(pname, loss_weight)
             self.save_hyperparameters()        
             
->>>>>>> new_dataloader_OSBS
     def create_datasets(self):
         #Create levels for each year
         ## Level 0     
