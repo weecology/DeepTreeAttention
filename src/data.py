@@ -212,11 +212,6 @@ def train_test_split(shp, config, client = None):
     
     return train, test
 
-<<<<<<< HEAD
-
-=======
-# Dataset class
->>>>>>> new_dataloader_OSBS
 class TreeDataset(Dataset):
     """A csv file with a path to image crop and label
     Args:
