@@ -22,8 +22,8 @@ def test_metadata_sensor_fusion():
     prediction = m(image, sites.int())
     assert prediction.shape == (20,10)
 
-def test_MetadataModel(config, dm):
-    model = metadata.metadata_sensor_fusion(sites=1, classes=3, bands=3)
-    m = metadata.MetadataModel(model=model, classes=3, label_dict=dm.species_label_dict, config=config)
-    trainer = Trainer(fast_dev_run=True)
-    trainer.fit(m,datamodule=dm)    
+#def test_MetadataModel(config, dm):
+    #model = metadata.metadata_sensor_fusion(sites=1, classes=3, bands=3)
+    #m = metadata.MetadataModel(model=model, classes=3, label_dict=dm.species_label_dict, config=config)
+    #trainer = Trainer(fast_dev_run=True)
+    #trainer.fit(m,datamodule=dm)    

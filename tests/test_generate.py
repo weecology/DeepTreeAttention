@@ -83,8 +83,9 @@ def test_generate_crops_dask(tmpdir, ROOT, rgb_path, sample_crowns):
         sensor_glob="{}/tests/data/*.tif".format(ROOT),
         savedir=tmpdir)
     
-    assert all([x in annotations.tile_year.unique() for x in ["2018","2019"]])
-    assert annotations.shape[0] == (gdf.shape[0] * 2)
+    assert len(annotations.tile_year.unique()) == 2 
+    all_years = annotations.groupby("individual").apply(lambda x: x.individual.value_counts()).reset_index(drop=True) == 2
+    assert all(all_years)     
     
     #make sure the correct resolution, should be a large image
     image_path = os.path.join(tmpdir, annotations.image_path.iloc[0])
@@ -104,8 +105,9 @@ def test_generate_crops(tmpdir, ROOT, rgb_path, sample_crowns):
         sensor_glob="{}/tests/data/*.tif".format(ROOT),
         savedir=tmpdir)
     
-    annotations.tile_year.unique() == ["2018","2019"]
-    assert annotations.shape[0] == (gdf.shape[0] * 2)
+    assert len(annotations.tile_year.unique()) == 2 
+    all_years = annotations.groupby("individual").apply(lambda x: x.individual.value_counts()).reset_index(drop=True) == 2
+    assert all(all_years)     
     
     #make sure the correct resolution, should be a large image
     image_path = os.path.join(tmpdir, annotations.image_path.iloc[0])

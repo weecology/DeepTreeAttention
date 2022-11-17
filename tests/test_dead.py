@@ -19,7 +19,7 @@ def test_validate(config):
     
 def test_predict(ROOT, config):
     trainer = Trainer(fast_dev_run=True)
-    config["dead"]["batch_size"] = 10
+    config["dead"]["batch_size"] = 2
     m = dead.AliveDead(config=config)
     rgb_path = "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop_2018.tif".format(ROOT)   
     crowns = predict_crowns(rgb_path)

@@ -28,7 +28,7 @@ def test_gather_predictions(config, dm, experiment):
     results = m.gather_predictions(predictions)
     assert len(np.unique(results.individual)) == len(np.unique(dm.test.individual))
     
-    results["individual"] = results["individual"]
+    results["individualID"] = results["individual"]
     results = results.merge(dm.test, on=["individual"])
     assert len(np.unique(results.individual)) == len(np.unique(dm.test.individual))
     
@@ -36,18 +36,4 @@ def test_gather_predictions(config, dm, experiment):
     ensemble_df = m.evaluation_scores(
         ensemble_df,
         experiment=None
-    )    
-    
-    assert len(np.unique(ensemble_df.individual)) == len(np.unique(dm.test.individual))
-    rgb_pool = glob.glob(dm.config["rgb_sensor_pool"], recursive=True)
-    test = dm.test.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
-    visualize.confusion_matrix(
-        comet_experiment=experiment,
-        results=ensemble_df,
-        species_label_dict=dm.species_label_dict,
-        test_crowns=dm.crowns,
-        test=test,
-        test_points=dm.canopy_points,
-        rgb_pool=rgb_pool,
-        name="Test"
     )

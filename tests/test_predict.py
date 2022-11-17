@@ -22,7 +22,7 @@ def species_model_path(config, dm, ROOT, tmpdir):
     return "{}/model.pl".format(tmpdir)
     
 def test_predict_tile(species_model_path, config, ROOT, tmpdir):
-    rgb_path = "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop_2018.tif".format(ROOT)
+    rgb_path = "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop_2019.tif".format(ROOT)
     config["HSI_sensor_pool"] = "{}/tests/data/hsi/*.tif".format(ROOT)
     config["CHM_pool"] = None
     config["prediction_crop_dir"] = tmpdir    
@@ -48,7 +48,6 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     assert crown_annotations[crown_annotations.individual == crown_annotations.iloc[0].individual].shape[0] == 2
     assert len(crown_annotations[crown_annotations.individual == crown_annotations.iloc[0].individual].bounds.minx.unique()) == 1
     
-    species_model_path = "/Users/benweinstein/Downloads/91ba2dc9445547f48805ec60be0a2f2f/209ca047ed004d778c0f0e728e126bda.pl"
     m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)        
     trainer = Trainer(fast_dev_run=False, max_steps=1, limit_val_batches=1)
     

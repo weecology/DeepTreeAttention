@@ -333,9 +333,8 @@ class TreeData(LightningDataModule):
         except:
             pass
         
-        # Clean data from raw csv, regenerate from scratch or check for progress and complete
-        if not self.config["use_data_commit"]:
-                        
+        # Clean data from raw csv, regenerate from scratch or check for progress and complete                        
+        if self.config["use_data_commit"] is None:
             if self.config["replace"]: 
                     
                 # Convert raw neon data to x,y tree locatins
