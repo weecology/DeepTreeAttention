@@ -11,10 +11,12 @@ from distributed import wait
 def run(tile, confusion_path="data/processed/confusion_matrix.csv", overlay_bounds="/home/b.weinstein/DeepTreeAttention/data/raw/OSBSBoundary/OSBS_boundary.shp", iteration=0):
     """Load a shapefile and confusion .csv and sample the confidence probabilities"""
     predicted_tile = gpd.read_file(tile)
+    predicted_tile = predicted_tile[predicted_tile.tile_year=="2021"]
     
     if overlay_bounds:
         boundary = gpd.read_file(overlay_bounds)
-        predicted_tile = gpd.overlay(predicted_tile, boundary)
+        boundary = boundary.to_crs("epsg:32617")        
+        predicted_tile = gpd.clip(predicted_tile, boundary)
     
     #Load confusion matrix
     confusion = load_confusion(confusion_path)
@@ -75,7 +77,7 @@ def sample_confusion(taxonID, confusion):
         return np.argmax(random_draw)
 
 def wrapper(client, iteration, experiment_key, shp_dir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/", savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results"):  
-    tiles = glob.glob("{}/{}/*.shp".format(shp_dir, experiment_key))
+    tiles = glob.glob("{}/{}/*_image.shp".format(shp_dir, experiment_key))
     total_counts = pd.Series()
     counts = []
     for tile in tiles:

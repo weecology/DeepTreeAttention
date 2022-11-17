@@ -2,8 +2,10 @@
 from src.models.year import learned_ensemble
 from src.data import TreeDataset
 from src import utils
+
 from pytorch_lightning import LightningModule
 import pandas as pd
+import math
 import numpy as np
 from torch.nn import Module
 from torch.nn import functional as F
@@ -30,7 +32,7 @@ class base_model(Module):
         return score 
     
 class MultiStage(LightningModule):
-    def __init__(self, train_df, test_df, crowns, config):
+    def __init__(self, train_df, test_df, crowns, config, train_mode=True):
         super().__init__()
         # Generate each model
         self.years = train_df.tile_year.unique()
@@ -44,6 +46,7 @@ class MultiStage(LightningModule):
         self.train_df = train_df
         self.test_df = test_df
         
+<<<<<<< HEAD
         """Divide train test split"""
         self.train_datasets, self.test_datasets = self.create_datasets()
         self.levels = len(self.train_datasets)       
@@ -69,6 +72,40 @@ class MultiStage(LightningModule):
             #self.register_buffer(pname, loss_weight)
         self.save_hyperparameters()        
         
+=======
+        #hotfix for old naming schema
+        try:
+            self.test_df["individual"] = self.test_df["individualID"]
+            self.train_df["individual"] = self.train_df["individualID"]
+        except:
+            pass
+        
+        if train_mode:
+            self.train_datasets, self.test_datasets = self.create_datasets()
+            self.levels = len(self.train_datasets)       
+        
+            self.classes = len(self.train_df.label.unique())
+            for index, ds in enumerate([self.level_0_train, self.level_1_train, self.level_2_train, self.level_3_train, self.level_4_train]): 
+                labels = ds.label
+                classes = self.num_classes[index]
+                base = base_model(classes=classes, years=len(self.years), config=self.config)
+                self.models.append(base)            
+                loss_weight = []
+                for x in range(classes):
+                    try:
+                        w = 1/np.sum(labels==x)
+                    except:
+                        w = 1 
+                    loss_weight.append(w)
+        
+                loss_weight = np.array(loss_weight/np.max(loss_weight))
+                loss_weight[loss_weight < self.config["min_loss_weight"]] = self.config["min_loss_weight"] 
+                loss_weight = torch.tensor(loss_weight, dtype=torch.float)                        
+                pname = 'loss_weight_{}'.format(index)            
+                self.register_buffer(pname, loss_weight)
+            self.save_hyperparameters()        
+            
+>>>>>>> new_dataloader_OSBS
     def create_datasets(self):
         #Create levels for each year
         ## Level 0     
@@ -167,8 +204,7 @@ class MultiStage(LightningModule):
             ds,
             batch_size=self.config["predict_batch_size"],
             shuffle=False,
-            num_workers=self.config["workers"],
-            collate_fn=utils.my_collate
+            num_workers=self.config["workers"]
         )
 
         return data_loader

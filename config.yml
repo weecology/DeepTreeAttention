@@ -52,7 +52,7 @@ preload_images: True
 workers: 0
 sampling_ceiling: 200
 #Network Parameters
-pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e24fd72a0924c87a28dfb6c804d7b7c.pt
+pretrain_state_dict:
 
 gpus: 1
 batch_size: 512
@@ -77,7 +77,7 @@ top_k: 4
 plot_n_individuals: 0
 
 #Predict
-predict_batch_size: 1024
+predict_batch_size: 64
 dead_threshold: 0.95
 prediction_crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
 
@@ -93,4 +93,3 @@ dead:
     savedir: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/
     batch_size: 128
     num_workers: 0
-    predict_batch_size: 128

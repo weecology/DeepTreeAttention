@@ -8,7 +8,7 @@ from src import multinomial
 def test_run(tmpdir):
     #Create predictions
     boxes = [geometry.box(0, 0, 5, 5),geometry.box(0, 0, 5, 5),geometry.box(0, 0, 5, 5), geometry.box(0, 0, 5, 5)]
-    p = gpd.GeoDataFrame({"ens_label":[0,0,1,None],"ensembleTa":["A","A","B","DEAD"],"ens_score":[0.9999,0.05,0.9999,None],"geometry":boxes})
+    p = gpd.GeoDataFrame({"tile_year":[2021,2021,2021,2021],"ens_label":[0,0,1,None],"ensembleTa":["A","A","B","DEAD"],"ens_score":[0.9999,0.05,0.9999,None],"geometry":boxes})
     p.to_file("{}/example.shp".format(tmpdir))
     
     #Create confusion matrix

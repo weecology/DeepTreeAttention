@@ -11,7 +11,7 @@ def crop(bounds, sensor_path=None, savedir = None, basename = None, rasterio_src
         src = rasterio_src
     img = src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform)) 
     if img.size == 0:
-        return None
+        raise ValueError("Bounds {} does not create a valid crop for source {}".format(bounds, src.transform))    
     if savedir:
         if as_numpy:
             filename = "{}/{}.npy".format(savedir, basename)            

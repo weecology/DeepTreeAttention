@@ -135,17 +135,19 @@ def main():
     
     for site in results.siteID.unique():
         site_result = results[results.siteID==site]
-        with comet_logger.experiment.context_manager(site):
-            visualize.confusion_matrix(
-                comet_experiment=comet_logger.experiment,
-                results=site_result,
-                species_label_dict=data_module.species_label_dict,
-                test_crowns=data_module.crowns,
-                test=data_module.test,
-                test_points=data_module.canopy_points,
-                rgb_pool=rgb_pool,
-                name=site
-            )
+        taxonlabels = [x for x species_label_dict.keys() if x in site_result.taxonID.unique()]
+        comet_experiment.log_confusion_matrix(
+            site_result.label.values,
+            site_result.pred_label_top1.values,
+            labels=taxonlabels,
+            max_categories=len(taxonlabels),
+            index_to_example_function=index_to_example,
+            test=test,
+            test_points=test_points,
+            test_crowns=test_crowns,
+            rgb_pool=rgb_pool,
+            name=site,
+            comet_experiment=comet_experiment)        
 
 if __name__ == "__main__":
     main()

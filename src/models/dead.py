@@ -55,7 +55,7 @@ class AliveDead(pl.LightningModule):
 
         return output
     
-    def train_dataloader(self,):
+    def train_dataloader(self):
         train_loader = torch.utils.data.DataLoader(
             self.train_ds,
             batch_size=self.config["dead"]["batch_size"],
@@ -64,6 +64,16 @@ class AliveDead(pl.LightningModule):
         )   
         
         return train_loader
+    
+    def predict_dataloader(self, ds):
+        loader = torch.utils.data.DataLoader(
+            ds,
+            batch_size=self.config["dead"]["batch_size"],
+            shuffle=False,
+            num_workers=self.config["dead"]["num_workers"]
+        )   
+        
+        return loader
     
     def val_dataloader(self):
         val_loader = torch.utils.data.DataLoader(
@@ -82,7 +92,13 @@ class AliveDead(pl.LightningModule):
         self.log("train_loss",loss)
         
         return loss
+      
+    def predict_step(self, batch, batch_idx):
+        outputs = self.forward(batch)
+        yhat = F.softmax(outputs, 1)
         
+        return yhat
+    
     def validation_step(self, batch, batch_idx):
         x,y = batch
         outputs = self(x)
@@ -91,13 +107,16 @@ class AliveDead(pl.LightningModule):
         metric_dict = self.metrics(outputs, y)
         self.log("Alive Accuracy",metric_dict["Class Accuracy"][0])
         self.log("Dead Accuracy",metric_dict["Class Accuracy"][1])        
-        self.log_dict(metric_dict)
+        #self.log_dict(metric_dict)
         
         return loss
     
     def validation_epoch_end(self, outputs):
         val_metrics = self.metrics.compute()
-        self.log_dict(val_metrics)
+        self.log("Alive Accuracy",val_metrics["Class Accuracy"][0])
+        self.log("Dead Accuracy",val_metrics["Class Accuracy"][1])  
+        self.log("Accuracy",val_metrics["Accuracy"])
+        self.log("Accuracy",val_metrics["Precision"])
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.config["dead"]["lr"])
@@ -158,38 +177,9 @@ class utm_dataset(Dataset):
         box = np.rollaxis(box,0,3)
         
         # Preprocess
-        image = self.transform(box.astype(np.float32))
+        image = self.transform(box)
             
         return image
-        
-def predict_dead_dataloader(dead_model, dataset, config):
-    """Given a set of bounding boxes and an RGB tile, predict Alive/Dead binary model"""
-    
-    data_loader = torch.utils.data.DataLoader(
-        dataset,
-        batch_size=config["dead"]["predict_batch_size"],
-        shuffle=False,
-        num_workers=config["workers"]
-    )
-    if torch.cuda.is_available():
-        dead_model = dead_model.to("cuda")
-    
-    #The batch norm statistics are not helpful in generalization, turn off.
-    dead_model.train()
-            
-    gather_predictions = []
-    for batch in data_loader:
-        if torch.cuda.is_available():
-            batch = batch.to("cuda")        
-        with torch.no_grad():
-            predictions = dead_model(batch)
-        gather_predictions.append(predictions.cpu())
-
-    gather_predictions = np.concatenate(gather_predictions)
-    label = np.argmax(gather_predictions,1)
-    score = np.max(gather_predictions, 1)
-    
-    return label, score
 
 def index_to_example(index, test_dataset):
     image_array = test_dataset[index][0].numpy()

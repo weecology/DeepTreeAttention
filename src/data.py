@@ -26,13 +26,14 @@ def filter_data(path, config):
         config: DeepTreeAttention config dict, see config.yml
     """
     field = pd.read_csv(path)
+    field["individual"] = field["individualID"]
     field = field[~field.itcEasting.isnull()]
     field = field[~field.growthForm.isin(["liana","small shrub"])]
     field = field[~field.growthForm.isnull()]
     field = field[~field.plantStatus.isnull()]        
     field = field[field.plantStatus.str.contains("Live")]    
     
-    groups = field.groupby("individualID")
+    groups = field.groupby("individual")
     shaded_ids = []
     for name, group in groups:
         shaded = any([x in ["Full shade", "Mostly shaded"] for x in group.canopyPosition.values])
@@ -40,9 +41,9 @@ def filter_data(path, config):
             if any([x in ["Open grown", "Full sun"] for x in group.canopyPosition.values]):
                 continue
             else:
-                shaded_ids.append(group.individualID.unique()[0])
+                shaded_ids.append(group.individual.unique()[0])
         
-    field = field[~(field.individualID.isin(shaded_ids))]
+    field = field[~(field.individual.isin(shaded_ids))]
     field = field[(field.height > 3) | (field.height.isnull())]
     field = field[field.stemDiameter > config["min_stem_diameter"]]
     
@@ -66,20 +67,20 @@ def filter_data(path, config):
     field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
     field = field[~(field.eventID.str.contains("2014"))]
     with_heights = field[~field.height.isnull()]
-    with_heights = with_heights.loc[with_heights.groupby('individualID')['height'].idxmax()]
+    with_heights = with_heights.loc[with_heights.groupby('individual')['height'].idxmax()]
     
     missing_heights = field[field.height.isnull()]
-    missing_heights = missing_heights[~missing_heights.individualID.isin(with_heights.individualID)]
-    missing_heights = missing_heights.groupby("individualID").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1)).reset_index(drop=True)
+    missing_heights = missing_heights[~missing_heights.individual.isin(with_heights.individual)]
+    missing_heights = missing_heights.groupby("individual").apply(lambda x: x.sort_values(["eventID"],ascending=False).head(1)).reset_index(drop=True)
   
     field = pd.concat([with_heights,missing_heights])
     
     # Remove multibole
-    field = field[~(field.individualID.str.contains('[A-Z]$',regex=True))]
+    field = field[~(field.individual.str.contains('[A-Z]$',regex=True))]
 
     # List of hand cleaned errors
     known_errors = ["NEON.PLA.D03.OSBS.03422","NEON.PLA.D03.OSBS.03422","NEON.PLA.D03.OSBS.03382", "NEON.PLA.D17.TEAK.01883"]
-    field = field[~(field.individualID.isin(known_errors))]
+    field = field[~(field.individual.isin(known_errors))]
     field = field[~(field.plotID == "SOAP_054")]
     
     #Create shapefile
@@ -211,7 +212,11 @@ def train_test_split(shp, config, client = None):
     
     return train, test
 
+<<<<<<< HEAD
 
+=======
+# Dataset class
+>>>>>>> new_dataloader_OSBS
 class TreeDataset(Dataset):
     """A csv file with a path to image crop and label
     Args:
@@ -229,7 +234,8 @@ class TreeDataset(Dataset):
         self.years = self.annotations.tile_year.unique()
         self.individuals = self.annotations.individual.unique()
         self.image_paths = self.annotations.groupby("individual").apply(lambda x: x.set_index('tile_year').image_path.to_dict())
-        self.labels = self.annotations.set_index("individual").label.to_dict()
+        if train:
+            self.labels = self.annotations.set_index("individual").label.to_dict()
         
         # Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=self.image_size)
@@ -269,7 +275,7 @@ class TreeDataset(Dataset):
                     year_annotations = ind_annotations[year]
                     image_path = os.path.join(self.config["crop_dir"], year_annotations)
                     image = load_image(image_path, image_size=self.image_size)                        
-                except KeyError:
+                except Exception:
                     image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
                 if self.train:
                     image = self.transformer(image)   
@@ -344,8 +350,8 @@ class TreeData(LightningDataModule):
                     IFAS = megaplot_data[megaplot_data.filename.str.contains("IFAS")]
                     IFAS.geometry = IFAS.geometry.envelope
                     IFAS["box_id"] = list(range(IFAS.shape[0]))
-                    IFAS = IFAS[["geometry","taxonID","individualID","plotID","siteID","box_id"]]
-                    IFAS["individual"] = IFAS["individualID"]
+                    IFAS = IFAS[["geometry","taxonID","individual","plotID","siteID","box_id"]]
+                    IFAS["individual"] = IFAS["individual"]
                     megaplot_data = megaplot_data[~(megaplot_data.filename.str.contains("IFAS"))]
                     df = pd.concat([megaplot_data, df])
                     
@@ -363,7 +369,7 @@ class TreeData(LightningDataModule):
                 
                 self.canopy_points = df
                 self.canopy_points.to_file("{}/canopy_points.shp".format(self.data_dir))
-                
+
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after CHM filter", len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after CHM filter", df.shape[0])
@@ -484,6 +490,13 @@ class TreeData(LightningDataModule):
             print("Loading previous run")            
             self.train = pd.read_csv("{}/train.csv".format(self.data_dir))
             self.test = pd.read_csv("{}/test.csv".format(self.data_dir))
+            
+            try:
+                self.train["individual"] = self.train["individualID"]
+                self.test["individual"] = self.test["individualID"]
+            except:
+                pass
+            
             self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
             
             #mimic schema due to abbreviation when .shp is saved
@@ -500,46 +513,4 @@ class TreeData(LightningDataModule):
             #Taxon to ID dict and the reverse    
             self.species_label_dict = {}
             for index, taxonID in enumerate(unique_species_labels):
-                self.species_label_dict[taxonID] = index
-                
-            #Store site labels
-            unique_site_labels = np.concatenate([self.train.siteID.unique(), self.test.siteID.unique()])
-            unique_site_labels = np.unique(unique_site_labels)
-            
-            self.site_label_dict = {}
-            for index, label in enumerate(unique_site_labels):
-                self.site_label_dict[label] = index
-            self.num_sites = len(self.site_label_dict)                   
-            
-            self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
-            
-            #Create dataloaders
-            self.train_ds = TreeDataset(
-                csv_file = "{}/train.csv".format(self.data_dir),
-                config=self.config,
-            )
-    
-            self.val_ds = TreeDataset(
-                csv_file = "{}/test.csv".format(self.data_dir),
-                config=self.config,
-            )            
-
-    def train_dataloader(self):
-        data_loader = torch.utils.data.DataLoader(
-            self.train_ds,
-            batch_size=self.config["batch_size"],
-            shuffle=True,
-            num_workers=self.config["workers"],
-        )
-        
-        return data_loader
-    
-    def val_dataloader(self):
-        data_loader = torch.utils.data.DataLoader(
-            self.val_ds,
-            batch_size=self.config["batch_size"],
-            shuffle=False,
-            num_workers=self.config["workers"],
-        )
-        
-        return data_loader
+                self.species_label_dict[taxonID] = index             
