@@ -18,7 +18,6 @@ def test_fit(config, dm, tmpdir):
     
     trainer.save_checkpoint("{}/test_model.pl".format(tmpdir))
     m2 = multi_stage.MultiStage.load_from_checkpoint("{}/test_model.pl".format(tmpdir), config=config)
-    assert m2.config["preload_images"] is False
 
 def test_gather_predictions(config, dm, experiment):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
