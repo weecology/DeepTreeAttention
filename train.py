@@ -135,7 +135,7 @@ def main():
     
     for site in results.siteID.unique():
         site_result = results[results.siteID==site]
-        taxonlabels = [x for x species_label_dict.keys() if x in site_result.taxonID.unique()]
+        taxonlabels = [x for x in species_label_dict.keys() if x in site_result.taxonID.unique()]
         comet_experiment.log_confusion_matrix(
             site_result.label.values,
             site_result.pred_label_top1.values,
