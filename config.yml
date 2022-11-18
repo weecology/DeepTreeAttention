@@ -40,7 +40,7 @@ replace: True
 existing_test_csv: 
 
 #How many samples from non-osbs sites can we use per species
-head_class_minimum_samples: 500
+head_class_minimum_samples: 2000
 oaks_sampling_ceiling: 200
 other_sampling_ceiling: 500
 evergreen_ceiling: 70
