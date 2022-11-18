@@ -136,18 +136,12 @@ def main():
     for site in results.siteID.unique():
         site_result = results[results.siteID==site]
         taxonlabels = [x for x in m.species_label_dict.keys() if x in site_result.taxonID.unique()]
-        comet_experiment.log_confusion_matrix(
+        comet_logger.experiment.log_confusion_matrix(
             site_result.label.values,
             site_result.pred_label_top1.values,
             labels=taxonlabels,
             max_categories=len(taxonlabels),
-            index_to_example_function=index_to_example,
-            test=test,
-            test_points=test_points,
-            test_crowns=test_crowns,
-            rgb_pool=rgb_pool,
-            name=site,
-            comet_experiment=comet_experiment)        
+            name=site)
 
 if __name__ == "__main__":
     main()
