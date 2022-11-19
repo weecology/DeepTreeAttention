@@ -58,7 +58,7 @@ class MultiStage(LightningModule):
             self.train_datasets, self.test_datasets = self.create_datasets()
             self.levels = len(self.train_datasets)       
             
-            self.level_metrics = {}
+            self.level_metrics = nn.ModuleDict()
             for level in self.level_id:
                 level_metric = torchmetrics.MetricCollection({       
                 "Epoch micro":torchmetrics.Accuracy(average="micro"),
@@ -66,7 +66,7 @@ class MultiStage(LightningModule):
                 "Species accuracy":torchmetrics.Accuracy(average="none", num_classes=len(self.level_label_dicts[level])),
                 "Species precision":torchmetrics.Precision(average="none", num_classes=len(self.level_label_dicts[level]))
                 },postfix="_level_{}".format(level))
-                self.level_metrics[level] = level_metric
+                self.level_metrics["level_{}".format(level)] = level_metric
 
             self.classes = len(self.train_df.label.unique())
             for index, ds in enumerate([self.level_0_train, self.level_1_train]): 
@@ -235,13 +235,13 @@ class MultiStage(LightningModule):
         self.log_dict(metric_dict, on_epoch=True, on_step=False)
         y_hat = F.softmax(y_hat, dim=1)
    
-        self.level_metrics[dataloader_idx].update(y_hat, y)
+        self.level_metrics["level_{}".format(dataloader_idx)].update(y_hat, y)
             
         return {"individual":individual, "yhat":y_hat, "label":y}  
     
-    def validation_epoch_end(self, outputs):
-        for level, val_dataloader in enumerate(outputs):
-            output = self.level_metrics[level].compute()
+    def on_validation_epoch_end(self):
+        for level in self.level_id:
+            output = self.level_metrics["level_{}".format(level)].compute()
             self.log("Epoch Micro Accuracy level {}".format(level), output["Epoch micro_level_{}".format(level)])
             self.log("Epoch Macro Accuracy level {}".format(level), output["Epoch macro_level_{}".format(level)])
 

@@ -11,7 +11,7 @@ def test_MultiStage(dm, config):
 def test_fit(config, dm, tmpdir):
     config["preload_images"] = True    
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
-    trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False)
+    trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=0)
     
     #Model can be trained and validated
     trainer.fit(m)

@@ -80,7 +80,7 @@ def config(ROOT):
     config["dead"]["epochs"] = 1
     config["pretrain_state_dict"] = None
     config["preload_images"] = False
-    config["batch_size"] = 2
+    config["batch_size"] = 3
     config["gpus"] = 0
     config["existing_test_csv"] = None
     config["workers"] = 0
