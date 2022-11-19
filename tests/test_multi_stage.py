@@ -1,11 +1,9 @@
 #Test multi_stage
 import numpy as np
-import glob
 from pytorch_lightning import Trainer
 from src.models import multi_stage
 from src.data import TreeDataset
-from src import visualize 
-
+import math
 
 def test_MultiStage(dm, config):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train,crowns=dm.crowns, config=config)
@@ -13,13 +11,20 @@ def test_MultiStage(dm, config):
 def test_fit(config, dm, tmpdir):
     config["preload_images"] = True    
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
-    trainer = Trainer(fast_dev_run=False, limit_train_batches=2, limit_val_batches=2, profiler="simple", max_epochs=1, enable_checkpointing=False)
-    trainer.fit(m)
+    trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False)
     
+    #Model can be trained and validated
+    trainer.fit(m)
+    metrics = trainer.validate(m)
+    
+    #Assert that the decision function from level 0 to level 1 is not NaN
+    assert not math.isnan(metrics[0]["Epoch_OTHER_accuracy"])
+    
+    #Confirm the model can be loaded
     trainer.save_checkpoint("{}/test_model.pl".format(tmpdir))
     m2 = multi_stage.MultiStage.load_from_checkpoint("{}/test_model.pl".format(tmpdir), config=config)
 
-def test_gather_predictions(config, dm, experiment):
+def test_gather_predictions(config, dm):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)
     trainer = Trainer(fast_dev_run=True)
     ds = TreeDataset(df=dm.test, train=False, config=config)

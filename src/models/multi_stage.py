@@ -45,6 +45,7 @@ class MultiStage(LightningModule):
         self.label_to_taxonIDs = []   
         self.train_df = train_df
         self.test_df = test_df
+                
         
         #hotfix for old naming schema
         try:
@@ -56,7 +57,17 @@ class MultiStage(LightningModule):
         if train_mode:
             self.train_datasets, self.test_datasets = self.create_datasets()
             self.levels = len(self.train_datasets)       
-        
+            
+            self.level_metrics = {}
+            for level in self.level_id:
+                level_metric = torchmetrics.MetricCollection({       
+                "Epoch micro":torchmetrics.Accuracy(average="micro"),
+                "Epoch macro": torchmetrics.Accuracy(average="macro", num_classes=len(self.level_label_dicts[level])),               
+                "Species accuracy":torchmetrics.Accuracy(average="none", num_classes=len(self.level_label_dicts[level])),
+                "Species precision":torchmetrics.Precision(average="none", num_classes=len(self.level_label_dicts[level]))
+                },postfix="_level_{}".format(level))
+                self.level_metrics[level] = level_metric
+
             self.classes = len(self.train_df.label.unique())
             for index, ds in enumerate([self.level_0_train, self.level_1_train]): 
                 labels = ds.label
@@ -119,9 +130,8 @@ class MultiStage(LightningModule):
 
         # Level 1, the remaining species
         self.level_1_train = self.train_df.copy()
-        rare_species = [x for x in self.train_df.taxonID.unique() if x not in common_species]
+        rare_species = [x for x in self.train_df.taxonID.unique() if x not in common_species.values]
         self.level_label_dicts.append({value:key for key, value in enumerate(rare_species)})
-        self.level_label_dicts[1]["OTHER"] = len(self.level_label_dicts[1])
         self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[1].items()})
         
         # Select head and tail classes
@@ -213,7 +223,7 @@ class MultiStage(LightningModule):
         return loss
     
     def validation_step(self, batch, batch_idx, dataloader_idx):
-        """Calculate val loss 
+        """Calculate val loss and on_epoch metrics
         """
         individual, inputs, y = batch
         images = inputs["HSI"]  
@@ -224,9 +234,29 @@ class MultiStage(LightningModule):
         metric_dict = self.models[dataloader_idx].metrics(y_hat, y)
         self.log_dict(metric_dict, on_epoch=True, on_step=False)
         y_hat = F.softmax(y_hat, dim=1)
-        
+   
+        self.level_metrics[dataloader_idx].update(y_hat, y)
+            
         return {"individual":individual, "yhat":y_hat, "label":y}  
     
+    def validation_epoch_end(self, outputs):
+        for level, val_dataloader in enumerate(outputs):
+            output = self.level_metrics[level].compute()
+            self.log("Epoch Micro Accuracy level {}".format(level), output["Epoch micro_level_{}".format(level)])
+            self.log("Epoch Macro Accuracy level {}".format(level), output["Epoch macro_level_{}".format(level)])
+
+            species_table = pd.DataFrame(
+                {"taxonID":self.level_label_dicts[level].keys(),
+                 "accuracy":output["Species accuracy_level_{}".format(level)],
+                 "precision":output["Species accuracy_level_{}".format(level)]
+                 })
+            
+            for key, value in species_table.set_index("taxonID").accuracy.to_dict().items():
+                self.log("Epoch_{}_accuracy".format(key), value)
+    
+            for key, value in species_table.set_index("taxonID").precision.to_dict().items():
+                self.log("Epoch_{}_precision".format(key), value)        
+        
     def predict_step(self, batch, batch_idx):
         """Calculate predictions
         """
@@ -244,51 +274,6 @@ class MultiStage(LightningModule):
     def on_predict_epoch_end(self, outputs):
         outputs = self.all_gather(outputs)
         
-    def validation_epoch_end(self, validation_step_outputs): 
-        for level, results in enumerate(validation_step_outputs):
-            yhat = torch.cat([x["yhat"] for x in results]).cpu().numpy()
-            labels = torch.cat([x["label"] for x in results]).cpu().numpy()            
-            yhat = np.argmax(yhat, 1)
-            epoch_micro = torchmetrics.functional.accuracy(
-                preds=torch.tensor(labels),
-                target=torch.tensor(yhat),
-                average="micro")
-            
-            epoch_macro = torchmetrics.functional.accuracy(
-                preds=torch.tensor(labels),
-                target=torch.tensor(yhat),
-                average="macro",
-                num_classes=len(self.species_label_dict)
-            )
-            
-            self.log("Epoch Micro Accuracy level {}".format(level), epoch_micro)
-            self.log("Epoch Macro Accuracy level {}".format(level), epoch_macro)
-            
-            # Log results by species
-            taxon_accuracy = torchmetrics.functional.accuracy(
-                preds=torch.tensor(yhat),
-                target=torch.tensor(labels), 
-                average="none", 
-                num_classes=len(self.level_label_dicts[level])
-            )
-            taxon_precision = torchmetrics.functional.precision(
-                preds=torch.tensor(yhat),
-                target=torch.tensor(labels), 
-                average="none", 
-                num_classes=len(self.level_label_dicts[level])
-            )
-            species_table = pd.DataFrame(
-                {"taxonID":self.level_label_dicts[level].keys(),
-                 "accuracy":taxon_accuracy,
-                 "precision":taxon_precision
-                 })
-            
-            for key, value in species_table.set_index("taxonID").accuracy.to_dict().items():
-                self.log("Epoch_{}_accuracy".format(key), value)
-    
-            for key, value in species_table.set_index("taxonID").precision.to_dict().items():
-                self.log("Epoch_{}_precision".format(key), value)
-    
     def gather_predictions(self, predict_df):
         """Post-process the predict method to create metrics"""
         individuals = []

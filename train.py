@@ -92,7 +92,7 @@ def main():
         max_epochs=data_module.config["epochs"],
         accelerator=data_module.config["accelerator"],
         num_sanity_val_steps=0,
-        val_check_interval=5,
+        val_check_interval=10,
         enable_checkpointing=False,
         callbacks=[lr_monitor],
         logger=comet_logger)
@@ -138,7 +138,7 @@ def main():
         taxonlabels = [x for x in m.species_label_dict.keys() if x in site_result.taxonID.unique()]
         comet_logger.experiment.log_confusion_matrix(
             site_result.label.values,
-            site_result.pred_label_top1.values,
+            site_result.ens_label.values,
             labels=taxonlabels,
             max_categories=len(taxonlabels),
             name=site)
