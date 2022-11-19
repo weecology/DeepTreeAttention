@@ -64,7 +64,7 @@ class MultiStage(LightningModule):
                 level_metric = MetricCollection({       
                 "Species accuracy":ClasswiseWrapper(Accuracy(average="none", num_classes=num_classes), labels=taxon_level_labels),
                 "Species precision":ClasswiseWrapper(Precision(average="none", num_classes=num_classes),labels=taxon_level_labels),
-                },postfix="_level_{}".format(level))
+                })
                 self.level_metrics["level_{}".format(level)] = level_metric
 
             self.classes = len(self.train_df.label.unique())
@@ -231,13 +231,12 @@ class MultiStage(LightningModule):
         loss = F.cross_entropy(y_hat, y)   
         
         self.log("val_loss",loss)
-        metric_dict = self.models[dataloader_idx].metrics(y_hat, y)
-        self.log_dict(metric_dict, on_epoch=True, on_step=False)
+        self.models[dataloader_idx].metrics(y_hat, y)
+        self.log_dict(self.models[dataloader_idx].metrics, on_epoch=True, on_step=False)
         y_hat = F.softmax(y_hat, dim=1)
    
-        level_metric_dict = self.level_metrics["level_{}".format(dataloader_idx)](y_hat, y)
-        self.log_dict(level_metric_dict, on_epoch=True, on_step=False)
-        
+        self.level_metrics["level_{}".format(dataloader_idx)].update(y_hat, y)
+ 
         return {"individual":individual, "yhat":y_hat, "label":y}  
     
     def predict_step(self, batch, batch_idx):
@@ -256,6 +255,12 @@ class MultiStage(LightningModule):
     
     def on_predict_epoch_end(self, outputs):
         outputs = self.all_gather(outputs)
+    
+    def on_validation_epoch_end(self):
+        for level in self.level_id:
+            class_metrics = self.level_metrics["level_{}".format(level)].compute()
+            self.log_dict(class_metrics, on_epoch=True, on_step=False)
+            self.level_metrics["level_{}".format(level)].reset()
         
     def gather_predictions(self, predict_df):
         """Post-process the predict method to create metrics"""

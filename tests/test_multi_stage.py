@@ -29,9 +29,9 @@ def test_fit(config, dm, tmpdir):
     metrics = trainer.validate(m)
     
     #Assert that the decision function from level 0 to level 1 is not NaN
-    assert not math.isnan(metrics[0]["accuracy_OTHER_level_0"])
+    assert not math.isnan(metrics[0]["accuracy_OTHER"])
     
-def test_gather_predictions(config, dm):
+def test_gather_predictions(config, dm, experiment):
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config, debug=True)
     trainer = Trainer(fast_dev_run=True)
     ds = TreeDataset(df=dm.test, train=False, config=config)
@@ -48,3 +48,13 @@ def test_gather_predictions(config, dm):
         ensemble_df,
         experiment=None
     )
+
+    for site in results.siteID.unique():
+        site_result = results[results.siteID==site]
+        taxonlabels = [x for x in m.species_label_dict.keys() if x in site_result.taxonID.unique()]
+        experiment.log_confusion_matrix(
+            site_result.label.values,
+            site_result.ens_label.values,
+            labels=taxonlabels,
+            max_categories=len(taxonlabels),
+            name=site)
