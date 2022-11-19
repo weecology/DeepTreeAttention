@@ -69,7 +69,7 @@ def config(ROOT):
     config["bands"] = 349
     config["classes"] = 3
     config["top_k"] = 1
-    config["head_class_minimum_samples"] = 2
+    config["head_class_minimum_samples"] = 3
     config["convert_h5"] = False
     config["plot_n_individuals"] = 1
     config["min_CHM_diff"] = None    
