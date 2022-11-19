@@ -245,17 +245,11 @@ class MultiStage(LightningModule):
             self.log("Epoch Micro Accuracy level {}".format(level), output["Epoch micro_level_{}".format(level)])
             self.log("Epoch Macro Accuracy level {}".format(level), output["Epoch macro_level_{}".format(level)])
 
-            species_table = pd.DataFrame(
-                {"taxonID":self.level_label_dicts[level].keys(),
-                 "accuracy":output["Species accuracy_level_{}".format(level)],
-                 "precision":output["Species accuracy_level_{}".format(level)]
-                 })
-            
-            for key, value in species_table.set_index("taxonID").accuracy.to_dict().items():
+            for key, value in zip(self.level_label_dicts[level].keys(),output["Species accuracy_level_{}".format(level)]):
                 self.log("Epoch_{}_accuracy".format(key), value)
-    
-            for key, value in species_table.set_index("taxonID").precision.to_dict().items():
-                self.log("Epoch_{}_precision".format(key), value)        
+                
+            for key, value in zip(self.level_label_dicts[level].keys(),output["Species precision_level_{}".format(level)]):
+                self.log("Epoch_{}_precision".format(key), value)                
         
     def predict_step(self, batch, batch_idx):
         """Calculate predictions
