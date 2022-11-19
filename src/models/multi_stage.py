@@ -10,6 +10,7 @@ import numpy as np
 from torch.nn import Module
 from torch.nn import functional as F
 from torch import nn
+import torchmetrics
 from torchmetrics import Accuracy, ClasswiseWrapper, Precision, MetricCollection
 import torch
 
@@ -323,21 +324,21 @@ class MultiStage(LightningModule):
         ensemble_df = ensemble_df.groupby("individual").apply(lambda x: x.head(1))
         
         #Ensemble accuracy
-        ensemble_accuracy = functional.accuracy(
+        ensemble_accuracy = torchmetrics.functional.accuracy(
             preds=torch.tensor(ensemble_df.ens_label.values),
             target=torch.tensor(ensemble_df.label.values),
             average="micro",
             num_classes=len(self.species_label_dict)
         )
             
-        ensemble_macro_accuracy = functional.accuracy(
+        ensemble_macro_accuracy = torchmetrics.functional.accuracy(
             preds=torch.tensor(ensemble_df.ens_label.values),
             target=torch.tensor(ensemble_df.label.values),
             average="macro",
             num_classes=len(self.species_label_dict)
         )
         
-        ensemble_precision = functional.precision(
+        ensemble_precision = torchmetrics.functional.precision(
             preds=torch.tensor(ensemble_df.ens_label.values),
             target=torch.tensor(ensemble_df.label.values),
             num_classes=len(self.species_label_dict)
@@ -349,14 +350,14 @@ class MultiStage(LightningModule):
             experiment.log_metric("ensemble_precision", ensemble_precision) 
         
         #Species Accuracy
-        taxon_accuracy = functional.accuracy(
+        taxon_accuracy = torchmetrics.functional.accuracy(
             preds=torch.tensor(ensemble_df.ens_label.values),
             target=torch.tensor(ensemble_df.label.values),
             average="none",
             num_classes=len(self.species_label_dict)
         )
             
-        taxon_precision = functional.precision(
+        taxon_precision = torchmetrics.functional.precision(
             preds=torch.tensor(ensemble_df.ens_label.values),
             target=torch.tensor(ensemble_df.label.values),
             average="none",
@@ -381,7 +382,7 @@ class MultiStage(LightningModule):
             for name, group in ensemble_df.groupby("siteID"):            
                 site_micro = np.sum(group.ens_label.values == group.label.values)/len(group.ens_label.values)
                 
-                site_macro = functional.accuracy(
+                site_macro = torchmetrics.functional.accuracy(
                     preds=torch.tensor(group.ens_label.values),
                     target=torch.tensor(group.label.values),
                     average="macro",
