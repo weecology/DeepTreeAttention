@@ -137,8 +137,8 @@ def main():
         site_result = ensemble_df[ensemble_df.siteID==site]
         taxonlabels = [x for x in m.species_label_dict.keys() if x in site_result.taxonID.unique()]
         comet_logger.experiment.log_confusion_matrix(
-            site_result.label.values,
-            site_result.ens_label.values,
+            y_true=site_result.label.values,
+            y_predicted=site_result.ens_label.values,
             labels=taxonlabels,
             max_categories=len(taxonlabels),
             file_name="{}.json".format(site),
