@@ -141,7 +141,8 @@ def main():
             site_result.ens_label.values,
             labels=taxonlabels,
             max_categories=len(taxonlabels),
-            name=site)
+            file_name="{}.json".format(site),
+            title=site)
 
 if __name__ == "__main__":
     main()
