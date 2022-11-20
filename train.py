@@ -133,8 +133,8 @@ def main():
     ensemble_df = ensemble_df.groupby("individual").apply(lambda x: x.head(1))
     test = test.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
     
-    for site in results.siteID.unique():
-        site_result = results[results.siteID==site]
+    for site in ensemble_df.siteID.unique():
+        site_result = ensemble_df[ensemble_df.siteID==site]
         taxonlabels = [x for x in m.species_label_dict.keys() if x in site_result.taxonID.unique()]
         comet_logger.experiment.log_confusion_matrix(
             site_result.label.values,
