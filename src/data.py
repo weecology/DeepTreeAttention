@@ -334,7 +334,7 @@ class TreeData(LightningDataModule):
                     
                 # Convert raw neon data to x,y tree locatins
                 df = filter_data(self.csv_file, config=self.config)
-                df = df[df.siteID.isin("OSBS","TALL")]
+                df = df[df.siteID.isin("OSBS","TALL","JERC")]
                 
                 # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
