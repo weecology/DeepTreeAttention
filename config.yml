@@ -29,7 +29,7 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Checkout data artifact from comet
-use_data_commit:
+use_data_commit: 0833ccf7e00e4fd99639cd9d34181bb7
 
 #Make new dataset
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
@@ -55,7 +55,7 @@ sampling_ceiling: 200
 pretrain_state_dict:
 
 gpus: 1
-batch_size: 512
+batch_size: 64
 bands: 349
 
 #LR for each level x year
