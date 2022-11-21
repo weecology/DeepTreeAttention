@@ -11,8 +11,8 @@ HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/year/
 min_stem_diameter: 10
 
 #Minimum number of test samples per class to be included
-min_train_samples: 10
-min_test_samples: 10
+min_train_samples: 100
+min_test_samples: 100
 
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
 iterations: 100
@@ -29,7 +29,7 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Checkout data artifact from comet
-use_data_commit: 5036de46931a4bc792b4425b99ac6aa0
+use_data_commit:
 
 #Make new dataset
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
