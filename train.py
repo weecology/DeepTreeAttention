@@ -131,13 +131,7 @@ def main():
     ensemble_df = ensemble_df.reset_index(drop=True)
     ensemble_df = ensemble_df.groupby("individual").apply(lambda x: x.head(1))
     test = test.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
-    
-    #per site lists
-    site_confusion_score = metrics.site_confusion(
-        y_true=ensemble_df.ens_labels.values,
-        y_pred=ensemble_df.label.values,
-        site_lists)
-    
+        
     #Create a per-site confusion matrix by recoding each site as a seperate set of labels
     for site in ensemble_df.siteID.unique():
         site_result = ensemble_df[ensemble_df.siteID==site]
@@ -155,5 +149,15 @@ def main():
             title=site
         )
 
+    #Within site confusion
+    site_lists = data_module.train.groupby("label").site.unique()
+    within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=site_lists)
+    comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
+    
+    #Within plot confusion
+    plot_lists = data_module.train.groupby("label").plotID.unique()
+    within_plot_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=plot_lists)
+    comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)
+    
 if __name__ == "__main__":
     main()
