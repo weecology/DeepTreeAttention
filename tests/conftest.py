@@ -103,7 +103,7 @@ def experiment():
         from pytorch_lightning.loggers import CometLogger        
         COMET_KEY = os.getenv("COMET_KEY")
         comet_logger = CometLogger(api_key=COMET_KEY,
-                                   project_name="DeepTreeAttention", workspace="bw4sz",auto_output_logging = "simple")
+                                   project_name="DeepTreeAttention2", workspace="bw4sz",auto_output_logging = "simple")
         return comet_logger.experiment
     else:
         return None
