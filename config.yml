@@ -40,7 +40,7 @@ replace: True
 existing_test_csv: 
 
 #How many samples from non-osbs sites can we use per species
-head_class_minimum_samples: 800
+head_class_minimum_samples: 1000
 oaks_sampling_ceiling: 200
 other_sampling_ceiling: 500
 evergreen_ceiling: 70
@@ -65,7 +65,7 @@ lr_2: 0.000005
 lr_3: 0.0001
 lr_4: 0.000005
 
-fast_dev_run: True
+fast_dev_run: False
 accelerator: auto
 epochs:  175
 min_loss_weight: 10
