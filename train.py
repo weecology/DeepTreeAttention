@@ -71,6 +71,12 @@ def main():
     train = train[~train.individual.str.contains("graves")].reset_index(drop=True)
     test = test[~test.individual.str.contains("graves")].reset_index(drop=True)
     
+    ##Hot fix for subsetting the data
+    counts = test.taxonID.value_counts().reset_index()
+    counts = counts[counts.taxonID>100]["index"]
+    train = train[train.taxonID.isin(counts)]
+    test = test[test.taxonID.isin(counts)]
+    
     m = multi_stage.MultiStage(train, test, config=data_module.config, crowns=crowns)
     
     #Save the train df for each level for inspection
