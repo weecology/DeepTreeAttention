@@ -79,6 +79,10 @@ def main():
     
     m = multi_stage.MultiStage(train, test, config=data_module.config, crowns=crowns)
     
+    #Hot fix for train and test labels on subset
+    train["label"] = train.taxonID.apply(lambda x: m.species_label_dict[x])
+    test["label"] = test.taxonID.apply(lambda x: m.species_label_dict[x])
+    
     #Save the train df for each level for inspection
     for index, train_df in enumerate([m.level_0_train,
               m.level_1_train]):
@@ -91,7 +95,6 @@ def main():
         
     #Create trainer
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
-    profiler = AdvancedProfiler(dirpath="/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/".format(comet_logger.experiment.id), filename="perf_logs")    
     trainer = Trainer(
         gpus=data_module.config["gpus"],
         fast_dev_run=data_module.config["fast_dev_run"],
