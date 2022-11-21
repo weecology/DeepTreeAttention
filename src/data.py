@@ -334,10 +334,11 @@ class TreeData(LightningDataModule):
                     
                 # Convert raw neon data to x,y tree locatins
                 df = filter_data(self.csv_file, config=self.config)
-                    
+                df = df[df.siteID=="OSBS"]
+                
                 # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
-                    megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config, client=self.client)
+                    megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config, client=self.client, site="OSBS")
                     megaplot_data.loc[megaplot_data.taxonID=="MAGR4","taxonID"] = "MAGNO"  
                     
                     # Hold IFAS records seperarely to model on polygons

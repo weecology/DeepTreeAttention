@@ -102,7 +102,7 @@ def create_grid(gdf):
     
     return grid
     
-def load(directory, config, client=None):
+def load(directory, config, client=None, site=None):
     """Load all the megaplot data and generate crown predictions
     Args:
         directory: location of .csv files of megaplot data
@@ -110,6 +110,6 @@ def load(directory, config, client=None):
     Returns:
         crowndf: a geopandas dataframe of crowns for all sites
     """
-    formatted_data = read_files(directory=directory, config=config, client=client)
+    formatted_data = read_files(directory=directory, config=config, client=client, site=site)
     
     return formatted_data

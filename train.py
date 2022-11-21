@@ -132,6 +132,12 @@ def main():
     ensemble_df = ensemble_df.groupby("individual").apply(lambda x: x.head(1))
     test = test.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
     
+    #per site lists
+    site_confusion_score = metrics.site_confusion(
+        y_true=ensemble_df.ens_labels.values,
+        y_pred=ensemble_df.label.values,
+        site_lists)
+    
     #Create a per-site confusion matrix by recoding each site as a seperate set of labels
     for site in ensemble_df.siteID.unique():
         site_result = ensemble_df[ensemble_df.siteID==site]
