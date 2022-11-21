@@ -49,13 +49,13 @@ def test_gather_predictions(config, dm, experiment):
         experiment=None
     )
     
-    #Create a per-site confusion matrix by recoding each site as a seperate set of labels
     for site in ensemble_df.siteID.unique():
         site_result = ensemble_df[ensemble_df.siteID==site]
-        site_labels = {value:key for key, value in enumerate(site_result.taxonID.unique())}
+        combined_species = np.unique(site_result[['taxonID', 'ensembleTaxonID']].values)
+        site_labels = {value:key for key, value in enumerate(combined_species)}
         y = [site_labels[x] for x in site_result.taxonID.values]
         ypred = [site_labels[x] for x in site_result.ensembleTaxonID.values]
-        taxonlabels = [value for key, value in site_labels.items()]
+        taxonlabels = [key for key, value in site_labels.items()]
         experiment.log_confusion_matrix(
             y,
             ypred,
