@@ -141,7 +141,7 @@ def main():
         y = [site_labels[x] for x in site_result.taxonID.values]
         ypred = [site_labels[x] for x in site_result.ensembleTaxonID.values]
         taxonlabels = [value for key, value in site_labels.items()]
-        experiment.log_confusion_matrix(
+        comet_logger.experiment.log_confusion_matrix(
             y,
             ypred,
             labels=taxonlabels,
