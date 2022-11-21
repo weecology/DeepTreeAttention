@@ -11,8 +11,8 @@ HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/year/
 min_stem_diameter: 10
 
 #Minimum number of test samples per class to be included
-min_train_samples: 100
-min_test_samples: 100
+min_train_samples: 5
+min_test_samples: 5
 
 #Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
 iterations: 100
@@ -29,7 +29,7 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Checkout data artifact from comet
-use_data_commit: 0833ccf7e00e4fd99639cd9d34181bb7
+use_data_commit:
 
 #Make new dataset
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
@@ -40,7 +40,7 @@ replace: True
 existing_test_csv: 
 
 #How many samples from non-osbs sites can we use per species
-head_class_minimum_samples: 2000
+head_class_minimum_samples: 1000
 oaks_sampling_ceiling: 200
 other_sampling_ceiling: 500
 evergreen_ceiling: 70
@@ -55,7 +55,7 @@ sampling_ceiling: 200
 pretrain_state_dict:
 
 gpus: 1
-batch_size: 64
+batch_size: 256
 bands: 349
 
 #LR for each level x year
