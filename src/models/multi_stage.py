@@ -139,7 +139,7 @@ class MultiStage(LightningModule):
         tail_classes = self.level_1_train[self.level_1_train.taxonID.isin(rare_species)]
         
         # Create labels
-        self.level_1_train = tail_classes              
+        self.level_1_train = tail_classes.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))              
         self.level_1_train["label"] = [self.level_label_dicts[1][x] for x in self.level_1_train.taxonID]
         self.level_1_train_ds = TreeDataset(df=self.level_1_train, config=self.config)
         train_datasets.append(self.level_1_train_ds)

@@ -150,7 +150,7 @@ def main():
         )
 
     #Within site confusion
-    site_lists = data_module.train.groupby("label").site.unique()
+    site_lists = data_module.train.groupby("label").siteID.unique()
     within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=site_lists)
     comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
     
