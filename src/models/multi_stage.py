@@ -215,10 +215,12 @@ class MultiStage(LightningModule):
         """Calculate train_df loss
         """
         #get loss weight
+        loss_weights = self.__getattr__('loss_weight_'+str(optimizer_idx))
+        
         individual, inputs, y = batch[optimizer_idx]
         images = inputs["HSI"]  
         y_hat = self.models[optimizer_idx].forward(images)
-        loss = F.cross_entropy(y_hat, y)    
+        loss = F.cross_entropy(y_hat, y, weight=loss_weights)    
         self.log("train_loss_{}".format(optimizer_idx),loss, on_epoch=True, on_step=False)
 
         return loss
