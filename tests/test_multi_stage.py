@@ -4,24 +4,27 @@ from pytorch_lightning import Trainer
 from src.models import multi_stage
 from src.data import TreeDataset
 import math
+import pytest
 
-def test_MultiStage(dm, config):
-    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train,crowns=dm.crowns, config=config, debug=True)
+@pytest.fixture()
+def m(dm, config, ROOT):    
+    taxonomic_csv = "{}/data/raw/families.csv".format(ROOT)        
+    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train, config=config, taxonomic_csv=taxonomic_csv, debug=True)
+    
+    return m
 
-def test_reload(config, dm, tmpdir):
-    config["preload_images"] = True    
-    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config, debug=False)
+
+def test_reload(config, dm, m, ROOT, tmpdir):
+    taxonomic_csv = "{}/data/raw/families.csv".format(ROOT)    
+    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train, config=config, taxonomic_csv=taxonomic_csv, debug=False)    
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m)
     
     #Confirm the model can be reloaded
     trainer.save_checkpoint("{}/test_model.pl".format(tmpdir))
-    m2 = multi_stage.MultiStage.load_from_checkpoint("{}/test_model.pl".format(tmpdir), config=config)
+    m2 = multi_stage.MultiStage.load_from_checkpoint("{}/test_model.pl".format(tmpdir))
 
-    
-def test_fit(config, dm, tmpdir):
-    config["preload_images"] = True    
-    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config, debug=True)
+def test_fit(config, m):
     trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=0)
     
     #Model can be trained and validated
@@ -29,10 +32,9 @@ def test_fit(config, dm, tmpdir):
     metrics = trainer.validate(m)
     
     #Assert that the decision function from level 0 to level 1 is not NaN
-    assert not math.isnan(metrics[0]["accuracy_OTHER"])
+    assert not math.isnan(metrics[0]["accuracy_CONIFER"])
     
-def test_gather_predictions(config, dm, experiment):
-    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config, debug=True)
+def test_gather_predictions(config, dm, m, experiment):
     trainer = Trainer(fast_dev_run=True)
     ds = TreeDataset(df=dm.test, train=False, config=config)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))

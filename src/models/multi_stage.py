@@ -32,7 +32,7 @@ class base_model(Module):
         return score 
     
 class MultiStage(LightningModule):
-    def __init__(self, train_df, test_df, crowns, config, train_mode=True, debug=False):
+    def __init__(self, train_df, test_df, config, taxonomic_csv, train_mode=True, debug=False):
         super().__init__()
         # Generate each model
         self.years = train_df.tile_year.unique()
@@ -40,11 +40,13 @@ class MultiStage(LightningModule):
         self.models = nn.ModuleList()
         self.species_label_dict = train_df[["taxonID","label"]].drop_duplicates().set_index("taxonID").to_dict()["label"]
         self.index_to_label = {v:k for k,v in self.species_label_dict.items()}
-        self.crowns = crowns
         self.level_label_dicts = []    
         self.label_to_taxonIDs = []   
         self.train_df = train_df
         self.test_df = test_df
+        
+        #Lookup taxonomic names
+        self.taxonomy = pd.read_csv(taxonomic_csv)
                 
         #hotfix for old naming schema
         try:
@@ -103,13 +105,21 @@ class MultiStage(LightningModule):
         common_species = self.level_0_train.taxonID.value_counts().reset_index()
         common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]
         self.level_label_dicts.append({value:key for key, value in enumerate(common_species)})
-        self.level_label_dicts[0]["OTHER"] = len(self.level_label_dicts[0])
+        self.level_label_dicts[0]["CONIFER"] = len(self.level_label_dicts[0])
+        self.level_label_dicts[0]["BROADLEAF"] = len(self.level_label_dicts[0])        
         self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[0].items()})
         
         # Select head and tail classes
         head_classes = self.level_0_train[self.level_0_train.taxonID.isin(common_species)]
+        
+        #Split tail classes into conifer and broadleaf
         tail_classes = self.level_0_train[~self.level_0_train.taxonID.isin(common_species)]
-        tail_classes["taxonID"] = "OTHER"
+        needleleaf = self.taxonomy[self.taxonomy.families=="Pinidae"].taxonID
+        needleleaf = needleleaf[~needleleaf.isin(common_species)]
+        broadleaf = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID
+        broadleaf = broadleaf[~broadleaf.isin(common_species)]
+        tail_classes.loc[tail_classes.taxonID.isin(needleleaf),"taxonID"] = "CONIFER"
+        tail_classes.loc[tail_classes.taxonID.isin(broadleaf),"taxonID"] = "BROADLEAF"
         
         # Create labels
         self.level_0_train = pd.concat([head_classes, tail_classes])                
@@ -121,7 +131,8 @@ class MultiStage(LightningModule):
         self.level_0_test = self.test_df.copy()
         head_classes = self.level_0_test[self.level_0_test.taxonID.isin(common_species)]
         tail_classes = self.level_0_test[~self.level_0_test.taxonID.isin(common_species)]
-        tail_classes["taxonID"] = "OTHER"
+        tail_classes.loc[tail_classes.taxonID.isin(needleleaf),"taxonID"] = "CONIFER"
+        tail_classes.loc[tail_classes.taxonID.isin(broadleaf),"taxonID"] = "BROADLEAF"
         self.level_0_test = pd.concat([head_classes, tail_classes]) 
         
         self.level_0_test["label"]= [self.level_label_dicts[0][x] for x in self.level_0_test.taxonID]            
@@ -129,7 +140,7 @@ class MultiStage(LightningModule):
         test_datasets.append(self.level_0_test_ds)
         self.level_id.append(0)
 
-        # Level 1, the remaining species
+        # Level 1
         self.level_1_train = self.train_df.copy()
         rare_species = [x for x in self.train_df.taxonID.unique() if x not in common_species.values]
         self.level_label_dicts.append({value:key for key, value in enumerate(rare_species)})
