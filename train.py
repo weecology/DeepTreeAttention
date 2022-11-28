@@ -71,16 +71,16 @@ def main():
     train = train[~train.individual.str.contains("graves")].reset_index(drop=True)
     test = test[~test.individual.str.contains("graves")].reset_index(drop=True)
     
-    m = multi_stage.MultiStage(train, test, config=data_module.config, crowns=crowns)
+    m = multi_stage.MultiStage(train, test, config=data_module.config, taxonomic_csv="data/raw/families.csv")
     
     #Save the train df for each level for inspection
     for index, train_df in enumerate([m.level_0_train,
-              m.level_1_train]):
+              m.level_1_train, m.level_2_train]):
         comet_logger.experiment.log_table("train_level_{}.csv".format(index), train_df)
     
     #Save the train df for each level for inspection
     for index, test_df in enumerate([m.level_0_test,
-              m.level_1_test]):
+              m.level_1_test, m.level_2_test]):
         comet_logger.experiment.log_table("test_level_{}.csv".format(index), test_df)
         
     #Create trainer

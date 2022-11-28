@@ -71,7 +71,7 @@ class MultiStage(LightningModule):
                 self.level_metrics["level_{}".format(level)] = level_metric
 
             self.classes = len(self.train_df.label.unique())
-            for index, ds in enumerate([self.level_0_train, self.level_1_train]): 
+            for index, ds in enumerate([self.level_0_train, self.level_1_train, self.level_2_train]): 
                 labels = ds.label
                 classes = self.num_classes[index]
                 base = base_model(classes=classes, years=len(self.years), config=self.config)
@@ -140,9 +140,9 @@ class MultiStage(LightningModule):
         test_datasets.append(self.level_0_test_ds)
         self.level_id.append(0)
 
-        # Level 1
+        # Level 1 - CONIFER
         self.level_1_train = self.train_df.copy()
-        rare_species = [x for x in self.train_df.taxonID.unique() if x not in common_species.values]
+        rare_species = [x for x in self.train_df.taxonID.unique() if x in needleleaf.values]
         self.level_label_dicts.append({value:key for key, value in enumerate(rare_species)})
         self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[1].items()})
         
@@ -164,6 +164,31 @@ class MultiStage(LightningModule):
         self.level_1_test_ds = TreeDataset(df=self.level_1_test, config=self.config)
         test_datasets.append(self.level_1_test_ds)
         self.level_id.append(1)
+        
+        # Level 2 - BROADLEAF
+        self.level_2_train = self.train_df.copy()
+        rare_species = [x for x in self.train_df.taxonID.unique() if x in broadleaf.values]
+        self.level_label_dicts.append({value:key for key, value in enumerate(rare_species)})
+        self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[2].items()})
+        
+        # Select head and tail classes
+        tail_classes = self.level_2_train[self.level_2_train.taxonID.isin(rare_species)]
+        
+        # Create labels
+        self.level_2_train = tail_classes.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))              
+        self.level_2_train["label"] = [self.level_label_dicts[2][x] for x in self.level_2_train.taxonID]
+        self.level_2_train_ds = TreeDataset(df=self.level_2_train, config=self.config)
+        train_datasets.append(self.level_2_train_ds)
+        self.num_classes.append(len(self.level_2_train.taxonID.unique()))
+        
+        self.level_2_test = self.test_df.copy()
+        tail_classes = self.level_2_test[self.level_2_test.taxonID.isin(rare_species)]
+        self.level_2_test = tail_classes
+        
+        self.level_2_test["label"]= [self.level_label_dicts[2][x] for x in self.level_2_test.taxonID]            
+        self.level_2_test_ds = TreeDataset(df=self.level_2_test, config=self.config)
+        test_datasets.append(self.level_2_test_ds)
+        self.level_id.append(2)
         
         return train_datasets, test_datasets
     
@@ -296,12 +321,12 @@ class MultiStage(LightningModule):
         predicted_label = temporal_average.groupby(["individual","level"]).yhat.apply(
             lambda x: np.argmax(np.vstack(x))).reset_index().pivot(
                 index=["individual"],columns="level",values="yhat").reset_index()
-        predicted_label.columns = ["individual","pred_label_top1_level_0","pred_label_top1_level_1"]
+        predicted_label.columns = ["individual","pred_label_top1_level_0","pred_label_top1_level_1","pred_label_top1_level_2"]
         
         predicted_score = temporal_average.groupby(["individual","level"]).yhat.apply(
             lambda x: np.vstack(x).max()).reset_index().pivot(
                 index=["individual"],columns="level",values="yhat").reset_index()
-        predicted_score.columns = ["individual","top1_score_level_0","top1_score_level_1"]
+        predicted_score.columns = ["individual","top1_score_level_0","top1_score_level_1","top1_score_level_2"]
         results = pd.merge(predicted_label,predicted_score)
         
         #Label taxa
@@ -318,15 +343,19 @@ class MultiStage(LightningModule):
         
         #For each level, select the predicted taxonID and retrieve the original label order
         for index,row in results.iterrows():
-            if not row["pred_taxa_top1_level_0"] == "OTHER":
+            if not row["pred_taxa_top1_level_0"] in ["CONIFER","BROADLEAF"]:
                 ensemble_taxonID.append(row["pred_taxa_top1_level_0"])
                 ensemble_label.append(self.species_label_dict[row["pred_taxa_top1_level_0"]])
                 ensemble_score.append(row["top1_score_level_0"])                
-            else:
+            elif row["pred_taxa_top1_level_0"] =="CONIFER":
                 ensemble_taxonID.append(row["pred_taxa_top1_level_1"])
                 ensemble_label.append(self.species_label_dict[row["pred_taxa_top1_level_1"]])
                 ensemble_score.append(row["top1_score_level_1"])                   
-
+            else:
+                ensemble_taxonID.append(row["pred_taxa_top1_level_2"])
+                ensemble_label.append(self.species_label_dict[row["pred_taxa_top1_level_2"]])
+                ensemble_score.append(row["top1_score_level_2"])     
+                
         results["ensembleTaxonID"] = ensemble_taxonID
         results["ens_score"] = ensemble_score
         results["ens_label"] = ensemble_label   
