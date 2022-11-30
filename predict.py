@@ -59,7 +59,7 @@ comet_logger.experiment.add_tag("prediction")
 
 comet_logger.experiment.log_parameters(config)
 
-cpu_client = start(cpus=1, mem_size="10GB")
+cpu_client = start(cpus=20, mem_size="10GB")
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1"
@@ -74,12 +74,12 @@ hyperspectral_pool = glob(config["HSI_tif_dir"]+"*")
 
 ### Step 1 Find RGB Tiles and convert HSI
 tiles = find_rgb_files(site="JERC", config=config)
-#tif_futures = cpu_client.map(
-    #convert,
-    #tiles,
-    #hyperspectral_pool=h5_pool,
-    #savedir=config["HSI_tif_dir"])
-#wait(tif_futures)
+tif_futures = cpu_client.map(
+    convert,
+    tiles,
+    hyperspectral_pool=h5_pool,
+    savedir=config["HSI_tif_dir"])
+wait(tif_futures)
 
 for x in tiles:
     basename = os.path.splitext(os.path.basename(x))[0]                
