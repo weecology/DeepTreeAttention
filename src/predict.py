@@ -27,7 +27,7 @@ def RGB_transform(augment):
     return transforms.Compose(data_transforms)
     
 def find_crowns(rgb_path, config, dead_model_path=None):
-    crowns = predict_crowns(rgb_path)
+    crowns = predict_crowns(rgb_path, config)
     if crowns is None:
         return None
     crowns["tile"] = rgb_path
@@ -109,12 +109,14 @@ def predict_tile(crown_annotations,m, trainer, config, savedir, filter_dead=Fals
     
     return trees
 
-def predict_crowns(PATH):
+def predict_crowns(PATH, config):
     """Predict a set of tree crowns from RGB data"""
     m = main.deepforest()
     if torch.cuda.is_available():
         print("CUDA detected")
         m.config["gpus"] = 1
+        m.config["workers"] = config["DeepForest_workers"]
+        m.config["preload_images"] = config["DeepForest_preload"]
     m.use_release(check_release=False)
     boxes = m.predict_tile(PATH)
     if boxes is None:
