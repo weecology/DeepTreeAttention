@@ -80,6 +80,8 @@ plot_n_individuals: 0
 predict_batch_size: 64
 dead_threshold: 0.95
 prediction_crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
+DeepForest_workers: 10
+DeepForest_preload: True
 
 #Comet dashboard
 comet_workspace: bw4sz
