@@ -6,7 +6,7 @@ import os
 import numpy as np
 from src import data
 from src import start_cluster
-from src.models import multi_stage
+from src.models import Hang2020
 from src import visualize
 from src import metrics
 import subprocess
@@ -71,17 +71,24 @@ def main():
     train = train[~train.individual.str.contains("graves")].reset_index(drop=True)
     test = test[~test.individual.str.contains("graves")].reset_index(drop=True)
     
-    m = multi_stage.MultiStage(train, test, config=data_module.config, taxonomic_csv="data/raw/families.csv")
+    model = Hang2020.vanilla_CNN(bands=config["bands"], classes=data_module.num_classes)
+            
+    #Loss weight, balanced
+    loss_weight = []
+    for x in data_module.species_label_dict:
+        loss_weight.append(1/data_module.train[data_module.train.taxonID==x].shape[0])
+        
+    loss_weight = np.array(loss_weight/np.max(loss_weight))
+    #Provide min value
+    loss_weight[loss_weight < 0.5] = 0.5  
     
-    #Save the train df for each level for inspection
-    for index, train_df in enumerate([m.level_0_train,
-              m.level_1_train, m.level_2_train]):
-        comet_logger.experiment.log_table("train_level_{}.csv".format(index), train_df)
+    comet_logger.experiment.log_parameter("loss_weight", loss_weight)
     
-    #Save the train df for each level for inspection
-    for index, test_df in enumerate([m.level_0_test,
-              m.level_1_test, m.level_2_test]):
-        comet_logger.experiment.log_table("test_level_{}.csv".format(index), test_df)
+    m = main.TreeModel(
+        model=model, 
+        classes=data_module.num_classes, 
+        loss_weight=loss_weight,
+        label_dict=data_module.species_label_dict)
         
     #Create trainer
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
@@ -104,59 +111,43 @@ def main():
     # Prediction datasets are indexed by year, but full data is given to each model before ensembling
     print("Before prediction, the taxonID value counts")
     print(test.taxonID.value_counts())
+    results = m.evaluate_crowns(
+        data_module.val_dataloader(),
+        crowns = data_module.crowns,
+        experiment=comet_logger.experiment,
+    )
+    rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
     
-    ds = data.TreeDataset(df=test, train=False, config=config)
-    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
-    results = m.gather_predictions(predictions)
-    results["individual"] = results["individual"]
-    results_with_data = results.merge(crowns, on="individual")
-    comet_logger.experiment.log_table("nested_predictions.csv", results_with_data)
-    
-    results = results.merge(data_module.test, on=["individual"])
-    ensemble_df = m.ensemble(results)
-    ensemble_df = m.evaluation_scores(
-        ensemble_df,
-        experiment=comet_logger.experiment
+    #Visualizations
+    visualize.plot_spectra(results, crop_dir=config["crop_dir"], experiment=comet_logger.experiment)
+    visualize.rgb_plots(
+        df=results,
+        config=config,
+        test_crowns=data_module.crowns,
+        test_points=data_module.canopy_points,
+        plot_n_individuals=config["plot_n_individuals"],
+        experiment=comet_logger.experiment)
+    visualize.confusion_matrix(
+        comet_experiment=comet_logger.experiment,
+        results=results,
+        species_label_dict=data_module.species_label_dict,
+        test_crowns=data_module.crowns,
+        test=data_module.test,
+        test_points=data_module.canopy_points,
+        rgb_pool=rgb_pool
     )
     
     #Log prediction
-    comet_logger.experiment.log_table("ensemble_df.csv", ensemble_df)
+    comet_logger.experiment.log_table("test_predictions.csv", results)
     
-    #Visualizations
-    ensemble_df["pred_taxa_top1"] = ensemble_df.ensembleTaxonID
-    ensemble_df["pred_label_top1"] = ensemble_df.ens_label
-    rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
-    
-    #Limit to 1 individual for confusion matrix
-    ensemble_df = ensemble_df.reset_index(drop=True)
-    ensemble_df = ensemble_df.groupby("individual").apply(lambda x: x.head(1))
-    test = test.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
-        
-    #Create a per-site confusion matrix by recoding each site as a seperate set of labels
-    for site in ensemble_df.siteID.unique():
-        site_result = ensemble_df[ensemble_df.siteID==site]
-        combined_species = np.unique(site_result[['taxonID', 'ensembleTaxonID']].values)
-        site_labels = {value:key for key, value in enumerate(combined_species)}
-        y = [site_labels[x] for x in site_result.taxonID.values]
-        ypred = [site_labels[x] for x in site_result.ensembleTaxonID.values]
-        taxonlabels = [key for key, value in site_labels.items()]
-        comet_logger.experiment.log_confusion_matrix(
-            y,
-            ypred,
-            labels=taxonlabels,
-            max_categories=len(taxonlabels),
-            file_name="{}.json".format(site),
-            title=site
-        )
-
     #Within site confusion
-    site_lists = data_module.train.groupby("label").siteID.unique()
-    within_site_confusion = metrics.site_confusion(y_true=ensemble_df.label, y_pred=ensemble_df.ens_label, site_lists=site_lists)
+    site_lists = data_module.train.groupby("label").site.unique()
+    within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=site_lists)
     comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
     
     #Within plot confusion
     plot_lists = data_module.train.groupby("label").plotID.unique()
-    within_plot_confusion = metrics.site_confusion(y_true=ensemble_df.label, y_pred=ensemble_df.ens_label, site_lists=plot_lists)
+    within_plot_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=plot_lists)
     comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)
     
 if __name__ == "__main__":

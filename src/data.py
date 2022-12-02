@@ -212,74 +212,58 @@ def train_test_split(shp, config, client = None):
     
     return train, test
 
+# Dataset class
 class TreeDataset(Dataset):
     """A csv file with a path to image crop and label
     Args:
        csv_file: path to csv file with image_path and label
     """
-    def __init__(self, df=None, csv_file=None, config=None, train=True):
-        if csv_file:
-            self.annotations = pd.read_csv(csv_file)
-        else:
-            self.annotations = df
-        
+    def __init__(self, csv_file, config=None, train=True, HSI=True, metadata=False):
+        self.annotations = pd.read_csv(csv_file)
         self.train = train
+        self.HSI = HSI
+        self.metadata = metadata
         self.config = config         
         self.image_size = config["image_size"]
-        self.years = self.annotations.tile_year.unique()
-        self.individuals = self.annotations.individual.unique()
-        self.image_paths = self.annotations.groupby("individual").apply(lambda x: x.set_index('tile_year').image_path.to_dict())
-        if train:
-            self.labels = self.annotations.set_index("individual").label.to_dict()
-        
+
         # Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=self.image_size)
-        self.image_dict = {}
-        
+
         # Pin data to memory if desired
         if self.config["preload_images"]:
-            for individual in self.individuals:
-                images = []
-                ind_annotations = self.image_paths[individual]
-                for year in self.years:
-                    try:
-                        year_annotations = ind_annotations[year]
-                        image_path = os.path.join(self.config["crop_dir"], year_annotations)
-                        image = load_image(image_path, image_size=self.image_size)                        
-                    except KeyError:
-                        image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
-                    if self.train:
-                        image = self.transformer(image)   
-                    images.append(image)
-                self.image_dict[individual] = images
-            
+            self.image_dict = {}
+            for index, row in self.annotations.iterrows():
+                image_path = os.path.join(self.config["crop_dir"],row["image_path"])
+                self.image_dict[index] = load_image(image_path, image_size=self.image_size)
+
     def __len__(self):
         # 0th based index
-        return len(self.individuals)
+        return self.annotations.shape[0]
 
     def __getitem__(self, index):
         inputs = {}
-        individual = self.individuals[index]        
-        if self.config["preload_images"]:
-            inputs["HSI"] = self.image_dict[individual]
-        else:
-            images = []
-            ind_annotations = self.image_paths[individual]
-            for year in self.years:
-                try:
-                    year_annotations = ind_annotations[year]
-                    image_path = os.path.join(self.config["crop_dir"], year_annotations)
-                    image = load_image(image_path, image_size=self.image_size)                        
-                except Exception:
-                    image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
-                if self.train:
-                    image = self.transformer(image)   
-                images.append(image)
-            inputs["HSI"] = images
-        
+        image_path = self.annotations.image_path.loc[index]      
+        individual = os.path.basename(image_path.split(".tif")[0])
+        if self.HSI:
+            if self.config["preload_images"]:
+                inputs["HSI"] = self.image_dict[index]
+            else:
+                image_basename = self.annotations.image_path.loc[index]  
+                image_path = os.path.join(self.config["crop_dir"],image_basename)                
+                image = load_image(image_path, image_size=self.image_size)
+                inputs["HSI"] = image
+
+        if self.metadata:
+            site = self.annotations.site.loc[index]  
+            site = torch.tensor(site, dtype=torch.int)
+            inputs["site"] = site
+
         if self.train:
-            label = self.labels[individual]
+            label = self.annotations.label.loc[index]
             label = torch.tensor(label, dtype=torch.long)
+
+            if self.HSI:
+                inputs["HSI"] = self.transformer(inputs["HSI"])
 
             return individual, inputs, label
         else:
