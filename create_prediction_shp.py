@@ -5,7 +5,7 @@ import pandas as pd
 import geopandas as gpd
 from src import start_cluster
 
-client = start_cluster.start(cpus=100,mem_size="5GB")
+client = start_cluster.start(cpus=5,mem_size="5GB")
 
 #Same data
 
@@ -17,11 +17,11 @@ def read_shp(path):
     gdf = gpd.read_file(path)
     gdf = gdf.groupby("individual").apply(lambda x: x.head(1))    
     #limit by OSBS polygon
-    boundary = gpd.read_file("/home/b.weinstein/DeepTreeAttention/data/raw/OSBSBoundary/OSBS_boundary.shp")
-    boundary = boundary.to_crs("epsg:32617")
-    intersects = gpd.clip(gdf, boundary)
+    #boundary = gpd.read_file("/home/b.weinstein/DeepTreeAttention/data/raw/OSBSBoundary/OSBS_boundary.shp")
+    #boundary = boundary.to_crs("epsg:32617")
+    #intersects = gpd.clip(gdf, boundary)
     
-    return intersects
+    return gdf
 
 futures = []
 for species_model_path in species_model_paths:
@@ -38,4 +38,4 @@ for species_model_path in species_model_paths:
     combined_shps = pd.concat(shps)
     gpd_boundary = gpd.GeoDataFrame(combined_shps, geometry="geometry")
     gpd_boundary = gpd_boundary.reset_index(drop=True)
-    gpd_boundary.to_file("/blue/ewhite/b.weinstein/DeepTreeAttention/results/{}/predictions.shp".format(basename))
+    gpd_boundary.to_file("/blue/ewhite/b.weinstein/DeepTreeAttention/results/{}/JERC_predictions.shp".format(basename))
