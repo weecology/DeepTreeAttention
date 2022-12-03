@@ -86,6 +86,7 @@ def main():
     
     m = baseline.TreeModel(
         model=model, 
+        config=config
         classes=data_module.num_classes, 
         loss_weight=loss_weight,
         label_dict=data_module.species_label_dict)
