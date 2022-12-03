@@ -6,7 +6,7 @@ import os
 import numpy as np
 from src import data
 from src import start_cluster
-from src.models import baseline
+from src.models import baseline, Hang2020
 from src import visualize
 from src import metrics
 import subprocess
