@@ -6,7 +6,7 @@ import os
 import numpy as np
 from src import data
 from src import start_cluster
-from src import main
+from src.models import baseline
 from src import visualize
 from src import metrics
 import subprocess
@@ -84,7 +84,7 @@ def main():
     
     comet_logger.experiment.log_parameter("loss_weight", loss_weight)
     
-    m = main.TreeModel(
+    m = baseline.TreeModel(
         model=model, 
         classes=data_module.num_classes, 
         loss_weight=loss_weight,
