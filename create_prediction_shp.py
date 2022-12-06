@@ -5,7 +5,7 @@ import pandas as pd
 import geopandas as gpd
 from src import start_cluster
 
-client = start_cluster.start(cpus=30,mem_size="5GB")
+client = start_cluster.start(cpus=100,mem_size="5GB")
 
 #Same data
 
