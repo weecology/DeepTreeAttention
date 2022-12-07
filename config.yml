@@ -95,3 +95,10 @@ dead:
     savedir: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/
     batch_size: 128
     num_workers: 0
+
+semi_supervised:
+    crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
+    site_filter: JERC
+    num_samples: 100
+    
+

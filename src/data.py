@@ -1,18 +1,19 @@
 #Ligthning data module
 from . import __file__
+import copy
 from distributed import wait
 import glob
 import geopandas as gpd
 import numpy as np
 import os
 import pandas as pd
-from pytorch_lightning import LightningDataModule
+from pytorch_lightning import LightningDataModule, Trainer
 from src import generate
 from src import CHM
 from src import augmentation
 from src import megaplot
 from src import neon_paths
-from src.models import dead
+from src.models import dead, multi_stage
 from src.utils import *
 
 from shapely.geometry import Point
@@ -508,4 +509,31 @@ class TreeData(LightningDataModule):
             #Taxon to ID dict and the reverse    
             self.species_label_dict = {}
             for index, taxonID in enumerate(unique_species_labels):
-                self.species_label_dict[taxonID] = index             
+                self.species_label_dict[taxonID] = index   
+                
+    
+        # Collect semi-supervised crops for feature extraction
+        if self.config["semi_supervised"]["crop_dir"] is not None:
+            semi_supervised_crops_csvs = glob.glob("{}/*.csv".format(self.config["semi_supervised"]["crop_dir"]))
+            semi_supervised_crops = pd.concat([pd.read_csv(x) for x in semi_supervised_crops_csvs])
+            if self.config["semi_supervised"]["site_filter"] is none None:
+                site_semi_supervised_crops = semi_supervised_crops[semi_supervised_crops.image_path.str.contains(self.config["semi_supervised"]["site_filter"])]
+            else:
+                site_semi_supervised_crops = semi_supervised_crops
+            
+            site_semi_supervised_crops = site_semi_supervised_crops.head(self.config["semi_supervised"]["num_samples"])
+            
+            #Predict labels for each crop
+            config = copy.deepcopy(self.config)
+            config["crop_dir"] = self.config["semi_supervised"]["crop_dir"]
+            
+            ds = TreeDataset(df=site_semi_supervised_crops, train=False, config=config)
+            predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
+            
+            m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)
+            trainer = Trainer(gpus=config["gpus"], logger=False, enable_checkpointing=False)
+            m.predict_dataloader(
+            
+            
+                
+            
