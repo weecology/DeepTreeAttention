@@ -492,22 +492,4 @@ class TreeData(LightningDataModule):
             #Taxon to ID dict and the reverse    
             self.species_label_dict = {}
             for index, taxonID in enumerate(unique_species_labels):
-                self.species_label_dict[taxonID] = index             
-
-            def train_dataloader(self):
-                data_loader = torch.utils.data.DataLoader(
-                    self.train_ds,
-                    batch_size=self.config["batch_size"],
-                    shuffle=True,
-                    num_workers=self.config["workers"],
-                )
-                
-                return data_loader
-            
-            def val_dataloader(self):
-                data_loader = torch.utils.data.DataLoader(
-                    self.val_ds,
-                    batch_size=self.config["batch_size"],
-                    shuffle=False,
-                    num_workers=self.config["workers"],
-                )
+                self.species_label_dict[taxonID] = index

@@ -13,10 +13,6 @@ from torchvision import transforms
 import torchmetrics
 import rasterio
 
-from src import data
-from src import generate
-from src import neon_paths
-from src import patches
 from src import utils
 from shapely.geometry import Point, box
 
@@ -156,7 +152,26 @@ class TreeModel(LightningModule):
         
         return pred
     
+    def train_dataloader(self):
+        data_loader = torch.utils.data.DataLoader(
+            self.trainer.datamodule.train_ds,
+            batch_size=self.config["batch_size"],
+            shuffle=True,
+            num_workers=self.config["workers"],
+        )
+        
+        return data_loader
     
+    def val_dataloader(self):
+        data_loader = torch.utils.data.DataLoader(
+            self.trainer.datamodule.val_ds,
+            batch_size=self.config["batch_size"],
+            shuffle=False,
+            num_workers=self.config["workers"],
+        )
+        
+        return data_loader
+        
     def predict_dataloader(self, data_loader, test_crowns=None, test_points=None, plot_n_individuals=1, return_features=False, experiment=None, train=True):
         """Given a file with paths to image crops, create crown predictions 
         The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
