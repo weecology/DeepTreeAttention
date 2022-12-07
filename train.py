@@ -104,7 +104,7 @@ def main():
         callbacks=[lr_monitor],
         logger=comet_logger)
     
-    trainer.fit(m, datamodule=datamodule)
+    trainer.fit(m, datamodule=data_module)
     
     #Save model checkpoint
     trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pt".format(comet_logger.experiment.id))
