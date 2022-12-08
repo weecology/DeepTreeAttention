@@ -82,45 +82,6 @@ class TreeModel(LightningModule):
         self.log("val_loss", loss, on_epoch=True)
         
         return loss
-
-    def on_validation_epoch_end(self):
-        results = self.predict_dataloader(self.trainer.datamodule.val_dataloader())
-        
-        final_micro = torchmetrics.functional.accuracy(
-            preds=torch.tensor(results.pred_label_top1.values),
-            target=torch.tensor(results.label.values),
-            average="micro")
-        
-        final_macro = torchmetrics.functional.accuracy(
-            preds=torch.tensor(results.pred_label_top1.values),
-            target=torch.tensor(results.label.values),
-            average="macro",
-            num_classes=self.classes)
-        
-        self.log("Epoch Micro Accuracy", final_micro)
-        self.log("Epoch Macro Accuracy", final_macro)
-        
-        # Log results by species
-        taxon_accuracy = torchmetrics.functional.accuracy(
-            preds=torch.tensor(results.pred_label_top1.values),
-            target=torch.tensor(results.label.values), 
-            average="none", 
-            num_classes=self.classes
-        )
-        taxon_precision = torchmetrics.functional.precision(
-            preds=torch.tensor(results.pred_label_top1.values),
-            target=torch.tensor(results.label.values),
-            average="none",
-            num_classes=self.classes
-        )
-        species_table = pd.DataFrame(
-            {"taxonID":self.label_to_index.keys(),
-             "accuracy":taxon_accuracy,
-             "precision":taxon_precision
-             })
-        
-        for key, value in species_table.set_index("taxonID").accuracy.to_dict().items():
-            self.log("Epoch_{}_accuracy".format(key), value)
             
     def configure_optimizers(self):
         optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
