@@ -11,6 +11,7 @@ from src import visualize
 from src import metrics
 import subprocess
 import sys
+import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
@@ -92,16 +93,15 @@ def main():
         label_dict=data_module.species_label_dict)
         
     #Create trainer
-    lr_monitor = LearningRateMonitor(logging_interval='epoch')
+    #lr_monitor = LearningRateMonitor(logging_interval='epoch')
     trainer = Trainer(
         gpus=data_module.config["gpus"],
         fast_dev_run=data_module.config["fast_dev_run"],
         max_epochs=data_module.config["epochs"],
         accelerator=data_module.config["accelerator"],
         num_sanity_val_steps=0,
-        val_check_interval=10,
+        val_check_interval=20,
         enable_checkpointing=False,
-        callbacks=[lr_monitor],
         logger=comet_logger)
     
     trainer.fit(m, datamodule=data_module)
