@@ -509,10 +509,3 @@ class TreeData(LightningDataModule):
             self.species_label_dict = {}
             for index, taxonID in enumerate(unique_species_labels):
                 self.species_label_dict[taxonID] = index   
-                
-    
-        # Collect semi-supervised crops for feature extraction
-        if self.config["semi_supervised"]["crop_dir"] is not None:
-            self.semi_supervised_dataloader = semi_supervised.prepare_training_dataloader(self.config)
-
-            

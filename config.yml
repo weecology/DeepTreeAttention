@@ -101,4 +101,5 @@ semi_supervised:
     site_filter: JERC
     num_samples: 100
     model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0df3483cc211460caefb73b6fd369c4b.pt
+    threshold: 0.8
 
