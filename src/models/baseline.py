@@ -195,9 +195,8 @@ class TreeModel(LightningModule):
             return_features=True
         )
         
-        # Read in crowns data
-        results = results.merge(crowns.drop(columns="label"), on="individual")
-        results = gpd.GeoDataFrame(results, geometry="geometry")    
+        # Read in site data
+        results["siteID"] = results.individual.apply(lambda x: crowns[crowns.individual == x[:-5]].siteID.values[0])
         
         # Log results by species
         taxon_accuracy = torchmetrics.functional.accuracy(
