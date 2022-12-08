@@ -63,7 +63,7 @@ def test_Hang2020():
     output = m(image)
     assert output.shape == (20,10)    
     
-def test_load_from_backbone(tmpdir):
+def test_load_from_backbone(tmpdir):    
     ten_classes = Hang2020.Hang2020(bands=3, classes=10)
     image = torch.randn(20, 3, 11, 11)
     output = ten_classes(image)    
