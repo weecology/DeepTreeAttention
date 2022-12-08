@@ -196,7 +196,15 @@ class TreeModel(LightningModule):
         )
         
         # Read in site data
-        results["siteID"] = results.individual.apply(lambda x: crowns[crowns.individual == x[:-5]].siteID.values[0])
+        def merge_site_id(x, crowns):
+            try:
+                return crowns[crowns.individual == x[:-5]].siteID.values[0]
+                
+            except:
+                print(x)
+                return None
+            
+        results["siteID"] = results.individual.apply(lambda x: merge_site_id(x, crowns))
         
         # Log results by species
         taxon_accuracy = torchmetrics.functional.accuracy(
