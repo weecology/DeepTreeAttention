@@ -93,7 +93,7 @@ def main():
         label_dict=data_module.species_label_dict)
         
     #Create trainer
-    #lr_monitor = LearningRateMonitor(logging_interval='epoch')
+    lr_monitor = LearningRateMonitor(logging_interval='epoch')
     trainer = Trainer(
         gpus=data_module.config["gpus"],
         fast_dev_run=data_module.config["fast_dev_run"],
@@ -101,6 +101,7 @@ def main():
         accelerator=data_module.config["accelerator"],
         num_sanity_val_steps=0,
         check_val_every_n_epoch=20,
+        callbacks=[lr_monitor],
         enable_checkpointing=False,
         logger=comet_logger)
     
