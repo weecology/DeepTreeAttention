@@ -87,6 +87,7 @@ class TreeModel(LightningModule):
         optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
         
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                         
                                                          mode='min',
                                                          factor=0.75,
                                                          patience=2,
@@ -97,7 +98,7 @@ class TreeModel(LightningModule):
                                                          min_lr=0.0000001,
                                                          eps=1e-08)
                                                                  
-        return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss',"frequency":25}
+        return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss',"frequency":25, "interval": "epoch"}
     
 
     def predict(self,inputs):
