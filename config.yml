@@ -59,7 +59,7 @@ batch_size: 128
 bands: 349
 
 #LR for each level x year
-lr_0: 0.00005
+lr: 0.0001
 lr_1: 0.00005
 lr_2: 0.000005
 lr_3: 0.0001
