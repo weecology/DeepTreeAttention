@@ -97,7 +97,7 @@ class TreeModel(LightningModule):
                                                          min_lr=0.0000001,
                                                          eps=1e-08)
                                                                  
-        return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
+        return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss',"frequency":20}
     
 
     def predict(self,inputs):
