@@ -268,7 +268,7 @@ class Single_Spectral_Model(Module):
         Learn spectral features with alternating convolutional and attention pooling layers
     """
     def __init__(self, bands, classes):
-        super(spectral_network, self).__init__()
+        super(Single_Spectral_Model, self).__init__()
         
         #First submodel is 32 filters
         self.conv1 = conv_module(in_channels=bands, filters=32)
