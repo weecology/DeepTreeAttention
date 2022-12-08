@@ -71,7 +71,7 @@ def main():
     train = train[~train.individual.str.contains("graves")].reset_index(drop=True)
     test = test[~test.individual.str.contains("graves")].reset_index(drop=True)
     
-    model = Hang2020.vanilla_CNN(bands=config["bands"], classes=data_module.num_classes)
+    model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=data_module.num_classes)
             
     #Loss weight, balanced
     loss_weight = []

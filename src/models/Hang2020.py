@@ -262,6 +262,38 @@ class Hang2020(Module):
         
         return joint_score
         
+
+class Single_Spectral_Model(Module):
+    """
+        Learn spectral features with alternating convolutional and attention pooling layers
+    """
+    def __init__(self, bands, classes):
+        super(spectral_network, self).__init__()
+        
+        #First submodel is 32 filters
+        self.conv1 = conv_module(in_channels=bands, filters=32)
+        self.attention_1 = spectral_attention(filters=32)
+    
+        self.conv2 = conv_module(in_channels=32, filters=64, maxpool_kernel=(2,2))
+        self.attention_2 = spectral_attention(filters=64)
+    
+        self.conv3 = conv_module(in_channels=64, filters=128, maxpool_kernel=(2,2))
+        self.attention_3 = spectral_attention(filters=128)
+        self.classifier3 = Classifier(classes=classes, in_features=128)
+    
+    def forward(self, x):
+        """The forward method is written for training the joint scores of the three attention layers"""
+        x = self.conv1(x)
+        x, attention = self.attention_1(x)
+        
+        x = self.conv2(x, pool = True)
+        x, attention = self.attention_2(x)
+        
+        x = self.conv3(x, pool = True)        
+        x, attention = self.attention_3(x)
+        scores3 = self.classifier3(attention)
+        
+        return scores3
     
 def load_from_backbone(state_dict, classes, bands):
     """Load from a backbone, potentially with a different head classifier"""
