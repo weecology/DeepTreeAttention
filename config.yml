@@ -40,7 +40,7 @@ replace: True
 existing_test_csv: 
 
 #How many samples from non-osbs sites can we use per species
-head_class_minimum_samples: 5000
+head_class_minimum_samples: 2000
 rare_class_sampling_max: 5000
 other_sampling_ceiling: 500
 evergreen_ceiling: 70
@@ -49,7 +49,7 @@ evergreen_ceiling: 70
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
 preload_images: True
-workers: 30
+workers: 0
 sampling_ceiling: 200
 #Network Parameters
 pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ca21358f3114481bba274da96f64c09c_state_dict.pt
@@ -60,8 +60,8 @@ bands: 349
 
 #LR for each level x year
 lr_0: 0.00005
-lr_1: 0.000001
-lr_2: 0.00005
+lr_1: 0.00005
+lr_2: 0.000005
 lr_3: 0.0001
 lr_4: 0.000005
 
