@@ -1,7 +1,6 @@
 #Multiple stage model
 from src.models.year import learned_ensemble
 from src.data import TreeDataset
-from src import semi_supervised
 
 from pytorch_lightning import LightningModule
 import pandas as pd
@@ -55,19 +54,19 @@ class MultiStage(LightningModule):
             pass
         
         if train_mode:
-            self.train_datasets, self.level_label_dicts = self.create_datasets(self.train_df)
-            self.test_datasets, _ = self.create_datasets(self.test_df)
+            self.train_datasets, self.train_dataframes, self.level_label_dicts = self.create_datasets(self.train_df)
+            self.test_datasets, self.test_dataframes, _ = self.create_datasets(self.test_df)
             
             #Create label dicts
-            label_to_taxonIDs = []
+            self.label_to_taxonIDs = []
             for x in self.level_label_dicts:
-                label_to_taxonIDs.append({v: k  for k, v in x.items()})
+                self.label_to_taxonIDs.append({v: k  for k, v in x.items()})
             
             self.levels = len(self.train_datasets)       
             
             #Generate metrics for each class level
             self.level_metrics = nn.ModuleDict()
-            for level in self.level_id:
+            for level, ds in enumerate(self.test_datasets):
                 taxon_level_labels = list(self.level_label_dicts[level].keys())
                 num_classes = len(self.level_label_dicts[level])
                 level_metric = MetricCollection({       
@@ -77,9 +76,9 @@ class MultiStage(LightningModule):
                 self.level_metrics["level_{}".format(level)] = level_metric
 
             self.classes = len(self.train_df.label.unique())
-            for index, ds in enumerate([self.level_0_train, self.level_1_train, self.level_2_train]): 
+            for index, ds in enumerate(self.train_dataframes): 
                 labels = ds.label
-                classes = self.num_classes[index]
+                classes = len(ds.label.unique())
                 base = base_model(classes=classes, years=len(self.years), config=self.config)
                 self.models.append(base)            
                 loss_weight = []
@@ -99,9 +98,11 @@ class MultiStage(LightningModule):
                 self.save_hyperparameters()        
             
     def create_datasets(self, df):
+        """Create a hierarchical set of dataloaders by splitting into taxonID groups"""
         #Create levels for each year
         ## Level 0     
         datasets = []
+        dataframes = []
         level_label_dicts = []
    
         # Level 0, the most common species at each site
@@ -109,8 +110,8 @@ class MultiStage(LightningModule):
         common_species = level_0_train.taxonID.value_counts().reset_index()
         common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]
         level_label_dicts.append({value:key for key, value in enumerate(common_species)})
-        level_label_dicts[0]["CONIFER"] = len(self.level_label_dicts[0])
-        level_label_dicts[0]["BROADLEAF"] = len(self.level_label_dicts[0])        
+        level_label_dicts[0]["CONIFER"] = len(level_label_dicts[0])
+        level_label_dicts[0]["BROADLEAF"] = len(level_label_dicts[0])        
         
         # Select head and tail classes
         head_classes = level_0_train[level_0_train.taxonID.isin(common_species)]
@@ -126,9 +127,10 @@ class MultiStage(LightningModule):
         
         # Create labels
         level_0_train = pd.concat([head_classes, tail_classes])                
-        level_0_train["label"] = [self.level_label_dicts[0][x] for x in level_0_train.taxonID]
+        level_0_train["label"] = [level_label_dicts[0][x] for x in level_0_train.taxonID]
         level_0_train_ds = TreeDataset(df=level_0_train, config=self.config)
         datasets.append(level_0_train_ds)
+        dataframes.append(level_0_train)
         
         # Level 1 - CONIFER
         level_1_train = df.copy()
@@ -140,9 +142,10 @@ class MultiStage(LightningModule):
         
         # Create labels
         level_1_train = tail_classes.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))              
-        level_1_train["label"] = [self.level_label_dicts[1][x] for x in level_1_train.taxonID]
+        level_1_train["label"] = [level_label_dicts[1][x] for x in level_1_train.taxonID]
         level_1_train_ds = TreeDataset(df=level_1_train, config=self.config)
         datasets.append(level_1_train_ds)
+        dataframes.append(level_1_train)
         
         # Level 2 - BROADLEAF
         level_2_train = df.copy()
@@ -154,17 +157,14 @@ class MultiStage(LightningModule):
         
         # Create labels
         level_2_train = tail_classes.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))              
-        level_2_train["label"] = [self.level_label_dicts[2][x] for x in level_2_train.taxonID]
+        level_2_train["label"] = [level_label_dicts[2][x] for x in level_2_train.taxonID]
         level_2_train_ds = TreeDataset(df=level_2_train, config=self.config)
         datasets.append(level_2_train_ds)
+        dataframes.append(level_2_train)
         
-        return datasets, level_label_dicts
+        return datasets, dataframes, level_label_dicts
     
     def train_dataloader(self):
-        
-        ##Generate the unlabeled dataloader
-        #unlabeled_dataloader = semi_supervised.create_dataloader(self.config)
-        #unlabeled_datasets, _ = self.create_datasets(unlabeled_dataloader)
         
         data_loaders = []
         for ds in self.train_datasets:
@@ -269,7 +269,7 @@ class MultiStage(LightningModule):
         outputs = self.all_gather(outputs)
     
     def on_validation_epoch_end(self):
-        for level in self.level_id:
+        for level, ds in enumerate(self.test_datasets):
             class_metrics = self.level_metrics["level_{}".format(level)].compute()
             self.log_dict(class_metrics, on_epoch=True, on_step=False)
             self.level_metrics["level_{}".format(level)].reset()

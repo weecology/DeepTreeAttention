@@ -51,7 +51,7 @@ def select_samples(unlabeled_df, ensemble_df, config):
     
     return unlabeled_df
         
-def create_dataloader(config):
+def create_dataframe(config):
     """Generate a pytorch dataloader from unlabeled crop data"""
     site_semi_supervised_crops = load_unlabeled_data(config)
     ensemble_df = predict_unlabeled(config, site_semi_supervised_crops)
@@ -63,6 +63,12 @@ def create_dataloader(config):
         config=config
     )
     
+
+    
+    return unlabeled_df
+
+
+def create_dataloader(unlabeled_df, config):
     semi_supervised_ds = TreeDataset(
         df=unlabeled_df,
         train=False,
@@ -73,7 +79,6 @@ def create_dataloader(config):
         batch_size=config["batch_size"],
         shuffle=True,
         num_workers=config["workers"]
-    )    
+    )        
     
     return data_loader
-
