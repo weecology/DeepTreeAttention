@@ -34,7 +34,7 @@ def predict_unlabeled(config, annotation_df, m=None):
         m = multi_stage.MultiStage.load_from_checkpoint(config["semi_supervised"]["model_path"], config=config)
     
     trainer = Trainer(gpus=config["gpus"], logger=False, enable_checkpointing=False)
-    ds = TreeDataset(annotation_df, train=False, config=config)
+    ds = TreeDataset(df = annotation_df, train=False, config=config)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)    
     ensemble_df = m.ensemble(results)
