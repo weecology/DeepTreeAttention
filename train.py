@@ -74,11 +74,11 @@ def main():
     m = multi_stage.MultiStage(train, test, config=data_module.config, taxonomic_csv="data/raw/families.csv")
     
     #Save the train df for each level for inspection
-    for index, train_df in enumerate([m.train_dataframes]):
+    for index, train_df in enumerate(m.train_dataframes):
         comet_logger.experiment.log_table("train_level_{}.csv".format(index), train_df)
     
     #Save the train df for each level for inspection
-    for index, test_df in enumerate([m.test_dataframes]):
+    for index, test_df in enumerate(m.test_dataframes):
         comet_logger.experiment.log_table("test_level_{}.csv".format(index), test_df)
         
     #Create trainer
