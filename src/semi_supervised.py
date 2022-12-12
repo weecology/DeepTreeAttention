@@ -51,10 +51,10 @@ def select_samples(unlabeled_df, ensemble_df, config):
     
     return unlabeled_df
         
-def create_dataframe(config):
+def create_dataframe(config, m=None):
     """Generate a pytorch dataloader from unlabeled crop data"""
     site_semi_supervised_crops = load_unlabeled_data(config)
-    ensemble_df = predict_unlabeled(config, site_semi_supervised_crops)
+    ensemble_df = predict_unlabeled(config, site_semi_supervised_crops, m=m)
     
     #Predict labels for each crop
     unlabeled_df = select_samples(

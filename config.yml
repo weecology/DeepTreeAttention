@@ -95,3 +95,10 @@ dead:
     savedir: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/419783aea1e14cbb81b7ee22b9a3345c.pt
     batch_size: 128
     num_workers: 0
+
+semi_supervised:
+    crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
+    site_filter: JERC
+    num_samples: 100
+    model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0df3483cc211460caefb73b6fd369c4b.pt
+    threshold: 0.8

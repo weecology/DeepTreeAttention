@@ -51,6 +51,9 @@ def main():
         metadata=True,
         comet_logger=comet_logger)
     
+    #Overwrite train with the semi-supervised crops
+    train = semi_supervised.create_dataframe(config)
+    
     if client:
         client.close()
     
@@ -63,7 +66,6 @@ def main():
     if not config["use_data_commit"]:
         comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
     
-    train = semi_supervised.create_dataframe(config)
     test = data_module.test.copy()
     
     #remove graves
