@@ -4,11 +4,8 @@ import glob
 import geopandas as gpd
 import os
 import numpy as np
-from src import data
-from src import start_cluster
 from src.models import multi_stage
-from src import visualize
-from src import metrics
+from src import visualize, metrics, start_cluster, data
 import subprocess
 import sys
 from pytorch_lightning import Trainer
