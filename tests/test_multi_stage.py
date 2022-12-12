@@ -1,9 +1,9 @@
 #Test multi_stage
 import numpy as np
+import math
 from pytorch_lightning import Trainer
 from src.models import multi_stage
 from src.data import TreeDataset
-import math
 import pytest
 
 @pytest.fixture()
@@ -25,7 +25,7 @@ def test_reload(config, dm, m, ROOT, tmpdir):
     m2 = multi_stage.MultiStage.load_from_checkpoint("{}/test_model.pl".format(tmpdir))
 
 def test_fit(config, m):
-    trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=0)
+    trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=1)
     
     #Model can be trained and validated
     trainer.fit(m)

@@ -89,7 +89,7 @@ def main():
         max_epochs=data_module.config["epochs"],
         accelerator=data_module.config["accelerator"],
         num_sanity_val_steps=0,
-        val_check_interval=10,
+        check_val_every_n_epoch=10,
         enable_checkpointing=False,
         callbacks=[lr_monitor],
         logger=comet_logger)
