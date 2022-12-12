@@ -63,8 +63,6 @@ def create_dataframe(config):
         config=config
     )
     
-
-    
     return unlabeled_df
 
 

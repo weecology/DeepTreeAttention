@@ -7,8 +7,7 @@ import numpy as np
 from src import data
 from src import start_cluster
 from src.models import baseline, Hang2020
-from src import visualize
-from src import metrics
+from src import visualize, semi_supervised, metrics
 import subprocess
 import sys
 import torch
@@ -64,9 +63,8 @@ def main():
     if not config["use_data_commit"]:
         comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
     
-    train = data_module.train.copy()
+    train = semi_supervised.create_dataframe(config)
     test = data_module.test.copy()
-    crowns = data_module.crowns.copy()
     
     #remove graves
     train = train[~train.individual.str.contains("graves")].reset_index(drop=True)
@@ -77,7 +75,7 @@ def main():
     #Loss weight, balanced
     loss_weight = []
     for x in data_module.species_label_dict:
-        loss_weight.append(1/data_module.train[data_module.train.taxonID==x].shape[0])
+        loss_weight.append(1/train[train.taxonID==x].shape[0])
         
     loss_weight = np.array(loss_weight/np.max(loss_weight))
     #Provide min value
