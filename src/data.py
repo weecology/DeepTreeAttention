@@ -218,8 +218,11 @@ class TreeDataset(Dataset):
     Args:
        csv_file: path to csv file with image_path and label
     """
-    def __init__(self, csv_file, config=None, train=True, HSI=True, metadata=False):
-        self.annotations = pd.read_csv(csv_file)
+    def __init__(self, csv_file=None, df=None, config=None, train=True, HSI=True, metadata=False):
+        if df is None:
+            self.annotations = pd.read_csv(csv_file)
+        else:
+            self.annotations = df
         self.train = train
         self.HSI = HSI
         self.metadata = metadata
