@@ -54,8 +54,9 @@ class MultiStage(LightningModule):
             pass
         
         if train_mode:
-            self.train_datasets, self.train_dataframes, self.level_label_dicts = self.create_datasets(self.train_df)
-            self.test_datasets, self.test_dataframes, _ = self.create_datasets(self.test_df)
+            # Create the hierarchical structure
+            self.train_datasets, self.train_dataframes, self.level_label_dicts = self.create_datasets(self.train_df, train=True)
+            self.test_datasets, self.test_dataframes, _ = self.create_datasets(self.test_df, common_species=self.train_dataframes[0].taxonID.unique())
             
             #Create label dicts
             self.label_to_taxonIDs = []
@@ -97,8 +98,15 @@ class MultiStage(LightningModule):
             if not debug:
                 self.save_hyperparameters()        
             
-    def create_datasets(self, df):
-        """Create a hierarchical set of dataloaders by splitting into taxonID groups"""
+    def create_datasets(self, df, train=False, common_species=None):
+        """Create a hierarchical set of dataloaders by splitting into taxonID groups
+        train: whether to sample the training labels
+        common_species: list of taxonIDs to include in level 0
+        """
+        if train == False:
+            if common_species is None:
+                raise AttributeError("train == False, but no taxonIDs were given to set as common species for level 0, use common_species=")
+        
         #Create levels for each year
         ## Level 0     
         datasets = []
@@ -107,8 +115,10 @@ class MultiStage(LightningModule):
    
         # Level 0, the most common species at each site
         level_0 = df.copy()
-        common_species = level_0.taxonID.value_counts().reset_index()
-        common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]
+        if train:
+            common_species = level_0.taxonID.value_counts().reset_index()
+            common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]
+            
         level_label_dicts.append({value:key for key, value in enumerate(common_species)})
         level_label_dicts[0]["CONIFER"] = len(level_label_dicts[0])
         level_label_dicts[0]["BROADLEAF"] = len(level_label_dicts[0])        
@@ -153,10 +163,12 @@ class MultiStage(LightningModule):
         level_label_dicts.append({value:key for key, value in enumerate(rare_species)})
         
         # Select head and tail classes
-        tail_classes = level_2[level_2.taxonID.isin(rare_species)]
+        level_2 = level_2[level_2.taxonID.isin(rare_species)]
         
-        # Create labels
-        level_2 = tail_classes.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))              
+        # Create labels and optionally balance
+        if train:
+            level_2 = level_2.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))        
+                        
         level_2["label"] = [level_label_dicts[2][x] for x in level_2.taxonID]
         level_2_ds = TreeDataset(df=level_2, config=self.config)
         datasets.append(level_2_ds)
@@ -165,7 +177,6 @@ class MultiStage(LightningModule):
         return datasets, dataframes, level_label_dicts
     
     def train_dataloader(self):
-        
         data_loaders = []
         for ds in self.train_datasets:
             data_loader = torch.utils.data.DataLoader(
@@ -225,7 +236,6 @@ class MultiStage(LightningModule):
         """
         #get loss weight
         loss_weights = self.__getattr__('loss_weight_'+str(optimizer_idx))
-        
         individual, inputs, y = batch[optimizer_idx]
         images = inputs["HSI"]  
         y_hat = self.models[optimizer_idx].forward(images)
