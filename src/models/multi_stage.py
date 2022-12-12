@@ -216,7 +216,7 @@ class MultiStage(LightningModule):
                                                              cooldown=0,
                                                              eps=1e-08)
             
-            optimizers.append({'optimizer':optimizer, 'lr_scheduler': {"scheduler":scheduler, "monitor":'val_loss/dataloader_idx_{}'.format(x)}})
+            optimizers.append({'optimizer':optimizer, 'lr_scheduler': {"scheduler":scheduler, "monitor":'val_loss/dataloader_idx_{}'.format(x), "frequency":self.config["validation_interval"], "interval":"epoch"}})
 
         return optimizers     
         
