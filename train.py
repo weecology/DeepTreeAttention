@@ -52,7 +52,7 @@ def main():
         comet_logger=comet_logger)
     
     #Overwrite train with the semi-supervised crops
-    train = semi_supervised.create_dataframe(config)
+    train = semi_supervised.create_dataframe(config, label_to_taxon_id=data_module.label_to_taxon_id)
     
     if client:
         client.close()
