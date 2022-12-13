@@ -48,8 +48,9 @@ def predict_unlabeled(config, annotation_df, label_to_taxon_id, m=None):
     )
     
     predictions = trainer.predict(m, dataloaders=data_loader)  
-    annotation_df["label"] = np.argmax(np.concatenate(predictions, 1),axis=1)
-    annotation_df["score"] = np.max(np.concatenate(predictions, 1),axis=1) 
+    predictions = np.vstack(predictions)
+    annotation_df["label"] = np.argmax(predictions,axis=1)
+    annotation_df["score"] = np.max(predictions,axis=1) 
     annotation_df["taxonID"] = annotation_df.label.apply(lambda x: label_to_taxon_id[x])
     
     return annotation_df
