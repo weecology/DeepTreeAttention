@@ -71,8 +71,8 @@ epochs: 170
 min_loss_weight: 10
 
 #Evaluation config
-#Top k class recall score
-top_k: 4
+#Epochs
+validation_interval: 10
 #Number of individuals to plot in comet graphics tab
 plot_n_individuals: 0
 
@@ -95,3 +95,11 @@ dead:
     savedir: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/
     batch_size: 128
     num_workers: 0
+
+semi_supervised:
+    crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
+    site_filter: JERC
+    num_samples: 100
+    model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0df3483cc211460caefb73b6fd369c4b.pt
+    threshold: 0.8
+

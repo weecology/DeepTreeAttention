@@ -508,4 +508,4 @@ class TreeData(LightningDataModule):
             #Taxon to ID dict and the reverse    
             self.species_label_dict = {}
             for index, taxonID in enumerate(unique_species_labels):
-                self.species_label_dict[taxonID] = index             
+                self.species_label_dict[taxonID] = index   

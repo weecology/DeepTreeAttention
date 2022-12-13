@@ -1,9 +1,9 @@
 #Test multi_stage
 import numpy as np
+import math
 from pytorch_lightning import Trainer
 from src.models import multi_stage
 from src.data import TreeDataset
-import math
 import pytest
 
 @pytest.fixture()
@@ -13,10 +13,18 @@ def m(dm, config, ROOT):
     
     return m
 
-
-def test_reload(config, dm, m, ROOT, tmpdir):
+def test_load(config, dm, m, ROOT, tmpdir):
     taxonomic_csv = "{}/data/raw/families.csv".format(ROOT)    
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train, config=config, taxonomic_csv=taxonomic_csv, debug=False)    
+    
+    for index, level in enumerate(m.train_dataframes):
+        len(m.label_to_taxonIDs[index].keys()) == len(level.label.unique())
+        len(m.level_label_dicts[index].keys()) == len(level.label.unique())
+
+    for index, level in enumerate(m.test_dataframes):
+        len(m.label_to_taxonIDs[index].keys()) == len(level.label.unique())
+        len(m.level_label_dicts[index].keys()) == len(level.label.unique())
+    
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m)
     
@@ -25,7 +33,7 @@ def test_reload(config, dm, m, ROOT, tmpdir):
     m2 = multi_stage.MultiStage.load_from_checkpoint("{}/test_model.pl".format(tmpdir))
 
 def test_fit(config, m):
-    trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=0)
+    trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=1)
     
     #Model can be trained and validated
     trainer.fit(m)

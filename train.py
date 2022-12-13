@@ -4,11 +4,8 @@ import glob
 import geopandas as gpd
 import os
 import numpy as np
-from src import data
-from src import start_cluster
 from src.models import multi_stage
-from src import visualize
-from src import metrics
+from src import visualize, metrics, start_cluster, data
 import subprocess
 import sys
 from pytorch_lightning import Trainer
@@ -74,13 +71,11 @@ def main():
     m = multi_stage.MultiStage(train, test, config=data_module.config, taxonomic_csv="data/raw/families.csv")
     
     #Save the train df for each level for inspection
-    for index, train_df in enumerate([m.level_0_train,
-              m.level_1_train, m.level_2_train]):
+    for index, train_df in enumerate(m.train_dataframes):
         comet_logger.experiment.log_table("train_level_{}.csv".format(index), train_df)
     
     #Save the train df for each level for inspection
-    for index, test_df in enumerate([m.level_0_test,
-              m.level_1_test, m.level_2_test]):
+    for index, test_df in enumerate(m.test_dataframes):
         comet_logger.experiment.log_table("test_level_{}.csv".format(index), test_df)
         
     #Create trainer
@@ -91,7 +86,7 @@ def main():
         max_epochs=data_module.config["epochs"],
         accelerator=data_module.config["accelerator"],
         num_sanity_val_steps=0,
-        val_check_interval=10,
+        check_val_every_n_epoch=data_module.config["validation_interval"],
         enable_checkpointing=False,
         callbacks=[lr_monitor],
         logger=comet_logger)
