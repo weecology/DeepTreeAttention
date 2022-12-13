@@ -90,7 +90,7 @@ class TreeModel(LightningModule):
         individual, inputs = batch
         images = inputs["HSI"]        
         y_hat = self.model.forward(images)
-        predicted_class = F.softmax(y_hat[-1], dim=1)
+        predicted_class = F.softmax(y_hat, dim=1)
         
         return predicted_class    
             
