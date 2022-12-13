@@ -72,6 +72,7 @@ min_loss_weight: 10
 
 #Evaluation config
 #Top k class recall score
+top_k: 4
 validation_interval: 10
 #Number of individuals to plot in comet graphics tab
 plot_n_individuals: 0
