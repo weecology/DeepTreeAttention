@@ -52,12 +52,15 @@ class TreeModel(LightningModule):
 
         self.save_hyperparameters(ignore=["loss_weight"])
         
-        #Weighted loss
-        if torch.cuda.is_available():
-            self.loss_weight = torch.tensor(loss_weight, device="cuda", dtype=torch.float)
-        else:
-            self.loss_weight = torch.ones((classes))    
-        
+        #Weighted loss - on reload and loss_weight = None, this is skipped
+        try:
+            if torch.cuda.is_available():
+                self.loss_weight = torch.tensor(loss_weight, device="cuda", dtype=torch.float)
+            else:
+                self.loss_weight = torch.ones((classes))    
+        except:
+            pass
+            
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
         """
