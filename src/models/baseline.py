@@ -53,6 +53,8 @@ class TreeModel(LightningModule):
         self.save_hyperparameters(ignore=["loss_weight"])
         
         #Weighted loss - on reload and loss_weight = None, this is skipped
+        if loss_weight is None:
+            self.loss_weight = torch.ones((classes))   
         try:
             if torch.cuda.is_available():
                 self.loss_weight = torch.tensor(loss_weight, device="cuda", dtype=torch.float)

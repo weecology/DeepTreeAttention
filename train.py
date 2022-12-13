@@ -57,10 +57,10 @@ def main():
     if client:
         client.close()
     
-    comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(data_module.train))
+    comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(train))
     comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(data_module.test))
     comet_logger.experiment.log_parameter("num_species",data_module.num_classes)
-    comet_logger.experiment.log_table("train.csv", data_module.train)
+    comet_logger.experiment.log_table("train.csv", train)
     comet_logger.experiment.log_table("test.csv", data_module.test)
     
     if not config["use_data_commit"]:
