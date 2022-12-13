@@ -2,7 +2,7 @@
 import copy
 import glob
 import torch
-from src.models import multi_stage
+from src.models import baseline
 from src.data import TreeDataset
 from pytorch_lightning import Trainer
 import pandas as pd
@@ -36,7 +36,7 @@ def predict_unlabeled(config, annotation_df, label_to_taxon_id, m=None):
     new_config["crop_dir"] = new_config["semi_supervised"]["crop_dir"]
         
     if m is None:
-        m = multi_stage.MultiStage.load_from_checkpoint(new_config["semi_supervised"]["model_path"], config=new_config)
+        m = baseline.TreeModel.load_from_checkpoint(new_config["semi_supervised"]["model_path"], config=new_config)
     
     trainer = Trainer(gpus=new_config["gpus"], logger=False, enable_checkpointing=False)
     ds = TreeDataset(df = annotation_df, train=False, config=new_config)
