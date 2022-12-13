@@ -32,19 +32,19 @@ def predict_unlabeled(config, annotation_df, label_to_taxon_id, m=None):
     Returns:
         ensemble_df: ensembled dataframe of predictions
     """
-    config = copy.deepcopy(config)
-    config["crop_dir"] = config["semi_supervised"]["crop_dir"]
+    new_config = copy.deepcopy(config)
+    new_config["crop_dir"] = new_config["semi_supervised"]["crop_dir"]
         
     if m is None:
-        m = multi_stage.MultiStage.load_from_checkpoint(config["semi_supervised"]["model_path"], config=config)
+        m = multi_stage.MultiStage.load_from_checkpoint(new_config["semi_supervised"]["model_path"], config=new_config)
     
-    trainer = Trainer(gpus=config["gpus"], logger=False, enable_checkpointing=False)
-    ds = TreeDataset(df = annotation_df, train=False, config=config)
+    trainer = Trainer(gpus=new_config["gpus"], logger=False, enable_checkpointing=False)
+    ds = TreeDataset(df = annotation_df, train=False, config=new_config)
     data_loader = torch.utils.data.DataLoader(
         ds,
-        batch_size=config["predict_batch_size"],
+        batch_size=new_config["predict_batch_size"],
         shuffle=False,
-        num_workers=config["workers"],
+        num_workers=new_config["workers"],
     )
     
     predictions = trainer.predict(m, dataloaders=data_loader)  
