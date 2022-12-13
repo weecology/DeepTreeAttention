@@ -90,9 +90,9 @@ class TreeModel(LightningModule):
         individual, inputs = batch
         images = inputs["HSI"]        
         y_hat = self.model.forward(images)
-        y_hat = F.softmax(y_hat[-1], dim=1)
+        predicted_class = F.softmax(y_hat[-1], dim=1)
         
-        return y_hat    
+        return predicted_class    
             
     def configure_optimizers(self):
         optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])

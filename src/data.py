@@ -497,6 +497,8 @@ class TreeData(LightningDataModule):
             for index, taxonID in enumerate(unique_species_labels):
                 self.species_label_dict[taxonID] = index
             
+            self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
+            
             #Create dataloaders
             self.train_ds = TreeDataset(
                 csv_file = "{}/train.csv".format(self.data_dir),

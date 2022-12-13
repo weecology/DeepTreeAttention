@@ -16,11 +16,7 @@ def m(dm, config, ROOT):
         
     return m
 
-def test_fit(config, m, dm):
+def test_create_dataframe(config, m, dm):
     config["semi_supervised"]["crop_dir"] = config["crop_dir"]
-    dm.train = semi_supervised.create_dataframe(config, m=m, unlabeled_df=dm.train)
-    trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=0)
-    
-    #Model can be trained and validated
-    trainer.fit(m)
-    metrics = trainer.validate(m)
+    dm.train = semi_supervised.create_dataframe(config, m=m, unlabeled_df=dm.train, label_to_taxon_id=dm.label_to_taxonID)
+    dm.train.shape[0] == config["semi_supervised"]["num_samples"]

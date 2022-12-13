@@ -7,6 +7,7 @@ from src.data import TreeDataset
 from pytorch_lightning import Trainer
 import pandas as pd
 import torch
+import numpy as np
 
 def load_unlabeled_data(config):
     semi_supervised_crops_csvs = glob.glob("{}/*.csv".format(config["semi_supervised"]["crop_dir"]))
@@ -20,7 +21,7 @@ def load_unlabeled_data(config):
     
     return site_semi_supervised_crops
     
-def predict_unlabeled(config, annotation_df, m=None):
+def predict_unlabeled(config, annotation_df, label_to_taxon_id, m=None):
     """Predict unlabaled data with model in memory or loaded from file
     Args:
         config: a DeepTreeAttention config
@@ -43,29 +44,27 @@ def predict_unlabeled(config, annotation_df, m=None):
         num_workers=config["workers"],
     )
     
-    predictions = trainer.predict(m, dataloaders=data_loader)
-    results = m.gather_predictions(predictions)    
-    ensemble_df = m.ensemble(results)
+    predictions = trainer.predict(m, dataloaders=data_loader)  
+    annotation_df["label"] = np.argmax(np.concatenate(predictions, 1),axis=1)
+    annotation_df["score"] = np.max(np.concatenate(predictions, 1),axis=1) 
+    annotation_df["taxonID"] = annotation_df.label.apply(lambda x: label_to_taxon_id[x])
     
-    ensemble_df["taxonID"] = ensemble_df.ensembleTaxonID
-    ensemble_df["label"] = ensemble_df.taxonID.apply(lambda x: m.species_label_dict[x])
-    
-    return ensemble_df
+    return annotation_df
 
 def select_samples(unlabeled_df, ensemble_df, config):
     """Given a unlabeled dataframe, select which samples to include in dataloader"""
-    samples_to_keep = ensemble_df[ensemble_df.ens_score > config["semi_supervised"]["threshold"]].individual
+    samples_to_keep = ensemble_df[ensemble_df.score > config["semi_supervised"]["threshold"]].individual
     unlabeled_df = unlabeled_df[unlabeled_df.individual.isin(samples_to_keep)]
     
     return unlabeled_df
         
-def create_dataframe(config, unlabeled_df=None, m=None):
+def create_dataframe(config, label_to_taxon_id, unlabeled_df=None, m=None):
     """Generate a pytorch dataloader from unlabeled crop data"""
     
     if unlabeled_df is None:
         unlabeled_df = load_unlabeled_data(config)
         
-    ensemble_df = predict_unlabeled(config, unlabeled_df, m=m)
+    ensemble_df = predict_unlabeled(config, unlabeled_df, label_to_taxon_id=label_to_taxon_id, m=m)
     
     # Predict labels for each crop
     selected_df = select_samples(
