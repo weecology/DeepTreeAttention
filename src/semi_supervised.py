@@ -6,6 +6,7 @@ from src.models import multi_stage
 from src.data import TreeDataset
 from pytorch_lightning import Trainer
 import pandas as pd
+import torch
 
 def load_unlabeled_data(config):
     semi_supervised_crops_csvs = glob.glob("{}/*.csv".format(config["semi_supervised"]["crop_dir"]))
@@ -35,7 +36,14 @@ def predict_unlabeled(config, annotation_df, m=None):
     
     trainer = Trainer(gpus=config["gpus"], logger=False, enable_checkpointing=False)
     ds = TreeDataset(df = annotation_df, train=False, config=config)
-    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
+    data_loader = torch.utils.data.DataLoader(
+        ds,
+        batch_size=config["predict_batch_size"],
+        shuffle=False,
+        num_workers=config["workers"],
+    )
+    
+    predictions = trainer.predict(m, dataloaders=data_loader)
     results = m.gather_predictions(predictions)    
     ensemble_df = m.ensemble(results)
     
@@ -51,19 +59,22 @@ def select_samples(unlabeled_df, ensemble_df, config):
     
     return unlabeled_df
         
-def create_dataframe(config, m=None):
+def create_dataframe(config, unlabeled_df=None, m=None):
     """Generate a pytorch dataloader from unlabeled crop data"""
-    site_semi_supervised_crops = load_unlabeled_data(config)
-    ensemble_df = predict_unlabeled(config, site_semi_supervised_crops, m=m)
     
-    #Predict labels for each crop
-    unlabeled_df = select_samples(
-        unlabeled_df=site_semi_supervised_crops,
+    if unlabeled_df is None:
+        unlabeled_df = load_unlabeled_data(config)
+        
+    ensemble_df = predict_unlabeled(config, unlabeled_df, m=m)
+    
+    # Predict labels for each crop
+    selected_df = select_samples(
+        unlabeled_df=unlabeled_df,
         ensemble_df=ensemble_df,
         config=config
     )
     
-    return unlabeled_df
+    return selected_df
 
 
 def create_dataloader(unlabeled_df, config):

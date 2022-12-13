@@ -82,6 +82,17 @@ class TreeModel(LightningModule):
         self.log("val_loss", loss, on_epoch=True)
         
         return loss
+    
+    def predict_step(self, batch, batch_idx):
+        """Train on a loaded dataset
+        """
+        #allow for empty data if data augmentation is generated
+        individual, inputs = batch
+        images = inputs["HSI"]        
+        y_hat = self.model.forward(images)
+        y_hat = F.softmax(y_hat[-1], dim=1)
+        
+        return y_hat    
             
     def configure_optimizers(self):
         optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
