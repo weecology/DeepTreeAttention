@@ -74,22 +74,22 @@ def main():
     
     model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=data_module.num_classes)
             
-    #Loss weight, balanced
-    loss_weight = []
-    for x in data_module.species_label_dict:
-        loss_weight.append(1/train[train.taxonID==x].shape[0])
+    ##Loss weight, balanced
+    #loss_weight = []
+    #for x in data_module.species_label_dict:
+        #loss_weight.append(1/train[train.taxonID==x].shape[0])
         
-    loss_weight = np.array(loss_weight/np.max(loss_weight))
-    #Provide min value
-    loss_weight[loss_weight < 0.5] = 0.5  
+    #loss_weight = np.array(loss_weight/np.max(loss_weight))
+    ##Provide min value
+    #loss_weight[loss_weight < 0.5] = 0.5  
     
-    comet_logger.experiment.log_parameter("loss_weight", loss_weight)
+    #comet_logger.experiment.log_parameter("loss_weight", loss_weight)
     
     m = baseline.TreeModel(
         model=model, 
         config=config,
         classes=data_module.num_classes, 
-        loss_weight=loss_weight,
+        loss_weight=None,
         label_dict=data_module.species_label_dict)
         
     #Create trainer
