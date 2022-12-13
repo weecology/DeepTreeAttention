@@ -56,7 +56,7 @@ class MultiStage(LightningModule):
         if train_mode:
             # Create the hierarchical structure
             self.train_datasets, self.train_dataframes, self.level_label_dicts = self.create_datasets(self.train_df, train=True)
-            self.test_datasets, self.test_dataframes, _ = self.create_datasets(self.test_df, common_species=self.train_dataframes[0].taxonID.unique())
+            self.test_datasets, self.test_dataframes, _ = self.create_datasets(self.test_df, level_label_dicts=self.level_label_dicts)
             
             #Create label dicts
             self.label_to_taxonIDs = []
@@ -98,30 +98,32 @@ class MultiStage(LightningModule):
             if not debug:
                 self.save_hyperparameters()        
             
-    def create_datasets(self, df, train=False, common_species=None):
+    def create_datasets(self, df, level_label_dicts=None, train=False):
         """Create a hierarchical set of dataloaders by splitting into taxonID groups
         train: whether to sample the training labels
-        common_species: list of taxonIDs to include in level 0
+        level_label_dicts: a dictionary mapping taxonID -> labels for each hierarchical level
         """
-        if train == False:
-            if common_species is None:
-                raise AttributeError("train == False, but no taxonIDs were given to set as common species for level 0, use common_species=")
-        
         #Create levels for each year
         ## Level 0     
         datasets = []
         dataframes = []
-        level_label_dicts = []
+        if level_label_dicts is None:
+            level_label_dicts = []
    
         # Level 0, the most common species at each site
         level_0 = df.copy()
         if train:
             common_species = level_0.taxonID.value_counts().reset_index()
             common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]
-            
-        level_label_dicts.append({value:key for key, value in enumerate(common_species)})
-        level_label_dicts[0]["CONIFER"] = len(level_label_dicts[0])
-        level_label_dicts[0]["BROADLEAF"] = len(level_label_dicts[0])        
+        else:
+            common_species = list(level_label_dicts[0].keys())
+                
+        try:
+            level_label_dicts[0]
+        except IndexError:
+            level_label_dicts.append({value:key for key, value in enumerate(common_species)})
+            level_label_dicts[0]["CONIFER"] = len(level_label_dicts[0])
+            level_label_dicts[0]["BROADLEAF"] = len(level_label_dicts[0])        
         
         # Select head and tail classes
         head_classes = level_0[level_0.taxonID.isin(common_species)]
@@ -145,7 +147,11 @@ class MultiStage(LightningModule):
         # Level 1 - CONIFER
         level_1 = df.copy()
         rare_species = [x for x in df.taxonID.unique() if x in needleleaf.values]
-        level_label_dicts.append({value:key for key, value in enumerate(rare_species)})
+        
+        try:
+            level_label_dicts[1]
+        except IndexError:
+            level_label_dicts.append({value:key for key, value in enumerate(rare_species)})
         
         # Select head and tail classes
         tail_classes = level_1[level_1.taxonID.isin(rare_species)]
@@ -160,7 +166,11 @@ class MultiStage(LightningModule):
         # Level 2 - BROADLEAF
         level_2 = df.copy()
         rare_species = [x for x in df.taxonID.unique() if x in broadleaf.values]
-        level_label_dicts.append({value:key for key, value in enumerate(rare_species)})
+        
+        try:
+            level_label_dicts[2]
+        except IndexError:
+            level_label_dicts.append({value:key for key, value in enumerate(rare_species)})
         
         # Select head and tail classes
         level_2 = level_2[level_2.taxonID.isin(rare_species)]

@@ -25,7 +25,6 @@ def test_load(config, dm, m, ROOT, tmpdir):
         len(m.label_to_taxonIDs[index].keys()) == len(level.label.unique())
         len(m.level_label_dicts[index].keys()) == len(level.label.unique())
     
-    
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m)
     
