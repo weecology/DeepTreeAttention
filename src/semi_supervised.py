@@ -6,12 +6,15 @@ from src.models import multi_stage
 from src.data import TreeDataset
 from pytorch_lightning import Trainer
 import pandas as pd
+import geopandas as gpd
 import torch
 import numpy as np
+import random
 
 def load_unlabeled_data(config):
-    semi_supervised_crops_csvs = glob.glob("{}/*.csv".format(config["semi_supervised"]["crop_dir"]))
-    semi_supervised_crops = pd.concat([pd.read_csv(x) for x in semi_supervised_crops_csvs])
+    semi_supervised_crops_csvs = glob.glob("{}/*.shp".format(config["semi_supervised"]["crop_dir"]))
+    random.shuffle(semi_supervised_crops_csvs)
+    semi_supervised_crops = pd.concat([gpd.read_file(x) for x in semi_supervised_crops_csvs[:config["semi_supervised"]["limit_shapefiles"]]])
     if config["semi_supervised"]["site_filter"] is None:
         site_semi_supervised_crops = semi_supervised_crops[semi_supervised_crops.image_path.str.contains(config["semi_supervised"]["site_filter"])]
     else:

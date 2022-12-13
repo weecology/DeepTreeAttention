@@ -102,3 +102,4 @@ semi_supervised:
     num_samples: 500
     model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0df3483cc211460caefb73b6fd369c4b.pt
     threshold: 0.8
+    limit_shapefiles: 5
