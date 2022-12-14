@@ -133,8 +133,8 @@ def main():
                 ypred,
                 labels=taxonlabels,
                 max_categories=len(taxonlabels),
-                file_name="{}.json".format(site),
-                title=site
+                file_name="{}_pretrain.json".format(site),
+                title="{}_pretrain".format(site)
             )
         
         #Log prediction
@@ -206,8 +206,8 @@ def main():
                 ypred,
                 labels=taxonlabels,
                 max_categories=len(taxonlabels),
-                file_name="{}.json".format(site),
-                title=site
+                file_name="{}_finetune.json".format(site),
+                title="{}_finetune".format(site)
             )
         
         #Log prediction
