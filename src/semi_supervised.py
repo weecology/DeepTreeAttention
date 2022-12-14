@@ -15,6 +15,13 @@ def load_unlabeled_data(config):
     semi_supervised_crops_csvs = glob.glob("{}/*.shp".format(config["semi_supervised"]["crop_dir"]))
     random.shuffle(semi_supervised_crops_csvs)
     semi_supervised_crops = pd.concat([gpd.read_file(x) for x in semi_supervised_crops_csvs[:config["semi_supervised"]["limit_shapefiles"]]]).reset_index(drop=True)
+    
+    #if present remove dead trees
+    try:
+        semi_supervised_crops = semi_supervised_crops[semi_supervised_crops.dead_label==0]
+    except:
+        pass
+    
     if config["semi_supervised"]["site_filter"] is None:
         site_semi_supervised_crops = semi_supervised_crops[semi_supervised_crops.image_path.str.contains(config["semi_supervised"]["site_filter"])]
     else:
@@ -55,12 +62,11 @@ def predict_unlabeled(config, annotation_df, label_to_taxon_id, m=None):
     
     return annotation_df
 
-def select_samples(unlabeled_df, ensemble_df, config):
+def select_samples(predicted_samples, config):
     """Given a unlabeled dataframe, select which samples to include in dataloader"""
-    samples_to_keep = ensemble_df[ensemble_df.score > config["semi_supervised"]["threshold"]].individual
-    unlabeled_df = unlabeled_df[unlabeled_df.individual.isin(samples_to_keep)]
+    samples_to_keep = predicted_samples[predicted_samples.score > config["semi_supervised"]["threshold"]]
     
-    return unlabeled_df
+    return samples_to_keep
         
 def create_dataframe(config, label_to_taxon_id, unlabeled_df=None, m=None):
     """Generate a pytorch dataloader from unlabeled crop data"""
@@ -68,12 +74,11 @@ def create_dataframe(config, label_to_taxon_id, unlabeled_df=None, m=None):
     if unlabeled_df is None:
         unlabeled_df = load_unlabeled_data(config)
         
-    ensemble_df = predict_unlabeled(config, unlabeled_df, label_to_taxon_id=label_to_taxon_id, m=m)
+    predicted_samples = predict_unlabeled(config, unlabeled_df, label_to_taxon_id=label_to_taxon_id, m=m)
     
     # Predict labels for each crop
     selected_df = select_samples(
-        unlabeled_df=unlabeled_df,
-        ensemble_df=ensemble_df,
+        predicted_samples=predicted_samples,
         config=config
     )
     
