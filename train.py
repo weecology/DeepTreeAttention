@@ -111,18 +111,12 @@ def main():
     with comet_logger.experiment.context_manager("pretrain"):
         semi_supervised_config = copy.deepcopy(data_module.config)
         semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
-        pretrain_ds = data.TreeDataset(
+        data_module.train_ds = data.TreeDataset(
             df=semi_supervised_train,
             config=semi_supervised_config,
         )
-        
-        pretain_dataloader = torch.utils.data.DataLoader(
-            pretrain_ds,
-            batch_size=data_module.config["batch_size"],
-            shuffle=True,
-            num_workers=data_module.config["workers"],
-        )        
-        trainer.fit(m, datamodule=data_module, train_dataloaders=pretain_dataloader)
+   
+        trainer.fit(m, datamodule=data_module)
     
         #Save model checkpoint
         trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_pretrain.pt".format(comet_logger.experiment.id))
