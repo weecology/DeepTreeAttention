@@ -54,7 +54,7 @@ def main():
     supervised_train = data_module.train.copy()    
     
     #Overwrite train with the semi-supervised crops
-    data_module.train = semi_supervised.create_dataframe(config, label_to_taxon_id=data_module.label_to_taxonID)
+    semi_supervised_train = semi_supervised.create_dataframe(config, label_to_taxon_id=data_module.label_to_taxonID)
     
     if client:
         client.close()
@@ -62,7 +62,7 @@ def main():
     comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(data_module.train))
     comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(data_module.test))
     comet_logger.experiment.log_parameter("num_species",data_module.num_classes)
-    comet_logger.experiment.log_table("train.csv", data_module.train)
+    comet_logger.experiment.log_table("semi_supervised_train.csv", semi_supervised_train)
     comet_logger.experiment.log_table("test.csv", data_module.test)
     
     if not config["use_data_commit"]:
@@ -108,7 +108,18 @@ def main():
         logger=comet_logger)
     
     with comet_logger.experiment.context_manager("pretrain"):
-        trainer.fit(m, datamodule=data_module)
+        pretrain_ds = data.TreeDataset(
+            df=semi_supervised_train,
+            config=self.config,
+        )
+        
+        pretain_dataloader = torch.utils.data.DataLoader(
+            pretrain_ds,
+            batch_size=data_module.config["batch_size"],
+            shuffle=True,
+            num_workers=data_module.config["workers"],
+        )        
+        trainer.fit(m, datamodule=data_module, train_dataloaders=pretain_dataloader)
     
         #Save model checkpoint
         trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_pretrain.pt".format(comet_logger.experiment.id))
