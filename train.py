@@ -105,6 +105,17 @@ def main():
             config=semi_supervised_config,
         )
    
+        ##Loss weight, balanced
+        loss_weight = []
+        for x in data_module.species_label_dict:
+            loss_weight.append(1/semi_supervised_train[semi_supervised_train.taxonID==x].shape[0])
+            
+        loss_weight = np.array(loss_weight/np.max(loss_weight))
+        
+        #Provide min value
+        loss_weight[loss_weight < 0.5] = 0.5  
+        m.loss_weight = torch.tensor(loss_weight, device="cuda", dtype=torch.float)
+        
         trainer.fit(m, datamodule=data_module)
     
         #Save model checkpoint
