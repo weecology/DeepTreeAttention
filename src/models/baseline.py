@@ -184,7 +184,7 @@ class TreeModel(LightningModule):
         
         if train:
             df["label"] = labels
-            df["true_taxa"] = df["label"].apply(lambda x: self.index_to_label[x])            
+            df["taxonID"] = df["label"].apply(lambda x: self.index_to_label[x])            
     
         if return_features:            
             return df, predictions        
