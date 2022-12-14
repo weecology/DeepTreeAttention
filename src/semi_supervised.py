@@ -14,7 +14,7 @@ import random
 def load_unlabeled_data(config):
     semi_supervised_crops_csvs = glob.glob("{}/*.shp".format(config["semi_supervised"]["crop_dir"]))
     random.shuffle(semi_supervised_crops_csvs)
-    semi_supervised_crops = pd.concat([gpd.read_file(x) for x in semi_supervised_crops_csvs[:config["semi_supervised"]["limit_shapefiles"]]]).reset_index(drop=True)
+    semi_supervised_crops = pd.concat([gpd.read_file(x) for x in semi_supervised_crops_csvs[:config["semi_supervised"]["limit_shapefiles"]]])
     
     #if present remove dead trees
     try:
@@ -28,6 +28,9 @@ def load_unlabeled_data(config):
         site_semi_supervised_crops = semi_supervised_crops
     
     site_semi_supervised_crops = site_semi_supervised_crops.head(config["semi_supervised"]["num_samples"])
+    
+    #Reset the index to 0:n_samples
+    site_semi_supervised_crops = site_semi_supervised_crops.reset_index(drop=True)
     
     return site_semi_supervised_crops
     

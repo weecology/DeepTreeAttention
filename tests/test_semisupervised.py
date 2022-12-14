@@ -3,6 +3,7 @@ from pytorch_lightning import Trainer
 from src import semi_supervised
 from src.models import Hang2020, baseline
 import pytest
+import numpy as np
 
 @pytest.fixture()
 def m(dm, config, ROOT):    
@@ -24,6 +25,7 @@ def test_create_dataframe(config, m, dm):
     dm.train = semi_supervised.create_dataframe(config, m=m, unlabeled_df=dm.train, label_to_taxon_id=dm.label_to_taxonID)
     dm.train.shape[0] == config["semi_supervised"]["num_samples"]
     assert all(dm.train.score > config["semi_supervised"]["threshold"])
+    assert all(dm.train.index.values == np.arange(dm.train.shape[0]))
     
 def test_fit(config, m, dm):
     config["semi_supervised"]["crop_dir"] = config["crop_dir"]
