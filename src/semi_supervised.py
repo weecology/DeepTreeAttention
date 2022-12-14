@@ -70,7 +70,7 @@ def select_samples(predicted_samples, config):
     samples_to_keep = predicted_samples[predicted_samples.score > config["semi_supervised"]["threshold"]]
     
     #Optionally balance
-    samples_to_keep = samples_to_keep.groupby("taxonID").apply(lambda x: x.head(config["semi_supervised"]["max_samples_per_class"])).reset_index(drop=True)
+    samples_to_keep = samples_to_keep.groupby("taxonID").apply(lambda x: x.sample(n=config["semi_supervised"]["max_samples_per_class"])).reset_index(drop=True)
     
     return samples_to_keep
         
