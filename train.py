@@ -130,16 +130,23 @@ def main():
         )
     
         rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)    
-        visualize.confusion_matrix(
-            comet_experiment=comet_logger.experiment,
-            results=results,
-            species_label_dict=data_module.species_label_dict,
-            test_crowns=data_module.crowns,
-            test=data_module.test,
-            test_points=data_module.canopy_points,
-            rgb_pool=rgb_pool,
-            name="pretrain",
-        )
+        #Create a per-site confusion matrix by recoding each site as a seperate set of labels
+        for site in results.siteID.unique():
+            site_result = results[results.siteID==site]
+            combined_species = np.unique(site_result[['taxonID', 'ensembleTaxonID']].values)
+            site_labels = {value:key for key, value in enumerate(combined_species)}
+            y = [site_labels[x] for x in site_result.taxonID.values]
+            ypred = [site_labels[x] for x in site_result.ensembleTaxonID.values]
+            taxonlabels = [key for key, value in site_labels.items()]
+            comet_logger.experiment.log_confusion_matrix(
+                y,
+                ypred,
+                labels=taxonlabels,
+                max_categories=len(taxonlabels),
+                file_name="{}.json".format(site),
+                title=site
+            )
+        
         
         #Log prediction
         comet_logger.experiment.log_table("test_predictions.csv", results)
@@ -182,16 +189,22 @@ def main():
         )
     
         rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)    
-        visualize.confusion_matrix(
-            comet_experiment=comet_logger.experiment,
-            results=results,
-            species_label_dict=data_module.species_label_dict,
-            test_crowns=data_module.crowns,
-            test=data_module.test,
-            test_points=data_module.canopy_points,
-            rgb_pool=rgb_pool,
-            name="fine_tune"
-        )
+        #Create a per-site confusion matrix by recoding each site as a seperate set of labels
+        for site in results.siteID.unique():
+            site_result = results[results.siteID==site]
+            combined_species = np.unique(site_result[['taxonID', 'ensembleTaxonID']].values)
+            site_labels = {value:key for key, value in enumerate(combined_species)}
+            y = [site_labels[x] for x in site_result.taxonID.values]
+            ypred = [site_labels[x] for x in site_result.ensembleTaxonID.values]
+            taxonlabels = [key for key, value in site_labels.items()]
+            comet_logger.experiment.log_confusion_matrix(
+                y,
+                ypred,
+                labels=taxonlabels,
+                max_categories=len(taxonlabels),
+                file_name="{}.json".format(site),
+                title=site
+            )
         
         #Log prediction
         comet_logger.experiment.log_table("test_predictions.csv", results)
