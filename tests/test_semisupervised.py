@@ -32,3 +32,7 @@ def test_fit(config, m, dm):
     dm.train = semi_supervised.create_dataframe(config, m=m, unlabeled_df=dm.train, label_to_taxon_id=dm.label_to_taxonID)
     trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=0)
     trainer.fit(m, datamodule=dm)
+    results = m.evaluate_crowns(
+        dm.val_dataloader(),
+        crowns = dm.crowns,
+    )    
