@@ -71,7 +71,7 @@ def main():
     test = data_module.test.copy()
     
     #remove graves
-    train = train[~train.individual.str.contains("graves")].reset_index(drop=True)
+    #train = train[~train.individual.str.contains("graves")].reset_index(drop=True)
     test = test[~test.individual.str.contains("graves")].reset_index(drop=True)
     
     model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=data_module.num_classes)
