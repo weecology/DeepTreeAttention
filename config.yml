@@ -104,3 +104,4 @@ semi_supervised:
     model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ca21358f3114481bba274da96f64c09c.pt
     threshold: 0.8
     limit_shapefiles: 30
+    epochs: 50

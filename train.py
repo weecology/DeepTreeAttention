@@ -59,10 +59,10 @@ def main():
     if client:
         client.close()
     
-    comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(train))
+    comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(data_module.train))
     comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(data_module.test))
     comet_logger.experiment.log_parameter("num_species",data_module.num_classes)
-    comet_logger.experiment.log_table("train.csv", train)
+    comet_logger.experiment.log_table("train.csv", data_module.train)
     comet_logger.experiment.log_table("test.csv", data_module.test)
     
     if not config["use_data_commit"]:
@@ -150,7 +150,7 @@ def main():
         trainer = Trainer(
             gpus=data_module.config["gpus"],
             fast_dev_run=data_module.config["fast_dev_run"],
-            max_epochs=data_module.config["epochs"],
+            max_epochs=data_module.config["semi_supervised"]["epochs"],
             accelerator=data_module.config["accelerator"],
             num_sanity_val_steps=0,
             check_val_every_n_epoch=data_module.config["validation_interval"],
