@@ -18,8 +18,12 @@ def m(dm, config, ROOT):
 
 def test_create_dataframe(config, m, dm):
     config["semi_supervised"]["crop_dir"] = config["crop_dir"]
+    config["semi_supervised"]["threshold"] = 0
+    config["semi_supervised"]["num_samples"] = 5
+    
     dm.train = semi_supervised.create_dataframe(config, m=m, unlabeled_df=dm.train, label_to_taxon_id=dm.label_to_taxonID)
     dm.train.shape[0] == config["semi_supervised"]["num_samples"]
+    assert all(dm.train.score > config["semi_supervised"]["threshold"])
     
 def test_fit(config, m, dm):
     config["semi_supervised"]["crop_dir"] = config["crop_dir"]

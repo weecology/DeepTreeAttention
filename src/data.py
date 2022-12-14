@@ -246,7 +246,10 @@ class TreeDataset(Dataset):
     def __getitem__(self, index):
         inputs = {}
         image_path = self.annotations.image_path.loc[index]      
-        individual = os.path.basename(image_path.split(".tif")[0])
+        try:
+            individual = os.path.basename(image_path.split(".tif")[0])
+        except AttributeError as e:
+            raise AttributeError("image path has no attribute split as a series, {}".format(image_path))
         if self.HSI:
             if self.config["preload_images"]:
                 inputs["HSI"] = self.image_dict[index]
