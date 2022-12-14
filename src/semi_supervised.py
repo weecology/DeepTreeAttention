@@ -27,6 +27,7 @@ def load_unlabeled_data(config):
     else:
         site_semi_supervised_crops = semi_supervised_crops
     
+    site_semi_supervised_crops = site_semi_supervised_crops.sample(frac=1)
     site_semi_supervised_crops = site_semi_supervised_crops.head(config["semi_supervised"]["num_samples"])
     
     #Reset the index to 0:n_samples
@@ -69,8 +70,8 @@ def select_samples(predicted_samples, config):
     """Given a unlabeled dataframe, select which samples to include in dataloader"""
     samples_to_keep = predicted_samples[predicted_samples.score > config["semi_supervised"]["threshold"]]
     
-    #Optionally balance
-    samples_to_keep = samples_to_keep.groupby("taxonID").apply(lambda x: x.sample(n=config["semi_supervised"]["max_samples_per_class"])).reset_index(drop=True)
+    #Optionally balance and limit
+    samples_to_keep = samples_to_keep.groupby("taxonID").apply(lambda x: x.head(config["semi_supervised"]["max_samples_per_class"])).reset_index(drop=True)
     
     return samples_to_keep
         
