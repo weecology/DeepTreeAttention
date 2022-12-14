@@ -22,7 +22,7 @@ def load_unlabeled_data(config):
     except:
         pass
     
-    if config["semi_supervised"]["site_filter"] is None:
+    if config["semi_supervised"]["site_filter"] is not None:
         site_semi_supervised_crops = semi_supervised_crops[semi_supervised_crops.image_path.str.contains(config["semi_supervised"]["site_filter"])]
     else:
         site_semi_supervised_crops = semi_supervised_crops
