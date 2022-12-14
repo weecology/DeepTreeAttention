@@ -67,7 +67,7 @@ lr_4: 0.000005
 
 fast_dev_run: False
 accelerator: auto
-epochs: 10
+epochs: 20
 min_loss_weight: 10
 
 #Evaluation config
@@ -105,4 +105,4 @@ semi_supervised:
     model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ca21358f3114481bba274da96f64c09c.pt
     threshold: 0.8
     limit_shapefiles: 20
-    epochs: 10
+    epochs: 100
