@@ -1,5 +1,6 @@
 #Train
 import comet_ml
+import copy
 import glob
 import geopandas as gpd
 import os
@@ -108,9 +109,11 @@ def main():
         logger=comet_logger)
     
     with comet_logger.experiment.context_manager("pretrain"):
+        semi_supervised_config = copy.deepcopy(data_module.config)
+        semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
         pretrain_ds = data.TreeDataset(
             df=semi_supervised_train,
-            config=self.config,
+            config=,
         )
         
         pretain_dataloader = torch.utils.data.DataLoader(
