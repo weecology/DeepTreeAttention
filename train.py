@@ -127,16 +127,17 @@ def main():
             data_module.val_dataloader(),
             crowns = data_module.crowns,
             experiment=comet_logger.experiment,
+            context="pretrain"
         )
     
         rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)    
         #Create a per-site confusion matrix by recoding each site as a seperate set of labels
         for site in results.siteID.unique():
             site_result = results[results.siteID==site]
-            combined_species = np.unique(site_result[['taxonID', 'ensembleTaxonID']].values)
+            combined_species = np.unique(site_result[['taxonID',"pred_taxa_top1"]].values)
             site_labels = {value:key for key, value in enumerate(combined_species)}
             y = [site_labels[x] for x in site_result.taxonID.values]
-            ypred = [site_labels[x] for x in site_result.ensembleTaxonID.values]
+            ypred = [site_labels[x] for x in site_result.pred_taxa_top1.values]
             taxonlabels = [key for key, value in site_labels.items()]
             comet_logger.experiment.log_confusion_matrix(
                 y,
@@ -146,7 +147,6 @@ def main():
                 file_name="{}.json".format(site),
                 title=site
             )
-        
         
         #Log prediction
         comet_logger.experiment.log_table("test_predictions.csv", results)
@@ -186,16 +186,17 @@ def main():
             data_module.val_dataloader(),
             crowns = data_module.crowns,
             experiment=comet_logger.experiment,
+            context="fine_tune"
         )
     
         rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)    
         #Create a per-site confusion matrix by recoding each site as a seperate set of labels
         for site in results.siteID.unique():
             site_result = results[results.siteID==site]
-            combined_species = np.unique(site_result[['taxonID', 'ensembleTaxonID']].values)
+            combined_species = np.unique(site_result[['taxonID',"pred_taxa_top1"]].values)
             site_labels = {value:key for key, value in enumerate(combined_species)}
-            y = [site_labels[x] for x in site_result.taxonID.values]
-            ypred = [site_labels[x] for x in site_result.ensembleTaxonID.values]
+            y = [site_labels[x] for x in site_result.pred_taxa_top1.values]
+            ypred = [site_labels[x] for x in site_result.taxonID.values]
             taxonlabels = [key for key, value in site_labels.items()]
             comet_logger.experiment.log_confusion_matrix(
                 y,

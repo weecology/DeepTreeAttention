@@ -191,7 +191,7 @@ class TreeModel(LightningModule):
         else:
             return df
     
-    def evaluate_crowns(self, data_loader, crowns, points=None, experiment=None):
+    def evaluate_crowns(self, data_loader, crowns, context=None, points=None, experiment=None):
         """Crown level measure of accuracy
         Args:
             data_loader: TreeData dataset
@@ -236,8 +236,8 @@ class TreeModel(LightningModule):
              })
         
         if experiment:
-            experiment.log_metrics(species_table.set_index("taxonID").accuracy.to_dict(),prefix="accuracy")
-            experiment.log_metrics(species_table.set_index("taxonID").precision.to_dict(),prefix="precision")
+            experiment.log_metrics(species_table.set_index("taxonID").accuracy.to_dict(),prefix="{}_accuracy".format(context))
+            experiment.log_metrics(species_table.set_index("taxonID").precision.to_dict(),prefix="{}_precision".format(context))
                 
         #Log result by site
         if experiment:
@@ -254,8 +254,8 @@ class TreeModel(LightningModule):
                     average="macro",
                     num_classes=self.classes)
                 
-                experiment.log_metric("{}_macro".format(name), site_macro)
-                experiment.log_metric("{}_micro".format(name), site_micro) 
+                experiment.log_metric("{}_{}_macro".format(context, name), site_macro)
+                experiment.log_metric("{}_{}_micro".format(context, name), site_micro) 
                 row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro.numpy()], "Macro Recall": [site_macro.numpy()]})
                 site_data_frame.append(row)
             site_data_frame = pd.concat(site_data_frame)
