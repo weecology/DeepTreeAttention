@@ -76,17 +76,6 @@ def main():
     test = test[~test.individual.str.contains("graves")].reset_index(drop=True)
     
     model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=data_module.num_classes)
-            
-    ##Loss weight, balanced
-    #loss_weight = []
-    #for x in data_module.species_label_dict:
-        #loss_weight.append(1/train[train.taxonID==x].shape[0])
-        
-    #loss_weight = np.array(loss_weight/np.max(loss_weight))
-    ##Provide min value
-    #loss_weight[loss_weight < 0.5] = 0.5  
-    
-    #comet_logger.experiment.log_parameter("loss_weight", loss_weight)
     
     m = baseline.TreeModel(
         model=model, 
@@ -175,6 +164,20 @@ def main():
             logger=comet_logger)
         
         data_module.train = supervised_train
+        
+        ##Loss weight, balanced
+        loss_weight = []
+        for x in data_module.species_label_dict:
+            loss_weight.append(1/supervised_train[supervised_train.taxonID==x].shape[0])
+            
+        loss_weight = np.array(loss_weight/np.max(loss_weight))
+        
+        #Provide min value
+        loss_weight[loss_weight < 0.5] = 0.5  
+        m.loss_weight = torch.tensor(loss_weight, device="cuda", dtype=torch.float)
+        
+        comet_logger.experiment.log_parameter("loss_weight", loss_weight)
+        
         trainer.fit(m, datamodule=data_module)
     
         #Save model checkpoint
@@ -211,7 +214,7 @@ def main():
         comet_logger.experiment.log_table("test_predictions.csv", results)
         
         #Within site confusion
-        site_lists = data_module.train.groupby("label").site.unique()
+        site_lists = data_module.train.groupby("label").siteID.unique()
         within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=site_lists)
         comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
         
