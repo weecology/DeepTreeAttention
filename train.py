@@ -163,8 +163,11 @@ def main():
             enable_checkpointing=False,
             logger=comet_logger)
         
-        data_module.train = supervised_train
-        
+        data_module.train_ds = data.TreeDataset(
+            df=supervised_train,
+            config=data_module.config,
+        )
+                
         ##Loss weight, balanced
         loss_weight = []
         for x in data_module.species_label_dict:
