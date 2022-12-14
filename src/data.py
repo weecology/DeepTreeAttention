@@ -246,8 +246,8 @@ class TreeDataset(Dataset):
     def __getitem__(self, index):
         inputs = {}
         image_path = self.annotations.image_path.loc[index]    
-        basename = os.path.splitext(image_path)[0]
-        individual = os.path.basename(basename)
+        individual = self.annotations.individual.loc[index] 
+        
         if self.HSI:
             if self.config["preload_images"]:
                 inputs["HSI"] = self.image_dict[index]
