@@ -113,7 +113,7 @@ def main():
         semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
         pretrain_ds = data.TreeDataset(
             df=semi_supervised_train,
-            config=,
+            config=semi_supervised_config,
         )
         
         pretain_dataloader = torch.utils.data.DataLoader(
