@@ -127,9 +127,6 @@ def random_crop(config, iteration):
     mask = src.read_masks(1)
     coordx = np.argwhere(mask==255)
     
-    #Project bounds to web mercator
-    #dst_crs = 'EPSG:4326'    
-    
     #Get random coordinate away from edge, try 20 times
     counter=0
     while counter < 20:
@@ -189,7 +186,7 @@ def random_crop(config, iteration):
             basename="CHM")
         
         selected_dict = metadata_dicts[index]
-        selected_dict["bounds"] = orijbounds   
+        selected_dict["bounds"] =  *bounds   
         selected_dict["epsg"] = str(src.crs)
         
         with open(os.path.join(year_dir,"metadata.json"), 'w') as convert_file:
@@ -224,7 +221,7 @@ if __name__ == "__main__":
     
     futures = []
     
-    for x in range(100000):
+    for x in range(100):
         future = client.submit(random_crop, 
                                config=config, 
                                iteration=x)
