@@ -90,7 +90,7 @@ class TreeModel(LightningModule):
                                                          verbose=True,
                                                          patience=8)
                                                                  
-        return {'optimizer':optimizer, "lr_scheduler": {'scheduler': scheduler,"monitor":'val_loss'}}
+        return {'optimizer':optimizer, "lr_scheduler": {'scheduler': scheduler,"monitor":'val_loss',"frequency":self.config["validation_interval"],"interval":"epoch"}}
     
 
     def predict(self,inputs):
