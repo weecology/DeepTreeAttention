@@ -23,7 +23,7 @@ def crop(bounds, sensor_path, savedir = None, basename = None):
     #dst_crs = 'EPSG:4326'
     
     left, bottom, right, top = bounds 
-    src = rasterio.open(sensor_path)        
+    src = rasterio.open(sensor_path, sharing=False)        
     img = src.read(window=rasterio.windows.from_bounds(left, bottom, left, top, transform=src.transform)) 
     res = src.res[0]
     
@@ -123,7 +123,7 @@ def random_crop(config, iteration):
         return None
     
     #Get window, mask out black areas
-    src = rasterio.open(selected_rgb[0])   
+    src = rasterio.open(selected_rgb[0],  sharing=False)   
     mask = src.read_masks(1)
     coordx = np.argwhere(mask==255)
     
@@ -204,7 +204,7 @@ def random_crop(config, iteration):
 
 # Cleanup function to test if geotifs are unique
 def read_bounds(tif_path):
-    src = rasterio.open(tif_path) 
+    src = rasterio.open(tif_path, sharing=False) 
     return src.bounds
     
 if __name__ == "__main__":
