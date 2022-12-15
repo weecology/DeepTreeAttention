@@ -18,6 +18,7 @@ def load_unlabeled_data(config, client=None):
     if client:
         semi_supervised_crops = client.map(gpd.read_file, semi_supervised_crops_csvs)
     
+    semi_supervised_crops = client.gather(semi_supervised_crops)
     semi_supervised_crops = pd.concat(semi_supervised_crops)
     
     #if present remove dead trees
