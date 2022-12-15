@@ -11,10 +11,14 @@ import torch
 import numpy as np
 import random
 
-def load_unlabeled_data(config):
+def load_unlabeled_data(config, client=None):
     semi_supervised_crops_csvs = glob.glob("{}/*.shp".format(config["semi_supervised"]["crop_dir"]))
     random.shuffle(semi_supervised_crops_csvs)
-    semi_supervised_crops = pd.concat([gpd.read_file(x) for x in semi_supervised_crops_csvs[:config["semi_supervised"]["limit_shapefiles"]]])
+    semi_supervised_crops_csvs = semi_supervised_crops_csvs[:config["semi_supervised"]["limit_shapefiles"]]
+    if client:
+        semi_supervised_crops = client.map(semi_supervised_crops_csvs, gpd.read_file)
+    
+    semi_supervised_crops = pd.concat(semi_supervised_crops)
     
     #if present remove dead trees
     try:
@@ -75,11 +79,11 @@ def select_samples(predicted_samples, config):
     
     return samples_to_keep
         
-def create_dataframe(config, label_to_taxon_id, unlabeled_df=None, m=None):
+def create_dataframe(config, label_to_taxon_id, unlabeled_df=None, m=None, client=None):
     """Generate a pytorch dataloader from unlabeled crop data"""
     
     if unlabeled_df is None:
-        unlabeled_df = load_unlabeled_data(config)
+        unlabeled_df = load_unlabeled_data(config, client=client)
         
     predicted_samples = predict_unlabeled(config, unlabeled_df, label_to_taxon_id=label_to_taxon_id, m=m)
     
