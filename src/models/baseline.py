@@ -90,10 +90,9 @@ class TreeModel(LightningModule):
                                                          factor=0.75,
                                                          patience=2,
                                                          verbose=True,
-                                                         threshold=0.0001,
+                                                         threshold=0.001,
                                                          threshold_mode='rel',
                                                          cooldown=0,
-                                                         min_lr=0.0000001,
                                                          eps=1e-08)
                                                                  
         return {'optimizer':optimizer, 'scheduler': scheduler,"monitor":'val_loss',"frequency":self.config["validation_interval"], "interval": "epoch"}
