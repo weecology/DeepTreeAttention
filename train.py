@@ -100,8 +100,7 @@ def main():
         max_epochs=data_module.config["epochs"],
         accelerator=data_module.config["accelerator"],
         num_sanity_val_steps=0,
-        #check_val_every_n_epoch=data_module.config["validation_interval"],
-        val_check_interval=20,
+        check_val_every_n_epoch=data_module.config["validation_interval"],
         callbacks=[lr_monitor],
         enable_checkpointing=False,
         logger=comet_logger)
