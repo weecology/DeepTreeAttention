@@ -55,8 +55,8 @@ def main():
     supervised_train = data_module.train.copy()    
     
     #Overwrite train with the semi-supervised crops
-    client = start_cluster.start(cpus=30, mem_size="6GB")        
-    semi_supervised_train = semi_supervised.create_dataframe(config, label_to_taxon_id=data_module.label_to_taxonID, client=client)
+    #client = start_cluster.start(cpus=30, mem_size="6GB")        
+    #semi_supervised_train = semi_supervised.create_dataframe(config, label_to_taxon_id=data_module.label_to_taxonID, client=client)
     
     if client:
         client.close()
@@ -64,7 +64,7 @@ def main():
     comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(data_module.train))
     comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(data_module.test))
     comet_logger.experiment.log_parameter("num_species",data_module.num_classes)
-    comet_logger.experiment.log_table("semi_supervised_train.csv", semi_supervised_train)
+    #comet_logger.experiment.log_table("semi_supervised_train.csv", semi_supervised_train)
     comet_logger.experiment.log_table("test.csv", data_module.test)
     
     if not config["use_data_commit"]:
