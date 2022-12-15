@@ -101,6 +101,7 @@ def main():
     with comet_logger.experiment.context_manager("pretrain"):
         semi_supervised_config = copy.deepcopy(data_module.config)
         semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
+        semi_supervised_config["preload_images"] = semi_supervised_config["semi_supervised"]["preload_images"]
         data_module.train_ds = data.TreeDataset(
             df=semi_supervised_train,
             config=semi_supervised_config,
