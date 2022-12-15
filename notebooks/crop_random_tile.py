@@ -23,36 +23,33 @@ def crop(bounds, sensor_path, savedir = None, basename = None):
     #dst_crs = 'EPSG:4326'
     
     left, bottom, right, top = bounds 
-    src = rasterio.open(sensor_path, sharing=False)        
-    img = src.read(window=rasterio.windows.from_bounds(left, bottom, left, top, transform=src.transform)) 
-    res = src.res[0]
-    
-    height = (top - bottom)/res
-    width = (right - left)/res   
-    
-    #transform, width, height = calculate_default_transform(
-        #src.crs, dst_crs, width, height,*bounds)
-    
-    if savedir:
-        profile = src.profile
-        profile.update(
-            height=height,
-            width=width,
-            transform=src.transform,
-            crs=src.crs
-        )
-        filename = "{}/{}.tif".format(savedir, basename)
-        with rasterio.open(filename, "w",**profile) as dst:
-            for i in range(1, src.count + 1):
-                reproject(
-                    source=rasterio.band(src, i),
-                    destination=rasterio.band(dst, i),
-                    src_transform=src.transform,
-                    src_crs=src.crs,
-                    dst_transform=src.transform,
-                    dst_crs=src.crs,
-                    resampling=Resampling.nearest)
-            dst.write(img)
+    with rasterio.open(sensor_path, sharing=False) as src:       
+        img = src.read(window=rasterio.windows.from_bounds(left, bottom, left, top, transform=src.transform)) 
+        res = src.res[0]
+        
+        height = (top - bottom)/res
+        width = (right - left)/res   
+        
+        if savedir:
+            profile = src.profile
+            profile.update(
+                height=height,
+                width=width,
+                transform=src.transform,
+                crs=src.crs
+            )
+            filename = "{}/{}.tif".format(savedir, basename)
+            with rasterio.open(filename, "w",**profile) as dst:
+                for i in range(1, src.count + 1):
+                    reproject(
+                        source=rasterio.band(src, i),
+                        destination=rasterio.band(dst, i),
+                        src_transform=src.transform,
+                        src_crs=src.crs,
+                        dst_transform=src.transform,
+                        dst_crs=src.crs,
+                        resampling=Resampling.nearest)
+                dst.write(img)
     if savedir:
         return filename
     else:
