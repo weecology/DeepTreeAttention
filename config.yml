@@ -102,5 +102,5 @@ semi_supervised:
     threshold: 0.8
     limit_shapefiles: 50
     epochs: 100
-    preload_images: False
-    workers: 5
+    preload_images: True
+    workers: 0
