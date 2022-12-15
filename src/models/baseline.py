@@ -102,17 +102,11 @@ class TreeModel(LightningModule):
     def configure_optimizers(self):
         optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                                         mode='min',
-                                                         factor=0.75,
+                                                         factor=0.5,
                                                          patience=8,
-                                                         verbose=True,
-                                                         threshold=0.0001,
-                                                         threshold_mode='rel',
-                                                         cooldown=0,
-                                                         min_lr=0.0000001,
-                                                         eps=1e-08)
+                                                         verbose=True)
                                                                  
-        return {'optimizer':optimizer, 'scheduler': scheduler,"monitor":'val_loss',"frequency":self.config["validation_interval"], "interval": "epoch"}
+        return {'optimizer':optimizer, 'lr_scheduler': {"scheduler":scheduler,"monitor":'val_loss',"frequency":self.config["validation_interval"], "interval": "epoch"}}
     
 
     def predict(self,inputs):
