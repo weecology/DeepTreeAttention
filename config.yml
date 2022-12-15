@@ -60,10 +60,6 @@ bands: 349
 
 #LR for each level x year
 lr: 0.0001
-lr_1: 0.00005
-lr_2: 0.000005
-lr_3: 0.0001
-lr_4: 0.000005
 
 fast_dev_run: False
 accelerator: auto

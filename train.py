@@ -98,76 +98,76 @@ def main():
         enable_checkpointing=False,
         logger=comet_logger)
     
-    with comet_logger.experiment.context_manager("pretrain"):
-        semi_supervised_config = copy.deepcopy(data_module.config)
-        semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
-        semi_supervised_config["preload_images"] = semi_supervised_config["semi_supervised"]["preload_images"]
-        semi_supervised_config["workers"] = semi_supervised_config["semi_supervised"]["workers"]
+    #with comet_logger.experiment.context_manager("pretrain"):
+        #semi_supervised_config = copy.deepcopy(data_module.config)
+        #semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
+        #semi_supervised_config["preload_images"] = semi_supervised_config["semi_supervised"]["preload_images"]
+        #semi_supervised_config["workers"] = semi_supervised_config["semi_supervised"]["workers"]
         
-        data_module.train_ds = data.TreeDataset(
-            df=semi_supervised_train,
-            config=semi_supervised_config,
-        )
+        #data_module.train_ds = data.TreeDataset(
+            #df=semi_supervised_train,
+            #config=semi_supervised_config,
+        #)
    
-        ##Loss weight, balanced
-        loss_weight = []
-        for x in data_module.species_label_dict:
-            count_in_df = semi_supervised_train[semi_supervised_train.taxonID==x].shape[0]
-            if count_in_df == 0:
-                loss_weight.append(0)
-            else:
-                loss_weight.append(1/count_in_df)
+        ###Loss weight, balanced
+        #loss_weight = []
+        #for x in data_module.species_label_dict:
+            #count_in_df = semi_supervised_train[semi_supervised_train.taxonID==x].shape[0]
+            #if count_in_df == 0:
+                #loss_weight.append(0)
+            #else:
+                #loss_weight.append(1/count_in_df)
                             
-        loss_weight = np.array(loss_weight/np.max(loss_weight))
+        #loss_weight = np.array(loss_weight/np.max(loss_weight))
         
-        #Provide min value
-        loss_weight[loss_weight < 0.5] = 0.5  
-        m.loss_weight = torch.tensor(loss_weight, device="cuda", dtype=torch.float)
+        ##Provide min value
+        #loss_weight[loss_weight < 0.5] = 0.5  
+        #m.loss_weight = torch.tensor(loss_weight, device="cuda", dtype=torch.float)
         
-        trainer.fit(m, datamodule=data_module)
+        #trainer.fit(m, datamodule=data_module)
     
-        #Save model checkpoint
-        trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_pretrain.pt".format(comet_logger.experiment.id))
-        torch.save(m.model.state_dict(), "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_pretain_state_dict.pt".format(comet_logger.experiment.id))
+        ##Save model checkpoint
+        #trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_pretrain.pt".format(comet_logger.experiment.id))
+        #torch.save(m.model.state_dict(), "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_pretain_state_dict.pt".format(comet_logger.experiment.id))
         
-        # Prediction datasets are indexed by year, but full data is given to each model before ensembling
-        results = m.evaluate_crowns(
-            data_module.val_dataloader(),
-            crowns = data_module.crowns,
-            experiment=comet_logger.experiment,
-            context="pretrain"
-        )
+        ## Prediction datasets are indexed by year, but full data is given to each model before ensembling
+        #results = m.evaluate_crowns(
+            #data_module.val_dataloader(),
+            #crowns = data_module.crowns,
+            #experiment=comet_logger.experiment,
+            #context="pretrain"
+        #)
     
-        rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)    
-        #Create a per-site confusion matrix by recoding each site as a seperate set of labels
-        for site in results.siteID.unique():
-            site_result = results[results.siteID==site]
-            combined_species = np.unique(site_result[['taxonID',"pred_taxa_top1"]].values)
-            site_labels = {value:key for key, value in enumerate(combined_species)}
-            y = [site_labels[x] for x in site_result.taxonID.values]
-            ypred = [site_labels[x] for x in site_result.pred_taxa_top1.values]
-            taxonlabels = [key for key, value in site_labels.items()]
-            comet_logger.experiment.log_confusion_matrix(
-                y,
-                ypred,
-                labels=taxonlabels,
-                max_categories=len(taxonlabels),
-                file_name="{}_pretrain.json".format(site),
-                title="{}_pretrain".format(site)
-            )
+        #rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)    
+        ##Create a per-site confusion matrix by recoding each site as a seperate set of labels
+        #for site in results.siteID.unique():
+            #site_result = results[results.siteID==site]
+            #combined_species = np.unique(site_result[['taxonID',"pred_taxa_top1"]].values)
+            #site_labels = {value:key for key, value in enumerate(combined_species)}
+            #y = [site_labels[x] for x in site_result.taxonID.values]
+            #ypred = [site_labels[x] for x in site_result.pred_taxa_top1.values]
+            #taxonlabels = [key for key, value in site_labels.items()]
+            #comet_logger.experiment.log_confusion_matrix(
+                #y,
+                #ypred,
+                #labels=taxonlabels,
+                #max_categories=len(taxonlabels),
+                #file_name="{}_pretrain.json".format(site),
+                #title="{}_pretrain".format(site)
+            #)
         
-        #Log prediction
-        comet_logger.experiment.log_table("test_predictions.csv", results)
+        ##Log prediction
+        #comet_logger.experiment.log_table("test_predictions.csv", results)
         
-        #Within site confusion
-        site_lists = data_module.train.groupby("label").siteID.unique()
-        within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=site_lists)
-        comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
+        ##Within site confusion
+        #site_lists = data_module.train.groupby("label").siteID.unique()
+        #within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=site_lists)
+        #comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
         
-        #Within plot confusion
-        plot_lists = data_module.train.groupby("label").plotID.unique()
-        within_plot_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=plot_lists)
-        comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)
+        ##Within plot confusion
+        #plot_lists = data_module.train.groupby("label").plotID.unique()
+        #within_plot_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=plot_lists)
+        #comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)
     
     # Fine-tune supervised labels
     with comet_logger.experiment.context_manager("fine_tune"):
