@@ -67,7 +67,7 @@ lr_4: 0.000005
 
 fast_dev_run: False
 accelerator: auto
-epochs: 1
+epochs: 20
 min_loss_weight: 10
 
 #Evaluation config
@@ -100,10 +100,12 @@ dead:
 semi_supervised:
     crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
     site_filter: JERC
-    num_samples: 100
+    num_samples: 1000000
     max_samples_per_class: 5000
     model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ca21358f3114481bba274da96f64c09c.pt
     threshold: 0.8
+    limit_shapefiles: 50
+    epochs: 100
     limit_shapefiles: 1
     epochs: 1
     preload_images: False
