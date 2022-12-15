@@ -174,7 +174,7 @@ def main():
         trainer = Trainer(
             gpus=data_module.config["gpus"],
             fast_dev_run=data_module.config["fast_dev_run"],
-            max_epochs=data_module.config["semi_supervised"]["epochs"],
+            max_epochs=data_module.config["epochs"],
             accelerator=data_module.config["accelerator"],
             num_sanity_val_steps=0,
             check_val_every_n_epoch=data_module.config["validation_interval"],

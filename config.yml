@@ -67,13 +67,13 @@ lr_4: 0.000005
 
 fast_dev_run: False
 accelerator: auto
-epochs: 20
+epochs: 150
 min_loss_weight: 10
 
 #Evaluation config
 #Top k class recall score
 top_k: 4
-validation_interval: 10
+validation_interval: 2
 #Number of individuals to plot in comet graphics tab
 plot_n_individuals: 0
 
@@ -106,7 +106,5 @@ semi_supervised:
     threshold: 0.8
     limit_shapefiles: 50
     epochs: 100
-    limit_shapefiles: 1
-    epochs: 1
     preload_images: False
     workers: 5
