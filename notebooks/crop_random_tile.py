@@ -186,7 +186,7 @@ def random_crop(config, iteration):
             basename="CHM")
         
         selected_dict = metadata_dicts[index]
-        selected_dict["bounds"] =  *bounds   
+        selected_dict["bounds"] =  bounds   
         selected_dict["epsg"] = str(src.crs)
         
         with open(os.path.join(year_dir,"metadata.json"), 'w') as convert_file:
