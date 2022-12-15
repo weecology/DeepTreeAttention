@@ -55,7 +55,8 @@ def main():
     supervised_train = data_module.train.copy()    
     
     #Overwrite train with the semi-supervised crops
-    semi_supervised_train = semi_supervised.create_dataframe(config, label_to_taxon_id=data_module.label_to_taxonID)
+    client = start_cluster.start(cpus=30, mem_size="6GB")        
+    semi_supervised_train = semi_supervised.create_dataframe(config, label_to_taxon_id=data_module.label_to_taxonID, client=client)
     
     if client:
         client.close()
@@ -108,8 +109,12 @@ def main():
         ##Loss weight, balanced
         loss_weight = []
         for x in data_module.species_label_dict:
-            loss_weight.append(1/semi_supervised_train[semi_supervised_train.taxonID==x].shape[0])
-            
+            count_in_df = semi_supervised_train[semi_supervised_train.taxonID==x].shape[0]
+            if count_in_df == 0:
+                loss_weight.append(0)
+            else:
+                loss_weight.append(1/count_in_df)
+                            
         loss_weight = np.array(loss_weight/np.max(loss_weight))
         
         #Provide min value
