@@ -16,7 +16,7 @@ def load_unlabeled_data(config, client=None):
     random.shuffle(semi_supervised_crops_csvs)
     semi_supervised_crops_csvs = semi_supervised_crops_csvs[:config["semi_supervised"]["limit_shapefiles"]]
     if client:
-        semi_supervised_crops = client.map(semi_supervised_crops_csvs, gpd.read_file)
+        semi_supervised_crops = client.map(gpd.read_file, semi_supervised_crops_csvs)
     
     semi_supervised_crops = pd.concat(semi_supervised_crops)
     
