@@ -12,7 +12,7 @@ import random
 import re
 import numpy as np
 from rasterio.windows import Window
-from distributed import wait
+from distributed import wait, Client
 import pandas as pd
 import h5py
 import json
@@ -208,7 +208,8 @@ def read_bounds(tif_path):
     return src.bounds
     
 if __name__ == "__main__":
-    client = start(cpus=80, mem_size = "25GB")    
+    #client = start(cpus=80, mem_size = "25GB")    
+    #client = Client()
     config = read_config("config.yml")    
     rgb_pool = glob.glob("/orange/ewhite/NeonData/*/DP3.30010.001/**/Camera/**/*.tif", recursive=True)
     rgb_pool = [x for x in rgb_pool if not "classified" in x]
@@ -226,7 +227,7 @@ if __name__ == "__main__":
     
     futures = []
     
-    for x in range(100):
+    for x in range(1000):
         random_crop(config, iteration=x)
     
     #for x in range(100):
@@ -255,8 +256,9 @@ if __name__ == "__main__":
 
     # Check if RGB images are unique
     files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/**/RGB.tif",recursive=True)
-    futures = client.map(read_bounds, files)
-    bounds = client.gather(futures)
+    #futures = client.map(read_bounds, files)
+    #bounds = client.gather(futures)
+    bounds = [read_bounds(x) for x in files]
     df = pd.DataFrame({"bounds":bounds,"path":files})
     tif_bounds = df.bounds.value_counts().reset_index(name="rgb_tif_bounds")
     duplicate_images = tif_bounds[tif_bounds.rgb_tif_bounds > 3]
