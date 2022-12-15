@@ -202,6 +202,11 @@ def random_crop(config, iteration):
             savedir=year_dir,
             basename="HSI")
 
+# Cleanup function to test if geotifs are unique
+def read_bounds(tif_path):
+    src = rasterio.open(tif_path) 
+    return src.bounds
+    
 if __name__ == "__main__":
     client = start(cpus=80, mem_size = "25GB")    
     config = read_config("config.yml")    
@@ -243,3 +248,15 @@ if __name__ == "__main__":
     to_remove = less_than_3[less_than_3.geo < 3].geo_index
     for x in counts[counts.basename.isin(to_remove)].path:
         os.remove(x)
+
+
+    # Check if RGB images are unique
+    files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/**/RGB.tif",recursive=True)
+    futures = client.map(read_bounds, files)
+    bounds = client.gather(futures)
+    df = pd.DataFrame({"bounds":bounds,"path":files})
+    tif_bounds = df.bounds.value_counts().reset_index(name="rgb_tif_bounds")
+    duplicate_images = tif_bounds[tif_bounds.rgb_tif_bounds > 3].rgb_tif_bounds
+    print(duplicate_images.shape)    
+    to_remove = df[df.bounds.isin(tif_bounds)]
+    print(to_remove)
