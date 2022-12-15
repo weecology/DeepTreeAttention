@@ -106,3 +106,4 @@ semi_supervised:
     threshold: 0.8
     limit_shapefiles: 1
     epochs: 1
+    preload_images: False
