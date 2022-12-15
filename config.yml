@@ -107,3 +107,4 @@ semi_supervised:
     limit_shapefiles: 1
     epochs: 1
     preload_images: False
+    workers: 5

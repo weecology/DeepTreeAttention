@@ -102,6 +102,8 @@ def main():
         semi_supervised_config = copy.deepcopy(data_module.config)
         semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
         semi_supervised_config["preload_images"] = semi_supervised_config["semi_supervised"]["preload_images"]
+        semi_supervised_config["workers"] = semi_supervised_config["semi_supervised"]["workers"]
+        
         data_module.train_ds = data.TreeDataset(
             df=semi_supervised_train,
             config=semi_supervised_config,
