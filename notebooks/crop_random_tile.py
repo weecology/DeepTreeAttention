@@ -227,18 +227,21 @@ if __name__ == "__main__":
     futures = []
     
     for x in range(100):
-        future = client.submit(random_crop, 
-                               config=config, 
-                               iteration=x)
-        futures.append(future)
+        random_crop(config, iteration=x)
     
-    wait(futures)
+    #for x in range(100):
+        #future = client.submit(random_crop, 
+                               #config=config, 
+                               #iteration=x)
+        #futures.append(future)
     
-    for x in futures:
-        try:
-            x.result()
-        except Exception as e:
-            print(e)
+    #wait(futures)
+    
+    #for x in futures:
+        #try:
+            #x.result()
+        #except Exception as e:
+            #print(e)
             
     # post process cleanup
     files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/**/*.tif",recursive=True)
@@ -256,7 +259,7 @@ if __name__ == "__main__":
     bounds = client.gather(futures)
     df = pd.DataFrame({"bounds":bounds,"path":files})
     tif_bounds = df.bounds.value_counts().reset_index(name="rgb_tif_bounds")
-    duplicate_images = tif_bounds[tif_bounds.rgb_tif_bounds > 3].rgb_tif_bounds
+    duplicate_images = tif_bounds[tif_bounds.rgb_tif_bounds > 3]
     print(duplicate_images.shape)    
-    to_remove = df[df.bounds.isin(tif_bounds)]
+    to_remove = df[df.bounds.isin(duplicate_images["index"])]
     print(to_remove)
