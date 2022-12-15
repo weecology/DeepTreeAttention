@@ -75,6 +75,7 @@ min_loss_weight: 10
 top_k: 4
 #Number of individuals to plot in comet graphics tab
 plot_n_individuals: 0
+validation_interval: 1
 
 #Predict
 predict_batch_size: 64
