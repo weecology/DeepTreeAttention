@@ -24,7 +24,7 @@ def crop(bounds, sensor_path, savedir = None, basename = None):
     
     left, bottom, right, top = bounds 
     with rasterio.open(sensor_path, sharing=False) as src:       
-        window=rasterio.windows.from_bounds(left, bottom, left, top, transform=src.transform)
+        window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform)
         img = src.read(window=window) 
         window_transform = src.window_transform(window)        
         res = src.res[0]
