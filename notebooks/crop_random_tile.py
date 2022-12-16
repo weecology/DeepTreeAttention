@@ -175,7 +175,7 @@ def random_crop(config, iteration):
             bounds=bounds,
             sensor_path=tile,
             savedir=year_dir,
-            basename="RGB_{}_{}".format(bounds[0], bounds[1]))
+            basename="RGB")
     
     #Crop CHM
     for index, tile in enumerate(selected_chm):
@@ -185,7 +185,7 @@ def random_crop(config, iteration):
             bounds=bounds,
             sensor_path=tile,
             savedir=year_dir,
-            basename="CHM_{}_{}".format(bounds[0], bounds[1]))
+            basename="CHM")
         
         selected_dict = metadata_dicts[index]
         selected_dict["bounds"] =  bounds   
@@ -202,7 +202,7 @@ def random_crop(config, iteration):
             bounds=bounds,
             sensor_path=tile,
             savedir=year_dir,
-            basename="HSI_{}_{}".format(bounds[0], bounds[1]))
+            basename="HSI")
 
 # Cleanup function to test if geotifs are unique
 def read_bounds(tif_path):
@@ -210,8 +210,8 @@ def read_bounds(tif_path):
     return src.bounds
     
 if __name__ == "__main__":
-    #client = start(cpus=80, mem_size = "25GB")    
-    #client = Client()
+    client = start(cpus=80, mem_size = "25GB")    
+    client = Client()
     config = read_config("config.yml")    
     rgb_pool = glob.glob("/orange/ewhite/NeonData/*/DP3.30010.001/**/Camera/**/*.tif", recursive=True)
     rgb_pool = [x for x in rgb_pool if not "classified" in x]
@@ -230,21 +230,18 @@ if __name__ == "__main__":
     futures = []
     
     for x in range(1000):
-        random_crop(config, iteration=x)
+        future = client.submit(random_crop, 
+                               config=config, 
+                               iteration=x)
+        futures.append(future)
     
-    #for x in range(100):
-        #future = client.submit(random_crop, 
-                               #config=config, 
-                               #iteration=x)
-        #futures.append(future)
+    wait(futures)
     
-    #wait(futures)
-    
-    #for x in futures:
-        #try:
-            #x.result()
-        #except Exception as e:
-            #print(e)
+    for x in futures:
+        try:
+            x.result()
+        except Exception as e:
+            print(e)
             
     # post process cleanup
     files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/**/*.tif",recursive=True)
