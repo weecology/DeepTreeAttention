@@ -24,7 +24,9 @@ def crop(bounds, sensor_path, savedir = None, basename = None):
     
     left, bottom, right, top = bounds 
     with rasterio.open(sensor_path, sharing=False) as src:       
-        img = src.read(window=rasterio.windows.from_bounds(left, bottom, left, top, transform=src.transform)) 
+        window=rasterio.windows.from_bounds(left, bottom, left, top, transform=src.transform)
+        img = src.read(window=window) 
+        window_transform = src.window_transform(window)        
         res = src.res[0]
         
         height = (top - bottom)/res
@@ -35,21 +37,24 @@ def crop(bounds, sensor_path, savedir = None, basename = None):
             profile.update(
                 height=height,
                 width=width,
-                transform=src.transform,
+                transform=window_transform,
                 crs=src.crs
             )
             filename = "{}/{}.tif".format(savedir, basename)
             with rasterio.open(filename, "w",**profile) as dst:
-                for i in range(1, src.count + 1):
-                    reproject(
-                        source=rasterio.band(src, i),
-                        destination=rasterio.band(dst, i),
-                        src_transform=src.transform,
-                        src_crs=src.crs,
-                        dst_transform=src.transform,
-                        dst_crs=src.crs,
-                        resampling=Resampling.nearest)
                 dst.write(img)
+            
+            #with rasterio.open(filename, "w",**profile) as dst:
+                #for i in range(1, src.count + 1):
+                    #reproject(
+                        #source=rasterio.band(src, i),
+                        #destination=rasterio.band(dst, i),
+                        #src_transform=src.transform,
+                        #src_crs=src.crs,
+                        #dst_transform=src.transform,
+                        #dst_crs=src.crs,
+                        #resampling=Resampling.nearest)
+                #dst.write(img)
     if savedir:
         return filename
     else:
@@ -170,7 +175,7 @@ def random_crop(config, iteration):
             bounds=bounds,
             sensor_path=tile,
             savedir=year_dir,
-            basename="RGB")
+            basename="RGB_{}_{}".format(bounds[0], bounds[1]))
     
     #Crop CHM
     for index, tile in enumerate(selected_chm):
@@ -180,7 +185,7 @@ def random_crop(config, iteration):
             bounds=bounds,
             sensor_path=tile,
             savedir=year_dir,
-            basename="CHM")
+            basename="CHM_{}_{}".format(bounds[0], bounds[1]))
         
         selected_dict = metadata_dicts[index]
         selected_dict["bounds"] =  bounds   
@@ -197,7 +202,7 @@ def random_crop(config, iteration):
             bounds=bounds,
             sensor_path=tile,
             savedir=year_dir,
-            basename="HSI")
+            basename="HSI_{}_{}".format(bounds[0], bounds[1]))
 
 # Cleanup function to test if geotifs are unique
 def read_bounds(tif_path):
