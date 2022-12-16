@@ -43,18 +43,6 @@ def crop(bounds, sensor_path, savedir = None, basename = None):
             filename = "{}/{}.tif".format(savedir, basename)
             with rasterio.open(filename, "w",**profile) as dst:
                 dst.write(img)
-            
-            #with rasterio.open(filename, "w",**profile) as dst:
-                #for i in range(1, src.count + 1):
-                    #reproject(
-                        #source=rasterio.band(src, i),
-                        #destination=rasterio.band(dst, i),
-                        #src_transform=src.transform,
-                        #src_crs=src.crs,
-                        #dst_transform=src.transform,
-                        #dst_crs=src.crs,
-                        #resampling=Resampling.nearest)
-                #dst.write(img)
     if savedir:
         return filename
     else:
@@ -211,7 +199,6 @@ def read_bounds(tif_path):
     
 if __name__ == "__main__":
     client = start(cpus=80, mem_size = "25GB")    
-    client = Client()
     config = read_config("config.yml")    
     rgb_pool = glob.glob("/orange/ewhite/NeonData/*/DP3.30010.001/**/Camera/**/*.tif", recursive=True)
     rgb_pool = [x for x in rgb_pool if not "classified" in x]
