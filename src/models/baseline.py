@@ -36,6 +36,9 @@ class TreeModel(LightningModule):
         for x in label_dict:
             self.index_to_label[label_dict[x]] = x 
         
+        # Unsupervised versus supervised loss weight
+        self.alpha = nn.Parameter(torch.tensor(0.5, dtype=float), requires_grad=True)
+        
         #Create model 
         self.model = model
         
@@ -62,7 +65,33 @@ class TreeModel(LightningModule):
                 self.loss_weight = torch.ones((classes))    
         except:
             pass
-            
+    
+    def train_dataloader(self):
+        
+        
+        #labeled 
+        data_loader = torch.utils.data.DataLoader(
+            self.train_ds,
+            batch_size=self.config["batch_size"],
+            shuffle=True,
+            num_workers=self.config["workers"],
+        )
+        
+        #Unlabeled
+        
+        
+        return data_loader
+    
+    def val_dataloader(self):
+        data_loader = torch.utils.data.DataLoader(
+            self.val_ds,
+            batch_size=self.config["batch_size"],
+            shuffle=False,
+            num_workers=self.config["workers"],
+        )
+        
+        return data_loader
+    
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
         """
@@ -70,8 +99,14 @@ class TreeModel(LightningModule):
         individual, inputs, y = batch
         images = inputs["HSI"]
         y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)    
-
+        
+        supervised_loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)    
+        unsupervised_loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)    
+        
+        self.log("supervised_loss",supervised_loss)
+        self.log("unsupervised_loss", unsupervised_loss)
+        loss = supervised_loss + self.alpha * unsupervised_loss 
+        
         return loss
     
     def validation_step(self, batch, batch_idx):
