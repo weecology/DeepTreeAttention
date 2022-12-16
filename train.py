@@ -55,7 +55,7 @@ def main():
     supervised_train = data_module.train.copy()    
     
     #Overwrite train with the semi-supervised crops
-    client = start_cluster.start(cpus=30, mem_size="6GB")        
+    client = start_cluster.start(cpus=4, mem_size="6GB")        
     semi_supervised_train = semi_supervised.create_dataframe(config, label_to_taxon_id=data_module.label_to_taxonID, client=client)
     
     if client:

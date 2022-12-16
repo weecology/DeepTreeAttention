@@ -104,7 +104,7 @@ class TreeModel(LightningModule):
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                          factor=0.75,
                                                          patience=5,
-                                                         min_lr=0.00001,
+                                                         min_lr=0.000001,
                                                          verbose=True)
                                                                  
         return {'optimizer':optimizer, 'lr_scheduler': {"scheduler":scheduler,"monitor":'val_loss',"frequency":self.config["validation_interval"], "interval": "epoch"}}
