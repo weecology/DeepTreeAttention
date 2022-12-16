@@ -98,7 +98,7 @@ semi_supervised:
     site_filter: JERC
     num_samples: 1000000
     max_samples_per_class: 5000
-    model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ca21358f3114481bba274da96f64c09c.pt
+    model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/04261eccc11d4a04bde5865ffc298dbf.pt
     threshold: 0.8
     limit_shapefiles: 50
     epochs: 100
