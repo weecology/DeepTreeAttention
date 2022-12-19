@@ -254,18 +254,20 @@ if __name__ == "__main__":
     print(to_remove)
     
     #make sure each folder has RGB, CHM and HSI.tif
-    dirs = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/*/*",recursive=True)
-    
-    for d in dirs:
-        if not os.path.exists("{}/RGB.tif".format(d)):
-            dirname = os.path.dirname(d)
-            shutil.rmtree(d)
-        if not os.path.exists("{}/CHM.tif".format(d)):
-            dirname = os.path.dirname(d)
-            shutil.rmtree(d)            
-        if not os.path.exists("{}/HSI.tif".format(d)):
-            dirname = os.path.dirname(d)
-            shutil.rmtree(d)            
+dirs = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/*/*",recursive=True)
+
+for d in dirs:
+    if not os.path.exists("{}/RGB.tif".format(d)):
+        dirname = os.path.dirname(d)
+        shutil.rmtree(d)
+        continue
+    if not os.path.exists("{}/CHM.tif".format(d)):
+        dirname = os.path.dirname(d)
+        shutil.rmtree(d)        
+        continue
+    if not os.path.exists("{}/HSI.tif".format(d)):
+        dirname = os.path.dirname(d)
+        shutil.rmtree(d)            
             
         
     
