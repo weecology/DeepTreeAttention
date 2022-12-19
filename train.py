@@ -78,6 +78,8 @@ def main():
         config=config,
         classes=data_module.num_classes, 
         loss_weight=None,
+        supervised_test=data_module.test,
+        supervised_train=data_module.train,
         label_dict=data_module.species_label_dict)
         
     #Create trainer
