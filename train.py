@@ -105,7 +105,7 @@ def main():
             #loss_weight.append(1/count_in_df)
                         
     #loss_weight = np.array(loss_weight/np.max(loss_weight))
-    trainer.fit(m, datamodule=data_module)
+    trainer.fit(m)
 
     #Save model checkpoint
     trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pt".format(comet_logger.experiment.id))
