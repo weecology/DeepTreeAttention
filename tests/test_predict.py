@@ -12,8 +12,9 @@ from pytorch_lightning import Trainer
 #Training module
 @pytest.fixture()
 def species_model_path(config, dm, ROOT, tmpdir):
-    config["batch_size"] = 16    
-    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)    
+    config["batch_size"] = 16  
+    taxonomic_csv = "{}/data/raw/families.csv".format(ROOT)                
+    m  = multi_stage.MultiStage(train_df=dm.train.reset_index(drop=True), test_df=dm.test.reset_index(drop=True), config=config, taxonomic_csv=taxonomic_csv)    
     m.ROOT = "{}/tests/".format(ROOT)
     trainer = Trainer(fast_dev_run=True)
     trainer.fit(m)

@@ -70,8 +70,11 @@ def generate_prediction_crops(crowns, config, client=None, as_numpy=True):
     rgb_path = crown_annotations.RGB_tile.unique()[0]
     basename = os.path.splitext(os.path.basename(rgb_path))[0]         
     crown_annotations = gpd.GeoDataFrame(crown_annotations, geometry="geometry")    
-    crown_annotations = crown_annotations.merge(crowns[["individual","dead_label","dead_score"]])
-    
+    try:
+        crown_annotations = crown_annotations.merge(crowns[["individual","dead_label","dead_score"]])
+    except:
+        crown_annotations = crown_annotations.merge(crowns[["individual"]])
+        
     crown_annotations.to_file("{}/{}.shp".format(config["prediction_crop_dir"],basename))  
     
     return "{}/{}.shp".format(config["prediction_crop_dir"], basename)

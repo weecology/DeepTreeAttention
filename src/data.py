@@ -443,6 +443,8 @@ class TreeData(LightningDataModule):
             self.train["label"] = self.train.taxonID.apply(lambda x: self.species_label_dict[x])            
             self.test["label"] = self.test.taxonID.apply(lambda x: self.species_label_dict[x])
             
+            #Make sure index is 0 indexde
+            
             self.train.to_csv("{}/train.csv".format(self.data_dir), index=False)            
             self.test.to_csv("{}/test.csv".format(self.data_dir), index=False)
             
@@ -473,6 +475,9 @@ class TreeData(LightningDataModule):
             print("Loading previous run")            
             self.train = pd.read_csv("{}/train.csv".format(self.data_dir))
             self.test = pd.read_csv("{}/test.csv".format(self.data_dir))
+            
+            self.train = self.train.reset_index(drop=True)
+            self.test = self.test.reset_index(drop=True)
             
             try:
                 self.train["individual"] = self.train["individualID"]
