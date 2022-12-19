@@ -220,9 +220,9 @@ class TreeDataset(Dataset):
     """
     def __init__(self, csv_file=None, df=None, config=None, train=True, HSI=True, metadata=False):
         if df is None:
-            self.annotations = pd.read_csv(csv_file)
+            self.annotations = pd.read_csv(csv_file).reset_index(drop=True)
         else:
-            self.annotations = df
+            self.annotations = df.reset_index(drop=True)
         self.train = train
         self.HSI = HSI
         self.metadata = metadata

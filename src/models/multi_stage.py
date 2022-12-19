@@ -1,11 +1,9 @@
 #Multiple stage model
 from src.models.year import learned_ensemble
 from src.data import TreeDataset
-from src import utils
 
 from pytorch_lightning import LightningModule
 import pandas as pd
-import math
 import numpy as np
 from torch.nn import Module
 from torch.nn import functional as F
@@ -56,12 +54,20 @@ class MultiStage(LightningModule):
             pass
         
         if train_mode:
-            self.train_datasets, self.test_datasets = self.create_datasets()
+            # Create the hierarchical structure
+            self.train_datasets, self.train_dataframes, self.level_label_dicts = self.create_datasets(self.train_df, train=True)
+            self.test_datasets, self.test_dataframes, _ = self.create_datasets(self.test_df, level_label_dicts=self.level_label_dicts)
+            
+            #Create label dicts
+            self.label_to_taxonIDs = []
+            for x in self.level_label_dicts:
+                self.label_to_taxonIDs.append({v: k  for k, v in x.items()})
+            
             self.levels = len(self.train_datasets)       
             
             #Generate metrics for each class level
             self.level_metrics = nn.ModuleDict()
-            for level in self.level_id:
+            for level, ds in enumerate(self.test_datasets):
                 taxon_level_labels = list(self.level_label_dicts[level].keys())
                 num_classes = len(self.level_label_dicts[level])
                 level_metric = MetricCollection({       
@@ -71,9 +77,9 @@ class MultiStage(LightningModule):
                 self.level_metrics["level_{}".format(level)] = level_metric
 
             self.classes = len(self.train_df.label.unique())
-            for index, ds in enumerate([self.level_0_train, self.level_1_train, self.level_2_train]): 
+            for index, ds in enumerate(self.train_dataframes): 
                 labels = ds.label
-                classes = self.num_classes[index]
+                classes = len(ds.label.unique())
                 base = base_model(classes=classes, years=len(self.years), config=self.config)
                 self.models.append(base)            
                 loss_weight = []
@@ -92,28 +98,38 @@ class MultiStage(LightningModule):
             if not debug:
                 self.save_hyperparameters()        
             
-    def create_datasets(self):
+    def create_datasets(self, df, level_label_dicts=None, train=False):
+        """Create a hierarchical set of dataloaders by splitting into taxonID groups
+        train: whether to sample the training labels
+        level_label_dicts: a dictionary mapping taxonID -> labels for each hierarchical level
+        """
         #Create levels for each year
         ## Level 0     
-        train_datasets = []
-        test_datasets = []
-        self.num_classes = []
-        self.level_id = []
+        datasets = []
+        dataframes = []
+        if level_label_dicts is None:
+            level_label_dicts = []
    
         # Level 0, the most common species at each site
-        self.level_0_train = self.train_df.copy()
-        common_species = self.level_0_train.taxonID.value_counts().reset_index()
-        common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]
-        self.level_label_dicts.append({value:key for key, value in enumerate(common_species)})
-        self.level_label_dicts[0]["CONIFER"] = len(self.level_label_dicts[0])
-        self.level_label_dicts[0]["BROADLEAF"] = len(self.level_label_dicts[0])        
-        self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[0].items()})
+        level_0 = df.copy()
+        if train:
+            common_species = level_0.taxonID.value_counts().reset_index()
+            common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]
+        else:
+            common_species = list(level_label_dicts[0].keys())
+                
+        try:
+            level_label_dicts[0]
+        except IndexError:
+            level_label_dicts.append({value:key for key, value in enumerate(common_species)})
+            level_label_dicts[0]["CONIFER"] = len(level_label_dicts[0])
+            level_label_dicts[0]["BROADLEAF"] = len(level_label_dicts[0])        
         
         # Select head and tail classes
-        head_classes = self.level_0_train[self.level_0_train.taxonID.isin(common_species)]
+        head_classes = level_0[level_0.taxonID.isin(common_species)]
         
         #Split tail classes into conifer and broadleaf
-        tail_classes = self.level_0_train[~self.level_0_train.taxonID.isin(common_species)]
+        tail_classes = level_0[~level_0.taxonID.isin(common_species)]
         needleleaf = self.taxonomy[self.taxonomy.families=="Pinidae"].taxonID
         needleleaf = needleleaf[~needleleaf.isin(common_species)]
         broadleaf = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID
@@ -122,75 +138,53 @@ class MultiStage(LightningModule):
         tail_classes.loc[tail_classes.taxonID.isin(broadleaf),"taxonID"] = "BROADLEAF"
         
         # Create labels
-        self.level_0_train = pd.concat([head_classes, tail_classes])                
-        self.level_0_train["label"] = [self.level_label_dicts[0][x] for x in self.level_0_train.taxonID]
-        self.level_0_train_ds = TreeDataset(df=self.level_0_train, config=self.config)
-        train_datasets.append(self.level_0_train_ds)
-        self.num_classes.append(len(self.level_0_train.taxonID.unique()))
+        level_0 = pd.concat([head_classes, tail_classes])                
+        level_0["label"] = [level_label_dicts[0][x] for x in level_0.taxonID]
+        level_0_ds = TreeDataset(df=level_0, config=self.config)
+        datasets.append(level_0_ds)
+        dataframes.append(level_0)
         
-        self.level_0_test = self.test_df.copy()
-        head_classes = self.level_0_test[self.level_0_test.taxonID.isin(common_species)]
-        tail_classes = self.level_0_test[~self.level_0_test.taxonID.isin(common_species)]
-        tail_classes.loc[tail_classes.taxonID.isin(needleleaf),"taxonID"] = "CONIFER"
-        tail_classes.loc[tail_classes.taxonID.isin(broadleaf),"taxonID"] = "BROADLEAF"
-        self.level_0_test = pd.concat([head_classes, tail_classes]) 
-        
-        self.level_0_test["label"]= [self.level_label_dicts[0][x] for x in self.level_0_test.taxonID]            
-        self.level_0_test_ds = TreeDataset(df=self.level_0_test, config=self.config, train=True)
-        test_datasets.append(self.level_0_test_ds)
-        self.level_id.append(0)
-
         # Level 1 - CONIFER
-        self.level_1_train = self.train_df.copy()
-        rare_species = [x for x in self.train_df.taxonID.unique() if x in needleleaf.values]
-        self.level_label_dicts.append({value:key for key, value in enumerate(rare_species)})
-        self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[1].items()})
+        level_1 = df.copy()
+        rare_species = [x for x in df.taxonID.unique() if x in needleleaf.values]
+        
+        try:
+            level_label_dicts[1]
+        except IndexError:
+            level_label_dicts.append({value:key for key, value in enumerate(rare_species)})
         
         # Select head and tail classes
-        tail_classes = self.level_1_train[self.level_1_train.taxonID.isin(rare_species)]
+        tail_classes = level_1[level_1.taxonID.isin(rare_species)]
         
         # Create labels
-        self.level_1_train = tail_classes.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))              
-        self.level_1_train["label"] = [self.level_label_dicts[1][x] for x in self.level_1_train.taxonID]
-        self.level_1_train_ds = TreeDataset(df=self.level_1_train, config=self.config)
-        train_datasets.append(self.level_1_train_ds)
-        self.num_classes.append(len(self.level_1_train.taxonID.unique()))
-        
-        self.level_1_test = self.test_df.copy()
-        tail_classes = self.level_1_test[self.level_1_test.taxonID.isin(rare_species)]
-        self.level_1_test = tail_classes
-        
-        self.level_1_test["label"]= [self.level_label_dicts[1][x] for x in self.level_1_test.taxonID]            
-        self.level_1_test_ds = TreeDataset(df=self.level_1_test, config=self.config)
-        test_datasets.append(self.level_1_test_ds)
-        self.level_id.append(1)
+        level_1 = tail_classes.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))              
+        level_1["label"] = [level_label_dicts[1][x] for x in level_1.taxonID]
+        level_1_ds = TreeDataset(df=level_1, config=self.config)
+        datasets.append(level_1_ds)
+        dataframes.append(level_1)
         
         # Level 2 - BROADLEAF
-        self.level_2_train = self.train_df.copy()
-        rare_species = [x for x in self.train_df.taxonID.unique() if x in broadleaf.values]
-        self.level_label_dicts.append({value:key for key, value in enumerate(rare_species)})
-        self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[2].items()})
+        level_2 = df.copy()
+        rare_species = [x for x in df.taxonID.unique() if x in broadleaf.values]
+        
+        try:
+            level_label_dicts[2]
+        except IndexError:
+            level_label_dicts.append({value:key for key, value in enumerate(rare_species)})
         
         # Select head and tail classes
-        tail_classes = self.level_2_train[self.level_2_train.taxonID.isin(rare_species)]
+        level_2 = level_2[level_2.taxonID.isin(rare_species)]
         
-        # Create labels
-        self.level_2_train = tail_classes.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))              
-        self.level_2_train["label"] = [self.level_label_dicts[2][x] for x in self.level_2_train.taxonID]
-        self.level_2_train_ds = TreeDataset(df=self.level_2_train, config=self.config)
-        train_datasets.append(self.level_2_train_ds)
-        self.num_classes.append(len(self.level_2_train.taxonID.unique()))
+        # Create labels and optionally balance
+        if train:
+            level_2 = level_2.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))        
+                        
+        level_2["label"] = [level_label_dicts[2][x] for x in level_2.taxonID]
+        level_2_ds = TreeDataset(df=level_2, config=self.config)
+        datasets.append(level_2_ds)
+        dataframes.append(level_2)
         
-        self.level_2_test = self.test_df.copy()
-        tail_classes = self.level_2_test[self.level_2_test.taxonID.isin(rare_species)]
-        self.level_2_test = tail_classes
-        
-        self.level_2_test["label"]= [self.level_label_dicts[2][x] for x in self.level_2_test.taxonID]            
-        self.level_2_test_ds = TreeDataset(df=self.level_2_test, config=self.config)
-        test_datasets.append(self.level_2_test_ds)
-        self.level_id.append(2)
-        
-        return train_datasets, test_datasets
+        return datasets, dataframes, level_label_dicts
     
     def train_dataloader(self):
         data_loaders = []
@@ -256,7 +250,6 @@ class MultiStage(LightningModule):
         """
         #get loss weight
         loss_weights = self.__getattr__('loss_weight_'+str(optimizer_idx))
-        
         individual, inputs, y = batch[optimizer_idx]
         images = inputs["HSI"]  
         y_hat = self.models[optimizer_idx].forward(images)
@@ -274,7 +267,11 @@ class MultiStage(LightningModule):
         loss = F.cross_entropy(y_hat, y)   
         
         self.log("val_loss",loss)
-        self.models[dataloader_idx].metrics(y_hat, y)
+        try:
+            self.models[dataloader_idx].metrics(y_hat, y)
+        except:
+            print("Validation failed with targets {}".format(y))
+            
         self.log_dict(self.models[dataloader_idx].metrics, on_epoch=True, on_step=False)
         y_hat = F.softmax(y_hat, dim=1)
    
@@ -300,7 +297,7 @@ class MultiStage(LightningModule):
         outputs = self.all_gather(outputs)
     
     def on_validation_epoch_end(self):
-        for level in self.level_id:
+        for level, ds in enumerate(self.test_datasets):
             class_metrics = self.level_metrics["level_{}".format(level)].compute()
             self.log_dict(class_metrics, on_epoch=True, on_step=False)
             self.level_metrics["level_{}".format(level)].reset()
