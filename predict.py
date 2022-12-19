@@ -19,17 +19,6 @@ def find_rgb_files(site, config, year="2021"):
     tiles = [x for x in tiles if "neon-aop-products" not in x]
     tiles = [x for x in tiles if "/{}/".format(year) in x]
     
-    #tiles = [x for x in tiles if "404000_3286000" in x] 
-    #Only allow tiles that are within OSBS station boundary
-    #osbs_tiles = []
-    #for rgb_path in tiles:
-        #basename = os.path.basename(rgb_path)
-        #geo_index = re.search("(\d+_\d+)_image", basename).group(1)
-        #if ((float(geo_index.split("_")[0]) > 399815.5) &
-        #(float(geo_index.split("_")[0]) < 409113.7) &
-        #(float(geo_index.split("_")[1]) > 3282308) &
-        #(float( geo_index.split("_")[1]) < 3290124)):
-            #osbs_tiles.append(rgb_path)
     return tiles
 
 

@@ -1,12 +1,13 @@
 #Multiple stage model
 from src.models.year import learned_ensemble
-from src.data import TreeDataset
-
+from src.utils import *
+from src import augmentation
 from pytorch_lightning import LightningModule
 import pandas as pd
 import numpy as np
 from torch.nn import Module
 from torch.nn import functional as F
+from torch.utils.data import Dataset
 from torch import nn
 import torchmetrics
 from torchmetrics import Accuracy, ClasswiseWrapper, Precision, MetricCollection
@@ -97,7 +98,80 @@ class MultiStage(LightningModule):
                 self.register_buffer(pname, loss_weight)
             if not debug:
                 self.save_hyperparameters()        
+    
+    class TreeDataset(Dataset):
+        """A csv file with a path to image crop and label
+        Args:
+           csv_file: path to csv file with image_path and label
+        """
+        def __init__(self, df=None, csv_file=None, config=None, train=True):
+            if csv_file:
+                self.annotations = pd.read_csv(csv_file)
+            else:
+                self.annotations = df
             
+            self.train = train
+            self.config = config         
+            self.image_size = config["image_size"]
+            self.years = self.annotations.tile_year.unique()
+            self.individuals = self.annotations.individual.unique()
+            self.image_paths = self.annotations.groupby("individual").apply(lambda x: x.set_index('tile_year').image_path.to_dict())
+            if train:
+                self.labels = self.annotations.set_index("individual").label.to_dict()
+            
+            # Create augmentor
+            self.transformer = augmentation.train_augmentation(image_size=self.image_size)
+            self.image_dict = {}
+            
+            # Pin data to memory if desired
+            if self.config["preload_images"]:
+                for individual in self.individuals:
+                    images = []
+                    ind_annotations = self.image_paths[individual]
+                    for year in self.years:
+                        try:
+                            year_annotations = ind_annotations[year]
+                            image_path = os.path.join(self.config["crop_dir"], year_annotations)
+                            image = load_image(image_path, image_size=self.image_size)                        
+                        except KeyError:
+                            image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
+                        if self.train:
+                            image = self.transformer(image)   
+                        images.append(image)
+                    self.image_dict[individual] = images
+                
+        def __len__(self):
+            # 0th based index
+            return len(self.individuals)
+        
+        def __getitem__(self, index):
+            inputs = {}
+            individual = self.individuals[index]        
+            if self.config["preload_images"]:
+                inputs["HSI"] = self.image_dict[individual]
+            else:
+                images = []
+                ind_annotations = self.image_paths[individual]
+                for year in self.years:
+                    try:
+                        year_annotations = ind_annotations[year]
+                        image_path = os.path.join(self.config["crop_dir"], year_annotations)
+                        image = load_image(image_path, image_size=self.image_size)                        
+                    except Exception:
+                        image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
+                    if self.train:
+                        image = self.transformer(image)   
+                    images.append(image)
+                inputs["HSI"] = images
+            
+            if self.train:
+                label = self.labels[individual]
+                label = torch.tensor(label, dtype=torch.long)
+        
+                return individual, inputs, label
+            else:
+                return individual, inputs
+        
     def create_datasets(self, df, level_label_dicts=None, train=False):
         """Create a hierarchical set of dataloaders by splitting into taxonID groups
         train: whether to sample the training labels
@@ -140,7 +214,7 @@ class MultiStage(LightningModule):
         # Create labels
         level_0 = pd.concat([head_classes, tail_classes])                
         level_0["label"] = [level_label_dicts[0][x] for x in level_0.taxonID]
-        level_0_ds = TreeDataset(df=level_0, config=self.config)
+        level_0_ds = self.TreeDataset(df=level_0, config=self.config)
         datasets.append(level_0_ds)
         dataframes.append(level_0)
         
@@ -159,7 +233,7 @@ class MultiStage(LightningModule):
         # Create labels
         level_1 = tail_classes.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))              
         level_1["label"] = [level_label_dicts[1][x] for x in level_1.taxonID]
-        level_1_ds = TreeDataset(df=level_1, config=self.config)
+        level_1_ds = self.TreeDataset(df=level_1, config=self.config)
         datasets.append(level_1_ds)
         dataframes.append(level_1)
         
@@ -180,7 +254,7 @@ class MultiStage(LightningModule):
             level_2 = level_2.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))        
                         
         level_2["label"] = [level_label_dicts[2][x] for x in level_2.taxonID]
-        level_2_ds = TreeDataset(df=level_2, config=self.config)
+        level_2_ds = self.TreeDataset(df=level_2, config=self.config)
         datasets.append(level_2_ds)
         dataframes.append(level_2)
         
@@ -440,3 +514,4 @@ class MultiStage(LightningModule):
             experiment.log_table("site_results.csv", site_data_frame)        
         
         return ensemble_df
+    

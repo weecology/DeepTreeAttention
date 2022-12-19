@@ -5,15 +5,10 @@ import glob
 import geopandas as gpd
 import os
 import numpy as np
-<<<<<<< HEAD
 from src import data
 from src import start_cluster
 from src.models import joint_semi, Hang2020
 from src import visualize, semi_supervised, metrics
-=======
-from src.models import multi_stage
-from src import visualize, metrics, start_cluster, data
->>>>>>> TALL_OSBS_JERC_hierarchical
 import subprocess
 import sys
 import torch
@@ -78,24 +73,12 @@ def main():
     test = data_module.test.copy()
     model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=data_module.num_classes)
     
-<<<<<<< HEAD
     m = joint_semi.TreeModel(
         model=model, 
         config=config,
         classes=data_module.num_classes, 
         loss_weight=None,
         label_dict=data_module.species_label_dict)
-=======
-    m = multi_stage.MultiStage(train, test, config=data_module.config, taxonomic_csv="data/raw/families.csv")
-    
-    #Save the train df for each level for inspection
-    for index, train_df in enumerate(m.train_dataframes):
-        comet_logger.experiment.log_table("train_level_{}.csv".format(index), train_df)
-    
-    #Save the train df for each level for inspection
-    for index, test_df in enumerate(m.test_dataframes):
-        comet_logger.experiment.log_table("test_level_{}.csv".format(index), test_df)
->>>>>>> TALL_OSBS_JERC_hierarchical
         
     #Create trainer
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
@@ -106,10 +89,6 @@ def main():
         accelerator=data_module.config["accelerator"],
         num_sanity_val_steps=0,
         check_val_every_n_epoch=data_module.config["validation_interval"],
-<<<<<<< HEAD
-=======
-        enable_checkpointing=False,
->>>>>>> TALL_OSBS_JERC_hierarchical
         callbacks=[lr_monitor],
         enable_checkpointing=False,
         logger=comet_logger)
@@ -124,13 +103,11 @@ def main():
             #loss_weight.append(1/count_in_df)
                         
     #loss_weight = np.array(loss_weight/np.max(loss_weight))
-    
-    
     trainer.fit(m, datamodule=data_module)
 
     #Save model checkpoint
-    trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_pretrain.pt".format(comet_logger.experiment.id))
-    torch.save(m.model.state_dict(), "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_pretain_state_dict.pt".format(comet_logger.experiment.id))
+    trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pt".format(comet_logger.experiment.id))
+    torch.save(m.model.state_dict(), "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_state_dict.pt".format(comet_logger.experiment.id))
     
     # Prediction datasets are indexed by year, but full data is given to each model before ensembling
     results = m.evaluate_crowns(

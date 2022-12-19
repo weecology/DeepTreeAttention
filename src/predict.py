@@ -1,6 +1,5 @@
 #Predict
-from deepforest import main
-from deepforest.utilities import annotations_to_shapefile
+
 import glob
 import os
 import geopandas as gpd
@@ -10,10 +9,12 @@ from torchvision import transforms
 import torch
 from pytorch_lightning import Trainer
 
+from deepforest import main
+from deepforest.utilities import annotations_to_shapefile
+
 from src.models import dead
 from src.CHM import postprocess_CHM
 from src.generate import generate_crops
-from src.data import TreeDataset
 
 def RGB_transform(augment):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -145,7 +146,7 @@ def predict_crowns(PATH, config):
 def predict_species(crowns, m, trainer, config):
     """Compute hierarchical prediction without predicting unneeded levels""" 
     config["crop_dir"] = config["prediction_crop_dir"]
-    ds = TreeDataset(df=crowns, train=False, config=config)
+    ds = m.TreeDataset(df=crowns, train=False, config=config)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     if predictions is None:
         return None

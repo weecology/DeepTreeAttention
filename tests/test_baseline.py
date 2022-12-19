@@ -10,14 +10,13 @@ import pytest
 @pytest.fixture()
 def m(dm, config, ROOT): 
     config["lr"] = 0.01
-    model = Hang2020.vanilla_CNN(bands=config["bands"], classes=dm.num_classes) 
+    model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=dm.num_classes) 
     m = baseline.TreeModel(
         model=model, 
         config=config,
         classes=dm.num_classes, 
         loss_weight=None,
         label_dict=dm.species_label_dict)
-    
     
     return m
 

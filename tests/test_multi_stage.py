@@ -44,7 +44,7 @@ def test_fit(config, m):
     
 def test_gather_predictions(config, dm, m, experiment):
     trainer = Trainer(fast_dev_run=True)
-    ds = TreeDataset(df=dm.test, train=False, config=config)
+    ds = m.TreeDataset(df=dm.test, train=False, config=config)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)
     assert len(np.unique(results.individual)) == len(np.unique(dm.test.individual))

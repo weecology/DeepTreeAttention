@@ -16,6 +16,7 @@ from distributed import wait, Client
 import pandas as pd
 import h5py
 import json
+import shutil
 from rasterio.warp import calculate_default_transform, reproject, Resampling, transform_bounds
 
 def crop(bounds, sensor_path, savedir = None, basename = None):
@@ -251,3 +252,21 @@ if __name__ == "__main__":
     print(duplicate_images.shape)    
     to_remove = df[df.bounds.isin(duplicate_images["index"])]
     print(to_remove)
+    
+    #make sure each folder has RGB, CHM and HSI.tif
+    dirs = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/*/*",recursive=True)
+    
+    for d in dirs:
+        if not os.path.exists("{}/RGB.tif".format(d)):
+            dirname = os.path.dirname(d)
+            shutil.rmtree(d)
+        if not os.path.exists("{}/CHM.tif".format(d)):
+            dirname = os.path.dirname(d)
+            shutil.rmtree(d)            
+        if not os.path.exists("{}/HSI.tif".format(d)):
+            dirname = os.path.dirname(d)
+            shutil.rmtree(d)            
+            
+        
+    
+    

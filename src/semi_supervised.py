@@ -13,6 +13,10 @@ import random
 
 def load_unlabeled_data(config, client=None):
     semi_supervised_crops_csvs = glob.glob("{}/*.shp".format(config["semi_supervised"]["crop_dir"]))
+    
+    if len(semi_supervised_crops_csvs) == 0:
+        raise ValueError("No .shp files found in {}".format(config["semi_supervised"]["crop_dir"]))
+    
     random.shuffle(semi_supervised_crops_csvs)
     semi_supervised_crops_csvs = semi_supervised_crops_csvs[:config["semi_supervised"]["limit_shapefiles"]]
     if client:
@@ -50,6 +54,10 @@ def predict_unlabeled(config, annotation_df, label_to_taxon_id, m=None):
     Returns:
         ensemble_df: ensembled dataframe of predictions
     """
+    
+    if annotation_df.empty:
+        raise ValueError("Annoatation Dataframe has no rows")
+    
     new_config = copy.deepcopy(config)
     new_config["crop_dir"] = new_config["semi_supervised"]["crop_dir"]
     new_config["preload_images"] = False
@@ -68,6 +76,10 @@ def predict_unlabeled(config, annotation_df, label_to_taxon_id, m=None):
     )
     
     predictions = trainer.predict(m, dataloaders=data_loader)  
+    
+    if predictions is None:
+        raise ValueError("No predictions made from the trainer dataloader")
+    
     predictions = np.vstack(predictions)
     annotation_df["label"] = np.argmax(predictions,axis=1)
     annotation_df["score"] = np.max(predictions,axis=1) 

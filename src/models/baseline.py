@@ -9,12 +9,9 @@ import pandas as pd
 from torch.nn import functional as F
 from torch import optim
 import torch
-from torchvision import transforms
 import torchmetrics
-import rasterio
 
 from src import utils
-from shapely.geometry import Point, box
 
 class TreeModel(LightningModule):
     """A pytorch lightning data module
@@ -24,7 +21,7 @@ class TreeModel(LightningModule):
     def __init__(self, model, classes, label_dict, loss_weight=None, config=None, *args, **kwargs):
         super().__init__()
     
-        self.ROOT = os.path.dirname(os.path.dirname(__file__))    
+        self.ROOT = os.path.dirname(os.path.dirname(utils.__file__))    
         if config is None:
             self.config = utils.read_config("{}/config.yml".format(self.ROOT))   
         else:
@@ -35,7 +32,7 @@ class TreeModel(LightningModule):
         self.index_to_label = {}
         for x in label_dict:
             self.index_to_label[label_dict[x]] = x 
-                
+        
         #Create model 
         self.model = model
         
@@ -62,33 +59,7 @@ class TreeModel(LightningModule):
                 self.loss_weight = torch.ones((classes))    
         except:
             pass
-    
-    def train_dataloader(self):
-        
-        
-        #labeled 
-        data_loader = torch.utils.data.DataLoader(
-            self.train_ds,
-            batch_size=self.config["batch_size"],
-            shuffle=True,
-            num_workers=self.config["workers"],
-        )
-        
-        #Unlabeled
-        
-        
-        return data_loader
-    
-    def val_dataloader(self):
-        data_loader = torch.utils.data.DataLoader(
-            self.val_ds,
-            batch_size=self.config["batch_size"],
-            shuffle=False,
-            num_workers=self.config["workers"],
-        )
-        
-        return data_loader
-    
+            
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
         """
@@ -96,14 +67,8 @@ class TreeModel(LightningModule):
         individual, inputs, y = batch
         images = inputs["HSI"]
         y_hat = self.model.forward(images)
-        
-        supervised_loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)    
-        unsupervised_loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)    
-        
-        self.log("supervised_loss",supervised_loss)
-        self.log("unsupervised_loss", unsupervised_loss)
-        loss = supervised_loss + self.alpha * unsupervised_loss 
-        
+        loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)    
+
         return loss
     
     def validation_step(self, batch, batch_idx):
@@ -114,23 +79,12 @@ class TreeModel(LightningModule):
         images = inputs["HSI"]        
         y_hat = self.model.forward(images)
         loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)        
-        self.log_dict(self.model.metrics, on_epoch=True, on_step=False)
+        self.log_dict(self.metrics(y_hat, y), on_epoch=True, on_step=False)
         
         # Log loss and metrics
         self.log("val_loss", loss, on_epoch=True)
         
         return loss
-    
-    
-    def predict_dataloader(self, ds):
-        data_loader = torch.utils.data.DataLoader(
-            ds,
-            batch_size=self.config["batch_size"],
-            shuffle=False,
-            num_workers=self.config["workers"],
-        )
-        
-        return data_loader
     
     def predict_step(self, batch, batch_idx):
         """Train on a loaded dataset
@@ -167,7 +121,7 @@ class TreeModel(LightningModule):
         
         return pred
     
-    def predict_and_format_dataloader(self, data_loader, test_crowns=None, test_points=None, plot_n_individuals=1, return_features=False, experiment=None, train=True):
+    def predict_dataloader(self, data_loader, test_crowns=None, test_points=None, plot_n_individuals=1, return_features=False, experiment=None, train=True):
         """Given a file with paths to image crops, create crown predictions 
         The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
         unique identifier for each crown and counter is 0..n pixel crops that belong to that crown.
@@ -240,7 +194,7 @@ class TreeModel(LightningModule):
             df: results dataframe
             metric_dict: metric -> value
         """
-        results, features = self.predict_and_format_dataloader(
+        results, features = self.predict_dataloader(
             data_loader=data_loader,
             plot_n_individuals=self.config["plot_n_individuals"],
             experiment=None,
