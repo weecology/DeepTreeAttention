@@ -232,14 +232,16 @@ if __name__ == "__main__":
             print(e)
             
     # post process cleanup
-    files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/**/*.tif",recursive=True)
-    counts = pd.DataFrame({"basename":[os.path.basename(x) for x in files],"path":files}) 
-    counts["geo_index"] = counts.path.apply(lambda x: os.path.dirname(os.path.dirname(x)))
-    less_than_3 = counts.groupby("geo_index").basename.value_counts().reset_index(name="geo")
-    to_remove = less_than_3[less_than_3.geo < 3].geo_index
-    for x in counts[counts.basename.isin(to_remove)].path:
-        os.remove(x)
-
+files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/**/*.tif",recursive=True)
+counts = pd.DataFrame({"basename":[os.path.basename(x) for x in files],"path":files}) 
+counts["geo_index"] = counts.path.apply(lambda x: os.path.dirname(os.path.dirname(x)))
+less_than_3 = counts.groupby("geo_index").basename.value_counts().reset_index(name="geo")
+to_remove = less_than_3[less_than_3.geo < 3].geo_index.unique()
+for x in to_remove:
+    try:
+        shutil.rmtree(x)
+    except:
+        pass
 
     # Check if RGB images are unique
     files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/**/RGB.tif",recursive=True)
@@ -259,15 +261,15 @@ dirs = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/*/*"
 for d in dirs:
     if not os.path.exists("{}/RGB.tif".format(d)):
         dirname = os.path.dirname(d)
-        shutil.rmtree(d)
+        shutil.rmtree(dirname)
         continue
     if not os.path.exists("{}/CHM.tif".format(d)):
         dirname = os.path.dirname(d)
-        shutil.rmtree(d)        
+        shutil.rmtree(dirname)        
         continue
     if not os.path.exists("{}/HSI.tif".format(d)):
         dirname = os.path.dirname(d)
-        shutil.rmtree(d)            
+        shutil.rmtree(dirname)            
             
         
     
