@@ -108,4 +108,4 @@ semi_supervised:
     preload_images: True
     workers: 0
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
-    alpha: 1
+    alpha: 0.01
