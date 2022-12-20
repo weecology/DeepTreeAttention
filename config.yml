@@ -99,12 +99,12 @@ dead:
 
 semi_supervised:
     crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
-    site_filter:
-    num_samples:
-    max_samples_per_class: 10000
+    site_filter: OSBS
+    num_samples: 1000000
+    max_samples_per_class: 100
     model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/04261eccc11d4a04bde5865ffc298dbf.pt
     threshold: 0.9
-    limit_shapefiles: 1000
+    limit_shapefiles: 100
     preload_images: True
     workers: 0
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
