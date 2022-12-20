@@ -101,13 +101,13 @@ semi_supervised:
     crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
     site_filter:
     num_samples: 2000000
-    max_samples_per_class: 5000
+    max_samples_per_class: 10000
     model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/04261eccc11d4a04bde5865ffc298dbf.pt
     threshold: 0.9
     limit_shapefiles: 100
     preload_images: True
     workers: 0
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
-    alpha: 2
+    alpha: 1
     #Existing csv file
     semi_supervised_train:
