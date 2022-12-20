@@ -52,7 +52,7 @@ preload_images: True
 workers: 0
 sampling_ceiling: 200
 #Network Parameters
-pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ca21358f3114481bba274da96f64c09c_state_dict.pt
+pretrain_state_dict:
 
 gpus: 1
 batch_size: 128
@@ -68,7 +68,7 @@ lr_4: 0.0001
 
 fast_dev_run: False
 accelerator: auto
-epochs: 150
+epochs: 120
 min_loss_weight: 10
 
 #Evaluation config
@@ -99,12 +99,12 @@ dead:
 
 semi_supervised:
     crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
-    site_filter: JERC
-    num_samples: 1000000
-    max_samples_per_class: 10000
+    site_filter:
+    num_samples: 2000000
+    max_samples_per_class: 5000
     model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/04261eccc11d4a04bde5865ffc298dbf.pt
-    threshold: 0.8
-    limit_shapefiles: 50
+    threshold: 0.95
+    limit_shapefiles: 100
     preload_images: True
     workers: 0
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
