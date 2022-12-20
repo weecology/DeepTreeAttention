@@ -35,7 +35,7 @@ class TreeModel(baseline.TreeModel):
             self.index_to_label[label_dict[x]] = x 
         
         # Unsupervised versus supervised loss weight
-        self.alpha = torch.nn.Parameter(torch.tensor(0.5, dtype=float), requires_grad=True)
+        self.alpha = torch.nn.Parameter(torch.tensor(self.config["semi_supervised"]["alpha"], dtype=float), requires_grad=False)
         self.semi_supervised_train = semi_supervised.create_dataframe(config, label_to_taxon_id=self.index_to_label)
         self.supervised_train = supervised_train
         self.supervised_test = supervised_test

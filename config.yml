@@ -107,3 +107,5 @@ semi_supervised:
     limit_shapefiles: 100
     preload_images: True
     workers: 0
+    #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
+    alpha: 1
