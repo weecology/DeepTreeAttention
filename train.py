@@ -81,6 +81,7 @@ def main():
         label_dict=data_module.species_label_dict)
     
     comet_logger.experiment.log_table("semi_supervised_train.csv", m.semi_supervised_train)
+    m.semi_supervised_train.to_csv("/blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/{}.csv".format(comet_logger.experiment.id))
     
     #Create trainer
     lr_monitor = LearningRateMonitor(logging_interval='epoch')

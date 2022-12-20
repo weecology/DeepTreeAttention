@@ -109,3 +109,5 @@ semi_supervised:
     workers: 0
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
     alpha: 1
+    #Existing csv file
+    semi_supervised_train:
