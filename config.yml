@@ -59,7 +59,7 @@ batch_size: 128
 bands: 349
 
 #LR for each level x year
-lr: 0.0001
+lr: 0.00001
 lr_0: 0.0001
 lr_1: 0.0001
 lr_2: 0.0001
@@ -68,7 +68,7 @@ lr_4: 0.0001
 
 fast_dev_run: False
 accelerator: auto
-epochs: 70
+epochs: 120
 min_loss_weight: 10
 
 #Evaluation config
