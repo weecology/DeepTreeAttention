@@ -75,11 +75,22 @@ def main():
     test = data_module.test.copy()
     model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=data_module.num_classes)
     
+    ###Loss weight, balanced
+    loss_weight = []
+    for x in data_module.species_label_dict:
+        count_in_df = data_module.train[data_module.train.taxonID==x].shape[0]
+        if count_in_df == 0:
+            loss_weight.append(0)
+        else:
+            loss_weight.append(1/count_in_df)
+                        
+    loss_weight = np.array(loss_weight/np.max(loss_weight))
+    
     m = joint_semi.TreeModel(
         model=model, 
         config=config,
         classes=data_module.num_classes, 
-        loss_weight=None,
+        loss_weight=loss_weight,
         supervised_test=data_module.test,
         supervised_train=data_module.train,
         label_dict=data_module.species_label_dict)
@@ -100,16 +111,6 @@ def main():
         enable_checkpointing=False,
         logger=comet_logger)
     
-    ###Loss weight, balanced
-    #loss_weight = []
-    #for x in data_module.species_label_dict:
-        #count_in_df = semi_supervised_train[semi_supervised_train.taxonID==x].shape[0]
-        #if count_in_df == 0:
-            #loss_weight.append(0)
-        #else:
-            #loss_weight.append(1/count_in_df)
-                        
-    #loss_weight = np.array(loss_weight/np.max(loss_weight))
     trainer.fit(m)
 
     #Save model checkpoint
