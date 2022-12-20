@@ -59,7 +59,7 @@ batch_size: 128
 bands: 349
 
 #LR for each level x year
-lr: 0.00001
+lr: 0.0001
 lr_0: 0.0001
 lr_1: 0.0001
 lr_2: 0.0001
@@ -108,4 +108,4 @@ semi_supervised:
     preload_images: True
     workers: 0
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
-    alpha: 1
+    alpha: 4
