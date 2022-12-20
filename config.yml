@@ -100,10 +100,10 @@ dead:
 semi_supervised:
     crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
     site_filter: 
-    num_samples: 1000000
+    num_samples: 2000000
     max_samples_per_class: 1000
     model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/cfbeb13fcd774a48b9b9cb99745b6d74.pt
-    threshold: 0.9
+    threshold: 0.98
     limit_shapefiles: 100
     preload_images: True
     workers: 0
