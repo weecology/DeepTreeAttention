@@ -63,7 +63,6 @@ def main():
     comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(data_module.train))
     comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(data_module.test))
     comet_logger.experiment.log_parameter("num_species",data_module.num_classes)
-    comet_logger.experiment.log_table("semi_supervised_train.csv", semi_supervised_train)
     comet_logger.experiment.log_table("test.csv", data_module.test)
     
     if not config["use_data_commit"]:
@@ -80,7 +79,9 @@ def main():
         supervised_test=data_module.test,
         supervised_train=data_module.train,
         label_dict=data_module.species_label_dict)
-        
+    
+    comet_logger.experiment.log_table("semi_supervised_train.csv", m.semi_supervised_train)
+    
     #Create trainer
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
     trainer = Trainer(
