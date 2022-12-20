@@ -138,7 +138,8 @@ def main():
         test_crowns=data_module.crowns,
         test=data_module.test,
         test_points=data_module.canopy_points,
-        rgb_pool=rgb_pool
+        rgb_pool=rgb_pool,
+	name="pretrain"
     )
     
     #Log prediction
