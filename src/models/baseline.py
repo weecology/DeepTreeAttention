@@ -229,8 +229,8 @@ class TreeModel(LightningModule):
              })
         
         if experiment:
-            experiment.log_metrics(species_table.set_index("taxonID").accuracy.to_dict(),prefix="{}_accuracy".format(context))
-            experiment.log_metrics(species_table.set_index("taxonID").precision.to_dict(),prefix="{}_precision".format(context))
+            experiment.log_metrics(species_table.set_index("taxonID").accuracy.to_dict(),prefix="accuracy")
+            experiment.log_metrics(species_table.set_index("taxonID").precision.to_dict(),prefix="precision")
                 
         #Log result by site
         if experiment:

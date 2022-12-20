@@ -56,7 +56,6 @@ def main():
     
     #Overwrite train with the semi-supervised crops
     client = start_cluster.start(cpus=4, mem_size="6GB")        
-    semi_supervised_train = semi_supervised.create_dataframe(config, label_to_taxon_id=data_module.label_to_taxonID, client=client)
     
     if client:
         client.close()
@@ -115,9 +114,7 @@ def main():
     results = m.evaluate_crowns(
         data_module.val_dataloader(),
         crowns = data_module.crowns,
-        experiment=comet_logger.experiment,
-        context="Joint"
-        
+        experiment=comet_logger.experiment        
     )
 
     rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)    
@@ -134,8 +131,8 @@ def main():
             ypred,
             labels=taxonlabels,
             max_categories=len(taxonlabels),
-            file_name="{}_pretrain.json".format(site),
-            title="{}_pretrain".format(site)
+            file_name="{}.json".format(site),
+            title="{}".format(site)
         )
     
     #Log prediction
