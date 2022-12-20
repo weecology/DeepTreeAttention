@@ -99,9 +99,9 @@ dead:
 
 semi_supervised:
     crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
-    site_filter: JERC
+    site_filter: 
     num_samples: 1000000
-    max_samples_per_class: 100
+    max_samples_per_class: 1000
     model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/cfbeb13fcd774a48b9b9cb99745b6d74.pt
     threshold: 0.9
     limit_shapefiles: 100
