@@ -36,7 +36,7 @@ class TreeModel(baseline.TreeModel):
         
         # Unsupervised versus supervised loss weight
         self.alpha = torch.nn.Parameter(torch.tensor(self.config["semi_supervised"]["alpha"], dtype=float), requires_grad=False)
-        if semi_supervised_train is None:
+        if self.config["semi_supervised"]["semi_supervised_train"] is None:
             self.semi_supervised_train = semi_supervised.create_dataframe(config, label_to_taxon_id=self.index_to_label)
         else:
             self.semi_supervised_train = pd.read_csv(self.config["semi_supervised"]["semi_supervised_train"])
