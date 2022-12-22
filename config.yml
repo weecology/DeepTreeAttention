@@ -67,7 +67,7 @@ lr_4: 0.000005
 
 fast_dev_run: False
 accelerator: auto
-epochs: 170
+epochs: 20
 min_loss_weight: 10
 
 #Evaluation config
