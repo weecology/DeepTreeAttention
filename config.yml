@@ -110,4 +110,4 @@ semi_supervised:
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
     alpha: 1
     #Existing csv file
-    semi_supervised_train:
+    semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/52cd36e02999473aa339ef2b7649ec29.csv
