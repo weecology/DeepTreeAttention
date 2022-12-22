@@ -1,7 +1,7 @@
 #Training HSI Augmentations 
 from torchvision import transforms
 
-def train_augmentation(image_size):
+def train_augmentation():
     """Torchvision transforms
     Args:
         image: a torch vision tensor with C, H, W order
