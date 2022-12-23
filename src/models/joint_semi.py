@@ -124,9 +124,17 @@ class TreeModel(baseline.TreeModel):
         # Unlabeled data - Strong Augmentation
         individual, inputs, y = batch["unlabeled"]
         images = inputs["HSI"]["Strong"]
-        y_hat_strong = self.model.forward(images)   
-        y_pred_strong = torch.argmax(y_hat_strong, dim=1)    
-        unsupervised_loss = F.cross_entropy(input=y_hat_weak, target=y_pred_strong)    
+        y_hat_strong = self.model.forward(images)
+        
+        #Only select those labels greater than threshold
+        samples_to_keep = torch.max(y_hat_strong, dim=1) > self.config["semi_supervised"]["threshold"]
+        selected_unlabeled_yhat = y_hat_strong[samples_to_keep,:]
+        selected_weak_y = y_hat_weak[samples_to_keep,:]
+        y_pred_selected_unlabeled = torch.argmax(selected_unlabeled_yhat, dim=1) 
+        
+        #Useful to log number of samples kept
+        self.log("unlabeled_samples",selected_weak_y.shape[0])
+        unsupervised_loss = F.cross_entropy(input=selected_weak_y, target=y_pred_selected_unlabeled)    
         
         self.log("supervised_loss",supervised_loss)
         self.log("unsupervised_loss", unsupervised_loss)
