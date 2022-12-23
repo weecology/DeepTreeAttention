@@ -116,10 +116,16 @@ class TreeModel(baseline.TreeModel):
         y_hat = self.model.forward(images)
         supervised_loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)   
         
-        # Unlabeled data
+        # Unlabeled data - Weak Augmentation
         individual, inputs, y = batch["unlabeled"]
-        images = inputs["HSI"]
-        y_hat = self.model.forward(images)        
+        images = inputs["HSI"]["Weak"]
+        y_hat_weak = self.model.forward(images)    
+        
+        # Unlabeled data - Strong Augmentation
+        individual, inputs, y = batch["unlabeled"]
+        images = inputs["HSI"]["Strong"]
+        y_hat_strong = self.model.forward(images)   
+        
         unsupervised_loss = F.cross_entropy(y_hat, y)    
         
         self.log("supervised_loss",supervised_loss)

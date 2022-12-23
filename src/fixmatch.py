@@ -56,15 +56,7 @@ class TreeDataset(Dataset):
         if self.train:
             label = self.annotations.label.loc[index]
             label = torch.tensor(label, dtype=torch.long)
-            inputs["HSI"] = self.transformer(inputs["HSI"])
+            
             return individual, inputs, label
-        else:
-            return individual, inputs
         
-
-def weak(image):
-    """Weak augmentation pipeline"""
-    pass
-
-def strong(image):
-    """Strong augmentation pipeline"""
+        return individual, inputs
