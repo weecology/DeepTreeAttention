@@ -1,10 +1,10 @@
 # Fixmatch datasets for strong and weak augmentation.
 # Dataset class
+import pandas as pd
+import os
 from torch.utils.data import Dataset
 from src import augmentation
 from src.utils import *
-import pandas as pd
-import os
 
 class TreeDataset(Dataset):
     """A csv file with a path to image crop and label

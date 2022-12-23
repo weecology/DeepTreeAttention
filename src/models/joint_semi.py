@@ -125,8 +125,8 @@ class TreeModel(baseline.TreeModel):
         individual, inputs, y = batch["unlabeled"]
         images = inputs["HSI"]["Strong"]
         y_hat_strong = self.model.forward(images)   
-        
-        unsupervised_loss = F.cross_entropy(y_hat, y)    
+        y_pred_strong = torch.argmax(y_hat_strong, dim=1)    
+        unsupervised_loss = F.cross_entropy(input=y_hat_weak, target=y_pred_strong)    
         
         self.log("supervised_loss",supervised_loss)
         self.log("unsupervised_loss", unsupervised_loss)
