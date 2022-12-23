@@ -1,7 +1,7 @@
 #Train
 import os
-os.environ['COMET_LOGGING_FILE_LEVEL'] = 'DEBUG'
-os.environ['COMET_LOGGING_FILE'] = './comet.log'
+#os.environ['COMET_LOGGING_FILE_LEVEL'] = 'DEBUG'
+#os.environ['COMET_LOGGING_FILE'] = './comet.log'
 
 import comet_ml
 import copy

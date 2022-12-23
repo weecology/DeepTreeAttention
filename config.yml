@@ -52,7 +52,7 @@ preload_images: True
 workers: 0
 sampling_ceiling: 200
 #Network Parameters
-pretrain_state_dict:
+pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/d83e6daf273042e1bc448c2eab4a4e63.pt
 
 gpus: 1
 batch_size: 128
@@ -99,15 +99,15 @@ dead:
 
 semi_supervised:
     crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
-    site_filter:
-    num_samples: 2000000
-    max_samples_per_class: 5000
-    model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/04261eccc11d4a04bde5865ffc298dbf.pt
-    threshold: 0.9
-    limit_shapefiles: 100
+    site_filter: 
+    num_samples: 3000000
+    max_samples_per_class: 1000
+    model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/cfbeb13fcd774a48b9b9cb99745b6d74.pt
+    threshold: 0.98
+    limit_shapefiles: 300
     preload_images: True
     workers: 0
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
     alpha: 1
     #Existing csv file
-    semi_supervised_train:
+    semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/52cd36e02999473aa339ef2b7649ec29.csv
