@@ -11,6 +11,7 @@ import torchmetrics
 import copy
 
 from src import utils
+from src import fixmatch
 from src.models import baseline
 from src import data, semi_supervised
 
@@ -77,7 +78,7 @@ class TreeModel(baseline.TreeModel):
         semi_supervised_config["preload_images"] = semi_supervised_config["semi_supervised"]["preload_images"]
         semi_supervised_config["workers"] = semi_supervised_config["semi_supervised"]["workers"]
 
-        unlabeled_ds = data.TreeDataset(
+        unlabeled_ds = fixmatch.TreeDataset(
             df=self.semi_supervised_train,
             config=semi_supervised_config,
             train=True
@@ -118,16 +119,16 @@ class TreeModel(baseline.TreeModel):
         
         # Unlabeled data - Weak Augmentation
         individual, inputs, y = batch["unlabeled"]
-        images = inputs["HSI"]["Weak"]
+        images = inputs["Weak"]
         y_hat_weak = self.model.forward(images)    
         
         # Unlabeled data - Strong Augmentation
         individual, inputs, y = batch["unlabeled"]
-        images = inputs["HSI"]["Strong"]
+        images = inputs["Strong"]
         y_hat_strong = self.model.forward(images)
         
         #Only select those labels greater than threshold
-        samples_to_keep = torch.max(y_hat_strong, dim=1) > self.config["semi_supervised"]["threshold"]
+        samples_to_keep = torch.max(y_hat_strong, dim=1).values > self.config["semi_supervised"]["threshold"]
         selected_unlabeled_yhat = y_hat_strong[samples_to_keep,:]
         selected_weak_y = y_hat_weak[samples_to_keep,:]
         y_pred_selected_unlabeled = torch.argmax(selected_unlabeled_yhat, dim=1) 

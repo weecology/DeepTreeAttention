@@ -34,12 +34,11 @@ def prediction_dir(ROOT, config, tmpdir):
     
     return tmpdir
 
-def test_create_dataframe(config, m, dm):
+def test_create_dataframe(config, m, dm, prediction_model_path):
     config["semi_supervised"]["crop_dir"] = config["crop_dir"]
-    config["semi_supervised"]["threshold"] = 0
-    config["semi_supervised"]["num_samples"] = 5
+    config["semi_supervised"]["model_path"] = prediction_model_path
     
-    dm.train = semi_supervised.create_dataframe(config, m=m, unlabeled_df=dm.train, label_to_taxon_id=dm.label_to_taxonID)
+    dm.train = semi_supervised.create_dataframe(config, unlabeled_df=dm.train, label_to_taxon_id=dm.label_to_taxonID)
     dm.train.shape[0] == config["semi_supervised"]["num_samples"]
     assert all(dm.train.score > config["semi_supervised"]["threshold"])
     assert all(dm.train.index.values == np.arange(dm.train.shape[0]))

@@ -41,22 +41,24 @@ class TreeDataset(Dataset):
         individual = self.annotations.individual.loc[index] 
         
         if self.config["preload_images"]:
-            inputs["HSI"] = self.image_dict[index]
+            image = self.image_dict[index]
         else:
             image_basename = self.annotations.image_path.loc[index]  
             image_path = os.path.join(self.config["crop_dir"],image_basename)                
             image = load_image(image_path, image_size=self.image_size)
-            
+
+        if self.train:
             strong_augmentation = self.strong_transformer(image)
             weak_augmentation = self.weak_transformer(image)
             
-            inputs["HSI"]["Strong"] = strong_augmentation
-            inputs["HSI"]["Weak"] = weak_augmentation
-
-        if self.train:
+            inputs["Strong"] = strong_augmentation
+            inputs["Weak"] = weak_augmentation
+            
             label = self.annotations.label.loc[index]
             label = torch.tensor(label, dtype=torch.long)
             
             return individual, inputs, label
-        
-        return individual, inputs
+        else:
+            inputs["HSI"] = image
+            
+            return individual, inputs

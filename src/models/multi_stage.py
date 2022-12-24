@@ -120,7 +120,7 @@ class MultiStage(LightningModule):
                 self.labels = self.annotations.set_index("individual").label.to_dict()
             
             # Create augmentor
-            self.transformer = augmentation.train_augmentation(image_size=self.image_size)
+            self.transformer = augmentation.train_augmentation()
             self.image_dict = {}
             
             # Pin data to memory if desired

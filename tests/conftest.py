@@ -86,6 +86,9 @@ def config(ROOT):
     config["workers"] = 0
     config["dead"]["num_workers"] = 0
     config["dead"]["batch_size"] = 2
+    config["semi_supervised"]["threshold"] = 0
+    config["semi_supervised"]["num_samples"] = 5
+    config["semi_supervised"]["semi_supervised_train"] = None
     
     return config
 

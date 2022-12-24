@@ -230,7 +230,7 @@ class TreeDataset(Dataset):
         self.image_size = config["image_size"]
 
         # Create augmentor
-        self.transformer = augmentation.train_augmentation(image_size=self.image_size)
+        self.transformer = augmentation.train_augmentation()
 
         # Pin data to memory if desired
         if self.config["preload_images"]:
