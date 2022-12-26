@@ -111,3 +111,4 @@ semi_supervised:
     alpha: 1
     #Existing csv file
     semi_supervised_train: 
+    fixmatch_threshold: 0.95

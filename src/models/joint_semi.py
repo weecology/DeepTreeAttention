@@ -128,7 +128,7 @@ class TreeModel(baseline.TreeModel):
         y_hat_strong = self.model.forward(images)
         
         #Only select those labels greater than threshold
-        samples_to_keep = torch.max(y_hat_strong, dim=1).values > self.config["semi_supervised"]["threshold"]
+        samples_to_keep = torch.max(y_hat_strong, dim=1).values > self.config["semi_supervised"]["fixmatch_threshold"]
         selected_unlabeled_yhat = y_hat_strong[samples_to_keep,:]
         
         if selected_unlabeled_yhat.shape[0] > 0:
