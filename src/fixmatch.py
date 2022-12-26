@@ -1,10 +1,13 @@
 # Fixmatch datasets for strong and weak augmentation.
+
+## The PCA Transformation was adopted from 
 # Dataset class
 import pandas as pd
 import os
 from torch.utils.data import Dataset
 from src import augmentation
 from src.utils import *
+from torchvision import transforms
 
 class TreeDataset(Dataset):
     """A csv file with a path to image crop and label
@@ -22,7 +25,6 @@ class TreeDataset(Dataset):
 
         # Create augmentor
         self.weak_transformer = augmentation.train_augmentation()
-        self.strong_transformer = augmentation.train_augmentation()
 
         # Pin data to memory if desired
         if self.config["preload_images"]:
@@ -48,10 +50,9 @@ class TreeDataset(Dataset):
             image = load_image(image_path, image_size=self.image_size)
 
         if self.train:
-            strong_augmentation = self.strong_transformer(image)
             weak_augmentation = self.weak_transformer(image)
             
-            inputs["Strong"] = strong_augmentation
+            inputs["Strong"] = image
             inputs["Weak"] = weak_augmentation
             
             label = self.annotations.label.loc[index]

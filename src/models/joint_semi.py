@@ -11,7 +11,7 @@ import torchmetrics
 import copy
 
 from src import utils
-from src import fixmatch
+from src import fixmatch, augmentation
 from src.models import baseline
 from src import data, semi_supervised
 
@@ -47,6 +47,9 @@ class TreeModel(baseline.TreeModel):
         
         #Create model 
         self.model = model
+        
+        #Create strong augmentation
+        self.strong_augmentation = augmentation.PCATransformation(n_components=3)
         
         #Metrics
         micro_recall = torchmetrics.Accuracy(average="micro")
@@ -122,21 +125,28 @@ class TreeModel(baseline.TreeModel):
         images = inputs["Weak"]
         y_hat_weak = self.model.forward(images)    
         
-        # Unlabeled data - Strong Augmentation
+        # Unlabeled data - Strong Augmentation, applied per batch
         individual, inputs, y = batch["unlabeled"]
         images = inputs["Strong"]
-        y_hat_strong = self.model.forward(images)
+        self.strong_augmentation.fit(images)
+        transformed_images = self.strong_augmentation.transform(images)
+        transformed_images = torch.tensor(transformed_images.astype(np.float32))
+        y_hat_strong = self.model.forward(transformed_images)
         
         #Only select those labels greater than threshold
         samples_to_keep = torch.max(y_hat_strong, dim=1).values > self.config["semi_supervised"]["threshold"]
         selected_unlabeled_yhat = y_hat_strong[samples_to_keep,:]
-        selected_weak_y = y_hat_weak[samples_to_keep,:]
-        y_pred_selected_unlabeled = torch.argmax(selected_unlabeled_yhat, dim=1) 
         
-        #Useful to log number of samples kept
-        self.log("unlabeled_samples",selected_weak_y.shape[0])
-        unsupervised_loss = F.cross_entropy(input=selected_weak_y, target=y_pred_selected_unlabeled)    
-        
+        if selected_unlabeled_yhat.shape[0] > 0:
+            selected_weak_y = y_hat_weak[samples_to_keep,:]
+            y_pred_selected_unlabeled = torch.argmax(selected_unlabeled_yhat, dim=1) 
+            
+            #Useful to log number of samples kept
+            self.log("unlabeled_samples",selected_weak_y.shape[0])
+            unsupervised_loss = F.cross_entropy(input=selected_weak_y, target=y_pred_selected_unlabeled)    
+        else:
+            unsupervised_loss = 0
+            
         self.log("supervised_loss",supervised_loss)
         self.log("unsupervised_loss", unsupervised_loss)
         self.log("alpha", self.alpha, on_step=False, on_epoch=True)
