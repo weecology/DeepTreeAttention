@@ -46,14 +46,14 @@ class PCATransformation():
         :param transformations_count: Number of transformations for each class
         :return:
         """
-        reshaped_data = data.reshape(-1, data.shape[1]*data.shape[2] * data.shape[3])        
+        reshaped_data = data.flatten().reshape(1,-1)        
         transformed = self.pca.transform(reshaped_data)
         for x in range(transformations_count):
             random_values = np.random.uniform(low=self.low, high=self.high,
                                           size=transformed.shape)
             transformed = transformed + random_values
             
-        transformed = self.pca.inverse_transform(transformed)
+        transformed = self.pca.inverse_transform(transformed).astype(np.float32)
         
         return transformed.reshape(data.shape)
         

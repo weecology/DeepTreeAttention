@@ -25,6 +25,7 @@ class TreeDataset(Dataset):
 
         # Create augmentor
         self.weak_transformer = augmentation.train_augmentation()
+        self.strong_transformer = augmentation.PCATransformation()
 
         # Pin data to memory if desired
         if self.config["preload_images"]:
@@ -33,6 +34,13 @@ class TreeDataset(Dataset):
                 image_path = os.path.join(self.config["crop_dir"],row["image_path"])
                 self.image_dict[index] = load_image(image_path, image_size=self.image_size)
 
+            
+            pca_tensor = [value for key,value in self.image_dict.items()]
+            pca_tensor = torch.stack(pca_tensor)
+            self.strong_transformer.fit(pca_tensor)
+        else:
+            raise ValueError("Cannot use PCA tensor for augmentation and config['preload_images'] = False")
+        
     def __len__(self):
         # 0th based index
         return self.annotations.shape[0]
@@ -50,9 +58,10 @@ class TreeDataset(Dataset):
             image = load_image(image_path, image_size=self.image_size)
 
         if self.train:
+            strong_augmentation = self.strong_transformer.transform(image)
             weak_augmentation = self.weak_transformer(image)
             
-            inputs["Strong"] = image
+            inputs["Strong"] = strong_augmentation
             inputs["Weak"] = weak_augmentation
             
             label = self.annotations.label.loc[index]
