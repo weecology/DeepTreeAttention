@@ -133,11 +133,11 @@ class TreeModel(baseline.TreeModel):
         
         if selected_unlabeled_yhat.shape[0] > 0:
             selected_weak_y = y_hat_weak[samples_to_keep,:]
-            y_pred_selected_unlabeled = torch.argmax(selected_unlabeled_yhat, dim=1) 
+            psuedo_label = torch.argmax(selected_weak_y, dim=1)
             
             #Useful to log number of samples kept
             self.log("unlabeled_samples",selected_weak_y.shape[0])
-            unsupervised_loss = F.cross_entropy(input=selected_weak_y, target=y_pred_selected_unlabeled)    
+            unsupervised_loss = F.cross_entropy(input=selected_unlabeled_yhat, target=psuedo_label)    
         else:
             unsupervised_loss = 0
             
