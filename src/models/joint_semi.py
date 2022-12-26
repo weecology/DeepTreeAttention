@@ -11,7 +11,7 @@ import torchmetrics
 import copy
 
 from src import utils
-from src import fixmatch, augmentation
+from src import fixmatch
 from src.models import baseline
 from src import data, semi_supervised
 
@@ -47,9 +47,6 @@ class TreeModel(baseline.TreeModel):
         
         #Create model 
         self.model = model
-        
-        #Create strong augmentation
-        self.strong_augmentation = augmentation.PCATransformation(n_components=3)
         
         #Metrics
         micro_recall = torchmetrics.Accuracy(average="micro")
@@ -125,13 +122,10 @@ class TreeModel(baseline.TreeModel):
         images = inputs["Weak"]
         y_hat_weak = self.model.forward(images)    
         
-        # Unlabeled data - Strong Augmentation, applied per batch
+        # Unlabeled data - Strong Augmentation
         individual, inputs, y = batch["unlabeled"]
         images = inputs["Strong"]
-        self.strong_augmentation.fit(images)
-        transformed_images = self.strong_augmentation.transform(images)
-        transformed_images = torch.tensor(transformed_images.astype(np.float32))
-        y_hat_strong = self.model.forward(transformed_images)
+        y_hat_strong = self.model.forward(images)
         
         #Only select those labels greater than threshold
         samples_to_keep = torch.max(y_hat_strong, dim=1).values > self.config["semi_supervised"]["threshold"]
