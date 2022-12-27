@@ -25,7 +25,7 @@ class TreeDataset(Dataset):
 
         # Create augmentor
         self.weak_transformer = augmentation.train_augmentation()
-        self.strong_transformer = augmentation.PCATransformation()
+        self.strong_transformer = augmentation.train_augmentation()
 
         # Pin data to memory if desired
         if self.config["preload_images"]:

@@ -136,7 +136,8 @@ class TreeModel(baseline.TreeModel):
             psuedo_label = torch.argmax(selected_weak_y, dim=1)
             
             #Useful to log number of samples kept
-            self.log("unlabeled_samples",selected_weak_y.shape[0])
+            self.unlabeled_samples_count+=1 
+            self.log("unlabeled_samples",selected_weak_y.shape[0], on_epoch=True, on_step=False)
             unsupervised_loss = F.cross_entropy(input=selected_unlabeled_yhat, target=psuedo_label)    
         else:
             unsupervised_loss = 0
@@ -148,6 +149,10 @@ class TreeModel(baseline.TreeModel):
         
         return loss
     
+    def on_train_epoch_end(self):
+        """Reset count of unlabeled samples per train epoch"""
+        self.unlabeled_samples_count = 0
+        
     def val_dataloader(self):
         """Validation data loader only includes labeled data"""
         

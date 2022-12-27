@@ -66,31 +66,3 @@ class PCATransformation():
         reshaped_data = data.reshape(-1, data.shape[1]*data.shape[2] * data.shape[3])
         self.pca = self.pca.fit(reshaped_data)
 
-class OnlineLightenTransform():
-    """
-    Transformation which adds a mean band average from respective bands,
-    scaled by a scaling factor. Used for online augmentation.
-    """
-    def __init__(self, scaling: List[float]):
-        self.per_band_average = None
-        self.scaling = scaling
-        super(OnlineLightenTransform, self).__init__()
-
-    def fit(self, data: np.ndarray):
-        self.per_band_average = np.average(data, axis=0)
-
-    def transform(self, data: np.ndarray,
-                  transformations: int=1):
-        """
-        Transform samples
-        :param data: Data to be transformed
-        :param transformations_count: Number of transformations for each class
-        :return:
-        """
-        transformed = np.zeros((len(self.scaling) * 2, ) + data.shape)
-        index = 0
-        for scale in self.scaling:
-            transformed[index] = data + (self.per_band_average * scale)
-            transformed[index + 1] = data - (self.per_band_average * scale)
-            index += len(self.scaling)
-        return transformed

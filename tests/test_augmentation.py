@@ -15,8 +15,17 @@ def test_PCATransformation():
     images = torch.randn(20, 369, 11, 11)    
     transformer = augmentation.PCATransformation()
     transformer.fit(images)
-    transformed_images = transformer.transform(data=images)
+    for image in images:
+        transformed_image = transformer.transform(data=image)
+        assert transformed_image.shape == image.shape
+        assert not np.array_equal(image, transformed_image)
+
+def test_OnlineLightenTransform():
+    images = torch.randn(20, 369, 11, 11)    
+    transformer = augmentation.OnlineLightenTransform(scaling=[1.4])
     
-    assert transformed_images.shape == images.shape
-    assert not np.array_equal(images, transformed_images)
-    
+    transformer.fit(images)
+    for image in images:
+        transformed_image = transformer.transform(data=image)
+        assert transformed_image.shape == image.shape
+        assert not np.array_equal(image, transformed_image)
