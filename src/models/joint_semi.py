@@ -131,7 +131,7 @@ class TreeModel(baseline.TreeModel):
         #Is this confidence of the weak or the strong?
         samples_to_keep = torch.max(y_hat_weak, dim=1).values > self.config["semi_supervised"]["fixmatch_threshold"]
         
-        if selected_unlabeled_yhat.shape[0] > 0:
+        if sum(samples_to_keep) > 0:
             selected_weak_y = y_hat_weak[samples_to_keep,:]
             selected_unlabeled_yhat = y_hat_strong[samples_to_keep,:]            
             psuedo_label = torch.argmax(selected_weak_y, dim=1)
