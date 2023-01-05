@@ -71,7 +71,7 @@ class TreeModel(baseline.TreeModel):
                 self.loss_weight = torch.ones((classes))    
         except:
             pass
-    
+        
     def train_dataloader(self):
         semi_supervised_config = copy.deepcopy(self.config)
         semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
@@ -150,7 +150,7 @@ class TreeModel(baseline.TreeModel):
         
         return loss
     
-    def on_train_epoch_end(self):
+    def on_train_epoch_start(self):
         """Reset count of unlabeled samples per train epoch"""
         self.unlabeled_samples_count = 0
         
