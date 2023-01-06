@@ -73,16 +73,7 @@ class TreeModel(baseline.TreeModel):
             pass
         
     def train_dataloader(self):
-        semi_supervised_config = copy.deepcopy(self.config)
-        semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
-        semi_supervised_config["preload_images"] = semi_supervised_config["semi_supervised"]["preload_images"]
-        semi_supervised_config["workers"] = semi_supervised_config["semi_supervised"]["workers"]
-
-        unlabeled_ds = fixmatch.TreeDataset(
-            df=self.semi_supervised_train,
-            config=semi_supervised_config,
-            train=True
-        )
+        ## Labeled data
         
         labeled_ds = data.TreeDataset(
             df=self.supervised_train,
@@ -90,7 +81,6 @@ class TreeModel(baseline.TreeModel):
             train=True
         )
         
-        #labeled 
         data_loader = torch.utils.data.DataLoader(
             labeled_ds,
             batch_size=self.config["batch_size"],
@@ -98,7 +88,17 @@ class TreeModel(baseline.TreeModel):
             num_workers=self.config["workers"],
         )
         
-        #Unlabeled
+        ## Unlabeled data
+        semi_supervised_config = copy.deepcopy(self.config)
+        semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
+        semi_supervised_config["preload_images"] = semi_supervised_config["semi_supervised"]["preload_images"]
+        semi_supervised_config["workers"] = semi_supervised_config["semi_supervised"]["workers"]
+
+        unlabeled_ds = fixmatch.TreeDataset(
+            df=self.semi_supervised_train,
+            config=semi_supervised_config
+        )
+        
         unlabeled_data_loader = torch.utils.data.DataLoader(
             unlabeled_ds,
             batch_size=self.config["batch_size"],
@@ -118,12 +118,12 @@ class TreeModel(baseline.TreeModel):
         supervised_loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)   
         
         # Unlabeled data - Weak Augmentation
-        individual, inputs, y = batch["unlabeled"]
+        individual, inputs = batch["unlabeled"]
         images = inputs["Weak"]
         y_hat_weak = self.model.forward(images)    
         
         # Unlabeled data - Strong Augmentation
-        individual, inputs, y = batch["unlabeled"]
+        individual, inputs = batch["unlabeled"]
         images = inputs["Strong"]
         y_hat_strong = self.model.forward(images)
         
@@ -208,17 +208,3 @@ class TreeModel(baseline.TreeModel):
                                                          verbose=True)
                                                                  
         return {'optimizer':optimizer, 'lr_scheduler': {"scheduler":scheduler,"monitor":'val_loss',"frequency":self.config["validation_interval"], "interval": "epoch"}}
-    
-
-    def predict(self,inputs):
-        """Given a input dictionary, construct args for prediction"""
-        if "cuda" == self.device.type:
-            images = inputs["HSI"]
-            images = [x.cuda() for x in images]
-            pred = self.model(images)
-            pred = pred.cpu()
-        else:
-            images = inputs["HSI"]
-            pred = self.model(images)
-        
-        return pred

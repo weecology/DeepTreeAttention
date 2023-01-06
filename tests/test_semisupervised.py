@@ -4,23 +4,6 @@ from src import semi_supervised, predict
 from src.models import Hang2020, baseline, joint_semi
 import pytest
 import numpy as np
-
-@pytest.fixture()
-def prediction_model_path(dm, config, tmpdir):
-    model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=dm.num_classes) 
-    trainer = Trainer(fast_dev_run=False, max_steps=1, limit_val_batches=1)    
-    model_for_unlabeled_prediction = baseline.TreeModel(
-        model=model, 
-        config=config,
-        classes=dm.num_classes, 
-        loss_weight=None,
-        label_dict=dm.species_label_dict)
-    
-    trainer = Trainer(fast_dev_run=False, max_steps=1, limit_val_batches=1)
-    trainer.fit(model_for_unlabeled_prediction, datamodule=dm)
-    trainer.save_checkpoint("{}/checkpoint.pt".format(tmpdir))
-    
-    return "{}/checkpoint.pt".format(tmpdir)
         
 @pytest.fixture()
 def prediction_dir(ROOT, config, tmpdir):
@@ -28,26 +11,25 @@ def prediction_dir(ROOT, config, tmpdir):
     config["CHM_pool"] = None
     config["prediction_crop_dir"] = tmpdir  
     
-    rgb_path = "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop_2019.tif".format(ROOT)    
-    crowns = predict.find_crowns(rgb_path, config)    
-    crown_annotations_path = predict.generate_prediction_crops(crowns=crowns, config=config)
+    rgb_paths = ["{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop_2019.tif".format(ROOT),
+                 "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop_2018.tif".format(ROOT)]  
+    
+    for rgb_path in rgb_paths:
+        crowns = predict.find_crowns(rgb_path, config)    
+        crown_annotations_path = predict.generate_prediction_crops(crowns=crowns, config=config)
     
     return tmpdir
 
-def test_create_dataframe(config, m, dm, prediction_model_path):
-    config["semi_supervised"]["crop_dir"] = config["crop_dir"]
-    config["semi_supervised"]["model_path"] = prediction_model_path
-    
+def test_create_dataframe(config, m, dm):
+    config["semi_supervised"]["crop_dir"] = config["crop_dir"]    
     dm.train = semi_supervised.create_dataframe(config, unlabeled_df=dm.train, label_to_taxon_id=dm.label_to_taxonID)
     dm.train.shape[0] == config["semi_supervised"]["num_samples"]
-    assert all(dm.train.score > config["semi_supervised"]["threshold"])
     assert all(dm.train.index.values == np.arange(dm.train.shape[0]))
     
-def test_fit(config, dm, prediction_dir, prediction_model_path):
+def test_fit(config, dm, prediction_dir):
     """Test that the model can load an existing model for unlabeled predictions and train """
     config["semi_supervised"]["site_filter"] = None
     config["semi_supervised"]["crop_dir"] = prediction_dir
-    config["semi_supervised"]["model_path"] = prediction_model_path
     config["semi_supervised"]["threshold"] = 0
     
     model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=dm.num_classes)        

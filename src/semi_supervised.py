@@ -39,79 +39,21 @@ def load_unlabeled_data(config, client=None):
         site_semi_supervised_crops = semi_supervised_crops
     
     site_semi_supervised_crops = site_semi_supervised_crops.sample(frac=1)
-    site_semi_supervised_crops = site_semi_supervised_crops.head(config["semi_supervised"]["num_samples"])
+    individuals_to_keep = pd.Series(site_semi_supervised_crops.individual.unique()).sample(n=config["semi_supervised"]["num_samples"])    
+    site_semi_supervised_crops = site_semi_supervised_crops[site_semi_supervised_crops.individual.isin(individuals_to_keep)]
     
     #Reset the index to 0:n_samples
     site_semi_supervised_crops = site_semi_supervised_crops.reset_index(drop=True)
     
     return site_semi_supervised_crops
-    
-def predict_unlabeled(config, annotation_df, label_to_taxon_id, m=None):
-    """Predict unlabaled data with model in memory or loaded from file
-    Args:
-        config: a DeepTreeAttention config
-        annotation_df: a pandas dataframe with image_path, to be into data.TreeDataset
-    Returns:
-        ensemble_df: ensembled dataframe of predictions
-    """
-    
-    if annotation_df.empty:
-        raise ValueError("Annoatation Dataframe has no rows")
-    
-    new_config = copy.deepcopy(config)
-    new_config["crop_dir"] = new_config["semi_supervised"]["crop_dir"]
-    new_config["preload_images"] = False
-    new_config["workers"] = 5
-    
-    if m is None:
-        m = baseline.TreeModel.load_from_checkpoint(new_config["semi_supervised"]["model_path"], config=new_config)
-    
-    trainer = Trainer(gpus=new_config["gpus"], logger=False, enable_checkpointing=False)
-    ds = TreeDataset(df = annotation_df, train=False, config=new_config)
-    data_loader = torch.utils.data.DataLoader(
-        ds,
-        batch_size=new_config["predict_batch_size"],
-        shuffle=False,
-        num_workers=new_config["workers"],
-    )
-    
-    predictions = trainer.predict(m, dataloaders=data_loader)  
-    
-    if predictions is None:
-        raise ValueError("No predictions made from the trainer dataloader")
-    
-    predictions = np.vstack(predictions)
-    annotation_df["label"] = np.argmax(predictions,axis=1)
-    annotation_df["score"] = np.max(predictions,axis=1) 
-    annotation_df["taxonID"] = annotation_df.label.apply(lambda x: label_to_taxon_id[x])
-    
-    return annotation_df
-
-def select_samples(predicted_samples, config):
-    """Given a unlabeled dataframe, select which samples to include in dataloader"""
-    samples_to_keep = predicted_samples[predicted_samples.score > config["semi_supervised"]["threshold"]]
-    
-    #Optionally balance and limit
-    samples_to_keep = samples_to_keep.groupby("taxonID").apply(lambda x: x.head(config["semi_supervised"]["max_samples_per_class"])).reset_index(drop=True)
-    
-    return samples_to_keep
         
 def create_dataframe(config, label_to_taxon_id, unlabeled_df=None, m=None, client=None):
     """Generate a pytorch dataloader from unlabeled crop data"""
     
     if unlabeled_df is None:
         unlabeled_df = load_unlabeled_data(config, client=client)
-        
-    predicted_samples = predict_unlabeled(config, unlabeled_df, label_to_taxon_id=label_to_taxon_id, m=m)
     
-    # Predict labels for each crop
-    selected_df = select_samples(
-        predicted_samples=predicted_samples,
-        config=config
-    )
-    
-    return selected_df
-
+    return unlabeled_df
 
 def create_dataloader(unlabeled_df, config):
     semi_supervised_ds = TreeDataset(

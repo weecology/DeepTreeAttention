@@ -1,9 +1,8 @@
 # Fixmatch datasets for strong and weak augmentation.
 
-## The PCA Transformation was adopted from 
 # Dataset class
-import pandas as pd
 import os
+import pandas as pd
 from torch.utils.data import Dataset
 from src import augmentation
 from src.utils import *
@@ -24,7 +23,6 @@ class TreeDataset(Dataset):
 
         # Create augmentor
         self.weak_transformer = augmentation.train_augmentation()
-        self.strong_transformer = augmentation.train_augmentation()
 
         # Pin data to memory if desired
         if self.config["preload_images"]:
@@ -32,12 +30,6 @@ class TreeDataset(Dataset):
             for index, row in self.annotations.iterrows():
                 image_path = os.path.join(self.config["crop_dir"],row["image_path"])
                 self.image_dict[index] = load_image(image_path, image_size=self.image_size)
-
-            #pca_tensor = [value for key,value in self.image_dict.items()]
-            #pca_tensor = torch.stack(pca_tensor)
-            #self.strong_transformer.fit(pca_tensor)
-        else:
-            raise ValueError("Cannot use PCA tensor for augmentation and config['preload_images'] = False")
         
     def __len__(self):
         # 0th based index
@@ -54,19 +46,20 @@ class TreeDataset(Dataset):
             image_basename = self.annotations.image_path.loc[index]  
             image_path = os.path.join(self.config["crop_dir"],image_basename)                
             image = load_image(image_path, image_size=self.image_size)
-
-        if self.train:
-            strong_augmentation = self.strong_transformer(image)
-            weak_augmentation = self.weak_transformer(image)
+        
+        weak_augmentation = self.weak_transformer(image)    
+        
+        # Strong Augmentation is the same location in a different year
+        year_annotations = self.annotations.drop(index=index)
+        try:
+            selected_year_path = year_annotations[year_annotations.individual==individual].sample(n=1).image_path.values[0]
+            selected_year_path = os.path.join(self.config["crop_dir"],selected_year_path)                
+        except ValueError:
+            raise ValueError("There are no multiple individuals in dataframe.head() {} for individual {}".format(year_annotations.head(), individual))
             
-            inputs["Strong"] = strong_augmentation
-            inputs["Weak"] = weak_augmentation
-            
-            label = self.annotations.label.loc[index]
-            label = torch.tensor(label, dtype=torch.long)
-            
-            return individual, inputs, label
-        else:
-            inputs["HSI"] = image
-            
-            return individual, inputs
+        selected_year_image = load_image(selected_year_path, image_size=self.image_size)
+        
+        inputs["Strong"] = self.weak_transformer(selected_year_image)
+        inputs["Weak"] = weak_augmentation
+        
+        return individual, inputs
