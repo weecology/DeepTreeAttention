@@ -59,10 +59,10 @@ def main():
     supervised_train = data_module.train.copy()    
     
     #Overwrite train with the semi-supervised crops
-    client = start_cluster.start(cpus=4, mem_size="6GB")        
-    
-    if client:
-        client.close()
+    if self.config["semi_supervised"]["semi_supervised_train"] is None:
+        client = start_cluster.start(cpus=40, mem_size="6GB")   
+    else:
+        client = None
     
     comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(data_module.train))
     comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(data_module.test))
@@ -89,6 +89,7 @@ def main():
     m = joint_semi.TreeModel(
         model=model, 
         config=config,
+        client=client,
         classes=data_module.num_classes, 
         loss_weight=loss_weight,
         supervised_test=data_module.test,

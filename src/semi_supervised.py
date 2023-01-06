@@ -42,8 +42,13 @@ def load_unlabeled_data(config, client=None):
     individuals_to_keep = pd.Series(site_semi_supervised_crops.individual.unique()).sample(n=config["semi_supervised"]["num_samples"])    
     site_semi_supervised_crops = site_semi_supervised_crops[site_semi_supervised_crops.individual.isin(individuals_to_keep)]
     
-    #Reset the index to 0:n_samples
+    # Reset the index to 0:n_samples
     site_semi_supervised_crops = site_semi_supervised_crops.reset_index(drop=True)
+    
+    # All individuals need atleast 2 years of day
+    counts = site_semi_supervised_crops.individual.value_counts()
+    individuals_to_keep = counts[~(counts == 1)].index.values
+    site_semi_supervised_crops = site_semi_supervised_crops[site_semi_supervised_crops.individual.isin(individuals_to_keep)]
     
     return site_semi_supervised_crops
         
