@@ -100,7 +100,7 @@ dead:
 semi_supervised:
     crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
     site_filter: 
-    num_samples: 3000000
+    num_samples: 30000
     threshold: 0.7
     limit_shapefiles: 100
     preload_images: True
