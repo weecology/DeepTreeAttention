@@ -102,11 +102,11 @@ semi_supervised:
     site_filter: 
     num_samples: 3000000
     threshold: 0.7
-    limit_shapefiles: 200
+    limit_shapefiles: 100
     preload_images: True
     workers: 0
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
     alpha: 1
     #Existing csv file
-    semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/8f821026b0e04984ba06d4f85f52de9f.csv
+    semi_supervised_train:
     fixmatch_threshold: 0.95
