@@ -20,7 +20,7 @@ class TreeModel(baseline.TreeModel):
     Args:
         model (str): Model to use. See the models/ directory. The name is the filename, each model should take in the same data loader
     """
-    def __init__(self, model, classes, label_dict, supervised_train, supervised_test, loss_weight=None, config=None):
+    def __init__(self, model, classes, label_dict, supervised_train, supervised_test, loss_weight=None, config=None, client=None):
         super().__init__(model, classes, label_dict, loss_weight=None, config=None)
     
         self.ROOT = os.path.dirname(os.path.dirname(__file__))    
@@ -38,7 +38,7 @@ class TreeModel(baseline.TreeModel):
         # Unsupervised versus supervised loss weight
         self.alpha = torch.nn.Parameter(torch.tensor(self.config["semi_supervised"]["alpha"], dtype=float), requires_grad=False)
         if self.config["semi_supervised"]["semi_supervised_train"] is None:
-            self.semi_supervised_train = semi_supervised.create_dataframe(config, label_to_taxon_id=self.index_to_label)
+            self.semi_supervised_train = semi_supervised.create_dataframe(config, label_to_taxon_id=self.index_to_label, client=client)
         else:
             self.semi_supervised_train = pd.read_csv(self.config["semi_supervised"]["semi_supervised_train"])
             
