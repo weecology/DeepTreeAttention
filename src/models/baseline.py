@@ -47,7 +47,7 @@ class TreeModel(LightningModule):
              "Top {} Accuracy".format(self.config["top_k"]): top_k_recall
              })
 
-        self.save_hyperparameters(ignore=["loss_weight"])
+        self.save_hyperparameters(ignore=["loss_weight","client"])
         
         #Weighted loss - on reload and loss_weight = None, this is skipped
         if loss_weight is None:
