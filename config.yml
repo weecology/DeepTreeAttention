@@ -105,5 +105,5 @@ semi_supervised:
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
     alpha: 1
     #Existing csv file
-    semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/68f9a7e8a4324d5a918b642bd2fe9958.csv
+    semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/68f9a7e8a4324d5a918b642bd2fe9958.csv
     fixmatch_threshold: 0.95
