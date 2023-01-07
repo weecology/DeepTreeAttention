@@ -43,6 +43,7 @@ class TreeDataset(Dataset):
         if self.config["preload_images"]:
             image = self.image_dict[index]
             weak_augmentation = self.weak_transformer(image)
+            year_annotations = self.annotations.drop(index=index)            
             selected_index = year_annotations[year_annotations.individual==individual].sample(n=1).index.values[0]            
             selected_year_image = self.image_dict[selected_index]
         else:
