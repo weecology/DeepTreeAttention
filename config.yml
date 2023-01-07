@@ -103,7 +103,7 @@ semi_supervised:
     num_samples: 3000
     limit_shapefiles: 100
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
-    alpha: 0.5
+    alpha: 0
     #Existing csv file
     semi_supervised_train:
     fixmatch_threshold: 0.95
