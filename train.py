@@ -99,8 +99,8 @@ def main():
         client=client,
         classes=data_module.num_classes, 
         loss_weight=loss_weight,
-        supervised_test=data_module.test,
-        supervised_train=data_module.train,
+        supervised_test=test,
+        supervised_train=sys,
         label_dict=data_module.species_label_dict)
     
     comet_logger.experiment.log_table("semi_supervised_train.csv", m.semi_supervised_train)
