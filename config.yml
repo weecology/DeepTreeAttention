@@ -48,8 +48,8 @@ evergreen_ceiling: 70
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
-preload_images: True
-workers: 0
+preload_images: False
+workers: 5
 sampling_ceiling: 200
 #Network Parameters
 pretrain_state_dict:
@@ -100,10 +100,10 @@ dead:
 semi_supervised:
     crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
     site_filter: 
-    num_samples: 30000
+    num_samples: 3000
     limit_shapefiles: 100
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
-    alpha: 1
+    alpha: 0
     #Existing csv file
     semi_supervised_train:
     fixmatch_threshold: 0.95
