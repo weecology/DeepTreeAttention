@@ -1,14 +1,10 @@
 #Prepare semi_supervised data
-import copy
 import glob
 import torch
-from src.models import baseline
 from src.data import TreeDataset
-from pytorch_lightning import Trainer
 import pandas as pd
 import geopandas as gpd
 import torch
-import numpy as np
 import random
 
 def load_unlabeled_data(config, client=None):
