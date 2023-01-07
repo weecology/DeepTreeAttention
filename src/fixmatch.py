@@ -42,24 +42,26 @@ class TreeDataset(Dataset):
         
         if self.config["preload_images"]:
             image = self.image_dict[index]
+            weak_augmentation = self.weak_transformer(image)
+            selected_index = year_annotations[year_annotations.individual==individual].sample(n=1).index.values[0]            
+            selected_year_image = self.image_dict[selected_index]
         else:
             image_basename = self.annotations.image_path.loc[index]  
             image_path = os.path.join(self.config["crop_dir"],image_basename)                
             image = load_image(image_path, image_size=self.image_size)
         
-        weak_augmentation = self.weak_transformer(image)    
-        
-        # Strong Augmentation is the same location in a different year
-        year_annotations = self.annotations.drop(index=index)
-        try:
-            selected_year_path = year_annotations[year_annotations.individual==individual].sample(n=1).image_path.values[0]
-            selected_year_path = os.path.join(self.config["crop_dir"],selected_year_path)                
-        except ValueError:
-            raise ValueError("There are no multiple individuals in dataframe.head() {} for individual {}".format(year_annotations.head(), individual))
-            
-        selected_year_image = load_image(selected_year_path, image_size=self.image_size)
+            # Strong Augmentation is the same location in a different year
+            year_annotations = self.annotations.drop(index=index)
+            try:
+                selected_year_path = year_annotations[year_annotations.individual==individual].sample(n=1).image_path.values[0]
+                selected_year_path = os.path.join(self.config["crop_dir"],selected_year_path)                
+            except ValueError:
+                raise ValueError("There are no multiple individuals in dataframe.head() {} for individual {}".format(year_annotations.head(), individual))
+                
+            weak_augmentation = self.weak_transformer(image)    
+            selected_year_image = load_image(selected_year_path, image_size=self.image_size)
         
         inputs["Strong"] = self.weak_transformer(selected_year_image)
         inputs["Weak"] = weak_augmentation
-        
+    
         return individual, inputs
