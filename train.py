@@ -90,8 +90,8 @@ def main():
     test = data_module.test
     train = data_module.train
     
-    test = test[test.tile_year="2021"]
-    train = train[train.tile_year="2021"]
+    #test = test[test.tile_year=="2021"]
+    #train = train[train.tile_year=="2021"]
     
     m = joint_semi.TreeModel(
         model=model, 
@@ -100,7 +100,7 @@ def main():
         classes=data_module.num_classes, 
         loss_weight=loss_weight,
         supervised_test=test,
-        supervised_train=sys,
+        supervised_train=train,
         label_dict=data_module.species_label_dict)
     
     comet_logger.experiment.log_table("semi_supervised_train.csv", m.semi_supervised_train)
