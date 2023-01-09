@@ -127,7 +127,7 @@ def main():
     #Save model checkpoint and profile
     trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pt".format(comet_logger.experiment.id))
     torch.save(m.model.state_dict(), "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_state_dict.pt".format(comet_logger.experiment.id))
-    comet_logger.experiment.log_asset("profile","/blue/ewhite/b.weinstein/DeepTreeAttention/logs/{}_profiler.out".format(comet_logger.experiment.id))
+    comet_logger.experiment.log_asset("/blue/ewhite/b.weinstein/DeepTreeAttention/logs/{}_profiler.out".format(comet_logger.experiment.id))
     
     # Prediction datasets are indexed by year, but full data is given to each model before ensembling
     results = m.evaluate_crowns(
@@ -166,6 +166,16 @@ def main():
     plot_lists = data_module.train.groupby("label").plotID.unique()
     within_plot_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=plot_lists)
     comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)
+    
+    # Cross temporal match
+    temporal_consistancy = results.groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()
+    comet_logger.experiment.log_metric("Temporal Consistancy",temporal_consistancy)
+    
+    pos_temporal_consistancy = results[results.taxonID==results.pred_taxa_top1].groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()
+    comet_logger.experiment.log_metric("True Positive Temporal Consistancy",pos_temporal_consistancy)
 
+    neg_temporal_consistancy = results[~(results.taxonID==results.pred_taxa_top1)].groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()
+    comet_logger.experiment.log_metric("True Positive Temporal Consistancy",neg_temporal_consistancy)
+    
 if __name__ == "__main__":
     main()
