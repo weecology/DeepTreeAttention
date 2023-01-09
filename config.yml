@@ -111,3 +111,4 @@ semi_supervised:
     max_samples_per_class: 1000
     workers: 5
     preload_images: False
+    threshold: 0.7
