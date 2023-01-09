@@ -73,7 +73,7 @@ min_loss_weight: 10
 
 #Evaluation config
 top_k: 4
-validation_interval: 20
+validation_interval: 1
 #Number of individuals to plot in comet graphics tab
 plot_n_individuals: 0
 
@@ -106,6 +106,6 @@ semi_supervised:
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
     alpha: 0.5
     #Existing csv file
-    semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/6ddbf302c19641d1bdf0c443b059f997.csv
+    semi_supervised_train:
     fixmatch_threshold: 0.95
     max_samples_per_class: 1000
