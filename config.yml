@@ -110,6 +110,6 @@ semi_supervised:
     fixmatch_threshold: 0.95
     max_samples_per_class: 1000
     workers: 5
-    preload_images: False
+    preload_images: True
     threshold: 0.7
     batch_size: 1024
