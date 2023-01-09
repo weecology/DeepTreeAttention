@@ -108,7 +108,7 @@ def main():
     m.semi_supervised_train.to_csv("/blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/{}.csv".format(comet_logger.experiment.id))
     
     #Create trainer
-    profiler=SimpleProfiler("/blue/ewhite/b.weinstein/DeepTreeAttention/logs/{}_profiler.out".format(comet_logger.experiment.id))
+    profiler=SimpleProfiler(filename="/blue/ewhite/b.weinstein/DeepTreeAttention/logs/{}_profiler".format(comet_logger.experiment.id))
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
     trainer = Trainer(
         gpus=data_module.config["gpus"],
@@ -127,7 +127,7 @@ def main():
     #Save model checkpoint and profile
     trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pt".format(comet_logger.experiment.id))
     torch.save(m.model.state_dict(), "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_state_dict.pt".format(comet_logger.experiment.id))
-    comet_logger.experiment.log_asset("/blue/ewhite/b.weinstein/DeepTreeAttention/logs/{}_profiler.out".format(comet_logger.experiment.id))
+    comet_logger.experiment.log_asset("/blue/ewhite/b.weinstein/DeepTreeAttention/logs/{}_profiler.txt".format(comet_logger.experiment.id))
     
     # Prediction datasets are indexed by year, but full data is given to each model before ensembling
     results = m.evaluate_crowns(
@@ -175,7 +175,7 @@ def main():
     comet_logger.experiment.log_metric("True Positive Temporal Consistancy",pos_temporal_consistancy)
 
     neg_temporal_consistancy = results[~(results.taxonID==results.pred_taxa_top1)].groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()
-    comet_logger.experiment.log_metric("True Positive Temporal Consistancy",neg_temporal_consistancy)
+    comet_logger.experiment.log_metric("True Negative Temporal Consistancy",neg_temporal_consistancy)
     
 if __name__ == "__main__":
     main()

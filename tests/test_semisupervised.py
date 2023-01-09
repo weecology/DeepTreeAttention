@@ -44,7 +44,7 @@ def test_create_dataframe(config, prediction_model_path, dm):
     train = semi_supervised.create_dataframe(config, unlabeled_df=dm.train, label_to_taxon_id=dm.label_to_taxonID)
     train.shape[0] == config["semi_supervised"]["num_samples"]
     assert all(train.index.values == np.arange(train.shape[0]))
-    
+
 def test_fit(config, dm, prediction_model_path, prediction_dir):
     """Test that the model can load an existing model for unlabeled predictions and train """
     config["semi_supervised"]["site_filter"] = None
