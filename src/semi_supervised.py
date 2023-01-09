@@ -77,8 +77,8 @@ def predict_unlabeled(config, annotation_df, label_to_taxon_id, m=None):
     
     new_config = copy.deepcopy(config)
     new_config["crop_dir"] = new_config["semi_supervised"]["crop_dir"]
-    new_config["preload_images"] = False
-    new_config["workers"] = 5
+    new_config["workers"] = new_config["semi_supervised"]["workers"]
+    new_config["preload_images"] = new_config["semi_supervised"]["preload_images"]
     
     if m is None:
         m = baseline.TreeModel.load_from_checkpoint(new_config["semi_supervised"]["model_path"], config=new_config)
