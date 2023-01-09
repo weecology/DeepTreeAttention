@@ -109,3 +109,5 @@ semi_supervised:
     semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/6ddbf302c19641d1bdf0c443b059f997.csv
     fixmatch_threshold: 0.95
     max_samples_per_class: 1000
+    workers: 5
+    preload_images: False
