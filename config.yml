@@ -103,7 +103,7 @@ semi_supervised:
     num_samples: 100000
     limit_shapefiles: 100
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
-    alpha: 0.15
+    alpha: 0.5
     #Existing csv file
     semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/6ddbf302c19641d1bdf0c443b059f997.csv
-    fixmatch_threshold: 0.99
+    fixmatch_threshold: 0.7
