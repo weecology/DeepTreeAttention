@@ -73,7 +73,7 @@ min_loss_weight: 10
 
 #Evaluation config
 top_k: 4
-validation_interval: 1
+validation_interval: 20
 #Number of individuals to plot in comet graphics tab
 plot_n_individuals: 0
 
