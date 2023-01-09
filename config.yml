@@ -49,7 +49,7 @@ evergreen_ceiling: 70
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
 preload_images: True
-workers: 0
+workers: 4
 sampling_ceiling: 200
 #Network Parameters
 pretrain_state_dict:
@@ -66,7 +66,7 @@ lr_2: 0.0001
 lr_3: 0.0001
 lr_4: 0.0001
 
-fast_dev_run: True
+fast_dev_run: False
 accelerator: auto
 epochs: 1
 min_loss_weight: 10
