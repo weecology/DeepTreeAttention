@@ -78,7 +78,7 @@ validation_interval: 1
 plot_n_individuals: 0
 
 #Predict
-predict_batch_size: 64
+predict_batch_size: 1024
 dead_threshold: 0.95
 prediction_crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
 DeepForest_workers: 10
