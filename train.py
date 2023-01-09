@@ -19,7 +19,7 @@ import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
-from pytorch_lightning.profiler import AdvancedProfiler
+from pytorch_lightning.profiler import SimpleProfiler
 
 import pandas as pd
 from pandas.util import hash_pandas_object
@@ -68,7 +68,7 @@ def main():
     comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(data_module.test))
     comet_logger.experiment.log_parameter("num_species",data_module.num_classes)
     comet_logger.experiment.log_table("test.csv", data_module.test)
-    comet_logger.experiment.log_table("test.csv", data_module.train)
+    comet_logger.experiment.log_table("train.csv", data_module.train)
     
     if not config["use_data_commit"]:
         comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
@@ -108,6 +108,7 @@ def main():
     m.semi_supervised_train.to_csv("/blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/{}.csv".format(comet_logger.experiment.id))
     
     #Create trainer
+    profiler=SimpleProfiler("/blue/ewhite/b.weinstein/DeepTreeAttention/logs/{}_profiler.out".format(comet_logger.experiment.id))
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
     trainer = Trainer(
         gpus=data_module.config["gpus"],
@@ -122,9 +123,10 @@ def main():
     
     trainer.fit(m)
 
-    #Save model checkpoint
+    #Save model checkpoint and profile
     trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pt".format(comet_logger.experiment.id))
     torch.save(m.model.state_dict(), "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_state_dict.pt".format(comet_logger.experiment.id))
+    comet_logger.experiment.log_asset("profile","/blue/ewhite/b.weinstein/DeepTreeAttention/logs/{}_profiler.out".format(comet_logger.experiment.id))
     
     # Prediction datasets are indexed by year, but full data is given to each model before ensembling
     results = m.evaluate_crowns(
