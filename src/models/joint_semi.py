@@ -99,7 +99,7 @@ class TreeModel(baseline.TreeModel):
         
         unlabeled_data_loader = torch.utils.data.DataLoader(
             unlabeled_ds,
-            batch_size=self.config["batch_size"],
+            batch_size=self.config["semi_supervised"]["batch_size"],
             shuffle=True,
             num_workers=self.config["workers"],
         )
