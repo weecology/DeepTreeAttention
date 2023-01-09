@@ -60,7 +60,7 @@ def main():
     
     #Overwrite train with the semi-supervised crops
     if data_module.config["semi_supervised"]["semi_supervised_train"] is None:
-        client = start_cluster.start(cpus=40, mem_size="6GB")   
+        client = start_cluster.start(cpus=10, mem_size="6GB")   
     else:
         client = None
     
@@ -68,6 +68,7 @@ def main():
     comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(data_module.test))
     comet_logger.experiment.log_parameter("num_species",data_module.num_classes)
     comet_logger.experiment.log_table("test.csv", data_module.test)
+    comet_logger.experiment.log_table("test.csv", data_module.train)
     
     if not config["use_data_commit"]:
         comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
