@@ -66,7 +66,7 @@ lr_2: 0.0001
 lr_3: 0.0001
 lr_4: 0.0001
 
-fast_dev_run: False
+fast_dev_run: True
 accelerator: auto
 epochs: 1
 min_loss_weight: 10
