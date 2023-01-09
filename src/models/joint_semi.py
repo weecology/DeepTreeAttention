@@ -119,6 +119,7 @@ class TreeModel(baseline.TreeModel):
         individual, inputs = batch["unlabeled"]
         images = inputs["Weak"]
         y_hat_weak = self.model.forward(images)    
+        y_hat_weak = torch.softmax(y_hat_weak, dim=1)
         
         # Unlabeled data - Strong Augmentation
         individual, inputs = batch["unlabeled"]
