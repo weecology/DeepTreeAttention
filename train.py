@@ -119,6 +119,7 @@ def main():
         check_val_every_n_epoch=data_module.config["validation_interval"],
         callbacks=[lr_monitor],
         enable_checkpointing=False,
+        multiple_trainloader_mode="min_size",
         logger=comet_logger)
     
     trainer.fit(m)
