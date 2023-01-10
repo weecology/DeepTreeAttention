@@ -55,7 +55,7 @@ sampling_ceiling: 200
 pretrain_state_dict:
 
 gpus: 1
-batch_size: 128
+batch_size: 256
 bands: 349
 
 #LR for each level x year
@@ -68,17 +68,17 @@ lr_4: 0.0001
 
 fast_dev_run: False
 accelerator: auto
-epochs: 120
+epochs: 150
 min_loss_weight: 10
 
 #Evaluation config
 top_k: 4
-validation_interval: 20
+validation_interval: 1
 #Number of individuals to plot in comet graphics tab
 plot_n_individuals: 0
 
 #Predict
-predict_batch_size: 64
+predict_batch_size: 1024
 dead_threshold: 0.95
 prediction_crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
 DeepForest_workers: 10
@@ -104,12 +104,12 @@ semi_supervised:
     limit_shapefiles: 100
     model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/cfbeb13fcd774a48b9b9cb99745b6d74.pt
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
-    alpha: 0.5
+    alpha: 0
     #Existing csv file
     semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/dc5fa734e3f84654a7ef3a40693f4575.csv
-    fixmatch_threshold: 0.95
+    fixmatch_threshold: 0.98
     max_samples_per_class: 1000
     workers: 5
-    preload_images: False
+    preload_images: True
     threshold: 0.7
-    batch_size: 1024
+    batch_size: 2048
