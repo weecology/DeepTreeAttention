@@ -112,4 +112,4 @@ semi_supervised:
     workers: 5
     preload_images: True
     threshold: 0.7
-    batch_size: 2048
+    batch_size: 128
