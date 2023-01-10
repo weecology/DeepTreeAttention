@@ -19,7 +19,6 @@ import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
-from pytorch_lightning.profiler import SimpleProfiler
 
 import pandas as pd
 from pandas.util import hash_pandas_object
@@ -86,6 +85,8 @@ def main():
             loss_weight.append(1/count_in_df)
                         
     loss_weight = np.array(loss_weight/np.max(loss_weight))
+    loss_weight[loss_weight < 0.5] = 0.5  
+    comet_logger.experiment.log_parameter("loss_weight", loss_weight)
     
     #Just one year
     test = data_module.test
@@ -108,7 +109,6 @@ def main():
     m.semi_supervised_train.to_csv("/blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/{}.csv".format(comet_logger.experiment.id))
     
     #Create trainer
-    profiler=SimpleProfiler(filename="/blue/ewhite/b.weinstein/DeepTreeAttention/logs/{}_profiler".format(comet_logger.experiment.id))
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
     trainer = Trainer(
         gpus=data_module.config["gpus"],
@@ -119,7 +119,6 @@ def main():
         check_val_every_n_epoch=data_module.config["validation_interval"],
         callbacks=[lr_monitor],
         enable_checkpointing=False,
-        profiler=profiler,
         logger=comet_logger)
     
     trainer.fit(m)
@@ -168,13 +167,15 @@ def main():
     comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)
     
     # Cross temporal match
-    temporal_consistancy = results.groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()
+    temporal_consistancy = results.groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()/results.shape[0]
     comet_logger.experiment.log_metric("Temporal Consistancy",temporal_consistancy)
     
-    pos_temporal_consistancy = results[results.taxonID==results.pred_taxa_top1].groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()
+    correct = results[results.taxonID==results.pred_taxa_top1]
+    pos_temporal_consistancy = correct.groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()/correct.shape[0]
     comet_logger.experiment.log_metric("True Positive Temporal Consistancy",pos_temporal_consistancy)
 
-    neg_temporal_consistancy = results[~(results.taxonID==results.pred_taxa_top1)].groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()
+    incorrect = results[~(results.taxonID==results.pred_taxa_top1)]
+    neg_temporal_consistancy = incorrect.groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()/incorrect.shape[0]
     comet_logger.experiment.log_metric("True Negative Temporal Consistancy",neg_temporal_consistancy)
     
 if __name__ == "__main__":
