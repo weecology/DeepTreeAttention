@@ -116,7 +116,7 @@ def main():
         max_epochs=data_module.config["epochs"],
         accelerator=data_module.config["accelerator"],
         num_sanity_val_steps=0,
-        val_check_interval=int(len(m.supervised_train)/self.config["batch_size"]),
+        val_check_interval=0.5,
         check_val_every_n_epoch=data_module.config["validation_interval"],
         callbacks=[lr_monitor],
         enable_checkpointing=False,
