@@ -198,13 +198,4 @@ class TreeModel(baseline.TreeModel):
         y_hat = self.model.forward(images)
         predicted_class = F.softmax(y_hat, dim=1)
         
-        return predicted_class    
-            
-    def configure_optimizers(self):
-        optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                                         factor=0.75,
-                                                         patience=2,
-                                                         verbose=True)
-                                                                 
-        return {'optimizer':optimizer, 'lr_scheduler': {"scheduler":scheduler,"monitor":'val_loss',"frequency":self.config["validation_interval"], "interval": "epoch"}}
+        return predicted_class
