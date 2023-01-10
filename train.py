@@ -167,15 +167,15 @@ def main():
     comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)
     
     # Cross temporal match
-    temporal_consistancy = results.groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()/results.shape[0]
+    temporal_consistancy = results.groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()
     comet_logger.experiment.log_metric("Temporal Consistancy",temporal_consistancy)
     
     correct = results[results.taxonID==results.pred_taxa_top1]
-    pos_temporal_consistancy = correct.groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()/correct.shape[0]
+    pos_temporal_consistancy = correct.groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()
     comet_logger.experiment.log_metric("True Positive Temporal Consistancy",pos_temporal_consistancy)
 
     incorrect = results[~(results.taxonID==results.pred_taxa_top1)]
-    neg_temporal_consistancy = incorrect.groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()/incorrect.shape[0]
+    neg_temporal_consistancy = incorrect.groupby("individual").apply(lambda x: x.pred_taxa_top1.value_counts().mean()).mean()
     comet_logger.experiment.log_metric("True Negative Temporal Consistancy",neg_temporal_consistancy)
     
 if __name__ == "__main__":

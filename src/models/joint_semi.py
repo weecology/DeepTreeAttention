@@ -204,8 +204,7 @@ class TreeModel(baseline.TreeModel):
         optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                          factor=0.75,
-                                                         patience=5,
-                                                         min_lr=0.000001,
+                                                         patience=2,
                                                          verbose=True)
                                                                  
         return {'optimizer':optimizer, 'lr_scheduler': {"scheduler":scheduler,"monitor":'val_loss',"frequency":self.config["validation_interval"], "interval": "epoch"}}
