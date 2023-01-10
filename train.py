@@ -92,8 +92,8 @@ def main():
     test = data_module.test
     train = data_module.train
     
-    test = test[test.tile_year=="2021"]
-    train = train[train.tile_year=="2021"]
+    test = test[test.tile_year==2021]
+    train = train[train.tile_year==2021]
     
     m = joint_semi.TreeModel(
         model=model, 
