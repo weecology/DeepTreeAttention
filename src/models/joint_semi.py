@@ -174,21 +174,6 @@ class TreeModel(baseline.TreeModel):
         
         return data_loader
     
-    def validation_step(self, batch, batch_idx):
-        """Val on a loaded dataset
-        """
-        #allow for empty data if data augmentation is generated
-        individual, inputs, y = batch
-        images = inputs["HSI"]        
-        y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)        
-        self.log_dict(self.metrics(y_hat, y), on_epoch=True, on_step=False)
-        
-        # Log loss and metrics
-        self.log("val_loss", loss, on_epoch=True)
-        
-        return loss
-    
     def predict_step(self, batch, batch_idx):
         """Train on a loaded dataset
         """
