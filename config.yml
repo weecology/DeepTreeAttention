@@ -55,7 +55,7 @@ sampling_ceiling: 200
 pretrain_state_dict:
 
 gpus: 1
-batch_size: 128
+batch_size: 256
 bands: 349
 
 #LR for each level x year
