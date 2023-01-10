@@ -57,8 +57,8 @@ class TreeDataset(Dataset):
             # Strong Augmentation is the same location in a different year
             year_annotations = self.year_lookup[individual]
             selected_indices = [x for x in year_annotations if not x == index]
-            selected_index = random.shuffle(selected_indices)
-            selected_year_path = self.annotations.iloc[selected_index].image_path
+            random.shuffle(selected_indices)
+            selected_year_path = self.annotations.iloc[selected_indices[0]].image_path
             selected_year_path = os.path.join(self.config["crop_dir"],selected_year_path)                
       
             weak_augmentation = self.weak_transformer(image)    
