@@ -118,10 +118,10 @@ class TreeModel(baseline.TreeModel):
         supervised_loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)   
         
         ## Unlabeled data - Weak Augmentation
-        #individual, inputs = batch["unlabeled"]
-        #images = inputs["Weak"]
-        #y_hat_weak = self.model.forward(images)    
-        #y_hat_weak = torch.softmax(y_hat_weak, dim=1)
+        individual, inputs = batch["unlabeled"]
+        images = inputs["Weak"]
+        y_hat_weak = self.model.forward(images)    
+        y_hat_weak = torch.softmax(y_hat_weak, dim=1)
         
         ## Unlabeled data - Strong Augmentation
         #individual, inputs = batch["unlabeled"]
