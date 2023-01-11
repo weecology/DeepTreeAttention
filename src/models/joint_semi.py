@@ -114,12 +114,12 @@ class TreeModel(baseline.TreeModel):
         # Labeled data
         individual, inputs, y = batch["labeled"]
         images = inputs["HSI"]
-        #Turn off batch norm
-        self.model.eval()
         y_hat = self.model.forward(images)
         supervised_loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)   
         
         ## Unlabeled data - Weak Augmentation
+        #Turn off batch norm
+        self.model.eval()        
         individual, inputs = batch["unlabeled"]
         images = inputs["Weak"]
         y_hat_weak = self.model.forward(images)    
