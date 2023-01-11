@@ -125,35 +125,32 @@ class TreeModel(baseline.TreeModel):
         y_hat_weak = self.model.forward(images)    
         y_hat_weak = torch.softmax(y_hat_weak, dim=1)
         
-        #Turn back on batch norm
-        self.model.train()
+        # Unlabeled data - Strong Augmentation
+        individual, inputs = batch["unlabeled"]
+        images = inputs["Strong"]
+        y_hat_strong = self.model.forward(images)
         
-        ## Unlabeled data - Strong Augmentation
-        #individual, inputs = batch["unlabeled"]
-        #images = inputs["Strong"]
-        #y_hat_strong = self.model.forward(images)
+        #Only select those labels greater than threshold
+        #Is this confidence of the weak or the strong?
+        samples_to_keep = torch.max(y_hat_weak, dim=1).values > self.config["semi_supervised"]["fixmatch_threshold"]
+        mean_confidence = torch.max(y_hat_weak, dim=1).values.mean()
+        self.log("Mean training confidence",mean_confidence)
         
-        ##Only select those labels greater than threshold
-        ##Is this confidence of the weak or the strong?
-        #samples_to_keep = torch.max(y_hat_weak, dim=1).values > self.config["semi_supervised"]["fixmatch_threshold"]
-        #mean_confidence = torch.max(y_hat_weak, dim=1).values.mean()
-        #self.log("Mean training confidence",mean_confidence)
-        
-        #if sum(samples_to_keep) > 0:
-            #selected_weak_y = y_hat_weak[samples_to_keep,:]
-            #selected_unlabeled_yhat = y_hat_strong[samples_to_keep,:]            
-            #psuedo_label = torch.argmax(selected_weak_y, dim=1)
+        if sum(samples_to_keep) > 0:
+            selected_weak_y = y_hat_weak[samples_to_keep,:]
+            selected_unlabeled_yhat = y_hat_strong[samples_to_keep,:]            
+            psuedo_label = torch.argmax(selected_weak_y, dim=1)
             
-            ##Useful to log number of samples kept
-            #self.unlabeled_samples_count = self.unlabeled_samples_count + psuedo_label.shape[0] 
-            #unsupervised_loss = F.cross_entropy(input=selected_unlabeled_yhat, target=psuedo_label)    
-        #else:
-            #unsupervised_loss = 0
+            #Useful to log number of samples kept
+            self.unlabeled_samples_count = self.unlabeled_samples_count + psuedo_label.shape[0] 
+            unsupervised_loss = F.cross_entropy(input=selected_unlabeled_yhat, target=psuedo_label)    
+        else:
+            unsupervised_loss = 0
             
-        #self.log("supervised_loss",supervised_loss)
-        #self.log("unsupervised_loss", unsupervised_loss)
-        #self.log("alpha", self.alpha, on_step=False, on_epoch=True)
-        #loss = supervised_loss + self.alpha * unsupervised_loss 
+        self.log("supervised_loss",supervised_loss)
+        self.log("unsupervised_loss", unsupervised_loss)
+        self.log("alpha", self.alpha, on_step=False, on_epoch=True)
+        loss = supervised_loss + self.alpha * unsupervised_loss 
         
         return supervised_loss
     
