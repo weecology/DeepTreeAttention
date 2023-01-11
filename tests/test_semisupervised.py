@@ -62,7 +62,7 @@ def test_fit(config, dm, prediction_model_path, prediction_dir):
         supervised_train=dm.train,
         label_dict=dm.species_label_dict)
     
-    trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=0)
+    trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=0, multiple_trainloader_mode="min_size")
     trainer.fit(joint_model)
     results = joint_model.evaluate_crowns(
         dm.val_dataloader(),

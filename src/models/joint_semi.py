@@ -97,14 +97,16 @@ class TreeModel(baseline.TreeModel):
             config=semi_supervised_config
         )
         
-        self.unlabeled_data_loader = torch.utils.data.DataLoader(
-            unlabeled_ds,
-            batch_size=self.config["semi_supervised"]["batch_size"],
-            shuffle=True,
-            num_workers=self.config["workers"],
-        )
+        #self.unlabeled_data_loader = torch.utils.data.DataLoader(
+            #unlabeled_ds,
+            #batch_size=self.config["semi_supervised"]["batch_size"],
+            #shuffle=True,
+            #num_workers=self.config["workers"],
+        #)
         
-        return {"labeled":self.data_loader, "unlabeled": self.unlabeled_data_loader}
+        #return {"labeled":self.data_loader, "unlabeled": self.unlabeled_data_loader}
+        
+        return {"labeled":self.data_loader}
     
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
@@ -115,40 +117,40 @@ class TreeModel(baseline.TreeModel):
         y_hat = self.model.forward(images)
         supervised_loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)   
         
-        # Unlabeled data - Weak Augmentation
-        individual, inputs = batch["unlabeled"]
-        images = inputs["Weak"]
-        y_hat_weak = self.model.forward(images)    
-        y_hat_weak = torch.softmax(y_hat_weak, dim=1)
+        ## Unlabeled data - Weak Augmentation
+        #individual, inputs = batch["unlabeled"]
+        #images = inputs["Weak"]
+        #y_hat_weak = self.model.forward(images)    
+        #y_hat_weak = torch.softmax(y_hat_weak, dim=1)
         
-        # Unlabeled data - Strong Augmentation
-        individual, inputs = batch["unlabeled"]
-        images = inputs["Strong"]
-        y_hat_strong = self.model.forward(images)
+        ## Unlabeled data - Strong Augmentation
+        #individual, inputs = batch["unlabeled"]
+        #images = inputs["Strong"]
+        #y_hat_strong = self.model.forward(images)
         
-        #Only select those labels greater than threshold
-        #Is this confidence of the weak or the strong?
-        samples_to_keep = torch.max(y_hat_weak, dim=1).values > self.config["semi_supervised"]["fixmatch_threshold"]
-        mean_confidence = torch.max(y_hat_weak, dim=1).values.mean()
-        self.log("Mean training confidence",mean_confidence)
+        ##Only select those labels greater than threshold
+        ##Is this confidence of the weak or the strong?
+        #samples_to_keep = torch.max(y_hat_weak, dim=1).values > self.config["semi_supervised"]["fixmatch_threshold"]
+        #mean_confidence = torch.max(y_hat_weak, dim=1).values.mean()
+        #self.log("Mean training confidence",mean_confidence)
         
-        if sum(samples_to_keep) > 0:
-            selected_weak_y = y_hat_weak[samples_to_keep,:]
-            selected_unlabeled_yhat = y_hat_strong[samples_to_keep,:]            
-            psuedo_label = torch.argmax(selected_weak_y, dim=1)
+        #if sum(samples_to_keep) > 0:
+            #selected_weak_y = y_hat_weak[samples_to_keep,:]
+            #selected_unlabeled_yhat = y_hat_strong[samples_to_keep,:]            
+            #psuedo_label = torch.argmax(selected_weak_y, dim=1)
             
-            #Useful to log number of samples kept
-            self.unlabeled_samples_count = self.unlabeled_samples_count + psuedo_label.shape[0] 
-            unsupervised_loss = F.cross_entropy(input=selected_unlabeled_yhat, target=psuedo_label)    
-        else:
-            unsupervised_loss = 0
+            ##Useful to log number of samples kept
+            #self.unlabeled_samples_count = self.unlabeled_samples_count + psuedo_label.shape[0] 
+            #unsupervised_loss = F.cross_entropy(input=selected_unlabeled_yhat, target=psuedo_label)    
+        #else:
+            #unsupervised_loss = 0
             
-        self.log("supervised_loss",supervised_loss)
-        self.log("unsupervised_loss", unsupervised_loss)
-        self.log("alpha", self.alpha, on_step=False, on_epoch=True)
-        loss = supervised_loss + self.alpha * unsupervised_loss 
+        #self.log("supervised_loss",supervised_loss)
+        #self.log("unsupervised_loss", unsupervised_loss)
+        #self.log("alpha", self.alpha, on_step=False, on_epoch=True)
+        #loss = supervised_loss + self.alpha * unsupervised_loss 
         
-        return loss
+        return supervised_loss
     
     def on_train_epoch_start(self):
         """Reset count of unlabeled samples per train epoch"""

@@ -78,7 +78,7 @@ class TreeModel(LightningModule):
         individual, inputs, y = batch
         images = inputs["HSI"]        
         y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat, y)        
+        loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)        
         self.log_dict(self.metrics(y_hat, y), on_epoch=True, on_step=False)
         
         # Log loss and metrics
