@@ -152,6 +152,8 @@ class TreeModel(baseline.TreeModel):
         self.log("alpha", self.alpha, on_step=False, on_epoch=True)
         loss = supervised_loss + self.alpha * unsupervised_loss 
         
+        self.model.train()
+        
         return supervised_loss
     
     def on_train_epoch_start(self):
