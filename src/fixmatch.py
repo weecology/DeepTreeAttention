@@ -64,7 +64,7 @@ class TreeDataset(Dataset):
             weak_augmentation = self.weak_transformer(image)    
             selected_year_image = load_image(selected_year_path, image_size=self.image_size)
         
-        inputs["Strong"] = selected_year_image
+        inputs["Strong"] = weak_augmentation
         inputs["Weak"] = weak_augmentation
     
         return individual, inputs
