@@ -118,8 +118,6 @@ class TreeModel(baseline.TreeModel):
         supervised_loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)   
         
         ## Unlabeled data - Weak Augmentation
-        #Turn off batch norm
-        self.model.eval()        
         individual, inputs = batch["unlabeled"]
         images = inputs["Weak"]
         y_hat_weak = self.model.forward(images)    
@@ -151,10 +149,8 @@ class TreeModel(baseline.TreeModel):
         self.log("unsupervised_loss", unsupervised_loss)
         self.log("alpha", self.alpha, on_step=False, on_epoch=True)
         loss = supervised_loss + self.alpha * unsupervised_loss 
-        
-        self.model.train()
-        
-        return supervised_loss
+                
+        return loss
     
     def on_train_epoch_start(self):
         """Reset count of unlabeled samples per train epoch"""
