@@ -97,16 +97,16 @@ class TreeModel(baseline.TreeModel):
             config=semi_supervised_config
         )
         
-        #self.unlabeled_data_loader = torch.utils.data.DataLoader(
-            #unlabeled_ds,
-            #batch_size=self.config["semi_supervised"]["batch_size"],
-            #shuffle=True,
-            #num_workers=self.config["workers"],
-        #)
+        self.unlabeled_data_loader = torch.utils.data.DataLoader(
+            unlabeled_ds,
+            batch_size=self.config["semi_supervised"]["batch_size"],
+            shuffle=True,
+            num_workers=self.config["workers"],
+        )
         
-        #return {"labeled":self.data_loader, "unlabeled": self.unlabeled_data_loader}
+        return {"labeled":self.data_loader, "unlabeled": self.unlabeled_data_loader}
         
-        return {"labeled":self.data_loader}
+        #return {"labeled":self.data_loader}
     
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
