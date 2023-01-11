@@ -23,7 +23,7 @@ class conv_module(Module):
         
     def forward(self, x, pool=False):
         x = self.conv_layer(x)
-        x = self.bn1(x)
+        #x = self.bn1(x)
         x = F.relu(x)
         if pool:
             x = self.max_pool(x)

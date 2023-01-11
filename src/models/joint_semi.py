@@ -134,7 +134,7 @@ class TreeModel(baseline.TreeModel):
         #Is this confidence of the weak or the strong?
         samples_to_keep = torch.max(y_hat_weak, dim=1).values > self.config["semi_supervised"]["fixmatch_threshold"]
         mean_confidence = torch.max(y_hat_weak, dim=1).values.mean()
-        self.log("Mean training confidence",mean_confidence)
+        self.log("Unlabeled mean training confidence",mean_confidence)
         
         if sum(samples_to_keep) > 0:
             selected_weak_y = y_hat_weak[samples_to_keep,:]
