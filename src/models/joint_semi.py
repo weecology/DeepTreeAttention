@@ -122,14 +122,17 @@ class TreeModel(baseline.TreeModel):
         unlabeled_images = inputs["Weak"]
         
         #Combine labeled and unlabeled data to preserve batchnorm
-        images = torch.vstack([labeled_images, unlabeled_images])
-        y_hat_weak = self.model.forward(images)    
+        self.model.eval()
+        y_hat_weak = self.model.forward(unlabeled_images)  
+        self.model.train()
         y_hat_weak = torch.softmax(y_hat_weak, dim=1)
         
         # Unlabeled data - Strong Augmentation
         individual, inputs = batch["unlabeled"]
         images = inputs["Strong"]
+        self.model.eval()
         y_hat_strong = self.model.forward(images)
+        self.model.train()
         
         #Only select those labels greater than threshold
         #Is this confidence of the weak or the strong?
@@ -152,8 +155,8 @@ class TreeModel(baseline.TreeModel):
         self.log("unsupervised_loss", unsupervised_loss)
         self.log("alpha", self.alpha, on_step=False, on_epoch=True)
         loss = supervised_loss + self.alpha * unsupervised_loss 
-                
-        return loss
+        
+        return supervised_loss
     
     def on_train_epoch_start(self):
         """Reset count of unlabeled samples per train epoch"""
