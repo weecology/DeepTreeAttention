@@ -113,13 +113,16 @@ class TreeModel(baseline.TreeModel):
         """
         # Labeled data
         individual, inputs, y = batch["labeled"]
-        images = inputs["HSI"]
-        y_hat = self.model.forward(images)
+        labeled_images = inputs["HSI"]
+        y_hat = self.model.forward(labeled_images)
         supervised_loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)   
         
         ## Unlabeled data - Weak Augmentation
         individual, inputs = batch["unlabeled"]
-        images = inputs["Weak"]
+        unlabeled_images = inputs["Weak"]
+        
+        #Combine labeled and unlabeled data to preserve batchnorm
+        images = torch.vstack([labeled_images, unlabeled_images])
         y_hat_weak = self.model.forward(images)    
         y_hat_weak = torch.softmax(y_hat_weak, dim=1)
         
