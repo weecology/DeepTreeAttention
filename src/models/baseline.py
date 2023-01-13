@@ -98,7 +98,7 @@ class TreeModel(LightningModule):
         return predicted_class    
             
     def configure_optimizers(self):
-        optimizer = optim.SGD(self.model.parameters(), lr=self.config["lr"])
+        optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                          factor=0.75,
                                                          patience=8,
