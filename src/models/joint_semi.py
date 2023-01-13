@@ -123,40 +123,30 @@ class TreeModel(baseline.TreeModel):
         
         #Combine labeled and unlabeled data to preserve batchnorm
         self.model.eval()
-        y_hat_weak = self.model.forward(unlabeled_images)  
+        logit_weak = self.model.forward(unlabeled_images)  
         self.model.train()
-        y_hat_weak = torch.softmax(y_hat_weak, dim=1)
+        prob_weak = F.softmax(logit_weak, dim=1)
         
         # Unlabeled data - Strong Augmentation
         individual, inputs = batch["unlabeled"]
         images = inputs["Strong"]
         self.model.eval()
-        y_hat_strong = self.model.forward(images)
+        logit_strong = self.model.forward(images)
         self.model.train()
         
         #Only select those labels greater than threshold
-        #Is this confidence of the weak or the strong?
-        samples_to_keep = torch.max(y_hat_weak, dim=1).values > self.config["semi_supervised"]["fixmatch_threshold"]
-        mean_confidence = torch.max(y_hat_weak, dim=1).values.mean()
-        self.log("Unlabeled mean training confidence",mean_confidence)
+        p_pseudo_label, pseudo_label = torch.max(prob_weak.detach(), dim=-1)
+        threshold_mask = p_pseudo_label.ge(self.config["semi_supervised"]["fixmatch_threshold"]).float()
+        pseudo_loss = F.cross_entropy(logit_strong, pseudo_label, reduction="none")
+        pseudo_loss = (pseudo_loss * threshold_mask).mean()
+        self.unlabeled_samples_count = self.unlabeled_samples_count + sum(threshold_mask)
         
-        if sum(samples_to_keep) > 0:
-            selected_weak_y = y_hat_weak[samples_to_keep,:]
-            selected_unlabeled_yhat = y_hat_strong[samples_to_keep,:]            
-            psuedo_label = torch.argmax(selected_weak_y, dim=1)
-            
-            #Useful to log number of samples kept
-            self.unlabeled_samples_count = self.unlabeled_samples_count + psuedo_label.shape[0] 
-            unsupervised_loss = F.cross_entropy(input=selected_unlabeled_yhat, target=psuedo_label)    
-        else:
-            unsupervised_loss = 0
-            
-        self.log("supervised_loss",supervised_loss)
-        self.log("unsupervised_loss", unsupervised_loss)
-        self.log("alpha", self.alpha, on_step=False, on_epoch=True)
+        self.log("Unlabeled mean training confidence",p_pseudo_label.mean())            
+        self.log("supervised_loss",supervised_loss, on_step=True)
+        self.log("unsupervised_loss", pseudo_loss, on_step=True)
         
         if self.current_epoch > 20:
-            loss = supervised_loss + self.alpha * unsupervised_loss 
+            loss = supervised_loss + (self.alpha * pseudo_loss) 
         else:
             loss = supervised_loss
         

@@ -90,6 +90,8 @@ def config(ROOT):
     config["semi_supervised"]["num_samples"] = 5
     config["semi_supervised"]["semi_supervised_train"] = None
     config["semi_supervised"]["max_samples_per_class"] = 3
+    config["semi_supervised"]["fixmatch_threshold"] = 0
+    
     
     return config
 
