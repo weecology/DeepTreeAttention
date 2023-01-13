@@ -4,7 +4,7 @@ from src import semi_supervised, predict
 from src.models import Hang2020, baseline, joint_semi
 import pytest
 import numpy as np
-    
+import torch
 
 @pytest.fixture()
 def prediction_model_path(dm, config, tmpdir):
