@@ -141,7 +141,7 @@ class TreeModel(baseline.TreeModel):
         pseudo_loss = (pseudo_loss * threshold_mask).mean()
         self.unlabeled_samples_count = self.unlabeled_samples_count + sum(threshold_mask)
         
-        self.log("Unlabeled mean training confidence",y_hat_weak.max(dim=1).values.mean())            
+        self.log("Unlabeled mean training confidence",p_pseudo_label.mean())            
         self.log("supervised_loss",supervised_loss, on_step=True)
         self.log("unsupervised_loss", pseudo_loss, on_step=True)
         
