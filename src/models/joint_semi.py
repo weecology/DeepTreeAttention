@@ -106,7 +106,6 @@ class TreeModel(baseline.TreeModel):
         
         return {"labeled":self.data_loader, "unlabeled": self.unlabeled_data_loader}
         
-        #return {"labeled":self.data_loader}
     
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
@@ -128,7 +127,6 @@ class TreeModel(baseline.TreeModel):
         prob_weak = F.softmax(logit_weak, dim=1)
         
         # Unlabeled data - Strong Augmentation
-        individual, inputs = batch["unlabeled"]
         images = inputs["Strong"]
         self.model.eval()
         logit_strong = self.model.forward(images)
