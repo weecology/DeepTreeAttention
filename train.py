@@ -59,7 +59,7 @@ def main():
     
     #Overwrite train with the semi-supervised crops
     if data_module.config["semi_supervised"]["semi_supervised_train"] is None:
-        client = start_cluster.start(cpus=10, mem_size="6GB")   
+        client = start_cluster.start(cpus=20, mem_size="10GB")   
     else:
         client = None
     
