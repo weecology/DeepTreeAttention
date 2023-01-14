@@ -143,7 +143,7 @@ class TreeModel(baseline.TreeModel):
         self.log("supervised_loss",supervised_loss, on_step=True)
         self.log("unsupervised_loss", pseudo_loss, on_step=True)
         
-        if self.current_epoch > 20:
+        if self.current_epoch > 100:
             loss = supervised_loss + (self.alpha * pseudo_loss) 
         else:
             loss = supervised_loss
