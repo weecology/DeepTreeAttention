@@ -77,8 +77,10 @@ class TreeModel(multi_stage.MultiStage):
         # Unlabeled data
         individual, inputs, y = batch[optimizer_idx]["unlabeled"]
         images = inputs["HSI"]
+        self.models[optimizer_idx].eval()
         y_hat = self.models[optimizer_idx].forward(images)        
         unsupervised_loss = F.cross_entropy(y_hat, y)    
+        self.models[optimizer_idx].train()
         
         self.log("supervised_loss_level_{}".format(optimizer_idx),supervised_loss)
         self.log("unsupervised_loss_level_{}".format(optimizer_idx), unsupervised_loss)
