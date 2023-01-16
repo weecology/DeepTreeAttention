@@ -509,3 +509,5 @@ class TreeData(LightningDataModule):
             self.species_label_dict = {}
             for index, taxonID in enumerate(unique_species_labels):
                 self.species_label_dict[taxonID] = index   
+            
+            self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}

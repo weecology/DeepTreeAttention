@@ -10,7 +10,7 @@ import geopandas as gpd
 from pytorch_lightning import Trainer
 
 from src.data import TreeDataset
-from src.models import baseline
+from src.models import multi_stage
 
 def load_unlabeled_data(config, client=None):
     semi_supervised_crops_csvs = glob.glob("{}/*.shp".format(config["semi_supervised"]["crop_dir"]))
@@ -55,10 +55,10 @@ def load_unlabeled_data(config, client=None):
     
 def select_samples(predicted_samples, config):
     """Given a unlabeled dataframe, select which samples to include in dataloader"""
-    samples_to_keep = predicted_samples[predicted_samples.score > config["semi_supervised"]["threshold"]]
+    samples_to_keep = predicted_samples[predicted_samples.ens_score > config["semi_supervised"]["threshold"]]
     
     #Optionally balance and limit
-    individuals_to_keep = samples_to_keep.groupby("taxonID").apply(lambda x: x.drop_duplicates(subset="individual").sample(frac=1).head(n=config["semi_supervised"]["max_samples_per_class"])).individual.values
+    individuals_to_keep = samples_to_keep.groupby("ensembleTaxonID").apply(lambda x: x.drop_duplicates(subset="individual").sample(frac=1).head(n=config["semi_supervised"]["max_samples_per_class"])).individual.values
     predicted_samples = predicted_samples[predicted_samples.individual.isin(individuals_to_keep)].reset_index(drop=True)
 
     return predicted_samples
@@ -81,7 +81,7 @@ def predict_unlabeled(config, annotation_df, label_to_taxon_id, m=None):
     new_config["preload_images"] = new_config["semi_supervised"]["preload_images"]
     
     if m is None:
-        m = baseline.TreeModel.load_from_checkpoint(new_config["semi_supervised"]["model_path"], config=new_config)
+        m = multi_stage.MultiStage.load_from_checkpoint(new_config["semi_supervised"]["model_path"], config=new_config)
     
     trainer = Trainer(gpus=new_config["gpus"], logger=False, enable_checkpointing=False)
     ds = TreeDataset(df = annotation_df, train=False, config=new_config)
@@ -98,11 +98,10 @@ def predict_unlabeled(config, annotation_df, label_to_taxon_id, m=None):
         raise ValueError("No predictions made from the trainer dataloader")
     
     predictions = np.vstack(predictions)
-    annotation_df["label"] = np.argmax(predictions,axis=1)
-    annotation_df["score"] = np.max(predictions,axis=1) 
-    annotation_df["taxonID"] = annotation_df.label.apply(lambda x: label_to_taxon_id[x])
-    
-    return annotation_df
+    results = m.gather_predictions(predictions)
+    ensemble_df = m.ensemble(results)
+
+    return ensemble_df
 
 def create_dataframe(config, label_to_taxon_id, unlabeled_df=None, m=None, client=None):
     """Generate a pytorch dataloader from unlabeled crop data"""

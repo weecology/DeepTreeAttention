@@ -86,6 +86,10 @@ def config(ROOT):
     config["workers"] = 0
     config["dead"]["num_workers"] = 0
     config["dead"]["batch_size"] = 2
+    config["semi_supervised"]["threshold"] = 0
+    config["semi_supervised"]["num_samples"] = 5
+    config["semi_supervised"]["semi_supervised_train"] = None
+        
     
     return config
 
@@ -111,7 +115,8 @@ def experiment():
 #Training module
 @pytest.fixture(scope="session")
 def m(config, dm, ROOT):
-    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)    
+    taxonomic_csv = "{}/data/raw/families.csv".format(ROOT)                
+    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, config=config, taxonomic_csv=taxonomic_csv)    
     m.ROOT = "{}/tests/".format(ROOT)
     
     return m

@@ -32,7 +32,7 @@ class TreeModel(multi_stage.MultiStage):
         print("Shape of semi-supervised {}".format(self.semi_supervised_train.shape))
         
         # Hierarchical psuedolabels
-        self.psuedo_dataframes, _ = self.create_levels(self.semi_supervised_train, level_label_dicts=self.level_label_dicts)
+        self.psuedo_datasets, self.psuedo_dataframes, _ = self.create_datasets(self.semi_supervised_train, level_label_dicts=self.level_label_dicts)
         
     def train_dataloader(self):
         semi_supervised_config = copy.deepcopy(self.config)
@@ -51,7 +51,7 @@ class TreeModel(multi_stage.MultiStage):
             )
             
             # Unlabeled
-            pseudo_dataset = self.TreeDataset(df=self.psuedo_dataframes[level], config=semi_supervised_config)
+            pseudo_dataset = data.TreeDataset(df=self.psuedo_dataframes[level], config=semi_supervised_config)
             unlabeled_data_loader = torch.utils.data.DataLoader(
                 pseudo_dataset,
                 batch_size=self.config["batch_size"],
