@@ -1,4 +1,4 @@
-f	#Config
+#Config
 
 ### Data Generation
 #glob path to sensor data, recursive wildcards allowed
