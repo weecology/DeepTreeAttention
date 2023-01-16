@@ -55,8 +55,10 @@ class MultiStage(LightningModule):
         
         if train_mode:
             # Create the hierarchical structure
-            self.train_datasets, self.train_dataframes, self.level_label_dicts = self.create_datasets(self.train_df, train=True)
-            self.test_datasets, self.test_dataframes, _ = self.create_datasets(self.test_df, level_label_dicts=self.level_label_dicts)
+            self.train_dataframes, self.level_label_dicts = self.create_levels(self.train_df, train=True)
+            self.test_dataframes, _ = self.create_levels(self.test_df, level_label_dicts=self.level_label_dicts)
+            self.test_datasets = self.create_level_datatsets(self.test_dataframes, config=self.config)
+            self.train_datasets = self.create_level_datatsets(self.train_dataframes, config=self.config)
             
             #Create label dicts
             self.label_to_taxonIDs = []
@@ -98,14 +100,13 @@ class MultiStage(LightningModule):
             if not debug:
                 self.save_hyperparameters()        
             
-    def create_datasets(self, df, level_label_dicts=None, train=False):
+    def create_levels(self, df, level_label_dicts=None, train=False):
         """Create a hierarchical set of dataloaders by splitting into taxonID groups
         train: whether to sample the training labels
         level_label_dicts: a dictionary mapping taxonID -> labels for each hierarchical level
         """
         #Create levels for each year
         ## Level 0     
-        datasets = []
         dataframes = []
         if level_label_dicts is None:
             level_label_dicts = []
@@ -140,8 +141,6 @@ class MultiStage(LightningModule):
         # Create labels
         level_0 = pd.concat([head_classes, tail_classes])                
         level_0["label"] = [level_label_dicts[0][x] for x in level_0.taxonID]
-        level_0_ds = TreeDataset(df=level_0, config=self.config)
-        datasets.append(level_0_ds)
         dataframes.append(level_0)
         
         # Level 1 - CONIFER
@@ -159,8 +158,6 @@ class MultiStage(LightningModule):
         # Create labels
         level_1 = tail_classes.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))              
         level_1["label"] = [level_label_dicts[1][x] for x in level_1.taxonID]
-        level_1_ds = TreeDataset(df=level_1, config=self.config)
-        datasets.append(level_1_ds)
         dataframes.append(level_1)
         
         # Level 2 - BROADLEAF
@@ -180,11 +177,18 @@ class MultiStage(LightningModule):
             level_2 = level_2.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))        
                         
         level_2["label"] = [level_label_dicts[2][x] for x in level_2.taxonID]
-        level_2_ds = TreeDataset(df=level_2, config=self.config)
-        datasets.append(level_2_ds)
         dataframes.append(level_2)
         
-        return datasets, dataframes, level_label_dicts
+        return dataframes, level_label_dicts
+    
+    def create_level_datatsets(self, dataframes, config):
+        """Static method to turn dataframes into pytorch datasets"""
+        datasets = []
+        for dataframe in dataframes:
+            ds = TreeDataset(df=dataframe, config=config)
+            datasets.append(ds)
+        
+        return datasets
     
     def train_dataloader(self):
         data_loaders = []

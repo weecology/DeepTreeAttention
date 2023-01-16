@@ -32,7 +32,7 @@ class TreeModel(multi_stage.MultiStage):
         print("Shape of semi-supervised {}".format(self.semi_supervised_train.shape))
         
         # Hierarchical psuedolabels
-        self.psuedo_datasets, self.psuedo_dataframes, _ = self.create_datasets(self.semi_supervised_train, level_label_dicts=self.level_label_dicts)
+        self.psuedo_dataframes, _ = self.create_levels(self.semi_supervised_train, level_label_dicts=self.level_label_dicts)
         
     def train_dataloader(self):
         semi_supervised_config = copy.deepcopy(self.config)
