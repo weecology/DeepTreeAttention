@@ -12,6 +12,14 @@ from pytorch_lightning import Trainer
 from src.data import TreeDataset
 from src.models import baseline
 
+def read_and_sample(path, frac):
+    """Read a shapefile and sample a portion of the individuals"""
+    gpd = gpd.read_file(path)
+    inds = gpd.sample(frac=frac).individual.unique()
+    gpd = gpd[gpd.individual.isin(inds)]
+    
+    return gpd
+    
 def load_unlabeled_data(config, client=None):
     semi_supervised_crops_csvs = glob.glob("{}/*.shp".format(config["semi_supervised"]["crop_dir"]))
     
@@ -21,10 +29,10 @@ def load_unlabeled_data(config, client=None):
     random.shuffle(semi_supervised_crops_csvs)
     semi_supervised_crops_csvs = semi_supervised_crops_csvs[:config["semi_supervised"]["limit_shapefiles"]]
     if client:
-        semi_supervised_crops = client.map(gpd.read_file, semi_supervised_crops_csvs)
+        semi_supervised_crops = client.map(read_and_sample, semi_supervised_crops_csvs, frac=config["semi_supervised"]["sample_fraction_of_individuals"])
         semi_supervised_crops = client.gather(semi_supervised_crops)
     else:
-        semi_supervised_crops = [gpd.read_file(x) for x in semi_supervised_crops_csvs]
+        semi_supervised_crops = [read_and_sample(x, frac=config["semi_supervised"]["sample_fraction_of_individuals"]) for x in semi_supervised_crops_csvs]
         
     semi_supervised_crops = pd.concat(semi_supervised_crops)
     
@@ -38,11 +46,7 @@ def load_unlabeled_data(config, client=None):
         site_semi_supervised_crops = semi_supervised_crops[semi_supervised_crops.image_path.str.contains(config["semi_supervised"]["site_filter"])]
     else:
         site_semi_supervised_crops = semi_supervised_crops
-    
-    site_semi_supervised_crops = site_semi_supervised_crops.sample(frac=1)
-    individuals_to_keep = pd.Series(site_semi_supervised_crops.individual.unique()).sample(n=config["semi_supervised"]["num_samples"])    
-    site_semi_supervised_crops = site_semi_supervised_crops[site_semi_supervised_crops.individual.isin(individuals_to_keep)]
-    
+        
     # Reset the index to 0:n_samples
     site_semi_supervised_crops = site_semi_supervised_crops.reset_index(drop=True)
     
