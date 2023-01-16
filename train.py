@@ -59,7 +59,7 @@ def main():
     
     #Overwrite train with the semi-supervised crops
     if data_module.config["semi_supervised"]["semi_supervised_train"] is None:
-        client = start_cluster.start(cpus=10, mem_size="6GB")   
+        client = start_cluster.start(cpus=20, mem_size="20GB")   
     else:
         client = None
     
@@ -119,7 +119,7 @@ def main():
         check_val_every_n_epoch=data_module.config["validation_interval"],
         callbacks=[lr_monitor],
         enable_checkpointing=False,
-        multiple_trainloader_mode="max_size_cycle",
+        multiple_trainloader_mode="min_size",
         logger=comet_logger)
     
     trainer.fit(m)

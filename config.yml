@@ -68,7 +68,7 @@ lr_4: 0.0001
 
 fast_dev_run: False
 accelerator: auto
-epochs: 300
+epochs: 250
 min_loss_weight: 10
 
 #Evaluation config
@@ -106,10 +106,10 @@ semi_supervised:
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
     alpha: 0.1
     #Existing csv file
-    semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/dc5fa734e3f84654a7ef3a40693f4575.csv
+    semi_supervised_train:
     fixmatch_threshold: 0.98
-    max_samples_per_class: 1000
+    max_samples_per_class: 5000
     workers: 5
     preload_images: True
-    threshold: 0.7
+    threshold: 0.8
     batch_size: 1024
