@@ -14,11 +14,11 @@ from src.models import baseline
 
 def read_and_sample(path, frac):
     """Read a shapefile and sample a portion of the individuals"""
-    gpd = gpd.read_file(path)
-    inds = gpd.sample(frac=frac).individual.unique()
-    gpd = gpd[gpd.individual.isin(inds)]
+    gdf = gpd.read_file(path)
+    inds = gdf.sample(frac=frac).individual.unique()
+    gdf = gdf[gdf.individual.isin(inds)]
     
-    return gpd
+    return gdf
     
 def load_unlabeled_data(config, client=None):
     semi_supervised_crops_csvs = glob.glob("{}/*.shp".format(config["semi_supervised"]["crop_dir"]))
