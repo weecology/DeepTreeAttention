@@ -108,5 +108,6 @@ semi_supervised:
     workers: 0
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
     alpha: 0
+    batch_size: 1024
     #Existing csv file
     semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/93fcd337382e4adb98352bffa1514a83.csv

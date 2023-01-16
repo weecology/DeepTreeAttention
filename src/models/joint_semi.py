@@ -39,6 +39,7 @@ class TreeModel(multi_stage.MultiStage):
         semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
         semi_supervised_config["preload_images"] = semi_supervised_config["semi_supervised"]["preload_images"]
         semi_supervised_config["workers"] = semi_supervised_config["semi_supervised"]["workers"]
+        semi_supervised_config["batch_size"] = semi_supervised_config["semi_supervised"]["batch_size"]
 
         train_dataloaders = []
         for level, ds in enumerate(self.train_datasets):
@@ -54,7 +55,7 @@ class TreeModel(multi_stage.MultiStage):
             pseudo_dataset = data.TreeDataset(df=self.psuedo_dataframes[level], config=semi_supervised_config)
             unlabeled_data_loader = torch.utils.data.DataLoader(
                 pseudo_dataset,
-                batch_size=self.config["batch_size"],
+                batch_size=semi_supervised_config["batch_size"],
                 shuffle=True,
                 num_workers=self.config["workers"],
             )
