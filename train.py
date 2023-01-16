@@ -4,7 +4,7 @@ import glob
 import geopandas as gpd
 import os
 import numpy as np
-from src.models import multi_stage
+from src.models import joint_semi
 from src import visualize, metrics, start_cluster, data
 import subprocess
 import sys
@@ -68,7 +68,7 @@ def main():
     train = train[~train.individual.str.contains("graves")].reset_index(drop=True)
     test = test[~test.individual.str.contains("graves")].reset_index(drop=True)
     
-    m = multi_stage.MultiStage(train, test, config=data_module.config, taxonomic_csv="data/raw/families.csv")
+    m = joint_semi.TreeModel(train, test, config=data_module.config, taxonomic_csv="data/raw/families.csv")
     
     #Save the train df for each level for inspection
     for index, train_df in enumerate(m.train_dataframes):
