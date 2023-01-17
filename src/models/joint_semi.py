@@ -144,7 +144,7 @@ class TreeModel(baseline.TreeModel):
         else:
             loss = supervised_loss
         
-        return loss
+        return pseudo_loss
     
     def on_train_epoch_start(self):
         """Reset count of unlabeled samples per train epoch"""
