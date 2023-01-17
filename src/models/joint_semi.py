@@ -78,8 +78,12 @@ class TreeModel(multi_stage.MultiStage):
         individual, inputs, y = batch[optimizer_idx]["unlabeled"]
         images = inputs["HSI"]
         self.models[optimizer_idx].eval()
-        y_hat = self.models[optimizer_idx].forward(images)        
+        y_hat = self.models[optimizer_idx].forward(images)   
+        yprob = F.softmax(y_hat)
+        p_pseudo_label, pseudo_label = torch.max(yprob.detach(), dim=-1)
+        threshold_mask = p_pseudo_label.ge(self.config["semi_supervised"]["loss_threshold"]).float()
         unsupervised_loss = F.cross_entropy(y_hat, y)    
+        unsupervised_loss = (unsupervised_loss * threshold_mask).mean()                
         self.models[optimizer_idx].train()
         
         self.log("supervised_loss_level_{}".format(optimizer_idx),supervised_loss)

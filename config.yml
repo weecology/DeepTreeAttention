@@ -111,3 +111,4 @@ semi_supervised:
     batch_size: 1024
     #Existing csv file
     semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/93fcd337382e4adb98352bffa1514a83.csv
+    loss_threshold: 0.95
