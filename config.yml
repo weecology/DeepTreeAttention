@@ -104,12 +104,12 @@ semi_supervised:
     limit_shapefiles: 100
     model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/cfbeb13fcd774a48b9b9cb99745b6d74.pt
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
-    alpha: 0.1
+    alpha: 0
     #Existing csv file
-    semi_supervised_train:
+    semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/93fcd337382e4adb98352bffa1514a83.csv
     fixmatch_threshold: 0.98
     max_samples_per_class: 5000
     workers: 5
-    preload_images: True
+    preload_images: False
     threshold: 0.8
     batch_size: 1024
