@@ -163,26 +163,52 @@ class MultiStage(LightningModule):
         datasets.append(level_1_ds)
         dataframes.append(level_1)
         
-        # Level 2 - BROADLEAF
+        # Level 2 - BROADLEAF - non OAK
         level_2 = df.copy()
-        rare_species = [x for x in df.taxonID.unique() if x in broadleaf.values]
+        broadleaf_species = [x for x in df.taxonID.unique() if x in broadleaf.values]        
+        non_oak = [x for x in broadleaf_species if not x[0:2] == "QU"]
+        oak = [x for x in broadleaf_species if x[0:2] == "QU"]
         
         try:
             level_label_dicts[2]
         except IndexError:
-            level_label_dicts.append({value:key for key, value in enumerate(rare_species)})
-        
+            label_dict = {value:key for key, value in enumerate(non_oak)}
+            label_dict["OAK"] = len(label_dict) 
+            level_label_dicts.append(label_dict)
+            
         # Select head and tail classes
-        level_2 = level_2[level_2.taxonID.isin(rare_species)]
+        level_2 = level_2[level_2.taxonID.isin(broadleaf_species)]
         
         # Create labels and optionally balance
         if train:
             level_2 = level_2.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))        
-                        
+        
+        level_2.loc[level_2.taxonID.isin(oak),"taxonID"] = "OAK"
         level_2["label"] = [level_label_dicts[2][x] for x in level_2.taxonID]
         level_2_ds = TreeDataset(df=level_2, config=self.config)
         datasets.append(level_2_ds)
         dataframes.append(level_2)
+        
+        # Level 3 - BROADLEAF - OAK
+        level_3 = df.copy()
+        
+        try:
+            level_label_dicts[3]
+        except IndexError:
+            label_dict = {value:key for key, value in enumerate(oak)}
+            level_label_dicts.append(label_dict)
+            
+        # Select head and tail classes
+        level_3 = level_3[level_3.taxonID.isin(oak)]
+        
+        # Create labels and optionally balance
+        if train:
+            level_3 = level_3.groupby("taxonID").apply(lambda x: x.head(self.config["rare_class_sampling_max"]))        
+        
+        level_3["label"] = [level_label_dicts[3][x] for x in level_3.taxonID]
+        level_3_ds = TreeDataset(df=level_3, config=self.config)
+        datasets.append(level_3_ds)
+        dataframes.append(level_3)
         
         return datasets, dataframes, level_label_dicts
     
@@ -318,12 +344,12 @@ class MultiStage(LightningModule):
         predicted_label = temporal_average.groupby(["individual","level"]).yhat.apply(
             lambda x: np.argmax(np.vstack(x))).reset_index().pivot(
                 index=["individual"],columns="level",values="yhat").reset_index()
-        predicted_label.columns = ["individual","pred_label_top1_level_0","pred_label_top1_level_1","pred_label_top1_level_2"]
+        predicted_label.columns = ["individual","pred_label_top1_level_0","pred_label_top1_level_1","pred_label_top1_level_2","pred_label_top1_level_3"]
         
         predicted_score = temporal_average.groupby(["individual","level"]).yhat.apply(
             lambda x: np.vstack(x).max()).reset_index().pivot(
                 index=["individual"],columns="level",values="yhat").reset_index()
-        predicted_score.columns = ["individual","top1_score_level_0","top1_score_level_1","top1_score_level_2"]
+        predicted_score.columns = ["individual","top1_score_level_0","top1_score_level_1","top1_score_level_2","top1_score_level_3"]
         results = pd.merge(predicted_label,predicted_score)
         
         #Label taxa
@@ -348,10 +374,14 @@ class MultiStage(LightningModule):
                 ensemble_taxonID.append(row["pred_taxa_top1_level_1"])
                 ensemble_label.append(self.species_label_dict[row["pred_taxa_top1_level_1"]])
                 ensemble_score.append(row["top1_score_level_1"])                   
-            else:
+            elif not row["pred_taxa_top1_level_2"] =="OAK":
                 ensemble_taxonID.append(row["pred_taxa_top1_level_2"])
                 ensemble_label.append(self.species_label_dict[row["pred_taxa_top1_level_2"]])
-                ensemble_score.append(row["top1_score_level_2"])     
+                ensemble_score.append(row["top1_score_level_2"])
+            else:
+                ensemble_taxonID.append(row["pred_taxa_top1_level_3"])
+                ensemble_label.append(self.species_label_dict[row["pred_taxa_top1_level_3"]])
+                ensemble_score.append(row["top1_score_level_3"])                
                 
         results["ensembleTaxonID"] = ensemble_taxonID
         results["ens_score"] = ensemble_score
