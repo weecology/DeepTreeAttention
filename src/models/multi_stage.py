@@ -1,6 +1,7 @@
 #Multiple stage model
 from src.models.year import learned_ensemble
 from src.data import TreeDataset
+from src import sampler
 
 from pytorch_lightning import LightningModule
 import pandas as pd
@@ -214,11 +215,18 @@ class MultiStage(LightningModule):
     
     def train_dataloader(self):
         data_loaders = []
-        for ds in self.train_datasets:
+                
+        for index, ds in enumerate(self.train_datasets):
+            #Multi-balance
+            imbalance = self.train_dataframes[index]
+            one_hot = torch.nn.functional.one_hot(torch.tensor(imbalance.groupby("individual", sort=False).apply(lambda x: x.head(1)).label.values))
+            train_sampler = sampler.MultilabelBalancedRandomSampler(
+                labels=one_hot, indices=range(len(imbalance.individual.unique())), class_choice="cycle")
+            
             data_loader = torch.utils.data.DataLoader(
                 ds,
                 batch_size=self.config["batch_size"],
-                shuffle=True,
+                sampler=train_sampler,
                 num_workers=self.config["workers"]
             )
             data_loaders.append(data_loader)
