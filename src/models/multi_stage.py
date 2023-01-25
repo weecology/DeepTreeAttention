@@ -221,7 +221,7 @@ class MultiStage(LightningModule):
             imbalance = self.train_dataframes[index]
             one_hot = torch.nn.functional.one_hot(torch.tensor(imbalance.groupby("individual", sort=False).apply(lambda x: x.head(1)).label.values))
             train_sampler = sampler.MultilabelBalancedRandomSampler(
-                labels=one_hot, indices=range(len(imbalance.individual.unique())), class_choice="cycle")
+                labels=one_hot, indices=range(len(imbalance.individual.unique())), class_choice="least_sampled")
             
             data_loader = torch.utils.data.DataLoader(
                 ds,
