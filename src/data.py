@@ -535,4 +535,3 @@ class TreeData(LightningDataModule):
         )
         
         return data_loader
-    
