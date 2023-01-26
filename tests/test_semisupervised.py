@@ -1,24 +1,14 @@
 #Test semi_supervised.py
 from pytorch_lightning import Trainer
 from src import semi_supervised, predict
-from src.models import Hang2020, baseline, joint_semi
+from src.models import joint_semi
 import pytest
 import numpy as np
-import torch
 
 @pytest.fixture()
-def prediction_model_path(dm, config, tmpdir):
-    model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=dm.num_classes) 
-    trainer = Trainer(fast_dev_run=False, max_steps=1, limit_val_batches=1)    
-    model_for_unlabeled_prediction = baseline.TreeModel(
-        model=model, 
-        config=config,
-        classes=dm.num_classes, 
-        loss_weight=None,
-        label_dict=dm.species_label_dict)
-    
+def prediction_model_path(m, tmpdir):    
     trainer = Trainer(fast_dev_run=False, max_steps=1, limit_val_batches=1)
-    trainer.fit(model_for_unlabeled_prediction, datamodule=dm)
+    trainer.fit(m)
     trainer.save_checkpoint("{}/checkpoint.pt".format(tmpdir))
     
     return "{}/checkpoint.pt".format(tmpdir)
@@ -45,24 +35,33 @@ def test_create_dataframe(config, prediction_model_path, dm):
     train.shape[0] == config["semi_supervised"]["num_samples"]
     assert all(train.index.values == np.arange(train.shape[0]))
 
-def test_fit(config, dm, prediction_model_path, prediction_dir):
+def test_fit(config, dm, prediction_model_path, ROOT, prediction_dir, comet_logger):
     """Test that the model can load an existing model for unlabeled predictions and train """
     config["semi_supervised"]["site_filter"] = None
     config["semi_supervised"]["crop_dir"] = prediction_dir
     config["semi_supervised"]["threshold"] = 0
     config["semi_supervised"]["model_path"] = prediction_model_path    
     
-    model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=dm.num_classes)        
+    taxonomic_csv = "{}/data/raw/families.csv".format(ROOT)            
+    
     joint_model = joint_semi.TreeModel(
-        model=model, 
         config=config,
-        classes=dm.num_classes, 
-        loss_weight=None,
         supervised_test=dm.test,
         supervised_train=dm.train,
-        label_dict=dm.species_label_dict)
+        taxonomic_csv=taxonomic_csv,
+        
+    )
     
-    trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=0, multiple_trainloader_mode="min_size")
+    trainer = Trainer(
+        fast_dev_run=False,
+        max_epochs=1,
+        limit_train_batches=1,
+        enable_checkpointing=False,
+        num_sanity_val_steps=0,
+        multiple_trainloader_mode="min_size",
+        logger=comet_logger
+    )
+    
     trainer.fit(joint_model)
     results = joint_model.evaluate_crowns(
         dm.val_dataloader(),

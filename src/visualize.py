@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 
 from matplotlib.collections import PatchCollection
 from rasterio.plot import show
-
+import torch
+import pandas as pd
 from src import neon_paths
 
 def plot_examples(df, test_crowns, plot_n_individuals, test_points, rgb_sensor_pool, experiment):
@@ -95,19 +96,9 @@ def index_to_example(index, test, test_crowns, test_points, rgb_pool, comet_expe
     # Return sample, assetId (index is added automatically)
     return {"sample": image_name, "assetId": results["imageId"]}
 
-def confusion_matrix(comet_experiment, results, species_label_dict, test, test_points, test_crowns, rgb_pool, name):
-    #Confusion matrix
-    comet_experiment.log_confusion_matrix(
-        results.label.values,
-        results.ens_label.values,
-        labels=list(species_label_dict.keys()),
-        max_categories=len(species_label_dict.keys()),
-        index_to_example_function=index_to_example,
-        test=test,
-        test_points=test_points,
-        test_crowns=test_crowns,
-        rgb_pool=rgb_pool,
-        comet_experiment=comet_experiment,
-        title=name
-    )
-    
+def visualize_consistency(prob_strong, prob_weak):
+    """Create a barplot of class labels"""
+    prob_array = torch.stack([prob_strong.squeeze(),prob_weak.squeeze()]).T
+    prob_array = pd.DataFrame(prob_array.detach().cpu().numpy())
+    prob_array.columns = ["weak","strong"]
+    return prob_array.plot(kind="bar")

@@ -1,39 +1,20 @@
 #Lightning Data Module
 from . import __file__
-import numpy as np
-from pytorch_lightning import LightningModule
-import os
 import pandas as pd
-from torch.nn import functional as F
-from torch import optim
 import torch
-import torchmetrics
 import copy
+from torch.nn import functional as F
 
-from src import utils
-from src import fixmatch
-from src.models import baseline
-from src import data, semi_supervised
+from src import fixmatch, visualize, data, semi_supervised
+from src.models import multi_stage
 
-class TreeModel(baseline.TreeModel):
+class TreeModel(multi_stage.MultiStage):
     """A pytorch lightning data module
     Args:
         model (str): Model to use. See the models/ directory. The name is the filename, each model should take in the same data loader
     """
-    def __init__(self, model, classes, label_dict, supervised_train, supervised_test, loss_weight=None, config=None, client=None):
-        super().__init__(model, classes, label_dict, loss_weight=None, config=None)
-    
-        self.ROOT = os.path.dirname(os.path.dirname(__file__))    
-        if config is None:
-            self.config = utils.read_config("{}/config.yml".format(self.ROOT))   
-        else:
-            self.config = config
-        
-        self.classes = classes
-        self.label_to_index = label_dict
-        self.index_to_label = {}
-        for x in label_dict:
-            self.index_to_label[label_dict[x]] = x 
+    def __init__(self, supervised_train, supervised_test, taxonomic_csv, config=None, client=None):
+        super(TreeModel, self).__init__(train_df=supervised_train, test_df=supervised_test, config=config, taxonomic_csv=taxonomic_csv)
         
         # Unsupervised versus supervised loss weight
         self.alpha = torch.nn.Parameter(torch.tensor(self.config["semi_supervised"]["alpha"], dtype=float), requires_grad=False)
@@ -43,39 +24,12 @@ class TreeModel(baseline.TreeModel):
             self.semi_supervised_train = pd.read_csv(self.config["semi_supervised"]["semi_supervised_train"])
             
         self.supervised_train = supervised_train
-        self.supervised_test = supervised_test
+        self.supervised_test = supervised_test       
         
-        #Create model 
-        self.model = model
-        
-        #Metrics
-        micro_recall = torchmetrics.Accuracy(average="micro")
-        macro_recall = torchmetrics.Accuracy(average="macro", num_classes=classes)
-        top_k_recall = torchmetrics.Accuracy(average="micro",top_k=self.config["top_k"])
-
-        self.metrics = torchmetrics.MetricCollection(
-            {"Micro Accuracy":micro_recall,
-             "Macro Accuracy":macro_recall,
-             "Top {} Accuracy".format(self.config["top_k"]): top_k_recall
-             })
-
-        self.save_hyperparameters(ignore=["loss_weight","client"])
-        
-        #Weighted loss - on reload and loss_weight = None, this is skipped
-        if loss_weight is None:
-            loss_weight = torch.ones((classes))   
-        try:
-            if torch.cuda.is_available():
-                self.loss_weight = torch.tensor(loss_weight, device="cuda", dtype=torch.float)
-            else:
-                self.loss_weight = torch.ones((classes))    
-        except:
-            pass
         
     def train_dataloader(self):
         ## Labeled data
-        
-        labeled_ds = data.TreeDataset(
+        labeled_ds = multi_stage.TreeDataset(
             df=self.supervised_train,
             config=self.config,
             train=True
@@ -105,15 +59,14 @@ class TreeModel(baseline.TreeModel):
         )
         
         return {"labeled":self.data_loader, "unlabeled": self.unlabeled_data_loader}
-        
     
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, batch_idx, optimizer_idx):
         """Train on a loaded dataset
         """
         # Labeled data
         individual, inputs, y = batch["labeled"]
         labeled_images = inputs["HSI"]
-        y_hat = self.model.forward(labeled_images)
+        y_hat = self.models[optimizer_idx].forward(labeled_images)
         supervised_loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)   
         
         ## Unlabeled data - Weak Augmentation
@@ -121,12 +74,12 @@ class TreeModel(baseline.TreeModel):
         unlabeled_images = inputs["Weak"]
         
         #Combine labeled and unlabeled data to preserve batchnorm
-        logit_weak = self.model.forward(unlabeled_images)  
+        logit_weak = self.models[optimizer_idx].forward(unlabeled_images)  
         prob_weak = F.softmax(logit_weak, dim=1)
         
         # Unlabeled data - Strong Augmentation
         images = inputs["Strong"]
-        logit_strong = self.model.forward(images)
+        logit_strong = self.models[optimizer_idx].forward(images)
         
         #Only select those labels greater than threshold
         p_pseudo_label, pseudo_label = torch.max(prob_weak.detach(), dim=-1)
@@ -146,29 +99,42 @@ class TreeModel(baseline.TreeModel):
         
         return pseudo_loss
     
-    def on_train_epoch_start(self):
-        """Reset count of unlabeled samples per train epoch"""
-        self.unlabeled_samples_count = 0
-    
-    def on_train_epoch_end(self):
-        self.log("unlabeled_samples",self.unlabeled_samples_count)
-        
-    def val_dataloader(self):
+    def fixmatch_dataloader(self, df):
         """Validation data loader only includes labeled data"""
         
-        val_ds = data.TreeDataset(
-            df = self.supervised_test,
-            config=self.config
+        semi_supervised_config = copy.deepcopy(self.config)
+        semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
+
+        ds = fixmatch.TreeDataset(
+            df=df,
+            config=semi_supervised_config
         )
         
         data_loader = torch.utils.data.DataLoader(
-            val_ds,
-            batch_size=self.config["batch_size"],
+            ds,
+            batch_size=1,
             shuffle=False,
             num_workers=self.config["workers"],
         )
+        return data_loader  
+    
+    def fixmatch_step(self, batch, batch_idx, level):
+        ## Unlabeled data - Weak Augmentation
+        individual, inputs = batch
+        unlabeled_images = inputs["Weak"]
         
-        return data_loader
+        #Combine labeled and unlabeled data to preserve batchnorm
+        self.models[level].eval()
+        logit_weak = self.models[level].forward(unlabeled_images)  
+        prob_weak = F.softmax(logit_weak, dim=1)
+        
+        # Unlabeled data - Strong Augmentation
+        images = inputs["Strong"]
+        logit_strong = self.models[level].forward(images)
+        prob_strong = F.softmax(logit_strong, dim=1)
+        self.models[level].train()
+        
+        return individual, prob_strong, prob_weak
     
     def predict_step(self, batch, batch_idx):
         """Train on a loaded dataset
@@ -180,3 +146,41 @@ class TreeModel(baseline.TreeModel):
         predicted_class = F.softmax(y_hat, dim=1)
         
         return predicted_class
+
+    def on_train_start(self):
+        """On training start log a sample set of data to visualize spectra"""
+        
+        self.unlabeled_samples_count = 0
+        
+        individual_to_keep = self.semi_supervised_train.groupby("taxonID").apply(lambda x: x.sample(frac=1).head(n=4)).individual
+        self.train_viz_df = self.semi_supervised_train[self.semi_supervised_train.individual.isin(individual_to_keep)].reset_index(drop=True)
+        self.trainer.logger.experiment.log_table("train_viz.csv", self.train_viz_df)
+        
+        self.train_viz_dl = self.fixmatch_dataloader(df=self.train_viz_df)
+        
+        for batch in self.train_viz_dl:
+            individual, inputs = batch
+            weak = inputs["Weak"]
+            strong = inputs["Strong"]
+            spectra = torch.stack([weak,strong]).mean([1,3, 4]).cpu().numpy()
+            pd.DataFrame(spectra.T).plot()
+            self.trainer.logger.experiment.log_figure("{}_spectra".format(individual))
+
+        for i, batch in enumerate(self.train_viz_dl):
+            for level in range(self.levels):
+                batch = self.transfer_batch_to_device(batch, self.device, dataloader_idx=0)
+                individual, strong, weak = self.fixmatch_step(batch, i, level)
+                figure = visualize.visualize_consistency(strong, weak)
+                self.trainer.logger.experiment.log_figure("{}_softmax_pretrain_level_{}".format(individual, level))
+
+    def on_train_epoch_end(self):
+        for i, batch in enumerate(self.train_viz_dl):
+            batch = self.transfer_batch_to_device(batch, self.device, dataloader_idx=0)
+            individual, strong, weak = self.predict_step(batch, i)
+            figure = visualize.visualize_consistency(strong, weak)
+            self.trainer.logger.experiment.log_figure("{}_softmax".format(individual))  
+
+    def on_train_epoch_end(self):
+        self.log("unlabeled_samples",self.unlabeled_samples_count)
+        
+            

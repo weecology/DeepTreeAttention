@@ -460,17 +460,6 @@ class TreeData(LightningDataModule):
                 len(self.test.siteID.unique()))
             )
              
-            #Create dataloaders
-            self.train_ds = TreeDataset(
-                csv_file = "{}/train.csv".format(self.data_dir),
-                config=self.config,
-            )
-            
-            self.val_ds = TreeDataset(
-                csv_file = "{}/test.csv".format(self.data_dir),
-                config=self.config,
-            )
-             
         else:
             print("Loading previous run")            
             self.train = pd.read_csv("{}/train.csv".format(self.data_dir))
@@ -504,34 +493,3 @@ class TreeData(LightningDataModule):
                 self.species_label_dict[taxonID] = index
             
             self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
-            
-            #Create dataloaders
-            self.train_ds = TreeDataset(
-                csv_file = "{}/train.csv".format(self.data_dir),
-                config=self.config,
-            )
-            
-            self.val_ds = TreeDataset(
-                csv_file = "{}/test.csv".format(self.data_dir),
-                config=self.config,
-            )
-            
-    def train_dataloader(self):
-        data_loader = torch.utils.data.DataLoader(
-            self.train_ds,
-            batch_size=self.config["batch_size"],
-            shuffle=False,
-            num_workers=self.config["workers"],
-        )
-        
-        return data_loader
-    
-    def val_dataloader(self):
-        data_loader = torch.utils.data.DataLoader(
-            self.val_ds,
-            batch_size=self.config["batch_size"],
-            shuffle=False,
-            num_workers=self.config["workers"],
-        )
-        
-        return data_loader

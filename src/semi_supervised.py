@@ -9,8 +9,7 @@ import pandas as pd
 import geopandas as gpd
 from pytorch_lightning import Trainer
 
-from src.data import TreeDataset
-from src.models import baseline
+from src.models import multi_stage
 
 def read_and_sample(path, frac):
     """Read a shapefile and sample a portion of the individuals"""
@@ -67,11 +66,11 @@ def select_samples(predicted_samples, config):
 
     return predicted_samples
 
-def predict_unlabeled(config, annotation_df, label_to_taxon_id, m=None):
+def predict_unlabeled(config, annotation_df, m=None):
     """Predict unlabaled data with model in memory or loaded from file
     Args:
         config: a DeepTreeAttention config
-        annotation_df: a pandas dataframe with image_path, to be into data.TreeDataset
+        annotation_df: a pandas dataframe with image_path, to be into TreeDataset
     Returns:
         ensemble_df: ensembled dataframe of predictions
     """
@@ -85,10 +84,10 @@ def predict_unlabeled(config, annotation_df, label_to_taxon_id, m=None):
     new_config["preload_images"] = new_config["semi_supervised"]["preload_images"]
     
     if m is None:
-        m = baseline.TreeModel.load_from_checkpoint(new_config["semi_supervised"]["model_path"], config=new_config)
+        m = multi_stage.MultiStage.load_from_checkpoint(new_config["semi_supervised"]["model_path"], config=new_config)
     
     trainer = Trainer(gpus=new_config["gpus"], logger=False, enable_checkpointing=False)
-    ds = TreeDataset(df = annotation_df, train=False, config=new_config)
+    ds = multi_stage.TreeDataset(df = annotation_df, train=False, config=new_config)
     data_loader = torch.utils.data.DataLoader(
         ds,
         batch_size=new_config["predict_batch_size"],
@@ -102,19 +101,21 @@ def predict_unlabeled(config, annotation_df, label_to_taxon_id, m=None):
         raise ValueError("No predictions made from the trainer dataloader")
     
     predictions = np.vstack(predictions)
-    annotation_df["label"] = np.argmax(predictions,axis=1)
-    annotation_df["score"] = np.max(predictions,axis=1) 
-    annotation_df["taxonID"] = annotation_df.label.apply(lambda x: label_to_taxon_id[x])
+    results = m.gather_predictions(predictions)
+    ensemble_df = m.ensemble(results)
+    output = annotation_df.merge(ensemble_df, on="individual")
+    output["taxonID"] = output["ensembleTaxonID"]
+    output["score"] = output["ens_score"]
     
-    return annotation_df
+    return output
 
-def create_dataframe(config, label_to_taxon_id, unlabeled_df=None, m=None, client=None):
+def create_dataframe(config, unlabeled_df=None, m=None, client=None):
     """Generate a pytorch dataloader from unlabeled crop data"""
     
     if unlabeled_df is None:
         unlabeled_df = load_unlabeled_data(config, client=client)
         
-    predicted_samples = predict_unlabeled(config, unlabeled_df, label_to_taxon_id=label_to_taxon_id, m=m)
+    predicted_samples = predict_unlabeled(config, unlabeled_df, m=m)
     
     # Predict labels for each crop
     selected_df = select_samples(
@@ -123,18 +124,3 @@ def create_dataframe(config, label_to_taxon_id, unlabeled_df=None, m=None, clien
     )
     
     return selected_df
-
-def create_dataloader(unlabeled_df, config):
-    semi_supervised_ds = TreeDataset(
-        df=unlabeled_df,
-        train=False,
-        config=config)
-    
-    data_loader = torch.utils.data.DataLoader(
-        semi_supervised_ds,
-        batch_size=config["batch_size"],
-        shuffle=True,
-        num_workers=config["workers"]
-    )        
-    
-    return data_loader
