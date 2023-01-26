@@ -7,11 +7,7 @@ import numpy as np
 import os
 import pandas as pd
 from pytorch_lightning import LightningDataModule
-from src import generate
-from src import CHM
-from src import augmentation
-from src import megaplot
-from src import neon_paths
+from src import generate, CHM, augmentation, megaplot, neon_paths, sampler
 from src.models import dead
 from src.utils import *
 
@@ -508,10 +504,14 @@ class TreeData(LightningDataModule):
                 config=self.config,
             )
     def train_dataloader(self):
+        one_hot = torch.nn.functional.one_hot(torch.tensor(self.train.label.values))
+        train_sampler = sampler.MultilabelBalancedRandomSampler(
+            labels=one_hot, indices=self.train.index, class_choice="cycle")
+                
         data_loader = torch.utils.data.DataLoader(
             self.train_ds,
             batch_size=self.config["batch_size"],
-            shuffle=True,
+            sampler=train_sampler,
             num_workers=self.config["workers"],
         )
         
