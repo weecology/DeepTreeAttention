@@ -19,7 +19,7 @@ class TreeModel(multi_stage.MultiStage):
         # Unsupervised versus supervised loss weight
         self.alpha = torch.nn.Parameter(torch.tensor(self.config["semi_supervised"]["alpha"], dtype=float), requires_grad=False)
         if self.config["semi_supervised"]["semi_supervised_train"] is None:
-            self.semi_supervised_train = semi_supervised.create_dataframe(config, label_to_taxon_id=self.index_to_label, client=client)
+            self.semi_supervised_train = semi_supervised.create_dataframe(config, client=client)
         else:
             self.semi_supervised_train = pd.read_csv(self.config["semi_supervised"]["semi_supervised_train"])
             
