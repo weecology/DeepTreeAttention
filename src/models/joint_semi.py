@@ -62,12 +62,16 @@ class TreeModel(multi_stage.MultiStage):
         unlabeled_images = inputs["Weak"]
         
         #Combine labeled and unlabeled data to preserve batchnorm
+        self.models[optimizer_idx].eval()        
         logit_weak = self.models[optimizer_idx].forward(unlabeled_images)  
+        self.models[optimizer_idx].train()        
         prob_weak = F.softmax(logit_weak, dim=1)
         
         # Unlabeled data - Strong Augmentation
         images = inputs["Strong"]
+        self.models[optimizer_idx].eval()
         logit_strong = self.models[optimizer_idx].forward(images)
+        self.models[optimizer_idx].train()
         
         #Only select those labels greater than threshold
         p_pseudo_label, pseudo_label = torch.max(prob_weak.detach(), dim=-1)
