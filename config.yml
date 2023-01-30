@@ -105,7 +105,7 @@ semi_supervised:
     alpha: 0
     #Existing csv file
     semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/0474f35447d5438a9454fca87e01d6e6.csv
-    fixmatch_threshold: 0
+    fixmatch_threshold: 0.7
     max_samples_per_class: 30000
     workers: 5
     preload_images: False
