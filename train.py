@@ -76,13 +76,10 @@ def main():
     train = data_module.train
     
     m = joint_semi.TreeModel(
-        model=model, 
         config=config,
-        client=client,
-        classes=data_module.num_classes, 
+        taxonomic_csv="data/raw/families.csv",
         supervised_test=test,
-        supervised_train=train,
-        label_dict=data_module.species_label_dict)
+        supervised_train=train)
     
     comet_logger.experiment.log_table("semi_supervised_train.csv", m.semi_supervised_train)
     m.semi_supervised_train.to_csv("/blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/{}.csv".format(comet_logger.experiment.id))
