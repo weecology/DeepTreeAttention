@@ -26,27 +26,15 @@ class TreeModel(multi_stage.MultiStage):
         self.supervised_train = supervised_train
         self.supervised_test = supervised_test       
         
-        
     def train_dataloader(self):
         ## Labeled data
-        labeled_ds = multi_stage.TreeDataset(
-            df=self.supervised_train,
-            config=self.config,
-            train=True
-        )
-        
-        self.data_loader = torch.utils.data.DataLoader(
-            labeled_ds,
-            batch_size=self.config["batch_size"],
-            shuffle=True,
-            num_workers=self.config["workers"],
-        )
+        self.data_loader = super(TreeModel, self).train_dataloader()
         
         ## Unlabeled data
         semi_supervised_config = copy.deepcopy(self.config)
         semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
 
-        unlabeled_ds = fixmatch.TreeDataset(
+        unlabeled_ds = fixmatch.FixmatchDataset(
             df=self.semi_supervised_train,
             config=semi_supervised_config
         )
@@ -56,7 +44,7 @@ class TreeModel(multi_stage.MultiStage):
             batch_size=self.config["semi_supervised"]["batch_size"],
             shuffle=True,
             num_workers=self.config["workers"],
-        )
+        )           
         
         return {"labeled":self.data_loader, "unlabeled": self.unlabeled_data_loader}
     
@@ -64,10 +52,10 @@ class TreeModel(multi_stage.MultiStage):
         """Train on a loaded dataset
         """
         # Labeled data
-        individual, inputs, y = batch["labeled"]
+        individual, inputs, y = batch["labeled"][optimizer_idx]
         labeled_images = inputs["HSI"]
         y_hat = self.models[optimizer_idx].forward(labeled_images)
-        supervised_loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)   
+        supervised_loss = F.cross_entropy(y_hat, y)   
         
         ## Unlabeled data - Weak Augmentation
         individual, inputs = batch["unlabeled"]
@@ -92,7 +80,7 @@ class TreeModel(multi_stage.MultiStage):
         self.log("supervised_loss",supervised_loss, on_step=True)
         self.log("unsupervised_loss", pseudo_loss, on_step=True)
         
-        if self.current_epoch > 100:
+        if self.current_epoch > 20:
             loss = supervised_loss + (self.alpha * pseudo_loss) 
         else:
             loss = supervised_loss
@@ -105,7 +93,7 @@ class TreeModel(multi_stage.MultiStage):
         semi_supervised_config = copy.deepcopy(self.config)
         semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
 
-        ds = fixmatch.TreeDataset(
+        ds = fixmatch.FixmatchDataset(
             df=df,
             config=semi_supervised_config
         )
@@ -135,17 +123,6 @@ class TreeModel(multi_stage.MultiStage):
         self.models[level].train()
         
         return individual, prob_strong, prob_weak
-    
-    def predict_step(self, batch, batch_idx):
-        """Train on a loaded dataset
-        """
-        #allow for empty data if data augmentation is generated
-        individual, inputs = batch
-        images = inputs["HSI"]        
-        y_hat = self.model.forward(images)
-        predicted_class = F.softmax(y_hat, dim=1)
-        
-        return predicted_class
 
     def on_train_start(self):
         """On training start log a sample set of data to visualize spectra"""
@@ -155,16 +132,16 @@ class TreeModel(multi_stage.MultiStage):
         individual_to_keep = self.semi_supervised_train.groupby("taxonID").apply(lambda x: x.sample(frac=1).head(n=4)).individual
         self.train_viz_df = self.semi_supervised_train[self.semi_supervised_train.individual.isin(individual_to_keep)].reset_index(drop=True)
         self.trainer.logger.experiment.log_table("train_viz.csv", self.train_viz_df)
-        
         self.train_viz_dl = self.fixmatch_dataloader(df=self.train_viz_df)
         
         for batch in self.train_viz_dl:
             individual, inputs = batch
             weak = inputs["Weak"]
             strong = inputs["Strong"]
-            spectra = torch.stack([weak,strong]).mean([1,3, 4]).cpu().numpy()
-            pd.DataFrame(spectra.T).plot()
-            self.trainer.logger.experiment.log_figure("{}_spectra".format(individual))
+            for level in range(self.levels):            
+                spectra = torch.stack([weak[0],strong[0]]).mean([1,3, 4]).cpu().numpy()
+                pd.DataFrame(spectra.T).plot()
+                self.trainer.logger.experiment.log_figure("{}_spectra_level_{}".format(individual, level))
 
         for i, batch in enumerate(self.train_viz_dl):
             for level in range(self.levels):

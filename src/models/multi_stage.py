@@ -158,19 +158,7 @@ class MultiStage(LightningModule):
                 classes = len(ds.label.unique())
                 base = base_model(classes=classes, years=len(self.years), config=self.config)
                 self.models.append(base)            
-                loss_weight = []
-                for x in range(classes):
-                    try:
-                        w = 1/np.sum(labels==x)
-                    except:
-                        w = 1 
-                    loss_weight.append(w)
-        
-                loss_weight = np.array(loss_weight/np.max(loss_weight))
-                loss_weight[loss_weight < self.config["min_loss_weight"]] = self.config["min_loss_weight"] 
-                loss_weight = torch.tensor(loss_weight, dtype=torch.float)                        
-                pname = 'loss_weight_{}'.format(index)            
-                self.register_buffer(pname, loss_weight)
+                
             if not debug:
                 self.save_hyperparameters()
         
@@ -358,11 +346,10 @@ class MultiStage(LightningModule):
         """Calculate train_df loss
         """
         #get loss weight
-        loss_weights = self.__getattr__('loss_weight_'+str(optimizer_idx))
         individual, inputs, y = batch[optimizer_idx]
         images = inputs["HSI"]  
         y_hat = self.models[optimizer_idx].forward(images)
-        loss = F.cross_entropy(y_hat, y, weight=loss_weights)    
+        loss = F.cross_entropy(y_hat, y)    
         self.log("train_loss_{}".format(optimizer_idx),loss, on_epoch=True, on_step=False)
 
         return loss

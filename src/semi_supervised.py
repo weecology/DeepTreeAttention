@@ -106,6 +106,7 @@ def predict_unlabeled(config, annotation_df, m=None):
     output = annotation_df.merge(ensemble_df, on="individual")
     output["taxonID"] = output["ensembleTaxonID"]
     output["score"] = output["ens_score"]
+    output["label"] = output["ens_label"]
     
     return output
 

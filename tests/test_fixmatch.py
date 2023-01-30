@@ -1,16 +1,15 @@
 # Test fixmatch dataloader
 from src import fixmatch
-import cProfile, pstats
+import torch
 
 
 def test_TreeDataset(dm, config):
     config["preload_images"] = True
-    ds = fixmatch.TreeDataset(df=dm.train.reset_index(drop=True), config=config)
-    len(ds) == dm.train.shape[0]
+    ds = fixmatch.FixmatchDataset(df=dm.train.reset_index(drop=True), config=config)
+    batch = ds[0]
+    individaul, inputs = batch
     
-    profiler = cProfile.Profile()
-    profiler.enable()
-    [x for x in ds]
-    profiler.disable()
-    stats = pstats.Stats(profiler).sort_stats('cumtime')
-    stats.print_stats()
+    assert list(inputs.keys()) == ["HSI","Strong","Weak"]
+    for index in range(len(inputs)):
+        assert not torch.equal(inputs["Weak"][index], inputs["Strong"][index])
+    

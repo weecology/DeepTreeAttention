@@ -2,6 +2,7 @@
 from pytorch_lightning import Trainer
 from src import semi_supervised, predict
 from src.models import joint_semi
+from src.models.multi_stage import TreeDataset
 import pytest
 import numpy as np
 
@@ -31,7 +32,7 @@ def prediction_dir(ROOT, config, tmpdir):
 def test_create_dataframe(config, prediction_model_path, dm):
     config["semi_supervised"]["crop_dir"] = config["crop_dir"]  
     config["semi_supervised"]["model_path"] = prediction_model_path    
-    train = semi_supervised.create_dataframe(config, unlabeled_df=dm.train, label_to_taxon_id=dm.label_to_taxonID)
+    train = semi_supervised.create_dataframe(config, unlabeled_df=dm.train)
     train.shape[0] == config["semi_supervised"]["num_samples"]
     assert all(train.index.values == np.arange(train.shape[0]))
 
@@ -48,8 +49,7 @@ def test_fit(config, dm, prediction_model_path, ROOT, prediction_dir, comet_logg
         config=config,
         supervised_test=dm.test,
         supervised_train=dm.train,
-        taxonomic_csv=taxonomic_csv,
-        
+        taxonomic_csv=taxonomic_csv
     )
     
     trainer = Trainer(
@@ -63,9 +63,8 @@ def test_fit(config, dm, prediction_model_path, ROOT, prediction_dir, comet_logg
     )
     
     trainer.fit(joint_model)
-    results = joint_model.evaluate_crowns(
-        dm.val_dataloader(),
-        crowns = dm.crowns
-    )
+    ds = TreeDataset(df=dm.test, train=False, config=config)
+    predictions = trainer.predict(joint_model, dataloaders=joint_model.predict_dataloader(ds))
+    results = joint_model.gather_predictions(predictions)    
     
     assert not results.empty
