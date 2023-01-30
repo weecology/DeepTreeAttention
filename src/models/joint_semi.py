@@ -85,7 +85,7 @@ class TreeModel(multi_stage.MultiStage):
         else:
             loss = supervised_loss
         
-        return pseudo_loss
+        return loss
     
     def fixmatch_dataloader(self, df):
         """Validation data loader only includes labeled data"""
