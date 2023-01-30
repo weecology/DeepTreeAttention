@@ -55,14 +55,14 @@ sampling_ceiling: 200
 pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ca21358f3114481bba274da96f64c09c_state_dict.pt
 
 gpus: 1
-batch_size: 128
+batch_size: 48
 bands: 349
 
 #LR for each level x year
 lr_0: 0.000005
 lr_1: 0.0000005
-lr_2: 0.000005
-lr_3: 0.000005
+lr_2: 0.0000005
+lr_3: 0.0000005
 
 fast_dev_run: False
 accelerator: auto
