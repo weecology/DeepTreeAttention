@@ -70,7 +70,6 @@ def main():
         comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
     
     test = data_module.test.copy()
-    model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=data_module.num_classes)
 
     #Just one year
     test = data_module.test
@@ -81,7 +80,6 @@ def main():
         config=config,
         client=client,
         classes=data_module.num_classes, 
-        loss_weight=loss_weight,
         supervised_test=test,
         supervised_train=train,
         label_dict=data_module.species_label_dict)
@@ -113,7 +111,7 @@ def main():
     print("Before prediction, the taxonID value counts")
     print(test.taxonID.value_counts())
     
-    ds = multi_.TreeDataset(df=test, train=False, config=config)
+    ds = TreeDataset(df=test, train=False, config=config)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)
     results["individual"] = results["individual"]
