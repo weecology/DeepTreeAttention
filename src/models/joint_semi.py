@@ -96,6 +96,7 @@ class TreeModel(multi_stage.MultiStage):
         
         semi_supervised_config = copy.deepcopy(self.config)
         semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
+        semi_supervised_config["preload_images"] = semi_supervised_config["semi_supervised"]["preload_images"]
 
         ds = fixmatch.FixmatchDataset(
             df=df,
@@ -104,8 +105,8 @@ class TreeModel(multi_stage.MultiStage):
         
         data_loader = torch.utils.data.DataLoader(
             ds,
-            batch_size=1,
-            shuffle=False,
+            batch_size=self.config["semi_supervised"]["batch_size"],
+            shuffle=True,
             num_workers=self.config["workers"],
         )
         return data_loader  
