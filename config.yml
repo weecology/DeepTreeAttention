@@ -64,7 +64,7 @@ lr_1: 0.0000005
 lr_2: 0.0000005
 lr_3: 0.0000005
 
-fast_dev_run: True
+fast_dev_run: False
 accelerator: auto
 epochs: 200
 
@@ -101,11 +101,11 @@ semi_supervised:
     limit_shapefiles: 150
     model_path: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/cfbeb13fcd774a48b9b9cb99745b6d74.pt
     #unsupervised loss weight alpha, higher values gives more weight to unlabeled data
-    alpha: 1
+    alpha: 0.25
     #Existing csv file
     semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/0474f35447d5438a9454fca87e01d6e6.csv
     fixmatch_threshold: 0.7
-    max_samples_per_class: 1000
+    max_samples_per_class: 5000
     workers: 5
     preload_images: False
     threshold: 0.5
