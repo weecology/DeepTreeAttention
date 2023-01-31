@@ -29,7 +29,7 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Checkout data artifact from comet
-use_data_commit: 968e4fdf2a9548a8a48d145dc66a8e2f
+use_data_commit: 3832ac8288484226896a840c49ad13d9
 
 #Make new dataset
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
@@ -48,26 +48,25 @@ evergreen_ceiling: 70
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
-preload_images: False
-workers: 10
+preload_images: True
+workers: 0
 sampling_ceiling: 200
 #Network Parameters
-pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ca21358f3114481bba274da96f64c09c_state_dict.pt
+pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/df6258839f214d1f8231cdb1b1d0d5d1_state_dict.pt
 
 gpus: 1
-batch_size: 128
+batch_size: 48
 bands: 349
 
 #LR for each level x year
 lr_0: 0.000005
 lr_1: 0.0000005
-lr_2: 0.000005
-lr_3: 0.000005
+lr_2: 0.0000005
+lr_3: 0.0000005
 
 fast_dev_run: False
 accelerator: auto
-epochs: 230
-min_loss_weight: 10
+epochs: 200
 
 #Evaluation config
 top_k: 4
@@ -105,9 +104,9 @@ semi_supervised:
     alpha: 0
     #Existing csv file
     semi_supervised_train: /blue/ewhite/b.weinstein/DeepTreeAttention/semi_supervised/0474f35447d5438a9454fca87e01d6e6.csv
-    fixmatch_threshold: 0
+    fixmatch_threshold: 0.7
     max_samples_per_class: 30000
     workers: 5
     preload_images: False
     threshold: 0.5
-    batch_size: 256
+    batch_size: 128
