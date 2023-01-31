@@ -1,7 +1,7 @@
 # Fixmatch datasets for strong and weak augmentation.
 import random
 from src.models.multi_stage import TreeDataset
-    
+import torch
 class FixmatchDataset(TreeDataset):
     """A strong and weak augmentation dataset
     Args:
@@ -31,6 +31,16 @@ class FixmatchDataset(TreeDataset):
             strong_augmentations = swapped_order
             weak_augmentations = years
 
+        if self.strong_augmentation == "random_mask":
+            #Randomly select among years
+            years = inputs["HSI"]
+            strong_augmentations = []
+            drop = torch.nn.Dropout2d()
+            for image in years:
+                dropout_image = drop(image)
+                strong_augmentations.append(dropout_image)                
+            weak_augmentations = years
+            
         inputs["Strong"] = strong_augmentations
         inputs["Weak"] = weak_augmentations
         
