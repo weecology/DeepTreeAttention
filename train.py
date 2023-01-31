@@ -111,7 +111,7 @@ def main():
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)
     results["individual"] = results["individual"]
-    results_with_data = results.merge(crowns, on="individual")
+    results_with_data = results.merge(data_module.crowns, on="individual")
     comet_logger.experiment.log_table("nested_predictions.csv", results_with_data)
     
     results = results.merge(data_module.test, on=["individual"])
