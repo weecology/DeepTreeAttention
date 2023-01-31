@@ -22,6 +22,10 @@ class TreeModel(multi_stage.MultiStage):
             self.semi_supervised_train = semi_supervised.create_dataframe(config, client=client)
         else:
             self.semi_supervised_train = pd.read_csv(self.config["semi_supervised"]["semi_supervised_train"])
+        
+        if self.config["semi_supervised"]["max_samples_per_class"] is not None:
+            individuals_to_keep = self.semi_supervised_train.groupby("taxonID").apply(lambda x: x.drop_duplicates(subset="individual").sample(frac=1).head(n=config["semi_supervised"]["max_samples_per_class"])).individual.values
+            self.semi_supervised_train = self.semi_supervised_train[self.semi_supervised_train.individual.isin(individuals_to_keep)].reset_index(drop=True)            
             
         self.supervised_train = supervised_train
         self.supervised_test = supervised_test       
