@@ -102,7 +102,6 @@ def main():
 
     #Save model checkpoint and profile
     trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}.pt".format(comet_logger.experiment.id))
-    torch.save(m.model.state_dict(), "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_state_dict.pt".format(comet_logger.experiment.id))
 
     # Prediction datasets are indexed by year, but full data is given to each model before ensembling
     print("Before prediction, the taxonID value counts")
