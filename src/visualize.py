@@ -101,4 +101,5 @@ def visualize_consistency(prob_strong, prob_weak):
     prob_array = torch.stack([prob_strong.squeeze(),prob_weak.squeeze()]).T
     prob_array = pd.DataFrame(prob_array.detach().cpu().numpy())
     prob_array.columns = ["weak","strong"]
+    
     return prob_array.plot(kind="bar")

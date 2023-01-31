@@ -106,7 +106,7 @@ class TreeModel(multi_stage.MultiStage):
         
         data_loader = torch.utils.data.DataLoader(
             ds,
-            batch_size=self.config["semi_supervised"]["batch_size"],
+            batch_size=1,
             shuffle=True,
             num_workers=self.config["workers"],
         )
