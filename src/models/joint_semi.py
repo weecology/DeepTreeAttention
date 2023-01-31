@@ -33,6 +33,7 @@ class TreeModel(multi_stage.MultiStage):
         ## Unlabeled data
         semi_supervised_config = copy.deepcopy(self.config)
         semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
+        semi_supervised_config["preload_images"] = semi_supervised_config["semi_supervised"]["preload_images"]
 
         unlabeled_ds = fixmatch.FixmatchDataset(
             df=self.semi_supervised_train,
