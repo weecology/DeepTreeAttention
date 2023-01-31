@@ -110,3 +110,4 @@ semi_supervised:
     preload_images: False
     threshold: 0.5
     batch_size: 128
+    strategy: debug

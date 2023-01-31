@@ -41,7 +41,8 @@ class TreeModel(multi_stage.MultiStage):
 
         unlabeled_ds = fixmatch.FixmatchDataset(
             df=self.semi_supervised_train,
-            config=semi_supervised_config
+            config=semi_supervised_config,
+            strong_augmentation=semi_supervised_config["semi_supervised"]["strategy"]            
         )
         
         self.unlabeled_data_loader = torch.utils.data.DataLoader(
@@ -104,7 +105,8 @@ class TreeModel(multi_stage.MultiStage):
 
         ds = fixmatch.FixmatchDataset(
             df=df,
-            config=semi_supervised_config
+            config=semi_supervised_config,
+            strong_augmentation=semi_supervised_config["semi_supervised"]["strategy"]
         )
         
         data_loader = torch.utils.data.DataLoader(

@@ -17,9 +17,15 @@ class FixmatchDataset(TreeDataset):
     def __getitem__(self, index):
         individual, inputs = super().__getitem__(index)
         strong_augmentations = []
+        if self.strong_augmentation == "debug":
+            #Randomly select among years
+            years = inputs["HSI"]
+            strong_augmentations = years
+            weak_augmentations = years
+        
         if self.strong_augmentation == "cross_year":
             #Randomly select among years
-            years =  inputs["HSI"]
+            years = inputs["HSI"]
             swapped_order = years.copy()
             random.shuffle(swapped_order)
             strong_augmentations = swapped_order
