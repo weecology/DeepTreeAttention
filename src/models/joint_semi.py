@@ -83,9 +83,9 @@ class TreeModel(multi_stage.MultiStage):
         threshold_mask = p_pseudo_label.ge(self.config["semi_supervised"]["fixmatch_threshold"]).float()
         pseudo_loss = F.cross_entropy(logit_strong, pseudo_label, reduction="none")
         pseudo_loss = (pseudo_loss * threshold_mask).mean()
-        self.unlabeled_samples_count = self.unlabeled_samples_count + sum(threshold_mask)
+        self.unlabeled_samples_count[optimizer_idx] = self.unlabeled_samples_count[optimizer_idx] + sum(threshold_mask)
         
-        self.log("Unlabeled mean training confidence",p_pseudo_label.mean())            
+        self.log("Unlabeled mean training confidence_{}".format(optimizer_idx),p_pseudo_label.mean())            
         self.log("supervised_loss_{}".format(optimizer_idx),supervised_loss)
         self.log("unsupervised_loss_{}".format(optimizer_idx), pseudo_loss)
         
@@ -98,7 +98,6 @@ class TreeModel(multi_stage.MultiStage):
     
     def fixmatch_dataloader(self, df):
         """Validation data loader only includes labeled data"""
-        
         semi_supervised_config = copy.deepcopy(self.config)
         semi_supervised_config["crop_dir"] = semi_supervised_config["semi_supervised"]["crop_dir"]
         semi_supervised_config["preload_images"] = semi_supervised_config["semi_supervised"]["preload_images"]
@@ -136,8 +135,9 @@ class TreeModel(multi_stage.MultiStage):
 
     def on_train_start(self):
         """On training start log a sample set of data to visualize spectra"""
-        
-        self.unlabeled_samples_count = 0
+        self.unlabeled_samples_count = {}
+        for level in range(self.levels):
+            self.unlabeled_samples_count[level] = 0
         
         individual_to_keep = self.semi_supervised_train.groupby("taxonID").apply(lambda x: x.sample(frac=1).head(n=4)).individual
         self.train_viz_df = self.semi_supervised_train[self.semi_supervised_train.individual.isin(individual_to_keep)].reset_index(drop=True)
@@ -162,12 +162,14 @@ class TreeModel(multi_stage.MultiStage):
 
     def on_train_epoch_end(self):
         for i, batch in enumerate(self.train_viz_dl):
-            batch = self.transfer_batch_to_device(batch, self.device, dataloader_idx=0)
-            individual, strong, weak = self.predict_step(batch, i)
-            figure = visualize.visualize_consistency(strong, weak)
-            self.trainer.logger.experiment.log_figure("{}_softmax".format(individual))  
+            for level in range(self.levels):
+                batch = self.transfer_batch_to_device(batch, self.device, dataloader_idx=0)
+                individual, strong, weak = self.fixmatch_step(batch, i, level)
+                figure = visualize.visualize_consistency(strong, weak)
+                self.trainer.logger.experiment.log_figure("{}_softmax_level_{}".format(individual, level))
 
     def on_train_epoch_end(self):
-        self.log("unlabeled_samples",self.unlabeled_samples_count)
+        for level in range(self.levels):
+            self.log("unlabeled_samples_{}".format(level),self.unlabeled_samples_count[level])
         
             
