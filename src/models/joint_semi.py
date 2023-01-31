@@ -82,8 +82,8 @@ class TreeModel(multi_stage.MultiStage):
         self.unlabeled_samples_count = self.unlabeled_samples_count + sum(threshold_mask)
         
         self.log("Unlabeled mean training confidence",p_pseudo_label.mean())            
-        self.log("supervised_loss",supervised_loss, on_step=True)
-        self.log("unsupervised_loss", pseudo_loss, on_step=True)
+        self.log("supervised_loss_{}".format(optimizer_idx),supervised_loss)
+        self.log("unsupervised_loss_{}".format(optimizer_idx), pseudo_loss)
         
         if self.current_epoch > 20:
             loss = supervised_loss + (self.alpha * pseudo_loss) 
