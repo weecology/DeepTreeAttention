@@ -66,7 +66,7 @@ lr_3: 0.0000005
 
 fast_dev_run: False
 accelerator: auto
-epochs: 200
+epochs: 1000
 
 #Evaluation config
 top_k: 4
