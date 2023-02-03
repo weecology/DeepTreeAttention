@@ -146,6 +146,7 @@ def predict_species(crowns, m, trainer, config):
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     if predictions is None:
         return None
+    
     results = m.gather_predictions(predictions)
     ensemble_df = m.ensemble(results)
     ensemble_df = results.merge(crowns, on="individual")
