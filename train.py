@@ -39,14 +39,14 @@ def train_model(train, test, data_module, comet_logger, name):
         
         comet_logger.experiment.log_parameter("loss_weight", loss_weight)
         
-        model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=data_module.num_classes)      
+        model = Hang2020.Single_Spectral_Model(bands=data_module.config["bands"], classes=data_module.num_classes)      
         
-        if config["pretrain_state_dict"]:
-            model.state_dict(torch.load(config["pretrain_state_dict"]))
+        if data_module.config["pretrain_state_dict"]:
+            model.state_dict(torch.load(data_module.config["pretrain_state_dict"]))
             
         m = baseline.TreeModel(
             model=model, 
-            config=config,
+            config=data_module.config,
             classes=data_module.num_classes, 
             loss_weight=loss_weight,
             label_dict=data_module.species_label_dict)
