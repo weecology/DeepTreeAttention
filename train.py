@@ -22,6 +22,8 @@ from pandas.util import hash_pandas_object
 
 def train_model(train, test, data_module, comet_logger, name):
     with comet_logger.experiment.context_manager(name):
+        
+        # Setup experiment loop
         data_module.train = train
         data_module.test = test
         data_module.create_label_dict(train, test)
@@ -34,13 +36,12 @@ def train_model(train, test, data_module, comet_logger, name):
         loss_weight = []
         for x in data_module.species_label_dict:
             loss_weight.append(1/data_module.train[data_module.train.taxonID==x].shape[0])
-            
         loss_weight = np.array(loss_weight/np.max(loss_weight))
-        #Provide min value
         loss_weight[loss_weight < 0.5] = 0.5  
         
         comet_logger.experiment.log_parameter("loss_weight", loss_weight)
         
+        # Create Model
         model = Hang2020.Single_Spectral_Model(bands=data_module.config["bands"], classes=data_module.num_classes)      
         
         if data_module.config["pretrain_state_dict"]:
@@ -73,7 +74,7 @@ def train_model(train, test, data_module, comet_logger, name):
         torch.save(m.model.state_dict(), "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_{}_state_dict.pt".format(comet_logger.experiment.id, name))
         
         results = m.evaluate_crowns(
-            data_loader=m.val_dataloader()
+            data_loader=m.val_dataloader(),
             siteIDs=dm.test.siteID,
             experiment=comet_logger.experiment,
         )
@@ -87,15 +88,15 @@ def train_model(train, test, data_module, comet_logger, name):
             title=name
         )
     
-        #Log prediction
+        # Log prediction
         comet_logger.experiment.log_table("test_predictions.csv", results)
         
-        #Within site confusion
+        # Within site confusion
         site_lists = data_module.train.groupby("label").site.unique()
         within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=site_lists)
         comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
         
-        #Within plot confusion
+        # Within plot confusion
         plot_lists = data_module.train.groupby("label").plotID.unique()
         within_plot_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=plot_lists)
         comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)

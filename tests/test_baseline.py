@@ -15,13 +15,10 @@ def m(dm, config):
         loss_weight=None,
         label_dict=dm.species_label_dict)
     
-    
     return m
 
-def test_fit(config, dm, m):
-    trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=0)
-    
-    #Model can be trained and validated
+def test_fit(dm, m):
+    trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=0)    
     trainer.fit(m, datamodule=dm)
     
 def test_evaluate_crowns(dm, m, experiment):

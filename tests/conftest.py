@@ -4,10 +4,8 @@ from deepforest.main import deepforest
 import geopandas as gpd
 import os
 import glob
-import rasterio as rio
 from src import data
-from src.models import year
-from src.models import dead, multi_stage
+from src.models import dead, baseline, Hang2020
 from src import utils
 import tempfile
 import torch
@@ -111,7 +109,8 @@ def experiment():
 #Training module
 @pytest.fixture(scope="session")
 def m(config, dm, ROOT):
-    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, config=config, taxonomic_csv="{}/data/raw/families.csv")    
+    model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=dm.num_classes)
+    m  = baseline.TreeModel(model, classes=dm.num_classes, label_dict=dm.species_label_dict)    
     m.ROOT = "{}/tests/".format(ROOT)
     
     return m
