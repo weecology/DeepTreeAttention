@@ -110,7 +110,7 @@ def experiment():
 @pytest.fixture(scope="session")
 def m(config, dm, ROOT):
     model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=dm.num_classes)
-    m  = baseline.TreeModel(model, classes=dm.num_classes, label_dict=dm.species_label_dict)    
+    m  = baseline.TreeModel(model, classes=dm.num_classes, label_dict=dm.species_label_dict, config=config)    
     m.ROOT = "{}/tests/".format(ROOT)
     
     return m

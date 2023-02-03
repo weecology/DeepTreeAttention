@@ -1,24 +1,23 @@
-#Train
+# Train
 import comet_ml
 import glob
 import geopandas as gpd
 import os
 import numpy as np
-from src import data
-from src import start_cluster
-from src.models import baseline, Hang2020
-from src import visualize
-from src import metrics
+import pandas as pd
+from pandas.util import hash_pandas_object
+
 import subprocess
 import sys
 import torch
+
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.profiler import AdvancedProfiler
 
-import pandas as pd
-from pandas.util import hash_pandas_object
+from src import data, start_cluster, visualize, metrics
+from src.models import baseline, Hang2020
 
 def train_model(train, test, data_module, comet_logger, name):
     with comet_logger.experiment.context_manager(name):
@@ -130,7 +129,6 @@ def main():
         data_dir=config["crop_dir"],
         config=config,
         client=client,
-        metadata=True,
         comet_logger=comet_logger)
     
     if client:
