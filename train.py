@@ -72,8 +72,8 @@ def train_model(train, test, data_module, comet_logger, name):
         torch.save(m.model.state_dict(), "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_{}_state_dict.pt".format(comet_logger.experiment.id, name))
         
         results = m.evaluate_crowns(
-            data_loader=dm.val_dataloader(),
-            siteIDs=dm.test.siteID,
+            data_loader=data_module.val_dataloader(),
+            siteIDs=data_module.test.siteID,
             experiment=comet_logger.experiment,
         )
         rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)

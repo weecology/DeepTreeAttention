@@ -1,22 +1,17 @@
-import os
 import pytest
 from src import predict
 import geopandas as gpd
-from src.models import multi_stage, dead
+from src.models import dead, baseline
 from pytorch_lightning import Trainer
-import pandas as pd
 import cProfile
 import pstats
 from pytorch_lightning import Trainer
 
 #Training module
 @pytest.fixture()
-def species_model_path(config, dm, ROOT, tmpdir):
-    config["batch_size"] = 16    
-    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)    
-    m.ROOT = "{}/tests/".format(ROOT)
+def species_model_path(m, dm, tmpdir):
     trainer = Trainer(fast_dev_run=True)
-    trainer.fit(m)
+    trainer.fit(m, datamodule=dm)
     trainer.save_checkpoint("{}/model.pl".format(tmpdir))
     
     return "{}/model.pl".format(tmpdir)
@@ -48,7 +43,7 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     assert crown_annotations[crown_annotations.individual == crown_annotations.iloc[0].individual].shape[0] == 2
     assert len(crown_annotations[crown_annotations.individual == crown_annotations.iloc[0].individual].bounds.minx.unique()) == 1
     
-    m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)        
+    m = baseline.TreeModel.load_from_checkpoint(species_model_path, config=config)        
     trainer = Trainer(fast_dev_run=False, max_steps=1, limit_val_batches=1)
     
     trees = predict.predict_tile(
