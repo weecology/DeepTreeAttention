@@ -111,7 +111,7 @@ def experiment():
 #Training module
 @pytest.fixture(scope="session")
 def m(config, dm, ROOT):
-    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, crowns=dm.crowns, config=config)    
+    m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, config=config, taxonomic_csv="{}/data/raw/families.csv")    
     m.ROOT = "{}/tests/".format(ROOT)
     
     return m
