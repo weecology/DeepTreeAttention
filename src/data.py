@@ -214,14 +214,13 @@ class TreeDataset(Dataset):
     Args:
        csv_file: path to csv file with image_path and label
     """
-    def __init__(self, csv_file=None, df=None, config=None, train=True, HSI=True, metadata=False):
+    def __init__(self, csv_file=None, df=None, config=None, train=True, HSI=True):
         if df is None:
             self.annotations = pd.read_csv(csv_file)
         else:
             self.annotations = df
         self.train = train
         self.HSI = HSI
-        self.metadata = metadata
         self.config = config         
         self.image_size = config["image_size"]
 
@@ -252,11 +251,6 @@ class TreeDataset(Dataset):
                 image = load_image(image_path, image_size=self.image_size)
                 inputs["HSI"] = image
 
-        if self.metadata:
-            site = self.annotations.site.loc[index]  
-            site = torch.tensor(site, dtype=torch.int)
-            inputs["site"] = site
-
         if self.train:
             label = self.annotations.label.loc[index]
             label = torch.tensor(label, dtype=torch.long)
@@ -284,7 +278,7 @@ class TreeData(LightningDataModule):
     The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
     Use regenerate=True to override this behavior in setup()
     """
-    def __init__(self, csv_file, config, HSI=True, metadata=False, client = None, data_dir=None, comet_logger=None, debug=False):
+    def __init__(self, csv_file, config, HSI=True, client = None, data_dir=None, comet_logger=None, debug=False):
         """
         Args:
             config: optional config file to override
@@ -296,7 +290,6 @@ class TreeData(LightningDataModule):
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
         self.csv_file = csv_file
         self.HSI = HSI
-        self.metadata = metadata
         self.comet_logger = comet_logger
         self.debug = debug 
 

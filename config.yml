@@ -1,25 +1,26 @@
 #Config
 
 ### Data Generation
-#glob path to sensor data, recursive wildcards allowed
+# glob path to sensor data, recursive wildcards allowed
 rgb_sensor_pool: /orange/ewhite/NeonData/*/DP3.30010.001/**/Camera/**/*.tif 
 HSI_sensor_pool: /orange/ewhite/NeonData/*/DP3.30006.001/**/Reflectance/*.h5
 CHM_pool: /orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif
 HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/year/
 
-#NEON data filtering
+# NEON data filtering
 min_stem_diameter: 10
 
-#Minimum number of test samples per class to be included
+# Minimum number of test samples per class to be included
 min_train_samples: 20
 min_test_samples: 20
 
-#Iterations to search for the best train-test split that mantains the largest number of species. Set to 1 for debugging, no files will be written
+# Iterations to search for the best train-test split that mantains the largest number of species. 
+# Set to 1 for debugging, no files will be written
 iterations: 100
 
-#minimum CHM height, leave blank to skip CHM filtering
+# Minimum CanopyModel height, leave blank to skip CHM filtering
 min_CHM_height: 1
-#Max difference between measured height and CHM height if CHM > height
+# Max difference between measured height and CHM height if CHM > height
 max_CHM_diff: 4
 #Max difference between measured height and CHM height if CHM < height
 CHM_height_limit: 8
@@ -63,8 +64,6 @@ min_loss_weight: 10
 #Evaluation config
 #Top k class recall score
 top_k: 4
-#Number of individuals to plot in comet graphics tab
-plot_n_individuals: 0
 validation_interval: 1
 
 #Predict
