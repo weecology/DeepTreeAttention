@@ -93,9 +93,9 @@ def predict_tile(crown_annotations, m, config, savedir, filter_dead=False):
     
     # Remove predictions for dead trees
     if filter_dead:
-        trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"ensembleTaxonID"] = "DEAD"
-        trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"ens_label"] = None
-        trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"ens_score"] = None
+        trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"pred_taxa_top1"] = "DEAD"
+        trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"label"] = None
+        trees.loc[(trees.dead_label==1) & (trees.dead_score > config["dead_threshold"]),"score"] = None
         
     # Calculate crown area
     trees["crown_area"] = trees.geometry.apply(lambda x: x.area)

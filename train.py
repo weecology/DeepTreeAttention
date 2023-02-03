@@ -31,15 +31,15 @@ def train_model(train, test, data_module, comet_logger, name):
         data_module.num_classes = len(train.taxonID.unique())        
         
         print("There are {} records for {} species for {} sites in filtered train".format(
-            self.train.shape[0],
-            len(self.train.label.unique()),
-            len(self.train.siteID.unique())
+            data_module.train.shape[0],
+            len(data_module.train.label.unique()),
+            len(data_module.train.siteID.unique())
         ))
         
         print("There are {} records for {} species for {} sites in test".format(
-            self.test.shape[0],
-            len(self.test.label.unique()),
-            len(self.test.siteID.unique()))
+            data_module.test.shape[0],
+            len(data_module.test.label.unique()),
+            len(data_module.test.siteID.unique()))
         )    
         
         #Loss weight, balanced
