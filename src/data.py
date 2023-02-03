@@ -468,19 +468,19 @@ class TreeData(LightningDataModule):
         
         #Create dataloaders
         self.train_ds = TreeDataset(
-            csv_file = "{}/train.csv".format(self.data_dir),
+            df = train,
             config=self.config,
         )
         
         self.val_ds = TreeDataset(
-            csv_file = "{}/test.csv".format(self.data_dir),
+            df=test,
             config=self.config,
         ) 
     
     @classmethod
     def create_label_dict(self, train, test):
         # Store class labels
-        unique_species_labels = np.concatenate([self.train.taxonID.unique(), self.test.taxonID.unique()])
+        unique_species_labels = np.concatenate([train.taxonID.unique(), test.taxonID.unique()])
         unique_species_labels = np.unique(unique_species_labels)
         unique_species_labels = np.sort(unique_species_labels)            
         self.num_classes = len(unique_species_labels)
