@@ -100,7 +100,6 @@ def main():
         max_epochs=data_module.config["epochs"],
         accelerator=data_module.config["accelerator"],
         num_sanity_val_steps=0,
-        #val_check_interval=20,
         check_val_every_n_epoch=data_module.config["validation_interval"],
         callbacks=[lr_monitor],
         enable_checkpointing=False,
@@ -122,26 +121,14 @@ def main():
     )
     rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
     
-    #Visualizations
-    #visualize.plot_spectra(results, crop_dir=config["crop_dir"], experiment=comet_logger.experiment)
-    #visualize.rgb_plots(
-    #    df=results,
-    #    config=config,
-    #    test_crowns=data_module.crowns,
-    #    test_points=data_module.canopy_points,
-    #    plot_n_individuals=config["plot_n_individuals"],
-    #    experiment=comet_logger.experiment)
-    visualize.confusion_matrix(
-        comet_experiment=comet_logger.experiment,
-        results=results,
-        species_label_dict=data_module.species_label_dict,
-        test_crowns=data_module.crowns,
-        test=data_module.test,
-        test_points=data_module.canopy_points,
-        rgb_pool=rgb_pool,
-	name="pretrain"
+    comet_experiment.log_confusion_matrix(
+        results.label.values,
+        results.pred_taxa_top1.values,
+        labels=list(species_label_dict.keys()),
+        max_categories=len(species_label_dict.keys()),
+        title="All sites"
     )
-    
+
     #Log prediction
     comet_logger.experiment.log_table("test_predictions.csv", results)
     
