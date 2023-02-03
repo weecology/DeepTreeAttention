@@ -143,6 +143,7 @@ def predict_species(crowns, m, trainer, config):
     """Compute hierarchical prediction without predicting unneeded levels""" 
     config["crop_dir"] = config["prediction_crop_dir"]
     ds = TreeDataset(df=crowns, train=False, config=config)
+    
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     if predictions is None:
         return None
