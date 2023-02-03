@@ -78,7 +78,7 @@ def train_model(train, test, data_module, comet_logger, name):
         )
         rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
         
-        comet_experiment.log_confusion_matrix(
+        comet_logger.experiment.log_confusion_matrix(
             results.label.values,
             results.pred_taxa_top1.values,
             labels=list(species_label_dict.keys()),
