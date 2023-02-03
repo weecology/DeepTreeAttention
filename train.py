@@ -39,7 +39,11 @@ def train_model(train, test, data_module, comet_logger, name):
         
         comet_logger.experiment.log_parameter("loss_weight", loss_weight)
         
-        model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=data_module.num_classes)        
+        model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=data_module.num_classes)      
+        
+        if config["pretrain_state_dict"]:
+            model.state_dict(torch.load(config["pretrain_state_dict"]))
+            
         m = baseline.TreeModel(
             model=model, 
             config=config,
@@ -144,7 +148,7 @@ def main():
     for site in data_module.train.siteID.unique():
         train = data_module.train[data_module.train.siteID==site]
         test = data_module.test[data_module.test.siteID==site]        
-        train_model(train, text, data_module, comet_logger, site)
+        train_model(train, test, data_module, comet_logger, site)
     
 if __name__ == "__main__":
     main()
