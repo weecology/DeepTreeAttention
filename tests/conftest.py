@@ -84,6 +84,8 @@ def config(ROOT):
     config["workers"] = 0
     config["dead"]["num_workers"] = 0
     config["dead"]["batch_size"] = 2
+    config["fast_dev_run"] = True
+    config["snapshot_dir"] = None
     
     return config
 

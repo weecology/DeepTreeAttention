@@ -56,6 +56,7 @@ fast_dev_run: False
 accelerator: auto
 epochs: 120
 min_loss_weight: 10
+snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
 
 ### Evaluation config
 #Top k class recall score
