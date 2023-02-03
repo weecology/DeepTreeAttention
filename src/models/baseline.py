@@ -191,7 +191,7 @@ class TreeModel(LightningModule):
         # Read in site data
         def merge_site_id(x, crowns):
             try:
-                return crowns[crowns.individual == x[:-9]].siteID.values[0]
+                return crowns[crowns.individual == x[:-5]].siteID.values[0]
                 
             except:
                 print(x)
