@@ -148,11 +148,12 @@ def predict_species(crowns, m, config):
         num_workers=config["workers"],
     )    
     predictions = m._predict_dataloader_(data_loader, train=False)
-    
     if predictions is None:
         return None
     
-    return predictions
+    results = predictions.merge(crowns, on="individual")
+    
+    return results
 
 def predict_dead(crowns, dead_model_path, config):
     dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path, config=config)

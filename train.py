@@ -30,7 +30,20 @@ def train_model(train, test, data_module, comet_logger, name):
         data_module.test["label"] = data_module.test.taxonID.apply(lambda x: data_module.species_label_dict[x])        
         data_module.num_classes = len(train.taxonID.unique())        
         
+        print("There are {} records for {} species for {} sites in filtered train".format(
+            self.train.shape[0],
+            len(self.train.label.unique()),
+            len(self.train.siteID.unique())
+        ))
+        
+        print("There are {} records for {} species for {} sites in test".format(
+            self.test.shape[0],
+            len(self.test.label.unique()),
+            len(self.test.siteID.unique()))
+        )    
+        
         #Loss weight, balanced
+        print(data_module.species_label_dict)
         loss_weight = []
         for x in data_module.species_label_dict:
             try:
