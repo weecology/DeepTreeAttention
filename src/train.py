@@ -1,22 +1,14 @@
 # Train
 import comet_ml
-import glob
-import geopandas as gpd
 import os
 import numpy as np
-import pandas as pd
 from pandas.util import hash_pandas_object
-
-import subprocess
-import sys
 import torch
-
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
-from pytorch_lightning.profiler import AdvancedProfiler
 
-from src import data, start_cluster, visualize, metrics
+from src import data, start_cluster, metrics
 from src.models import baseline, Hang2020
 
 def train_model(train, test, data_module, comet_logger, name):
@@ -88,7 +80,7 @@ def train_model(train, test, data_module, comet_logger, name):
         #Save model checkpoint
         if data_module.config["snapshot_dir"] is not None:
             trainer.save_checkpoint("{}_{}.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
-            torch.save(m.model.state_dict(), "{}/{}_{}_state_dict.pt".format(comet_logger.experiment.id, name))
+            torch.save(m.model.state_dict(), "{}/{}_{}_state_dict.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
         
         results = m.evaluate_crowns(
             data_loader=data_module.val_dataloader(),
