@@ -3,6 +3,7 @@ from deepforest import main
 from deepforest.utilities import annotations_to_shapefile
 import glob
 import os
+import pandas as pd
 import geopandas as gpd
 import rasterio
 import numpy as np
@@ -150,8 +151,8 @@ def predict_species(crowns, m, config):
     predictions = m._predict_dataloader_(data_loader, train=False)
     if predictions is None:
         return None
-    
-    results = predictions.merge(crowns, on="individual")
+
+    results = pd.concat([predictions.drop(columns=["individual"]), crowns],axis=1)
     
     return results
 
