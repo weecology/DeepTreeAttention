@@ -147,8 +147,10 @@ def main(git_branch, git_commit, config):
     if not config["use_data_commit"]:
         comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
     
+    all_sites_train = data_module.train.copy(deep=True)
+    all_sites_test = data_module.test.copy(deep=True)
     for site in data_module.train.siteID.unique():        
         print(site)
-        train = data_module.train[data_module.train.siteID==site].reset_index(drop=True)
-        test = data_module.test[data_module.test.siteID==site].reset_index(drop=True)   
+        train = all_sites_train[all_sites_train.siteID==site].reset_index(drop=True)
+        test = all_sites_test[all_sites_test.siteID==site].reset_index(drop=True)   
         train_model(train, test, data_module, comet_logger, site)
