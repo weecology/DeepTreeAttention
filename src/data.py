@@ -493,8 +493,6 @@ class TreeData(LightningDataModule):
     def train_dataloader(self):
         one_hot = torch.nn.functional.one_hot(torch.tensor(self.train.label.values))
         
-        print(one_hot)
-        print(self.train.index)
         train_sampler = sampler.MultilabelBalancedRandomSampler(
             labels=one_hot, indices=self.train.index, class_choice="cycle")
                 
