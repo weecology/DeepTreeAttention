@@ -42,14 +42,11 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     #There should be two of each individual, with the same geoemetry
     assert crown_annotations[crown_annotations.individual == crown_annotations.iloc[0].individual].shape[0] == 2
     assert len(crown_annotations[crown_annotations.individual == crown_annotations.iloc[0].individual].bounds.minx.unique()) == 1
-    
     m = baseline.TreeModel.load_from_checkpoint(species_model_path, config=config)        
-    trainer = Trainer(fast_dev_run=False, max_steps=1, limit_val_batches=1)
     
     trees = predict.predict_tile(
         crown_annotations=crown_annotations_path,
         m=m,
-        trainer=trainer,
         filter_dead=True,
         savedir=tmpdir,
         config=config)

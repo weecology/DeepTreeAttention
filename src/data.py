@@ -390,14 +390,13 @@ class TreeData(LightningDataModule):
                 as_numpy=True
             )
             
-            #hard sampling cutoff
             annotations.to_csv("{}/annotations.csv".format(self.data_dir))
         
             if self.comet_logger:
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(annotations.taxonID.unique()))
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
             
-            #Remove crowns from test dataset if specified
+            # Remove crowns from test dataset if specified
             if self.config["existing_test_csv"]:
                 existing_test = pd.read_csv(self.config["existing_test_csv"])
                 self.test = annotations[annotations.individual.isin(existing_test.individual)]  
@@ -485,7 +484,6 @@ class TreeData(LightningDataModule):
         
     def train_dataloader(self):
         one_hot = torch.nn.functional.one_hot(torch.tensor(self.train.label.values))
-        
         train_sampler = sampler.MultilabelBalancedRandomSampler(
             labels=one_hot, indices=self.train.index, class_choice="cycle")
                 

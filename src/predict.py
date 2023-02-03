@@ -76,7 +76,7 @@ def generate_prediction_crops(crowns, config, client=None, as_numpy=True):
     
     return "{}/{}.shp".format(config["prediction_crop_dir"], basename)
 
-def predict_tile(crown_annotations,m, trainer, config, savedir, filter_dead=False):
+def predict_tile(crown_annotations, m, config, savedir, filter_dead=False):
     """Predict a set of crown labels from a annotations.shp
     Args:
         crown_annotations: geodataframe from predict.generate_prediction_crops
@@ -86,7 +86,7 @@ def predict_tile(crown_annotations,m, trainer, config, savedir, filter_dead=Fals
         filter_dead: filter dead model
     """
     crown_annotations = gpd.read_file(crown_annotations) 
-    trees = predict_species(crowns=crown_annotations, m=m, config=config, trainer=trainer)
+    trees = predict_species(crowns=crown_annotations, m=m, config=config)
 
     if trees is None:
         return None
@@ -100,7 +100,6 @@ def predict_tile(crown_annotations,m, trainer, config, savedir, filter_dead=Fals
     # Calculate crown area
     trees["crown_area"] = trees.geometry.apply(lambda x: x.area)
     trees = gpd.GeoDataFrame(trees, geometry="geometry")    
-    
     print("{} trees predicted".format(trees.shape[0]))
     
     #Save .shp
@@ -139,24 +138,26 @@ def predict_crowns(PATH, config):
     
     return gdf
 
-def predict_species(crowns, m, trainer, config):
+def predict_species(crowns, m, config):
     """Compute hierarchical prediction without predicting unneeded levels""" 
     config["crop_dir"] = config["prediction_crop_dir"]
     ds = TreeDataset(df=crowns, train=False, config=config)
+    data_loader = torch.utils.data.DataLoader(
+        ds,
+        batch_size=config["predict_batch_size"],
+        num_workers=config["workers"],
+    )    
+    predictions = m._predict_dataloader_(data_loader, train=False)
     
-    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     if predictions is None:
         return None
     
-    results = m.gather_predictions(predictions)
-    ensemble_df = m.ensemble(results)
-    ensemble_df = results.merge(crowns, on="individual")
-            
-    return ensemble_df
+    return predictions
 
 def predict_dead(crowns, dead_model_path, config):
     dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path, config=config)
-    #The batch norm statistics are not helpful in generalization, turn off.
+    
+    # The batch norm statistics are not helpful in generalization, turn off.
     dead_model.train()
         
     ds = dead.utm_dataset(crowns=crowns, config=config)

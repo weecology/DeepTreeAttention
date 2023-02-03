@@ -33,7 +33,11 @@ def train_model(train, test, data_module, comet_logger, name):
         #Loss weight, balanced
         loss_weight = []
         for x in data_module.species_label_dict:
-            loss_weight.append(1/data_module.train[data_module.train.taxonID==x].shape[0])
+            try:
+                lw = 1/data_module.train[data_module.train.taxonID==x].shape[0]
+            except:
+                lw = 0
+            loss_weight.append(lw)
         loss_weight = np.array(loss_weight/np.max(loss_weight))
         loss_weight[loss_weight < 0.5] = 0.5  
         
