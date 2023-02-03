@@ -398,7 +398,6 @@ class TreeData(LightningDataModule):
             )
             
             #hard sampling cutoff
-            #annotations = annotations.groupby("taxonID").apply(lambda x: x.head(self.config["sampling_ceiling"])).reset_index(drop=True)
             annotations.to_csv("{}/annotations.csv".format(self.data_dir))
         
             if self.comet_logger:
@@ -421,47 +420,16 @@ class TreeData(LightningDataModule):
             self.novel = self.novel[~self.novel.taxonID.isin(np.concatenate([self.train.taxonID.unique(), self.test.taxonID.unique()]))]
             self.novel.to_csv("{}/novel_species.csv".format(self.data_dir))
             
-            # Store class labels
-            unique_species_labels = np.concatenate([self.train.taxonID.unique(), self.test.taxonID.unique()])
-            unique_species_labels = np.unique(unique_species_labels)
-            unique_species_labels = np.sort(unique_species_labels)            
-            self.num_classes = len(unique_species_labels)
-    
-            # Taxon to ID dict and the reverse    
-            self.species_label_dict = {}
-            for index, taxonID in enumerate(unique_species_labels):
-                self.species_label_dict[taxonID] = index            
-            self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}
-            
-            #Encode the numeric site and class data
+            self.create_label_dict(self.train, self.test)
+
+            #Encode the numericclass data
             self.train["label"] = self.train.taxonID.apply(lambda x: self.species_label_dict[x])            
             self.test["label"] = self.test.taxonID.apply(lambda x: self.species_label_dict[x])
             
             self.train.to_csv("{}/train.csv".format(self.data_dir), index=False)            
             self.test.to_csv("{}/test.csv".format(self.data_dir), index=False)
             
-            print("There are {} records for {} species for {} sites in filtered train".format(
-                self.train.shape[0],
-                len(self.train.label.unique()),
-                len(self.train.siteID.unique())
-            ))
-            
-            print("There are {} records for {} species for {} sites in test".format(
-                self.test.shape[0],
-                len(self.test.label.unique()),
-                len(self.test.siteID.unique()))
-            )
-             
-            #Create dataloaders
-            self.train_ds = TreeDataset(
-                csv_file = "{}/train.csv".format(self.data_dir),
-                config=self.config,
-            )
-            
-            self.val_ds = TreeDataset(
-                csv_file = "{}/test.csv".format(self.data_dir),
-                config=self.config,
-            )
+            self.create_datasets(self.train, self.test)            
              
         else:
             print("Loading previous run")            
@@ -480,28 +448,49 @@ class TreeData(LightningDataModule):
             self.crowns["individual"] = self.crowns["individual"]
             self.canopy_points = gpd.read_file("{}/canopy_points.shp".format(self.data_dir))
             self.canopy_points["individual"] = self.canopy_points["individual"]
-            
-            #Store class labels
-            unique_species_labels = np.concatenate([self.train.taxonID.unique(), self.test.taxonID.unique()])
-            unique_species_labels = np.unique(unique_species_labels)
-            unique_species_labels = np.sort(unique_species_labels)            
-            self.num_classes = len(unique_species_labels)
-            
-            #Taxon to ID dict and the reverse    
-            self.species_label_dict = {}
-            for index, taxonID in enumerate(unique_species_labels):
-                self.species_label_dict[taxonID] = index
-            
-            #Create dataloaders
-            self.train_ds = TreeDataset(
-                csv_file = "{}/train.csv".format(self.data_dir),
-                config=self.config,
-            )
-            
-            self.val_ds = TreeDataset(
-                csv_file = "{}/test.csv".format(self.data_dir),
-                config=self.config,
-            )
+            self.create_datasets(self.train, self.test)
+        
+        print("There are {} records for {} species for {} sites in filtered train".format(
+            self.train.shape[0],
+            len(self.train.label.unique()),
+            len(self.train.siteID.unique())
+        ))
+        
+        print("There are {} records for {} species for {} sites in test".format(
+            self.test.shape[0],
+            len(self.test.label.unique()),
+            len(self.test.siteID.unique()))
+        )    
+    @classmethod
+    def create_datasets(self, train, test):
+        #Store class labels
+        self.create_label_dict(train, test)
+        
+        #Create dataloaders
+        self.train_ds = TreeDataset(
+            csv_file = "{}/train.csv".format(self.data_dir),
+            config=self.config,
+        )
+        
+        self.val_ds = TreeDataset(
+            csv_file = "{}/test.csv".format(self.data_dir),
+            config=self.config,
+        ) 
+    
+    @classmethod
+    def create_label_dict(self, train, test):
+        # Store class labels
+        unique_species_labels = np.concatenate([self.train.taxonID.unique(), self.test.taxonID.unique()])
+        unique_species_labels = np.unique(unique_species_labels)
+        unique_species_labels = np.sort(unique_species_labels)            
+        self.num_classes = len(unique_species_labels)
+
+        # Taxon to ID dict and the reverse    
+        self.species_label_dict = {}
+        for index, taxonID in enumerate(unique_species_labels):
+            self.species_label_dict[taxonID] = index            
+        self.label_to_taxonID = {v: k  for k, v in self.species_label_dict.items()}        
+        
     def train_dataloader(self):
         one_hot = torch.nn.functional.one_hot(torch.tensor(self.train.label.values))
         train_sampler = sampler.MultilabelBalancedRandomSampler(
