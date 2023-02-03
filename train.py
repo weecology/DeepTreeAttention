@@ -74,7 +74,7 @@ def train_model(train, test, data_module, comet_logger, name):
         
         results = m.evaluate_crowns(
             data_loader=m.val_dataloader()
-            siteIDs=dm.test.siteID
+            siteIDs=dm.test.siteID,
             experiment=comet_logger.experiment,
         )
         rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)
