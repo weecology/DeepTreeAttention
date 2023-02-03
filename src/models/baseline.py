@@ -1,7 +1,5 @@
 #Lightning Data Module
 from . import __file__
-import geopandas as gpd
-import glob as glob
 import numpy as np
 from pytorch_lightning import LightningModule
 import os

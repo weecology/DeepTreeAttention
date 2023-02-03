@@ -1,7 +1,7 @@
 #Test data module
-from src import data
 import pandas as pd
 import copy
+from src import data
 
 def test_TreeData_setup(config, ROOT):
     #One site's worth of data
@@ -22,10 +22,9 @@ def test_TreeData_setup(config, ROOT):
     
 def test_TreeDataset(m, dm, config):
     #Train loader
-    ds = data.TreeDataset(dm.train, config=dm.config)
+    ds = data.TreeDataset(df=dm.train, config=dm.config)
     individuals, inputs, label = ds[0]    
-    assert len(inputs["HSI"]) == len(dm.train.tile_year.unique())
-    assert inputs["HSI"][0].shape == (config["bands"], config["image_size"], config["image_size"])
+    assert inputs["HSI"].shape == (config["bands"], config["image_size"], config["image_size"])
     
 def test_sample_plots(dm, config):
     train, test = data.sample_plots(shp=dm.crowns, min_test_samples=10, min_train_samples=10)

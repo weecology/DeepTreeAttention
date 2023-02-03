@@ -21,7 +21,6 @@ from src.models import baseline, Hang2020
 
 def train_model(train, test, data_module, comet_logger, name):
     with comet_logger.experiment.context_manager(name):
-        
         # Setup experiment loop
         data_module.train = train
         data_module.test = test
@@ -73,7 +72,7 @@ def train_model(train, test, data_module, comet_logger, name):
         torch.save(m.model.state_dict(), "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_{}_state_dict.pt".format(comet_logger.experiment.id, name))
         
         results = m.evaluate_crowns(
-            data_loader=m.val_dataloader(),
+            data_loader=dm.val_dataloader(),
             siteIDs=dm.test.siteID,
             experiment=comet_logger.experiment,
         )
