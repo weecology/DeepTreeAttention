@@ -9,12 +9,8 @@ import pandas as pd
 from torch.nn import functional as F
 from torch import optim
 import torch
-from torchvision import transforms
 import torchmetrics
-import rasterio
-
 from src import utils
-from shapely.geometry import Point, box
 
 class TreeModel(LightningModule):
     """A pytorch lightning data module
@@ -106,7 +102,7 @@ class TreeModel(LightningModule):
         
         return pred
     
-    def predict_dataloader(self, data_loader, test_crowns=None, test_points=None, plot_n_individuals=1, return_features=False, experiment=None, train=True):
+    def _predict_dataloader_(self, data_loader, return_features=False, experiment=None, train=True):
         """Given a file with paths to image crops, create crown predictions 
         The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
         unique identifier for each crown and counter is 0..n pixel crops that belong to that crown.
@@ -166,38 +162,25 @@ class TreeModel(LightningModule):
     
         if return_features:            
             return df, predictions        
-        else:
-            return df
+        
+        return df
     
-    def evaluate_crowns(self, data_loader, crowns, points=None, experiment=None):
+    def evaluate_crowns(self, data_loader, siteIDs, experiment=None):
         """Crown level measure of accuracy
         Args:
             data_loader: TreeData dataset
+            test_df: dataframe with individual, siteID field
             experiment: optional comet experiment
-            points: the canopy_points.shp from the data_module
         Returns:
             df: results dataframe
             metric_dict: metric -> value
         """
-        results, features = self.predict_dataloader(
+        results = self._predict_dataloader_(
             data_loader=data_loader,
-            plot_n_individuals=self.config["plot_n_individuals"],
-            experiment=None,
-            test_crowns=crowns,
-            test_points=points,
-            return_features=True
+            experiment=None
         )
         
-        # Read in site data
-        def merge_site_id(x, crowns):
-            try:
-                return crowns[crowns.individual == x[:-5]].siteID.values[0]
-                
-            except:
-                print(x)
-                return None
-            
-        results["siteID"] = results.individual.apply(lambda x: merge_site_id(x, crowns))
+        results["siteID"] = siteIDs
         
         # Log results by species
         taxon_accuracy = torchmetrics.functional.accuracy(

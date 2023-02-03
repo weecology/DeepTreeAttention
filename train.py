@@ -72,12 +72,9 @@ def train_model(train, test, data_module, comet_logger, name):
         trainer.save_checkpoint("/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_{}.pt".format(comet_logger.experiment.id, name))
         torch.save(m.model.state_dict(), "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_{}_state_dict.pt".format(comet_logger.experiment.id, name))
         
-        # Prediction datasets are indexed by year, but full data is given to each model before ensembling
-        print("Before prediction, the taxonID value counts")
-        print(test.taxonID.value_counts())
         results = m.evaluate_crowns(
-            data_module.val_dataloader(),
-            crowns = data_module.crowns,
+            data_loader=m.val_dataloader()
+            siteIDs=dm.test.siteID
             experiment=comet_logger.experiment,
         )
         rgb_pool = glob.glob(data_module.config["rgb_sensor_pool"], recursive=True)

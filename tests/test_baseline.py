@@ -1,14 +1,11 @@
 #test baseline
 #Test multi_stage
-import numpy as np
 from pytorch_lightning import Trainer
 from src.models import baseline, Hang2020
-from src.data import TreeDataset
-import math
 import pytest
 
 @pytest.fixture()
-def m(dm, config, ROOT): 
+def m(dm, config): 
     config["lr"] = 0.01
     model = Hang2020.vanilla_CNN(bands=config["bands"], classes=dm.num_classes) 
     m = baseline.TreeModel(
@@ -30,7 +27,7 @@ def test_fit(config, dm, m):
 def test_evaluate_crowns(dm, m, experiment):
     results = m.evaluate_crowns(
         dm.val_dataloader(),
-        crowns = dm.crowns,
+        dm.test.siteID,
         experiment=experiment,
     )
     
