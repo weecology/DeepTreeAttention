@@ -146,8 +146,8 @@ def main():
         comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
     
     for site in data_module.train.siteID.unique():
-        train = data_module.train[data_module.train.siteID==site]
-        test = data_module.test[data_module.test.siteID==site]        
+        train = data_module.train[data_module.train.siteID==site].reset_index(drop=True)
+        test = data_module.test[data_module.test.siteID==site].reset_index(drop=True)   
         train_model(train, test, data_module, comet_logger, site)
     
 if __name__ == "__main__":
