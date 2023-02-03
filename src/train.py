@@ -156,6 +156,7 @@ def main(git_branch, git_commit, config):
         comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
     
     for site in data_module.train.siteID.unique():        
+        print(site)
         train = data_module.train[data_module.train.siteID==site].reset_index(drop=True)
         test = data_module.test[data_module.test.siteID==site].reset_index(drop=True)   
         train_model(train, test, data_module, comet_logger, site)
