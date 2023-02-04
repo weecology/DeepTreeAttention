@@ -159,6 +159,6 @@ def main(git_branch, git_commit, config):
         try:
             train_model(train, test, data_module, comet_logger, site)
         except Exception as e:
-            traceback.print_exc(e)
+            traceback.print_exc()
             continue
             
