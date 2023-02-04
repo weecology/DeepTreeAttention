@@ -202,7 +202,7 @@ class TreeModel(LightningModule):
         if experiment:
             experiment.log_metrics(species_table.set_index("taxonID").accuracy.to_dict(),prefix="accuracy")
             experiment.log_metrics(species_table.set_index("taxonID").precision.to_dict(),prefix="precision")
-                
+             
         #Log result by site
         if experiment:
             site_data_frame =[]
@@ -224,6 +224,21 @@ class TreeModel(LightningModule):
                 site_data_frame.append(row)
             site_data_frame = pd.concat(site_data_frame)
             experiment.log_table("site_results.csv", site_data_frame)
+        
+        #Overall score
+        overall_micro = torchmetrics.functional.accuracy(
+            preds=torch.tensor(results.pred_label_top1.values),
+            target=torch.tensor(results.label.values),
+            average="micro")
+        
+        overall_macro = torchmetrics.functional.accuracy(
+            preds=torch.tensor(results.pred_label_top1.values),
+            target=torch.tensor(results.label.values),
+            average="macro",
+            num_classes=self.classes)
+        
+        experiment.log_metric("overall_macro", overall_macro)
+        experiment.log_metric("overall_micro", overall_micro) 
         
         return results
             
