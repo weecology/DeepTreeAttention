@@ -17,10 +17,10 @@ def train_model(train, test, data_module, comet_logger, name):
         data_module.train = train
         data_module.test = test
         data_module.create_label_dict(train, test)
-        data_module.create_datasets(train, test)
         data_module.train["label"] = data_module.train.taxonID.apply(lambda x: data_module.species_label_dict[x])            
         data_module.test["label"] = data_module.test.taxonID.apply(lambda x: data_module.species_label_dict[x])        
         data_module.num_classes = len(data_module.species_label_dict)        
+        data_module.create_datasets(train, test)
         
         print(name)
         print("There are {} records for {} species for {} sites in filtered train".format(
