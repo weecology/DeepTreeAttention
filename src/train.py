@@ -7,6 +7,7 @@ import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
+import traceback
 
 from src import data, start_cluster, metrics
 from src.models import baseline, Hang2020
@@ -153,4 +154,9 @@ def main(git_branch, git_commit, config):
         print(site)
         train = all_sites_train[all_sites_train.siteID==site].reset_index(drop=True)
         test = all_sites_test[all_sites_test.taxonID.isin(train.taxonID.unique())].reset_index(drop=True)   
-        train_model(train, test, data_module, comet_logger, site)
+        try:
+            train_model(train, test, data_module, comet_logger, site)
+        except Exception as e:
+            traceback.print_exc(e)
+            continue
+            
