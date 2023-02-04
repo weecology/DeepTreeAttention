@@ -396,8 +396,8 @@ class TreeData(LightningDataModule):
             else:
                 self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir))
             if self.comet_logger:
-                self.comet_logger.experiment.log_parameter("Species after crop generation",len(annotations.taxonID.unique()))
-                self.comet_logger.experiment.log_parameter("Samples after crop generation",annotations.shape[0])
+                self.comet_logger.experiment.log_parameter("Species after crop generation",len(self.annotations.taxonID.unique()))
+                self.comet_logger.experiment.log_parameter("Samples after crop generation",self.annotations.shape[0])
     
             if self.config["train_test_split"] is None:
                 self.train, self.test = self.create_train_test_split(self.experiment_id)  
@@ -406,6 +406,7 @@ class TreeData(LightningDataModule):
                 self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, self.config["train_test_split"]))                  
         else:
             print("Loading previous data commit {}".format(self.config["use_data_commit"]))
+            self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir))            
             if self.config["train_test_split"] is None:
                 print("Using data commit {} creating a new train-test split for site {}".format(self.config["use_data_commit"],self.site))
                 self.create_train_test_split(ID=self.experiment_id)
