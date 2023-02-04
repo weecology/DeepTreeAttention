@@ -99,15 +99,15 @@ def train_model(train, test, data_module, comet_logger, name):
         # Log prediction
         comet_logger.experiment.log_table("test_predictions.csv", results)
         
-        # Within site confusion
-        site_lists = data_module.train.groupby("label").siteID.unique()
-        within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=site_lists)
-        comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
+        ## Within site confusion
+        #site_lists = data_module.train.groupby("label").siteID.unique()
+        #within_site_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=site_lists)
+        #comet_logger.experiment.log_metric("within_site_confusion", within_site_confusion)
         
-        # Within plot confusion
-        plot_lists = data_module.train.groupby("label").plotID.unique()
-        within_plot_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=plot_lists)
-        comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)
+        ## Within plot confusion
+        #plot_lists = data_module.train.groupby("label").plotID.unique()
+        #within_plot_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=plot_lists)
+        #comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)
         
 def main(git_branch, git_commit, config):
     #Create datamodule
