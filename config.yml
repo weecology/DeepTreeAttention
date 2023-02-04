@@ -38,7 +38,7 @@ replace_bounding_boxes: False
 # Regenerate bounding box sensor crops
 replace_crops: False
 # Recreate a train test split
-train_test_split: True
+train_test_split: None
 # Use existing plotIDs for train/test split
 existing_test_csv: 
 
@@ -47,7 +47,6 @@ existing_test_csv:
 image_size: 11
 preload_images: True
 workers: 0
-sampling_ceiling: 200
 
 ### Training Parameters
 pretrain_state_dict:
