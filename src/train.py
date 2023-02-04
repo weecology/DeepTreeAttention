@@ -94,7 +94,9 @@ def train_model(train, test, data_module, comet_logger, name):
             results.pred_label_top1.values,
             labels=list(data_module.species_label_dict.keys()),
             max_categories=len(data_module.species_label_dict.keys()),
-            title=name
+            title=name,
+            filename="{}.json".format(name)
+            
         )
     
         # Log prediction
