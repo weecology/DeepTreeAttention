@@ -152,5 +152,5 @@ def main(git_branch, git_commit, config):
     for site in data_module.train.siteID.unique():        
         print(site)
         train = all_sites_train[all_sites_train.siteID==site].reset_index(drop=True)
-        test = all_sites_test[all_sites_test.siteID==site].reset_index(drop=True)   
+        test = all_sites_test[all_sites_test.taxonID.isin(train.taxonID.unique())].reset_index(drop=True)   
         train_model(train, test, data_module, comet_logger, site)
