@@ -7,4 +7,5 @@ if __name__ == "__main__":
     git_branch=sys.argv[1]
     git_commit=sys.argv[2]    
     config = data.read_config("config.yml")
-    train.main(git_branch, git_commit, config)
+    for site in ["OSBS","UNDE"]:
+        train.main(git_branch, git_commit, config, site)

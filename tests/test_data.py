@@ -7,6 +7,8 @@ def test_TreeData_setup(config, ROOT):
     #One site's worth of data
     local_config = copy.deepcopy(config)
     local_config["use_data_commit"] = None
+    local_config["replace_bounding_boxes"] =True
+    local_config["replace_crops"] = True
     
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)               
     dm = data.TreeData(config=local_config, csv_file=csv_file, data_dir="{}/tests/data".format(ROOT), debug=True) 

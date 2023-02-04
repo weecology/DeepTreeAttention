@@ -33,8 +33,12 @@ use_data_commit: 927f306b663b444cb31b1ea72437661d
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 
-# Overwrite existing crops
-replace: True
+# Rerun DeepForest boxes
+replace_bounding_boxes: False
+# Regenerate bounding box sensor crops
+replace_crops: False
+# Recreate a train test split
+train_test_split: True
 # Use existing plotIDs for train/test split
 existing_test_csv: 
 
