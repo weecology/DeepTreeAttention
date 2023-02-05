@@ -69,7 +69,6 @@ def config(ROOT):
     config["top_k"] = 1
     config["head_class_minimum_samples"] = 3
     config["convert_h5"] = False
-    config["plot_n_individuals"] = 1
     config["min_CHM_diff"] = None    
     config["dead_model"] = None
     config["dead_threshold"] = 0.95
@@ -93,7 +92,7 @@ def config(ROOT):
 @pytest.fixture(scope="session")
 def dm(config, ROOT):
     csv_file = "{}/tests/data/110ac77ae89043898f618466359c2a2e/train.csv".format(ROOT)
-    data_module = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data/110ac77ae89043898f618466359c2a2e".format(ROOT), debug=True) 
+    data_module = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data/110ac77ae89043898f618466359c2a2e".format(ROOT)) 
     
     return data_module
 
