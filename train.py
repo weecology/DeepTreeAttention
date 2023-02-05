@@ -8,6 +8,6 @@ if __name__ == "__main__":
     git_commit=sys.argv[2]    
     config = data.read_config("config.yml")
     for site in ["BART","BLAN", "BONA","CLBJ", "DEJU", "DELA", "GRSM", "HARV", "JERC",
-                 "KONZ", "LENO", "MLBS", "MOAB", "NIWO", "NOGP" "OSBS","RMNP","SCBI","SERC","SJER","SOAP",
+                  "LENO", "MLBS", "MOAB", "NIWO", "NOGP" "OSBS","RMNP","SCBI","SERC","SJER","SOAP",
                  "STEI","TALL","TEAK","TREE","UKFS","UNDE","WREF","YELL"]:
         train.main(git_branch, git_commit, config, site)
