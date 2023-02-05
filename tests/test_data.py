@@ -9,7 +9,7 @@ def test_TreeData_setup(config, ROOT):
     local_config["use_data_commit"] = None
     local_config["replace_bounding_boxes"] =True
     local_config["replace_crops"] = True
-    local_config["train_test_split"] = None
+    local_config["train_test_commit"] = None
     
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)               
     dm = data.TreeData(config=local_config, csv_file=csv_file, data_dir="{}/tests/data".format(ROOT), experiment_id="OSBS") 
