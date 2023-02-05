@@ -434,7 +434,7 @@ class TreeData(LightningDataModule):
         )    
     def create_train_test_split(self, ID):      
         if self.site:
-            self.annotations = self.annotations[self.annotations.siteID==site]
+            self.annotations = self.annotations[self.annotations.siteID==self.site]
         if self.config["existing_test_csv"]:
             existing_test = pd.read_csv(self.config["existing_test_csv"])
             self.test = self.annotations[self.annotations.individual.isin(existing_test.individual)]  
