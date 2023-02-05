@@ -291,7 +291,7 @@ class TreeData(LightningDataModule):
         self.comet_logger = comet_logger
         self.site = site
         if comet_logger is not None:
-            self.experiment_id = comet_logger.experiment.id
+            self.experiment_id = "{}_{}".format(comet_logger.experiment.get_parameter("commit hash"), site)
         else:
             try:
                 self.experiment_id = experiment_id
