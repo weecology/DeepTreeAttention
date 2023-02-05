@@ -213,6 +213,7 @@ class TreeDataset(Dataset):
     """A csv file with a path to image crop and label
     Args:
        csv_file: path to csv file with image_path and label
+       df: pandas dataframe
     """
     def __init__(self, csv_file=None, df=None, config=None, train=True):
         if df is None:
@@ -239,18 +240,18 @@ class TreeDataset(Dataset):
 
     def __getitem__(self, index):
         inputs = {}
-        image_path = self.annotations.image_path.loc[index]      
+        image_path = self.annotations.image_path.iloc[index]      
         individual = os.path.basename(os.path.splitext(image_path)[0])
         if self.config["preload_images"]:
             inputs["HSI"] = self.image_dict[index]
         else:
-            image_basename = self.annotations.image_path.loc[index]  
+            image_basename = self.annotations.image_path.iloc[index]  
             image_path = os.path.join(self.config["crop_dir"],image_basename)                
             image = load_image(image_path, image_size=self.image_size)
             inputs["HSI"] = image
 
         if self.train:
-            label = self.annotations.label.loc[index]
+            label = self.annotations.label.iloc[index]
             label = torch.tensor(label, dtype=torch.long)
             inputs["HSI"] = self.transformer(inputs["HSI"])
 
@@ -439,7 +440,7 @@ class TreeData(LightningDataModule):
             existing_test = pd.read_csv(self.config["existing_test_csv"])
             self.test = self.annotations[self.annotations.individual.isin(existing_test.individual)]  
             self.train = self.annotations[~self.annotations.individual.isin(existing_test.individual)]
-            self.train = self.train[self.train.taxonID.isin(self.test.taxonID)]
+            self.train = self.train[self.train.taxonID.isin(self.test.taxonID)].reset_index(drop=True)
         else:
             self.train, self.test = train_test_split(self.annotations, config=self.config, client=self.client) 
 
@@ -453,6 +454,10 @@ class TreeData(LightningDataModule):
         #Encode the numeric class data
         self.train["label"] = self.train.taxonID.apply(lambda x: self.species_label_dict[x])            
         self.test["label"] = self.test.taxonID.apply(lambda x: self.species_label_dict[x])
+        
+        #make sure indexed to 0 after any filtering
+        self.test = self.test.reset_index(drop=True)
+        self.train = self.train.reset_index(drop=True)
         
         self.train.to_csv("{}/train_{}.csv".format(self.data_dir, ID), index=False)            
         self.test.to_csv("{}/test_{}.csv".format(self.data_dir, ID), index=False)            
