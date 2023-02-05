@@ -7,7 +7,7 @@ if __name__ == "__main__":
     git_branch=sys.argv[1]
     git_commit=sys.argv[2]    
     config = data.read_config("config.yml")
-    for site in ["ABBY","BART","BLAN", "BONA","CLBJ", "DEJU", "DELA", "GRSM", "HARV", "HEAL", "JERC",
+    for site in ["BART","BLAN", "BONA","CLBJ", "DEJU", "DELA", "GRSM", "HARV", "HEAL", "JERC",
                  "KONZ", "LENO", "MLBS", "MOAB", "NIWO", "NOGP" "OSBS","RMNP","SCBI","SERC","SJER","SOAP",
                  "STEI","TALL","TEAK","TREE","UKFS","UNDE","WREF","YELL"]:
         train.main(git_branch, git_commit, config, site)
