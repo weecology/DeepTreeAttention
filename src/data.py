@@ -400,20 +400,22 @@ class TreeData(LightningDataModule):
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(self.annotations.taxonID.unique()))
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",self.annotations.shape[0])
     
-            if self.config["train_test_split"] is None:
+            if self.config["train_test_commit"] is None:
                 self.train, self.test = self.create_train_test_split(self.experiment_id)  
             else:
-                self.train = pd.read_csv("{}/train_{}.csv".format(self.data_dir, self.config["train_test_split"]))
-                self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, self.config["train_test_split"]))                  
+                print("Loading a train-test split from {}_{}".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))
+                self.train = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
+                self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))               
         else:
             print("Loading previous data commit {}".format(self.config["use_data_commit"]))
             self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir))            
-            if self.config["train_test_split"] is None:
+            if self.config["train_test_commit"] is None:
                 print("Using data commit {} creating a new train-test split for site {}".format(self.config["use_data_commit"],self.site))
                 self.create_train_test_split(ID=self.experiment_id)
             else:
-                self.train = pd.read_csv("{}/train_{}.csv".format(self.data_dir, self.config["train_test_split"]))
-                self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, self.config["train_test_split"]))            
+                print("Loading a train-test split from {}_{}".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))
+                self.train = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
+                self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
             self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
             
             #mimic schema due to abbreviation when .shp is saved
