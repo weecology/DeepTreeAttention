@@ -51,7 +51,7 @@ workers: 0
 ### Training Parameters
 pretrain_state_dict:
 gpus: 1
-batch_size: 128
+batch_size: 48
 bands: 349
 # Learning rates
 lr: 0.00001
