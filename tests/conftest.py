@@ -85,6 +85,7 @@ def config(ROOT):
     config["dead"]["batch_size"] = 2
     config["fast_dev_run"] = True
     config["snapshot_dir"] = None
+    config["train_test_commit"] = "110ac77ae89043898f618466359c2a2e"
     
     return config
 
