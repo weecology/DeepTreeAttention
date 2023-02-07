@@ -56,7 +56,7 @@ batch_size: 128
 bands: 349
 # Learning rates
 lr: 0.00001
-fast_dev_run: False
+fast_dev_run: True
 accelerator: auto
 epochs: 120
 min_loss_weight: 10

@@ -101,8 +101,8 @@ def train_model(data_module, comet_logger, name):
         
         #Save model checkpoint
         if data_module.config["snapshot_dir"] is not None:
-            trainer.save_checkpoint("{}_{}.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.get_parameter("commit hash"), name))
-            torch.save(m.model.state_dict(), "{}/{}_{}_state_dict.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.get_parameter("commit hash"), name))
+            trainer.save_checkpoint("{}_{}.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
+            torch.save(m.model.state_dict(), "{}/{}_{}_state_dict.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
         
         results = m.evaluate_crowns(
             data_loader=data_module.val_dataloader(),
@@ -126,3 +126,5 @@ def train_model(data_module, comet_logger, name):
         plot_lists = data_module.train.groupby("label").plotID.unique()
         within_plot_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=plot_lists)
         comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)
+        
+        return comet_logger
