@@ -239,10 +239,10 @@ if __name__ == "__main__":
             print(e)
             
     # post process cleanup
-    files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/**/*.tif",recursive=True)
-    counts = pd.DataFrame({"basename":[os.path.basename(x) for x in files],"path":files}) 
-    counts["geo_index"] = counts.path.apply(lambda x: os.path.dirname(os.path.dirname(x)))
-    less_than_3 = counts.groupby("geo_index").basename.value_counts().reset_index(name="geo")
-    to_remove = less_than_3[less_than_3.geo < 3].geo_index
-    for x in counts[counts.basename.isin(to_remove)].path:
-        os.remove(x)
+files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised_allsites/**/*.tif",recursive=True)
+counts = pd.DataFrame({"basename":[os.path.basename(x) for x in files],"path":files}) 
+counts["geo_index"] = counts.path.apply(lambda x: os.path.dirname(os.path.dirname(x)))
+less_than_3 = counts.groupby("geo_index").basename.value_counts().reset_index(name="geo")
+to_remove = less_than_3[less_than_3.geo < 3].geo_index
+for x in counts[counts.basename.isin(to_remove)].path:
+    os.remove(x)
