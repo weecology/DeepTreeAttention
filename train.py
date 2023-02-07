@@ -9,7 +9,7 @@ if __name__ == "__main__":
     git_branch=sys.argv[1]
     git_commit=sys.argv[2]    
     config = data.read_config("config.yml")
-    original_commit = config["train_test_commit"].copy()
+    original_commit = config["train_test_commit"]
     if config["all_site_pretrain"]:
         files = glob.glob("{}/{}/*{}*".format(config["data_dir"],config["use_data_commit"],config["train_test_commit"]))
         files = [x for x in files if "test" in x]
