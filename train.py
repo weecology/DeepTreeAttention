@@ -26,8 +26,8 @@ if __name__ == "__main__":
         testdf.to_csv("{}/{}/test_{}_pretrain.csv".format(config["data_dir"],config["use_data_commit"], config["train_test_commit"]))
         
         site = "pretrain"        
-        train.main(git_branch, git_commit, config, site)
-        config["pretrain_state_dict"] = "{}_{}_pretrain_state_dict.pl".format(config["snapshot_dir"],config["train_test_commit"])
+        comet_logger = train.main(git_branch, git_commit, config, site)
+        config["pretrain_state_dict"] = "{}/{}_pretrain_state_dict.pl".format(config["snapshot_dir"],comet_logger.experiment.id)
         
     for site in ["BART","BLAN", "BONA","CLBJ", "DEJU", "DELA", "GRSM", "HARV", "JERC",
                   "LENO", "MLBS", "MOAB", "NIWO" ,"OSBS","RMNP","SCBI","SERC","SJER","SOAP",
