@@ -18,7 +18,7 @@ if __name__ == "__main__":
         train = df.reset_index(drop=True)
         train.to_csv("{}/train_{}_{}_pretrain.csv".format(config["data_dir"],config["use_data_commit"], config["train_test_commit"]))
         
-        files = glob.glob("*{}*".format(config["commit hash"]))
+        files = glob.glob("*{}*".format(config["train_test_commit"]))
         files = [x for x in files if "test" in x]
         dfs = [pd.read_csv(x) for x in files]
         df = pd.concat(dfs)
