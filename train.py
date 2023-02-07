@@ -16,14 +16,14 @@ if __name__ == "__main__":
         dfs = [pd.read_csv(x) for x in files]
         df = pd.concat(dfs)
         traindf = df.reset_index(drop=True)
-        traindf.to_csv("{}/train_{}_{}_pretrain.csv".format(config["data_dir"],config["use_data_commit"], config["train_test_commit"]))
+        testdf.to_csv("{}/{}/train_{}_pretrain.csv".format(config["data_dir"],config["use_data_commit"], config["train_test_commit"]))
         
         files = glob.glob("{}/{}/*{}*".format(config["data_dir"],config["use_data_commit"],config["train_test_commit"]))
         files = [x for x in files if "test" in x]
         dfs = [pd.read_csv(x) for x in files]
         df = pd.concat(dfs)
         testdf = df.reset_index(drop=True)
-        testdf.to_csv("{}/test_{}_{}_pretrain.csv".format(config["data_dir"],config["use_data_commit"], config["train_test_commit"]))
+        testdf.to_csv("{}/{}/test_{}_pretrain.csv".format(config["data_dir"],config["use_data_commit"], config["train_test_commit"]))
         
         site = "pretrain"        
         train.main(git_branch, git_commit, config, site)
