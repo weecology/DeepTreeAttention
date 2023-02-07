@@ -315,7 +315,8 @@ class TreeData(LightningDataModule):
                 # Convert raw neon data to x,y tree locatins
                 df = filter_data(self.csv_file, config=self.config)
                 if site:
-                    df = df[df.siteID==site]
+                    if not site == "all":
+                        df = df[df.siteID==site]
                 # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config, client=self.client, site=site)
@@ -437,7 +438,8 @@ class TreeData(LightningDataModule):
         )    
     def create_train_test_split(self, ID):      
         if self.site:
-            self.annotations = self.annotations[self.annotations.siteID==self.site].reset_index(drop=True)
+            if not self.site == "all":
+                self.annotations = self.annotations[self.annotations.siteID==self.site].reset_index(drop=True)
         if self.config["existing_test_csv"]:
             existing_test = pd.read_csv(self.config["existing_test_csv"])
             self.test = self.annotations[self.annotations.individual.isin(existing_test.individual)]  

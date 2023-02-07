@@ -54,7 +54,9 @@ def main(git_branch, git_commit, config, site=None):
     if not config["use_data_commit"]:
         comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
     
-    train_model(data_module, comet_logger, site)
+    comet_logger = train_model(data_module, comet_logger, site)
+    
+    return comet_logger
     
 def train_model(data_module, comet_logger, name):
     with comet_logger.experiment.context_manager(name):
