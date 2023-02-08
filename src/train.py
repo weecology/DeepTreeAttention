@@ -51,6 +51,9 @@ def main(git_branch, git_commit, config, site=None):
     comet_logger.experiment.log_table("train.csv", data_module.train)
     comet_logger.experiment.log_table("test.csv", data_module.test)
     
+    #always assert that there is no train in test
+    assert data_module.train[data_module.train.individual.isin(data_module.test.individual)].empty
+    
     if not config["use_data_commit"]:
         comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
     
