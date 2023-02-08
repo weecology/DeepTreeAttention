@@ -404,7 +404,7 @@ class TreeData(LightningDataModule):
             if self.config["train_test_commit"] is None:
                 self.train, self.test = self.create_train_test_split(self.experiment_id)  
             else:
-                print("Loading a train-test split from {}_{}".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))
+                print("Loading a train-test split from {}/{}".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))
                 self.train = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
                 self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))               
         else:
@@ -414,8 +414,8 @@ class TreeData(LightningDataModule):
                 print("Using data commit {} creating a new train-test split for site {}".format(self.config["use_data_commit"],self.site))
                 self.create_train_test_split(ID=self.experiment_id)
             else:
-                print("Loading a train-test split from {}_{}".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))
-                self.train = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
+                print("Loading a train-test split from {}/{}".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))
+                self.train = pd.read_csv("{}/train_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
                 self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
             self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
             
