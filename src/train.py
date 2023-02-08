@@ -76,12 +76,15 @@ def train_model(data_module, comet_logger, name):
         
         comet_logger.experiment.log_parameter("loss_weight", loss_weight)
         
-        # Create Model
-        model = Hang2020.Single_Spectral_Model(bands=data_module.config["bands"], classes=data_module.num_classes)      
-        
+        # Create Model        
         if data_module.config["pretrain_state_dict"]:
-            print("Loading a pretrain state dict {}".format(data_module.config["pretrain_state_dict"]))
-            model.state_dict(torch.load(data_module.config["pretrain_state_dict"]))       
+            print("Loading a pretrain state dict {}".format(data_module.config["pretrain_state_dict"]))            
+            model = Hang2020.load_from_backbone(
+                data_module.config["pretrain_state_dict"],
+                classes=data_module.num_classes,
+                bands=data_module.config["bands"])
+        else:
+            model = Hang2020.Single_Spectral_Model(bands=data_module.config["bands"], classes=data_module.num_classes)
             
         m = baseline.TreeModel(
             model=model, 
@@ -115,7 +118,7 @@ def train_model(data_module, comet_logger, name):
         
         #Save model checkpoint
         if data_module.config["snapshot_dir"] is not None:
-            trainer.save_checkpoint("{}_{}.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
+            trainer.save_checkpoint("{}/{}_{}.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
             torch.save(m.model.state_dict(), "{}/{}_{}_state_dict.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
         
         results = m.evaluate_crowns(

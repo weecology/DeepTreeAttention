@@ -299,7 +299,7 @@ def load_from_backbone(state_dict, classes, bands):
     """Load from a backbone, potentially with a different head classifier"""
     train_state_dict = torch.load(state_dict, map_location="cpu")
     dict_items = train_state_dict.items()
-    model = spectral_network(classes=classes, bands=bands)
+    model = Single_Spectral_Model(classes=classes, bands=bands)
     dict_to_update = model.state_dict()
     
     #update weights from non-classifier layers
