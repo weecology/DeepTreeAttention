@@ -23,6 +23,8 @@ if __name__ == "__main__":
         comet_logger = train.main(git_branch, git_commit, config, site)
         config["pretrain_state_dict"] = "{}/{}_all_state_dict.pt".format(config["snapshot_dir"],comet_logger.experiment.id)
         config["train_test_commit"] = original_commit
+        config["existing_test_csv"] = None
+        
     for site in ["BART","BLAN", "BONA","CLBJ", "DEJU", "DELA", "GRSM", "HARV", "JERC",
                   "LENO", "MLBS", "MOAB", "NIWO" ,"OSBS","RMNP","SCBI","SERC","SJER","SOAP",
                  "STEI","TALL","TEAK","TREE","UKFS","UNDE","WREF","YELL"]:
