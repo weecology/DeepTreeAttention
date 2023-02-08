@@ -91,7 +91,7 @@ def train_model(data_module, comet_logger, name):
             label_dict=data_module.species_label_dict)
         
         #Before training
-        with comet_logger.context_manager("Before training"):     
+        with comet_logger.experiment.context_manager("Before training"):     
             results = m.evaluate_crowns(
                 data_loader=data_module.val_dataloader(),
                 siteIDs=data_module.test.siteID,
