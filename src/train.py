@@ -81,7 +81,7 @@ def train_model(data_module, comet_logger, name):
         
         if data_module.config["pretrain_state_dict"]:
             print("Loading a pretrain state dict {}".format(data_module.config["pretrain_state_dict"]))
-            model.state_dict(torch.load(data_module.config["pretrain_state_dict"]))
+            model.state_dict(torch.load(data_module.config["pretrain_state_dict"]))       
             
         m = baseline.TreeModel(
             model=model, 
@@ -89,6 +89,14 @@ def train_model(data_module, comet_logger, name):
             classes=data_module.num_classes, 
             loss_weight=loss_weight,
             label_dict=data_module.species_label_dict)
+        
+        #Before training
+        with comet_logger.context_manager("Before training"):     
+            results = m.evaluate_crowns(
+                data_loader=data_module.val_dataloader(),
+                siteIDs=data_module.test.siteID,
+                experiment=comet_logger.experiment,
+            )
             
         #Create trainer
         lr_monitor = LearningRateMonitor(logging_interval='epoch')
