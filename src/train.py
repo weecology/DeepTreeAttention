@@ -80,6 +80,7 @@ def train_model(data_module, comet_logger, name):
         model = Hang2020.Single_Spectral_Model(bands=data_module.config["bands"], classes=data_module.num_classes)      
         
         if data_module.config["pretrain_state_dict"]:
+            print("Loading a pretrain state dict {}".format(data_module.config["pretrain_state_dict"]))
             model.state_dict(torch.load(data_module.config["pretrain_state_dict"]))
             
         m = baseline.TreeModel(
