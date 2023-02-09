@@ -349,6 +349,8 @@ class Single_Pixel_Model(Module):
         #Iterate over each pixel
         image_scores = []
         for pixel in x.reshape(x.shape[0], x.shape[1], 1, x.shape[2] * x.shape[3]).unbind(3):
+            if pixel.sum() == 0:
+                continue
             x = self.conv1(pixel)
             x, attention = self.attention_1(x)
             

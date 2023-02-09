@@ -57,7 +57,23 @@ def preprocess_image(image, channel_is_first=False):
     
     return normalized
 
-def load_image(img_path, image_size):
+def resize_or_pad(image, image_size, pad=False):
+    """Resize an image to a square size, or pad with zeros to a square size. This is useful for creating batches with varying size data
+    Args:
+        image: a numpy array
+        image_size: pixel width or height
+        pad: Pad with zeros instead of resizing
+    """
+    
+    if image_size is not -1:
+        image = transforms.functional.resize(image, size=(image_size,image_size), interpolation=transforms.InterpolationMode.NEAREST)
+    else:
+        pad_height =  image.shape[1]
+        pad_width = image.shape[2]
+        image = transforms.functional.pad(image, padding=[pad_width, pad_height])
+    return image
+
+def load_image(img_path, image_size, pad=True):
     """Load and preprocess an image for training/prediction"""
     if os.path.splitext(img_path)[-1] == ".npy":
         try:
@@ -75,8 +91,8 @@ def load_image(img_path, image_size):
     image = preprocess_image(image, channel_is_first=True)
     
     #resize image
-    image = transforms.functional.resize(image, size=(image_size,image_size), interpolation=transforms.InterpolationMode.NEAREST)
-    
+    image = resize_or_pad(image, image_size, pad=pad)
+
     return image
 
 def my_collate(batch):
