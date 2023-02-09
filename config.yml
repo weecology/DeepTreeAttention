@@ -49,7 +49,7 @@ preload_images: True
 workers: 0
 
 ### Training Parameters
-all_site_pretrain: True
+all_site_pretrain: False
 pretrain_state_dict:
 gpus: 1
 batch_size: 48
