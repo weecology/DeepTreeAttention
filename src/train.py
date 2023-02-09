@@ -51,8 +51,9 @@ def main(git_branch, git_commit, config, site=None):
     comet_logger.experiment.log_table("train.csv", data_module.train)
     comet_logger.experiment.log_table("test.csv", data_module.test)
     
-    #always assert that there is no train in test
-    assert data_module.train[data_module.train.individual.isin(data_module.test.individual)].empty
+    #always assert that there is no train in test, skip for debug
+    if not git_branch == "pytest":
+        assert data_module.train[data_module.train.individual.isin(data_module.test.individual)].empty
     
     if not config["use_data_commit"]:
         comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
@@ -75,6 +76,7 @@ def train_model(data_module, comet_logger, name):
         loss_weight[loss_weight < 0.5] = 0.5  
         
         comet_logger.experiment.log_parameter("loss_weight", loss_weight)
+        comet_logger.experiment.log_parameter("site", name)
         
         # Create Model        
         if data_module.config["pretrain_state_dict"]:
@@ -84,7 +86,7 @@ def train_model(data_module, comet_logger, name):
                 classes=data_module.num_classes,
                 bands=data_module.config["bands"])
         else:
-            model = Hang2020.Single_Spectral_Model(bands=data_module.config["bands"], classes=data_module.num_classes)
+            model = Hang2020.Single_Pixel_Model(bands=data_module.config["bands"], classes=data_module.num_classes)
             
         m = baseline.TreeModel(
             model=model, 

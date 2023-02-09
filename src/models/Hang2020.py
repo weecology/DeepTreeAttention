@@ -30,6 +30,23 @@ class conv_module(Module):
         
         return x
 
+class conv_module1D(Module):
+    def __init__(self, in_channels, filters, kernel_size=3, maxpool_kernel=None):
+        """Define a simple conv block with batchnorm and optional max pooling"""
+        super(conv_module1D, self).__init__()
+        self.conv_layer = nn.Conv1d(in_channels, out_channels=filters, kernel_size = kernel_size, padding="same") 
+        self.bn1 = nn.BatchNorm1d(filters)                    
+        self.maxpool_kernal = maxpool_kernel
+        if maxpool_kernel:
+            self.max_pool = nn.MaxPool2d(maxpool_kernel)
+        
+    def forward(self, x, pool=False):
+        x = self.conv_layer(x)
+        x = self.bn1(x)
+        x = F.relu(x)
+        
+        return x
+    
 class vanilla_CNN(Module):
     """
     A baseline model without spectral convolutions or spatial/spectral attention 
@@ -148,8 +165,13 @@ class spectral_attention(Module):
         
     def forward(self, x):
         """Calculate attention and class scores for batch"""
-        #Global pooling and add dimensions to keep the same shape
-        pooled_features = global_spectral_pool(x)
+        
+        #Global pooling and add dimensions to keep the same shape   
+        # Do not need to pool if following a 1D convolution, there is only one channel.
+        if x.shape[2] > 1:
+            pooled_features = global_spectral_pool(x)
+        else:
+            pooled_features = x
         
         #Attention layers
         attention = self.attention_conv1(pooled_features)
@@ -158,11 +180,17 @@ class spectral_attention(Module):
         attention = F.sigmoid(attention)
         
         #Add dummy dimension to make the shapes the same
-        attention = attention.unsqueeze(-1)
+        if x.ndim == 4:
+            attention = attention.unsqueeze(-1)
+            
         attention = torch.mul(x, attention)
         
         # Classification Head
-        pooled_attention_features = global_spectral_pool(attention)
+        if attention.shape[2] > 1:
+            pooled_attention_features = global_spectral_pool(attention)
+        else:
+            pooled_attention_features = attention
+            
         pooled_attention_features = torch.flatten(pooled_attention_features, start_dim=1)
         
         return attention, pooled_attention_features
@@ -283,6 +311,8 @@ class Single_Spectral_Model(Module):
     
     def forward(self, x):
         """The forward method is written for training the joint scores of the three attention layers"""
+        
+        #Iterate over each pixel
         x = self.conv1(x)
         x, attention = self.attention_1(x)
         
@@ -294,6 +324,46 @@ class Single_Spectral_Model(Module):
         scores3 = self.classifier3(attention)
         
         return scores3
+    
+class Single_Pixel_Model(Module):
+    """
+        Learn spectral features with alternating convolutional and attention pooling layers
+    """
+    def __init__(self, bands, classes):
+        super(Single_Pixel_Model, self).__init__()
+        
+        #First submodel is 32 filters
+        self.conv1 = conv_module1D(in_channels=bands, filters=32)
+        self.attention_1 = spectral_attention(filters=32)
+    
+        self.conv2 = conv_module1D(in_channels=32, filters=64, maxpool_kernel=(2,2))
+        self.attention_2 = spectral_attention(filters=64)
+    
+        self.conv3 = conv_module1D(in_channels=64, filters=128, maxpool_kernel=(2,2))
+        self.attention_3 = spectral_attention(filters=128)
+        self.classifier3 = Classifier(classes=classes, in_features=128)
+    
+    def forward(self, x):
+        """The forward method is written for training the joint scores of the three attention layers"""
+        
+        #Iterate over each pixel
+        image_scores = []
+        for pixel in x.reshape(x.shape[0], x.shape[1], 1, x.shape[2] * x.shape[3]).unbind(3):
+            x = self.conv1(pixel)
+            x, attention = self.attention_1(x)
+            
+            x = self.conv2(x)
+            x, attention = self.attention_2(x)
+            
+            x = self.conv3(x)        
+            x, attention = self.attention_3(x)
+            scores3 = self.classifier3(attention)
+            image_scores.append(scores3)
+        
+        stacked_score = torch.stack(image_scores, dim=1)
+        ensemble_score = stacked_score.mean(dim=(1))
+            
+        return ensemble_score
     
 def load_from_backbone(state_dict, classes, bands):
     """Load from a backbone, potentially with a different head classifier"""

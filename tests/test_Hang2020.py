@@ -62,6 +62,18 @@ def test_Hang2020():
     image = torch.randn(20, 3, 11, 11)
     output = m(image)
     assert output.shape == (20,10)    
+
+def test_Single_Spectral_Model():
+    m = Hang2020.Single_Spectral_Model(bands=3, classes=10)
+    image = torch.randn(20, 3, 11, 11)
+    output = m(image)
+    assert output.shape == (20,10)    
+
+def test_Single_Pixel_Model():
+    m = Hang2020.Single_Pixel_Model(bands=3, classes=10)
+    image = torch.randn(20, 3, 11, 11)
+    output = m(image)
+    assert output.shape == (20,10) 
     
 def test_load_from_backbone(tmpdir):    
     ten_classes = Hang2020.Hang2020(bands=3, classes=10)

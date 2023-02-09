@@ -49,8 +49,8 @@ preload_images: True
 workers: 0
 
 ### Training Parameters
-all_site_pretrain:
-pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots//4e4f9d660ec84cd1bed95e18a87108fe_all_state_dict.pt
+all_site_pretrain: False
+pretrain_state_dict:
 gpus: 1
 batch_size: 48
 bands: 349
