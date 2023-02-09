@@ -86,7 +86,7 @@ def train_model(data_module, comet_logger, name):
                 classes=data_module.num_classes,
                 bands=data_module.config["bands"])
         else:
-            model = Hang2020.Single_Pixel_Model(bands=data_module.config["bands"], classes=data_module.num_classes)
+            model = Hang2020.Single_Spectral_Model(bands=data_module.config["bands"], classes=data_module.num_classes)
             
         m = baseline.TreeModel(
             model=model, 
@@ -95,13 +95,13 @@ def train_model(data_module, comet_logger, name):
             loss_weight=loss_weight,
             label_dict=data_module.species_label_dict)
         
-        #Before training
-        with comet_logger.experiment.context_manager("Before training"):     
-            results = m.evaluate_crowns(
-                data_loader=data_module.val_dataloader(),
-                siteIDs=data_module.test.siteID,
-                experiment=comet_logger.experiment,
-            )
+        ##Before training
+        #with comet_logger.experiment.context_manager("Before training"):     
+            #results = m.evaluate_crowns(
+                #data_loader=data_module.val_dataloader(),
+                #siteIDs=data_module.test.siteID,
+                #experiment=comet_logger.experiment,
+            #)
             
         #Create trainer
         lr_monitor = LearningRateMonitor(logging_interval='epoch')
