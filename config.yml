@@ -44,7 +44,7 @@ existing_test_csv:
 
 ### Data loader Config
 # Resized pixel size of the crowns. Square crops around each pixel of size x
-image_size: 20
+image_size: 100
 preload_images: True
 workers: 0
 
