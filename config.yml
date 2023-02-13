@@ -47,7 +47,7 @@ existing_test_csv:
 image_size: 30
 preload_images: True
 workers: 0
-taxonomic_csv: /blue/ewhite/b.weinstein/DeepTreeAttention/data/raw/families.csv
+taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
 ### Training Parameters
 all_site_pretrain: False
