@@ -55,7 +55,7 @@ pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots//02373
 gpus: 1
 batch_size: 48
 bands: 349
-head_class_minimum_samples: 500
+head_class_minimum_samples: 200
 
 # Learning rates
 lr_0: 0.000005
