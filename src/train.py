@@ -9,7 +9,7 @@ from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
 
 from src import data, start_cluster, metrics
-from src.models import baseline, Hang2020
+from src.models import multi_stage, Hang2020
 
 def main(git_branch, git_commit, config, site=None):
     #Create datamodule
@@ -78,22 +78,10 @@ def train_model(data_module, comet_logger, name):
         comet_logger.experiment.log_parameter("loss_weight", loss_weight)
         comet_logger.experiment.log_parameter("site", name)
         
-        # Create Model        
-        if data_module.config["pretrain_state_dict"]:
-            print("Loading a pretrain state dict {}".format(data_module.config["pretrain_state_dict"]))            
-            model = Hang2020.load_from_backbone(
-                data_module.config["pretrain_state_dict"],
-                classes=data_module.num_classes,
-                bands=data_module.config["bands"])
-        else:
-            model = Hang2020.Single_Spectral_Model(bands=data_module.config["bands"], classes=data_module.num_classes)
-            
-        m = baseline.TreeModel(
-            model=model, 
-            config=data_module.config,
-            classes=data_module.num_classes, 
-            loss_weight=loss_weight,
-            label_dict=data_module.species_label_dict)
+        m = multi_stage.MultiStage(
+            train_df=data_module.train, 
+            test_df=data_module.test, 
+            config=data_module.config)
         
         ##Before training
         #with comet_logger.experiment.context_manager("Before training"):     
@@ -116,22 +104,32 @@ def train_model(data_module, comet_logger, name):
             enable_checkpointing=False,
             logger=comet_logger)
         
-        trainer.fit(m, datamodule=data_module)
+        trainer.fit(m)
         
         #Save model checkpoint
         if data_module.config["snapshot_dir"] is not None:
             trainer.save_checkpoint("{}/{}_{}.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
             torch.save(m.model.state_dict(), "{}/{}_{}_state_dict.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
         
-        results = m.evaluate_crowns(
-            data_loader=data_module.val_dataloader(),
-            siteIDs=data_module.test.siteID,
-            experiment=comet_logger.experiment,
+        ds = data.TreeDataset(df=data_module.test, train=False, config=data_module.config)
+        predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
+        results = m.gather_predictions(predictions)
+        results["label"] = data_module.test.label
+        results["siteID"] = data_module.test.siteID
+        results_with_data = results.merge(data_module.crowns, on="individual")
+        comet_logger.experiment.log_table("nested_predictions.csv", results_with_data)
+        
+        ensemble_df = m.ensemble(results)
+        ensemble_df = m.evaluation_scores(
+            ensemble_df,
+            experiment=comet_logger.experiment
         )
         
+        ensemble_df["pred_taxa_top1"] = ensemble_df.ensembleTaxonID
+        ensemble_df["pred_label_top1"] = ensemble_df.ens_label        
         comet_logger.experiment.log_confusion_matrix(
-            results.label.values,
-            results.pred_label_top1.values,
+            ensemble_df.label.values,
+            ensemble_df.pred_label_top1.values,
             labels=list(data_module.species_label_dict.keys()),
             max_categories=len(data_module.species_label_dict.keys()),
             title=name,
@@ -139,11 +137,6 @@ def train_model(data_module, comet_logger, name):
         )
         
         # Log prediction
-        comet_logger.experiment.log_table("test_predictions.csv", results)
-
-        ## Within plot confusion
-        #plot_lists = data_module.train.groupby("label").plotID.unique()
-        #within_plot_confusion = metrics.site_confusion(y_true = results.label, y_pred = results.pred_label_top1, site_lists=plot_lists)
-        #comet_logger.experiment.log_metric("within_plot_confusion", within_plot_confusion)
+        comet_logger.experiment.log_table("test_predictions.csv", ensemble_df)
         
         return comet_logger

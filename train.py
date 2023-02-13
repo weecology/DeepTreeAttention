@@ -3,6 +3,7 @@ import sys
 import glob
 import pandas as pd
 from src import train, data
+import traceback
 
 if __name__ == "__main__":
     #Get branch name for the comet tag
@@ -28,4 +29,7 @@ if __name__ == "__main__":
     for site in ["BART","BLAN", "BONA","CLBJ", "DEJU", "DELA", "GRSM", "HARV", "JERC",
                   "LENO", "MLBS", "MOAB", "NIWO" ,"OSBS","RMNP","SCBI","SERC","SJER","SOAP",
                  "STEI","TALL","TEAK","TREE","UKFS","UNDE","WREF","YELL"]:
-        train.main(git_branch, git_commit, config, site)
+        try:
+            train.main(git_branch, git_commit, config, site)
+        except:
+            print("{} failed with {}".format(site, traceback.print_exc()))

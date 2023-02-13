@@ -213,47 +213,70 @@ class TreeDataset(Dataset):
     """A csv file with a path to image crop and label
     Args:
        csv_file: path to csv file with image_path and label
-       df: pandas dataframe
     """
-    def __init__(self, csv_file=None, df=None, config=None, train=True):
-        if df is None:
+    def __init__(self, df=None, csv_file=None, config=None, train=True):
+        if csv_file:
             self.annotations = pd.read_csv(csv_file)
         else:
             self.annotations = df
+        
         self.train = train
         self.config = config         
         self.image_size = config["image_size"]
-
+        self.years = self.annotations.tile_year.unique()
+        self.individuals = self.annotations.individual.unique()
+        self.image_paths = self.annotations.groupby("individual").apply(lambda x: x.set_index('tile_year').image_path.to_dict())
+        if train:
+            self.labels = self.annotations.set_index("individual").label.to_dict()
+        
         # Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=self.image_size)
-
+        self.image_dict = {}
+        
         # Pin data to memory if desired
         if self.config["preload_images"]:
-            self.image_dict = {}
-            for index, row in self.annotations.iterrows():
-                image_path = os.path.join(self.config["crop_dir"],row["image_path"])
-                self.image_dict[index] = load_image(image_path, image_size=self.image_size)
-
+            for individual in self.individuals:
+                images = []
+                ind_annotations = self.image_paths[individual]
+                for year in self.years:
+                    try:
+                        year_annotations = ind_annotations[year]
+                        image_path = os.path.join(self.config["crop_dir"], year_annotations)
+                        image = load_image(image_path, image_size=self.image_size)                        
+                    except KeyError:
+                        image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
+                    if self.train:
+                        image = self.transformer(image)   
+                    images.append(image)
+                self.image_dict[individual] = images
+            
     def __len__(self):
         # 0th based index
-        return self.annotations.shape[0]
+        return len(self.individuals)
 
     def __getitem__(self, index):
         inputs = {}
-        image_path = self.annotations.image_path.iloc[index]      
-        individual = os.path.basename(os.path.splitext(image_path)[0])
+        individual = self.individuals[index]        
         if self.config["preload_images"]:
-            inputs["HSI"] = self.image_dict[index]
+            inputs["HSI"] = self.image_dict[individual]
         else:
-            image_basename = self.annotations.image_path.iloc[index]  
-            image_path = os.path.join(self.config["crop_dir"],image_basename)                
-            image = load_image(image_path, image_size=self.image_size)
-            inputs["HSI"] = image
-
+            images = []
+            ind_annotations = self.image_paths[individual]
+            for year in self.years:
+                try:
+                    year_annotations = ind_annotations[year]
+                    image_path = os.path.join(self.config["crop_dir"], year_annotations)
+                    image = load_image(image_path, image_size=self.image_size)                        
+                except Exception:
+                    image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
+                if self.train:
+                    image = self.transformer(image)   
+                images.append(image)
+            inputs["HSI"] = images
+        
         if self.train:
-            label = self.annotations.label.iloc[index]
+            label = self.labels[individual]
             label = torch.tensor(label, dtype=torch.long)
-            inputs["HSI"] = self.transformer(inputs["HSI"])
 
             return individual, inputs, label
         else:

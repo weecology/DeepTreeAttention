@@ -47,6 +47,7 @@ existing_test_csv:
 image_size: 30
 preload_images: True
 workers: 0
+taxonomic_csv: /blue/ewhite/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
 ### Training Parameters
 all_site_pretrain: False
@@ -54,8 +55,13 @@ pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots//02373
 gpus: 1
 batch_size: 48
 bands: 349
+
 # Learning rates
-lr: 0.0001
+lr_0: 0.000005
+lr_1: 0.0000005
+lr_2: 0.0000005
+lr_3: 0.000001
+
 fast_dev_run: False
 accelerator: auto
 epochs: 120

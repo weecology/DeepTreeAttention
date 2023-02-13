@@ -5,7 +5,7 @@ import geopandas as gpd
 import os
 import glob
 from src import data
-from src.models import dead, baseline, Hang2020
+from src.models import dead, multi_stage, Hang2020
 from src import utils
 import tempfile
 import torch
@@ -86,7 +86,8 @@ def config(ROOT):
     config["fast_dev_run"] = True
     config["snapshot_dir"] = None
     config["train_test_commit"] = "110ac77ae89043898f618466359c2a2e"
-    
+    config["taxonomic_csv"] = "{}/data/raw/families.csv".format(ROOT)
+
     return config
 
 #Data module
@@ -111,8 +112,7 @@ def experiment():
 #Training module
 @pytest.fixture(scope="session")
 def m(config, dm, ROOT):
-    model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=dm.num_classes)
-    m  = baseline.TreeModel(model, classes=dm.num_classes, label_dict=dm.species_label_dict, config=config)    
+    m = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, config=config)
     m.ROOT = "{}/tests/".format(ROOT)
     
     return m
