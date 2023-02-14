@@ -26,10 +26,11 @@ if __name__ == "__main__":
         config["train_test_commit"] = original_commit
         config["existing_test_csv"] = None
         
-    for site in ["BART","BLAN", "BONA","CLBJ", "DEJU", "DELA", "GRSM", "HARV", "JERC",
-                  "LENO", "MLBS", "MOAB", "NIWO" ,"OSBS","RMNP","SCBI","SERC","SJER","SOAP",
-                 "STEI","TALL","TEAK","TREE","UKFS","UNDE","WREF","YELL"]:
-        try:
+    #for site in ["BART","BLAN", "BONA","CLBJ", "DEJU", "DELA", "GRSM", "HARV", "JERC",
+                  #"LENO", "MLBS", "MOAB", "NIWO" ,"OSBS","RMNP","SCBI","SERC","SJER","SOAP",
+                 #"STEI","TALL","TEAK","TREE","UKFS","UNDE","WREF","YELL"]:
+     for site in ["OSBS"]:
+         try:
             train.main(git_branch, git_commit, config, site)
         except:
             print("{} failed with {}".format(site, traceback.print_exc()))
