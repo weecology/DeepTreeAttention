@@ -84,13 +84,13 @@ def train_model(data_module, comet_logger, name):
             test_df=data_module.test, 
             config=data_module.config)
 
-        for key, value in m.test_dataframes:
+        for key, value in m.test_dataframes.items():
             comet_logger.experiment.log_table("test_{}.csv".format(key), value)
 
-        for key, value in m.train_dataframes:
+        for key, value in m.train_dataframes.items():
             comet_logger.experiment.log_table("train_{}.csv".format(key), value)
         
-        comet_logger.experimnet.log_dict(data_module.train.taxonID.value_counts().to_dict())
+        comet_logger.experiment.log_parameters(data_module.train.taxonID.value_counts().to_dict())
         
         #Create trainer
         lr_monitor = LearningRateMonitor(logging_interval='epoch')
@@ -128,7 +128,7 @@ def train_model(data_module, comet_logger, name):
         
         comet_logger.experiment.log_confusion_matrix(
             ensemble_df.label.values,
-            ensemble_df.ensemble_df.ens_label.values,
+            ensemble_df.ens_label.values,
             labels=list(data_module.species_label_dict.keys()),
             max_categories=len(data_module.species_label_dict.keys()),
             title=name,
