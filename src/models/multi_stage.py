@@ -99,10 +99,7 @@ class MultiStage(LightningModule):
         if level_label_dict is None:
             common_species = df.taxonID.value_counts().reset_index()
             common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]
-            
             level_label_dict = {value:key for key, value in enumerate(common_species)}
-            level_label_dict["CONIFER"] = len(level_label_dict)
-            level_label_dict["BROADLEAF"] = len(level_label_dict)
         else:
             common_species = list(level_label_dict.keys())
         
@@ -113,8 +110,12 @@ class MultiStage(LightningModule):
         tail_classes = df[~df.taxonID.isin(common_species)]
         needleleaf = self.taxonomy[self.taxonomy.families=="Pinidae"].taxonID
         needleleaf = needleleaf[~needleleaf.isin(common_species)]
+        if not needleleaf.empty:
+            level_label_dict["CONIFER"] = len(level_label_dict)
         broadleaf = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID
         broadleaf = broadleaf[~broadleaf.isin(common_species)]
+        if not broadleaf.empty:
+            level_label_dict["BROADLEAF"] = len(level_label_dict)                        
         tail_classes.loc[tail_classes.taxonID.isin(needleleaf),"taxonID"] = "CONIFER"
         tail_classes.loc[tail_classes.taxonID.isin(broadleaf),"taxonID"] = "BROADLEAF"
         
@@ -314,6 +315,7 @@ class MultiStage(LightningModule):
         individual, inputs, y = batch[optimizer_idx]
         images = inputs["HSI"]  
         y_hat = self.models[level_name].forward(images)
+        print(y_hat)
         print("The y-hat shape is {}".format(y_hat.shape))
         print("The label shape is {}".format(y.shape))
         loss = F.cross_entropy(y_hat, y)    
