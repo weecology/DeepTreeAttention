@@ -12,6 +12,8 @@ from torch import nn
 import torchmetrics
 from torchmetrics import Accuracy, ClasswiseWrapper, Precision, MetricCollection
 import torch
+import traceback
+import warnings
 
 class base_model(Module):
     def __init__(self, years, classes, config):
@@ -46,7 +48,13 @@ class MultiStage(LightningModule):
         
         #Lookup taxonomic names
         self.taxonomy = pd.read_csv(config["taxonomic_csv"])
-                
+        
+        #remove anything not current in taxonomy and warn
+        missing_ids = self.train_df.loc[~self.train_df.taxonID.isin(self.taxonomy.taxonID)].taxonID.unique()
+        warnings.warn("The following ids are not in the taxonomy: {}!".format(missing_ids))
+        self.train_df = self.train_df[~self.train_df.taxonID.isin(missing_ids)]
+        self.test_df= self.test_df[~self.test_df.taxonID.isin(missing_ids)]
+        
         #hotfix for old naming schema
         try:
             self.test_df["individual"] = self.test_df["individualID"]
@@ -202,14 +210,15 @@ class MultiStage(LightningModule):
             datasets["dominant_class"] = level_ds            
         except ValueError:
             print("No data with samples more than {} samples".format(self.config["head_class_minimum_samples"]))
-        
+            traceback.print_exc()            
         try:
             level_ds, level_df, level_label_dict = self.conifer_model(df)
             level_label_dicts["conifer"] = level_label_dict
             dataframes["conifer"] = level_df
             datasets["conifer"] = level_ds           
         except ValueError:
-            print("No conifer samples")
+            print("Conifer model failed")
+            traceback.print_exc()
         
         try:
             level_ds, level_df, level_label_dict = self.broadleaf_model(df)
@@ -217,16 +226,17 @@ class MultiStage(LightningModule):
             dataframes["broadleaf"] = level_df
             datasets["broadleaf"] = level_ds           
         except ValueError:
-            print("No broadleaf samples")
-                
+            print("broadleaf model failed")
+            traceback.print_exc()                
         try:
             level_ds, level_df, level_label_dict = self.oak_model(df)
             level_label_dicts["oak"] = level_label_dict
             dataframes["oak"] = level_df
             datasets["oak"] = level_ds           
         except ValueError:
-            print("No oak samples")        
-
+            print("Oak model failed")
+            traceback.print_exc()
+            
         return datasets, dataframes, level_label_dicts
     
     def train_dataloader(self):
