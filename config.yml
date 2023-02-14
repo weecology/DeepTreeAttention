@@ -57,10 +57,10 @@ batch_size: 48
 bands: 349
 
 # Learning rates
-lr_0: 0.000005
-lr_1: 0.0000005
-lr_2: 0.0000005
-lr_3: 0.000001
+lr_dominant_class: 0.000005
+lr_conifer: 0.0000005
+lr_broadleaf: 0.0000005
+lr_oak: 0.000001
 
 fast_dev_run: False
 accelerator: auto
