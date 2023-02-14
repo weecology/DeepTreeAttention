@@ -82,15 +82,15 @@ def train_model(data_module, comet_logger, name):
             train_df=data_module.train, 
             test_df=data_module.test, 
             config=data_module.config)
+
+        for key, value in m.test_dataframes:
+            comet_logger.experiment.log_table("test_{}.csv".format(key), value)
+
+        for key, value in m.train_dataframes:
+            comet_logger.experiment.log_table("train_{}.csv".format(key), value)
         
-        ##Before training
-        #with comet_logger.experiment.context_manager("Before training"):     
-            #results = m.evaluate_crowns(
-                #data_loader=data_module.val_dataloader(),
-                #siteIDs=data_module.test.siteID,
-                #experiment=comet_logger.experiment,
-            #)
-            
+        comet_logger.experimnet.log_dict(data_module.train.taxonID.value_counts().to_dict())
+        
         #Create trainer
         lr_monitor = LearningRateMonitor(logging_interval='epoch')
         trainer = Trainer(

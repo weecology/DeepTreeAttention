@@ -12,6 +12,7 @@ from torch import nn
 import torchmetrics
 from torchmetrics import Accuracy, ClasswiseWrapper, Precision, MetricCollection
 import torch
+import traceback
 
 class base_model(Module):
     def __init__(self, years, classes, config):
@@ -202,14 +203,15 @@ class MultiStage(LightningModule):
             datasets["dominant_class"] = level_ds            
         except ValueError:
             print("No data with samples more than {} samples".format(self.config["head_class_minimum_samples"]))
-        
+            traceback.print_exc()            
         try:
             level_ds, level_df, level_label_dict = self.conifer_model(df)
             level_label_dicts["conifer"] = level_label_dict
             dataframes["conifer"] = level_df
             datasets["conifer"] = level_ds           
         except ValueError:
-            print("No conifer samples")
+            print("Conifer model failed")
+            traceback.print_exc()
         
         try:
             level_ds, level_df, level_label_dict = self.broadleaf_model(df)
@@ -217,16 +219,17 @@ class MultiStage(LightningModule):
             dataframes["broadleaf"] = level_df
             datasets["broadleaf"] = level_ds           
         except ValueError:
-            print("No broadleaf samples")
-                
+            print("broadleaf model failed")
+            traceback.print_exc()                
         try:
             level_ds, level_df, level_label_dict = self.oak_model(df)
             level_label_dicts["oak"] = level_label_dict
             dataframes["oak"] = level_df
             datasets["oak"] = level_ds           
         except ValueError:
-            print("No oak samples")        
-
+            print("Oak model failed")
+            traceback.print_exc()
+            
         return datasets, dataframes, level_label_dicts
     
     def train_dataloader(self):
