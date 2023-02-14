@@ -125,11 +125,9 @@ def train_model(data_module, comet_logger, name):
             experiment=comet_logger.experiment
         )
         
-        ensemble_df["pred_taxa_top1"] = ensemble_df.ensembleTaxonID
-        ensemble_df["pred_label_top1"] = ensemble_df.ens_label        
         comet_logger.experiment.log_confusion_matrix(
             ensemble_df.label.values,
-            ensemble_df.pred_label_top1.values,
+            ensemble_df.ensemble_df.ens_label.values,
             labels=list(data_module.species_label_dict.keys()),
             max_categories=len(data_module.species_label_dict.keys()),
             title=name,

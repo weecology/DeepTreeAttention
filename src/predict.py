@@ -139,22 +139,17 @@ def predict_crowns(PATH, config):
     
     return gdf
 
-def predict_species(crowns, m, config):
+def predict_species(crowns, trainer, m, config):
     """Compute hierarchical prediction without predicting unneeded levels""" 
     config["crop_dir"] = config["prediction_crop_dir"]
     ds = TreeDataset(df=crowns, train=False, config=config)
-    data_loader = torch.utils.data.DataLoader(
-        ds,
-        batch_size=config["predict_batch_size"],
-        num_workers=config["workers"],
-    )    
-    predictions = m._predict_dataloader_(data_loader, train=False)
-    if predictions is None:
-        return None
-
-    results = pd.concat([predictions.drop(columns=["individual"]), crowns],axis=1)
-    
-    return results
+    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
+    results = m.gather_predictions(predictions)
+    results["label"] = crowns.test.label
+    results["siteID"] = crowns.test.siteID    
+    ensemble_df = m.ensemble(results)
+        
+    return ensemble_df
 
 def predict_dead(crowns, dead_model_path, config):
     dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path, config=config)
