@@ -65,7 +65,7 @@ class MultiStage(LightningModule):
         if train_mode:
             # Create the hierarchical structure
             self.train_datasets, self.train_dataframes, self.level_label_dicts = self.create_datasets(self.train_df)
-            self.test_datasets, self.test_dataframes, _ = self.create_datasets(self.test_df)
+            self.test_datasets, self.test_dataframes, _ = self.create_datasets(self.test_df, level_label_dicts=self.level_label_dicts)
             
             #Create label dicts
             self.label_to_taxonIDs = {}
@@ -211,7 +211,6 @@ class MultiStage(LightningModule):
             level_label_dicts["conifer"] = None
             level_label_dicts["broadleaf"] = None
             level_label_dicts["oak"] = None
-            
         try:
             level_ds, level_df, level_label_dict = self.dominant_class_model(df=df, level_label_dict=level_label_dicts["dominant_class"])
             level_label_dicts["dominant_class"] = level_label_dict
@@ -225,7 +224,7 @@ class MultiStage(LightningModule):
             level_label_dicts["conifer"] = level_label_dict
             dataframes["conifer"] = level_df
             datasets["conifer"] = level_ds           
-        except ValueError:
+        except ValueError or KeyError:
             print("Conifer model failed")
             traceback.print_exc()
         
@@ -234,7 +233,7 @@ class MultiStage(LightningModule):
             level_label_dicts["broadleaf"] = level_label_dict
             dataframes["broadleaf"] = level_df
             datasets["broadleaf"] = level_ds           
-        except ValueError:
+        except ValueError or KeyError:
             print("broadleaf model failed")
             traceback.print_exc()                
         try:
@@ -242,7 +241,7 @@ class MultiStage(LightningModule):
             level_label_dicts["oak"] = level_label_dict
             dataframes["oak"] = level_df
             datasets["oak"] = level_ds           
-        except ValueError:
+        except ValueError or KeyError:
             print("Oak model failed")
             traceback.print_exc()
         
