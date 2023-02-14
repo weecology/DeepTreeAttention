@@ -94,19 +94,22 @@ class MultiStage(LightningModule):
             if not debug:
                 self.save_hyperparameters()        
     
-    def dominant_class_model(self, df):
+    def dominant_class_model(self, df, level_label_dict=None):
         """A level 0 model splits out the dominant class and compares to all other samples"""
-        # Level 0, the most common species at each site
-        common_species = df.taxonID.value_counts().reset_index()
-        common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]
+        
+        if level_label_dict is None:
+            common_species = df.taxonID.value_counts().reset_index()
+            common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]
 
-        if common_species.empty:
-            raise ValueError("No data with samples more than {} samples".format(self.config["head_class_minimum_samples"]))
-            
-        level_label_dict = {value:key for key, value in enumerate(common_species)}
-        level_label_dict["CONIFER"] = len(level_label_dict)
-        level_label_dict["BROADLEAF"] = len(level_label_dict)        
-    
+            if common_species.empty:
+                raise ValueError("No data with samples more than {} samples".format(self.config["head_class_minimum_samples"]))
+                    
+            level_label_dict = {value:key for key, value in enumerate(common_species)}
+            level_label_dict["CONIFER"] = len(level_label_dict)
+            level_label_dict["BROADLEAF"] = len(level_label_dict)
+        else:
+            common_species = list(level_label_dict.keys())
+        
         # Select head and tail classes
         head_classes = df[df.taxonID.isin(common_species)]
         
@@ -126,7 +129,7 @@ class MultiStage(LightningModule):
         
         return level_0_ds, level_0, level_label_dict
     
-    def conifer_model(self, df):
+    def conifer_model(self, df, level_label_dict=None):
         needleleaf = self.taxonomy[self.taxonomy.families=="Pinidae"].taxonID        
         needleleaf = [x for x in df.taxonID.unique() if x in needleleaf.values]
         common_species = df.taxonID.value_counts().reset_index()
@@ -147,7 +150,7 @@ class MultiStage(LightningModule):
         
         return level_1_ds, level_1, level_label_dict
     
-    def broadleaf_model(self, df):
+    def broadleaf_model(self, df, level_label_dict=None):
         """Model for the broadleaf species"""
         broadleaf = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID
         common_species = df.taxonID.value_counts().reset_index()
@@ -173,7 +176,7 @@ class MultiStage(LightningModule):
         
         return level_2_ds, level_2, level_label_dict
         
-    def oak_model(self, df):
+    def oak_model(self, df, level_label_dict=None):
         broadleaf = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID
         common_species = df.taxonID.value_counts().reset_index()
         common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]        
@@ -195,16 +198,22 @@ class MultiStage(LightningModule):
         
         return level_3_ds, level_3, level_label_dict
                 
-    def create_datasets(self, df):
+    def create_datasets(self, df, level_label_dicts=None):
         """Create a hierarchical set of dataloaders by splitting into taxonID groups
         train: whether to sample the training labels
         """
         datasets = {}
         dataframes = {}
-        level_label_dicts = {}
+        
+        if level_label_dicts is None:
+            level_label_dicts = {}
+            level_label_dicts["dominant_class"] = None
+            level_label_dicts["conifer"] = None
+            level_label_dicts["broadleaf"] = None
+            level_label_dicts["oak"] = None
             
         try:
-            level_ds, level_df, level_label_dict = self.dominant_class_model(df=df)
+            level_ds, level_df, level_label_dict = self.dominant_class_model(df=df, level_label_dict=level_label_dicts["dominant_class"])
             level_label_dicts["dominant_class"] = level_label_dict
             dataframes["dominant_class"] = level_df
             datasets["dominant_class"] = level_ds            
@@ -212,7 +221,7 @@ class MultiStage(LightningModule):
             print("No data with samples more than {} samples".format(self.config["head_class_minimum_samples"]))
             traceback.print_exc()            
         try:
-            level_ds, level_df, level_label_dict = self.conifer_model(df)
+            level_ds, level_df, level_label_dict = self.conifer_model(df, level_label_dict=level_label_dicts["conifer"])
             level_label_dicts["conifer"] = level_label_dict
             dataframes["conifer"] = level_df
             datasets["conifer"] = level_ds           
@@ -221,7 +230,7 @@ class MultiStage(LightningModule):
             traceback.print_exc()
         
         try:
-            level_ds, level_df, level_label_dict = self.broadleaf_model(df)
+            level_ds, level_df, level_label_dict = self.broadleaf_model(df, level_label_dict=level_label_dicts["broadleaf"])
             level_label_dicts["broadleaf"] = level_label_dict
             dataframes["broadleaf"] = level_df
             datasets["broadleaf"] = level_ds           
@@ -229,7 +238,7 @@ class MultiStage(LightningModule):
             print("broadleaf model failed")
             traceback.print_exc()                
         try:
-            level_ds, level_df, level_label_dict = self.oak_model(df)
+            level_ds, level_df, level_label_dict = self.oak_model(df, level_label_dict=level_label_dicts["oak"])
             level_label_dicts["oak"] = level_label_dict
             dataframes["oak"] = level_df
             datasets["oak"] = level_ds           
