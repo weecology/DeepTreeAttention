@@ -100,6 +100,8 @@ class MultiStage(LightningModule):
             common_species = df.taxonID.value_counts().reset_index()
             common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]
             level_label_dict = {value:key for key, value in enumerate(common_species)}
+            level_label_dict["BROADLEAF"] = len(level_label_dict)                        
+            level_label_dict["CONIFER"] = len(level_label_dict)            
         else:
             common_species = list(level_label_dict.keys())
         
@@ -110,12 +112,13 @@ class MultiStage(LightningModule):
         tail_classes = df[~df.taxonID.isin(common_species)]
         needleleaf = self.taxonomy[self.taxonomy.families=="Pinidae"].taxonID
         needleleaf = needleleaf[~needleleaf.isin(common_species)]
-        if not needleleaf.empty:
-            level_label_dict["CONIFER"] = len(level_label_dict)
+        if needleleaf.empty:
+            level_label_dict.pop("CONIFER")
         broadleaf = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID
         broadleaf = broadleaf[~broadleaf.isin(common_species)]
-        if not broadleaf.empty:
-            level_label_dict["BROADLEAF"] = len(level_label_dict)                        
+        if broadleaf.empty:
+            level_label_dict.pop("BROADLEAF")
+            
         tail_classes.loc[tail_classes.taxonID.isin(needleleaf),"taxonID"] = "CONIFER"
         tail_classes.loc[tail_classes.taxonID.isin(broadleaf),"taxonID"] = "BROADLEAF"
         
@@ -127,13 +130,13 @@ class MultiStage(LightningModule):
         return level_0_ds, level_0, level_label_dict
     
     def conifer_model(self, df, level_label_dict=None):
-        conifer = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID
+        conifer = self.taxonomy[(self.taxonomy.families=="Pinidae")].taxonID
         common_species = df.taxonID.value_counts().reset_index()
         common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]        
         conifer = conifer[~conifer.isin(common_species)]
         conifer_species = [x for x in df.taxonID.unique() if x in conifer.values]        
         
-        if len(needleleaf) < 2:
+        if len(conifer_species) < 2:
             raise ValueError("Not enough conifer species")
         
         level_label_dict = {value:key for key, value in enumerate(conifer_species)}
@@ -179,13 +182,12 @@ class MultiStage(LightningModule):
         common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]        
         broadleaf = broadleaf[~broadleaf.isin(common_species)]
         broadleaf_species = [x for x in df.taxonID.unique() if x in broadleaf.values]        
-        oak = [x for x in broadleaf_species if x[0:2] == "QU"]
+        oak = [x for x in broadleaf_species if x[0:2] == "QU"]        
         
         if not len(oak) > 2:
             raise ValueError("Not enough Oak Species")
         
         level_label_dict = {value:key for key, value in enumerate(oak)}
-        level_label_dict["OAK"] = len(level_label_dict) 
             
         # Select head and tail classes
         level_3 = df[df.taxonID.isin(oak)]
