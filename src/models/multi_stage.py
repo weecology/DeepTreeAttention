@@ -127,19 +127,19 @@ class MultiStage(LightningModule):
         return level_0_ds, level_0, level_label_dict
     
     def conifer_model(self, df, level_label_dict=None):
-        needleleaf = self.taxonomy[self.taxonomy.families=="Pinidae"].taxonID        
-        needleleaf = [x for x in df.taxonID.unique() if x in needleleaf.values]
+        conifer = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID
         common_species = df.taxonID.value_counts().reset_index()
-        common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]
-        needleleaf = [x for x in needleleaf if not x in common_species]
+        common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]        
+        conifer = conifer[~conifer.isin(common_species)]
+        conifer_species = [x for x in df.taxonID.unique() if x in conifer.values]        
         
         if len(needleleaf) < 2:
             raise ValueError("Not enough conifer species")
         
-        level_label_dict = {value:key for key, value in enumerate(needleleaf)}
+        level_label_dict = {value:key for key, value in enumerate(conifer_species)}
                     
         # Select head and tail classes
-        level_1 = df[df.taxonID.isin(needleleaf)]
+        level_1 = df[df.taxonID.isin(conifer_species)]
         
         # Create labels
         level_1["label"] = [level_label_dict[x] for x in level_1.taxonID]
