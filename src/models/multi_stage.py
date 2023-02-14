@@ -13,6 +13,7 @@ import torchmetrics
 from torchmetrics import Accuracy, ClasswiseWrapper, Precision, MetricCollection
 import torch
 import traceback
+import warnings
 
 class base_model(Module):
     def __init__(self, years, classes, config):
@@ -47,7 +48,13 @@ class MultiStage(LightningModule):
         
         #Lookup taxonomic names
         self.taxonomy = pd.read_csv(config["taxonomic_csv"])
-                
+        
+        #remove anything not current in taxonomy and warn
+        missing_ids = self.train_df.loc[~self.train_df.taxonID.isin(self.taxonomy.taxonID)].taxonID.unique()
+        warnings.warn("The following ids are not in the taxonomy: {}!".format(missing_ids))
+        self.train_df = self.train_df[~self.train_df.taxonID.isin(missing_ids)]
+        self.test_df= self.test_df[~self.test_df.taxonID.isin(missing_ids)]
+        
         #hotfix for old naming schema
         try:
             self.test_df["individual"] = self.test_df["individualID"]

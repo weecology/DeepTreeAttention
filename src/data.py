@@ -59,6 +59,7 @@ def filter_data(path, config):
     field.loc[field.taxonID=="PRPEP","taxonID"] = "PRPE2"
     field.loc[field.taxonID=="COCOC","taxonID"] = "COCO6"
     field.loc[field.taxonID=="NYBI","taxonID"] = "NYSY"
+    field.loc[field.taxonID=="ARVIM","taxonID"] = "ARVI4"
     
     field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
     field = field[~(field.eventID.str.contains("2014"))]

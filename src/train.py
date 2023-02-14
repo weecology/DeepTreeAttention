@@ -78,6 +78,7 @@ def train_model(data_module, comet_logger, name):
         comet_logger.experiment.log_parameter("loss_weight", loss_weight)
         comet_logger.experiment.log_parameter("site", name)
         
+        
         m = multi_stage.MultiStage(
             train_df=data_module.train, 
             test_df=data_module.test, 
