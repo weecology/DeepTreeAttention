@@ -100,10 +100,7 @@ class MultiStage(LightningModule):
         if level_label_dict is None:
             common_species = df.taxonID.value_counts().reset_index()
             common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]
-
-            if common_species.empty:
-                raise ValueError("No data with samples more than {} samples".format(self.config["head_class_minimum_samples"]))
-                    
+            
             level_label_dict = {value:key for key, value in enumerate(common_species)}
             level_label_dict["CONIFER"] = len(level_label_dict)
             level_label_dict["BROADLEAF"] = len(level_label_dict)
