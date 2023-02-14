@@ -315,9 +315,6 @@ class MultiStage(LightningModule):
         individual, inputs, y = batch[optimizer_idx]
         images = inputs["HSI"]  
         y_hat = self.models[level_name].forward(images)
-        print(y_hat)
-        print("The y-hat shape is {}".format(y_hat.shape))
-        print("The label shape is {}".format(y.shape))
         loss = F.cross_entropy(y_hat, y)    
         self.log("train_loss_{}".format(level_name),loss, on_epoch=True, on_step=False)
 

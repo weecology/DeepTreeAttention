@@ -14,7 +14,7 @@ class learned_ensemble(nn.Module):
             if config["pretrain_state_dict"]:
                 base_model = Hang2020.load_from_backbone(state_dict=config["pretrain_state_dict"], classes=classes, bands=config["bands"])
             else:
-                base_model = Hang2020.spectral_network(bands=config["bands"], classes=classes)
+                base_model = Hang2020.Single_Spectral_Model(bands=config["bands"], classes=classes)
             
             self.year_models.append(base_model)
         
@@ -23,8 +23,7 @@ class learned_ensemble(nn.Module):
         for index, x in enumerate(images):
             if x.sum() == 0:
                 continue
-            x = self.year_models[index](x)
-            score = x[-1]            
+            score = self.year_models[index](x)
             year_scores.append(score)
         
         return torch.stack(year_scores, axis=1).mean(axis=1)
