@@ -245,7 +245,10 @@ class MultiStage(LightningModule):
         except ValueError:
             print("Oak model failed")
             traceback.print_exc()
-            
+        
+        #Delete any empty keys
+        level_label_dicts = {k: v for k, v in self.level_label_dicts.items() if v}
+        
         return datasets, dataframes, level_label_dicts
     
     def train_dataloader(self):
