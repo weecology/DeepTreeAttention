@@ -216,7 +216,7 @@ class MultiStage(LightningModule):
             level_label_dicts["dominant_class"] = level_label_dict
             dataframes["dominant_class"] = level_df
             datasets["dominant_class"] = level_ds            
-        except ValueError:
+        except:
             print("No data with samples more than {} samples".format(self.config["head_class_minimum_samples"]))
             traceback.print_exc()            
         try:
@@ -224,7 +224,7 @@ class MultiStage(LightningModule):
             level_label_dicts["conifer"] = level_label_dict
             dataframes["conifer"] = level_df
             datasets["conifer"] = level_ds           
-        except ValueError or KeyError:
+        except:
             print("Conifer model failed")
             traceback.print_exc()
         
@@ -233,7 +233,7 @@ class MultiStage(LightningModule):
             level_label_dicts["broadleaf"] = level_label_dict
             dataframes["broadleaf"] = level_df
             datasets["broadleaf"] = level_ds           
-        except ValueError or KeyError:
+        except:
             print("broadleaf model failed")
             traceback.print_exc()                
         try:
@@ -241,7 +241,7 @@ class MultiStage(LightningModule):
             level_label_dicts["oak"] = level_label_dict
             dataframes["oak"] = level_df
             datasets["oak"] = level_ds           
-        except ValueError or KeyError:
+        except:
             print("Oak model failed")
             traceback.print_exc()
         
