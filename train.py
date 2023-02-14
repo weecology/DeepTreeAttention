@@ -30,7 +30,7 @@ if __name__ == "__main__":
                   #"LENO", "MLBS", "MOAB", "NIWO" ,"OSBS","RMNP","SCBI","SERC","SJER","SOAP",
                  #"STEI","TALL","TEAK","TREE","UKFS","UNDE","WREF","YELL"]:
     for site in ["OSBS"]:
-         try:
+        try:
             train.main(git_branch, git_commit, config, site)
         except:
             print("{} failed with {}".format(site, traceback.print_exc()))
