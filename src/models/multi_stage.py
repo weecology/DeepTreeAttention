@@ -96,7 +96,6 @@ class MultiStage(LightningModule):
     
     def dominant_class_model(self, df, level_label_dict=None):
         """A level 0 model splits out the dominant class and compares to all other samples"""
-        
         if level_label_dict is None:
             common_species = df.taxonID.value_counts().reset_index()
             common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]
@@ -316,6 +315,8 @@ class MultiStage(LightningModule):
         individual, inputs, y = batch[optimizer_idx]
         images = inputs["HSI"]  
         y_hat = self.models[level_name].forward(images)
+        print(y_hat.shape)
+        print(y.shape)
         loss = F.cross_entropy(y_hat, y)    
         self.log("train_loss_{}".format(level_name),loss, on_epoch=True, on_step=False)
 
@@ -495,7 +496,6 @@ class MultiStage(LightningModule):
             site_data_frame =[]
             for name, group in ensemble_df.groupby("siteID"):            
                 site_micro = np.sum(group.ens_label.values == group.label.values)/len(group.ens_label.values)
-                
                 site_macro = torchmetrics.functional.accuracy(
                     preds=torch.tensor(group.ens_label.values),
                     target=torch.tensor(group.label.values),

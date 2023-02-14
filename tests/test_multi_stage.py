@@ -91,3 +91,37 @@ def test_gather_predictions_no_conifer(config, dm, m):
     ensemble_df = m.evaluation_scores(
         experiment=None,
         ensemble_df=ensemble_df)
+
+def test_gather_predictions_no_conifer(config, dm, m):
+    trainer = Trainer(fast_dev_run=True)
+    no_conifer = dm.test[dm.test.taxonID.isin(["QULA2","QUEGE2","QUNI","MAGNO","LIST2","ACRU","NYSY","CAGL8","QUAL3"])]
+    ds = TreeDataset(df=no_conifer, train=False, config=config)
+    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
+    results = m.gather_predictions(predictions)
+    assert len(np.unique(results.individual)) == len(np.unique(no_conifer.individual))
+    
+    results["individualID"] = results["individual"]
+    results = results.merge(no_conifer, on=["individual"])
+    assert len(np.unique(results.individual)) == len(np.unique(no_conifer.individual))
+    
+    ensemble_df = m.ensemble(results)
+    ensemble_df = m.evaluation_scores(
+        experiment=None,
+        ensemble_df=ensemble_df)
+
+def test_gather_predictions_no_oak(config, dm, m):
+    trainer = Trainer(fast_dev_run=True)
+    no_oak = dm.test[dm.test.taxonID.isin(["MAGNO","LIST2","ACRU","NYSY","CAGL8"])]
+    ds = TreeDataset(df=no_oak, train=False, config=config)
+    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
+    results = m.gather_predictions(predictions)
+    assert len(np.unique(results.individual)) == len(np.unique(no_oak.individual))
+    
+    results["individualID"] = results["individual"]
+    results = results.merge(no_oak, on=["individual"])
+    assert len(np.unique(results.individual)) == len(np.unique(no_oak.individual))
+    
+    ensemble_df = m.ensemble(results)
+    ensemble_df = m.evaluation_scores(
+        experiment=None,
+        ensemble_df=ensemble_df)
