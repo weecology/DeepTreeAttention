@@ -29,7 +29,7 @@ if __name__ == "__main__":
     #for site in ["BART","BLAN", "BONA","CLBJ", "DEJU", "DELA", "GRSM", "HARV", "JERC",
                   #"LENO", "MLBS", "MOAB", "NIWO" ,"OSBS","RMNP","SCBI","SERC","SJER","SOAP",
                  #"STEI","TALL","TEAK","TREE","UKFS","UNDE","WREF","YELL"]:
-     for site in ["OSBS"]:
+    for site in ["OSBS"]:
          try:
             train.main(git_branch, git_commit, config, site)
         except:
