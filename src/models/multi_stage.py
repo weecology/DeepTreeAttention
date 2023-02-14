@@ -172,16 +172,17 @@ class MultiStage(LightningModule):
         broadleaf = broadleaf[~broadleaf.isin(common_species)]
         broadleaf_species = [x for x in df.taxonID.unique() if x in broadleaf.values]        
         oak = [x for x in broadleaf_species if x[0:2] == "QU"]
+        level_3 = df[df.taxonID.isin(broadleaf_species)]
         
         if not len(oak) > 2:
             raise ValueError("Not enough Oak Species")
         
-        label_dict["OAK"] = len(label_dict) 
-        label_dict = {value:key for key, value in enumerate(oak)}
+        level_label_dict = {value:key for key, value in enumerate(oak)}
+        level_label_dict["OAK"] = len(level_label_dict) 
             
         # Select head and tail classes
         level_3 = level_3[level_3.taxonID.isin(oak)]
-        level_3["label"] = [level_label_dicts[3][x] for x in level_3.taxonID]
+        level_3["label"] = [level_label_dict[x] for x in level_3.taxonID]
         level_3_ds = TreeDataset(df=level_3, config=self.config)
         
         return level_3_ds, level_3, level_label_dict
