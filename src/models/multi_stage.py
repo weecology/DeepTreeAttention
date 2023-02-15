@@ -48,6 +48,14 @@ class MultiStage(LightningModule):
         
         #Lookup taxonomic names
         self.taxonomy = pd.read_csv(config["taxonomic_csv"])
+        common_species = self.train_df.taxonID.value_counts().reset_index()
+        self.common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"].values
+        conifer = self.taxonomy[(self.taxonomy.families=="Pinidae")].taxonID        
+        conifer_species = [x for x in self.train_df.taxonID.unique() if x in conifer.values] 
+        self.conifer_species = [x for x in conifer_species if not x in self.common_species]
+        broadleaf = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID        
+        broadleaf_species = [x for x in self.train_df.taxonID.unique() if x in broadleaf.values] 
+        self.broadleaf_species = [x for x in broadleaf_species if not x in self.common_species]
         
         #remove anything not current in taxonomy and warn
         missing_ids = self.train_df.loc[~self.train_df.taxonID.isin(self.taxonomy.taxonID)].taxonID.unique()
@@ -94,35 +102,23 @@ class MultiStage(LightningModule):
             if not debug:
                 self.save_hyperparameters()        
     
-    def dominant_class_model(self, df, level_label_dict=None):
+    def dominant_class_model(self, df):
         """A level 0 model splits out the dominant class and compares to all other samples"""
-        if level_label_dict is None:
-            common_species = df.taxonID.value_counts().reset_index()
-            common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"].values
-            level_label_dict = {value:key for key, value in enumerate(common_species)}
-            level_label_dict["BROADLEAF"] = len(level_label_dict)                        
+        level_label_dict = {value:key for key, value in enumerate(self.common_species)}
+        if len(self.conifer_species) > 1:
             level_label_dict["CONIFER"] = len(level_label_dict)            
-        else:
-            common_species = list(level_label_dict.keys())
-        
+        if len(self.broadleaf_species) > 1:
+            level_label_dict["BROADLEAF"] = len(level_label_dict) 
+        if not len(level_label_dict) > 1:
+            raise ValueError("No dominant species or broadleaf or conifer split")
+    
         # Select head and tail classes
-        head_classes = df[df.taxonID.isin(common_species)]
+        head_classes = df[df.taxonID.isin(self.common_species)]
         
         #Split tail classes into conifer and broadleaf
-        tail_classes = df[~df.taxonID.isin(common_species)]
-        conifer = self.taxonomy[(self.taxonomy.families=="Pinidae")].taxonID        
-        conifer_species = [x for x in df.taxonID.unique() if x in conifer.values] 
-        conifer_species = [x for x in conifer_species if not x in common_species]
-        if not len(conifer_species) > 1:
-            level_label_dict.pop("CONIFER")
-        broadleaf = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID        
-        broadleaf_species = [x for x in df.taxonID.unique() if x in broadleaf.values] 
-        broadleaf_species = [x for x in broadleaf_species if not x in common_species] 
-        if not len(broadleaf_species) > 1:
-            level_label_dict.pop("BROADLEAF")
-            
-        tail_classes.loc[tail_classes.taxonID.isin(conifer_species),"taxonID"] = "CONIFER"
-        tail_classes.loc[tail_classes.taxonID.isin(broadleaf_species),"taxonID"] = "BROADLEAF"
+        tail_classes = df[~df.taxonID.isin(self.common_species)]
+        tail_classes.loc[tail_classes.taxonID.isin(self.conifer_species),"taxonID"] = "CONIFER"
+        tail_classes.loc[tail_classes.taxonID.isin(self.broadleaf_species),"taxonID"] = "BROADLEAF"
         
         # Create labels
         level_0 = pd.concat([head_classes, tail_classes])                
@@ -131,20 +127,11 @@ class MultiStage(LightningModule):
         
         return level_0_ds, level_0, level_label_dict
     
-    def conifer_model(self, df, level_label_dict=None):
-        common_species = df.taxonID.value_counts().reset_index()
-        common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]        
-        conifer = self.taxonomy[(self.taxonomy.families=="Pinidae")].taxonID        
-        conifer_species = [x for x in df.taxonID.unique() if x in conifer.values] 
-        conifer_species = [x for x in conifer_species if not x in common_species.values]
-        
-        if len(conifer_species) < 2:
-            raise ValueError("Not enough conifer species")
-        
-        level_label_dict = {value:key for key, value in enumerate(conifer_species)}
+    def conifer_model(self, df):        
+        level_label_dict = {value:key for key, value in enumerate(self.conifer_species)}
                     
         # Select head and tail classes
-        level_1 = df[df.taxonID.isin(conifer_species)]
+        level_1 = df[df.taxonID.isin(self.conifer_species)]
         
         # Create labels
         level_1["label"] = [level_label_dict[x] for x in level_1.taxonID]
@@ -152,25 +139,15 @@ class MultiStage(LightningModule):
         
         return level_1_ds, level_1, level_label_dict
     
-    def broadleaf_model(self, df, level_label_dict=None):
+    def broadleaf_model(self, df):
         """Model for the broadleaf species"""
-        common_species = df.taxonID.value_counts().reset_index()
-        common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]   
-        broadleaf = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID        
-        broadleaf_species = [x for x in df.taxonID.unique() if x in broadleaf.values] 
-        broadleaf_species = [x for x in broadleaf_species if not x in common_species.values]
-        oak = [x for x in broadleaf_species if x[0:2] == "QU"]        
-        
-        level_2 = df[df.taxonID.isin(broadleaf_species)]
-        
-        if len(broadleaf_species) < 2:
-            raise ValueError("Not enough broadleaf species")
-        
-        non_oak = [x for x in broadleaf_species if not x[0:2] == "QU"]
+        oak = [x for x in self.broadleaf_species if x[0:2] == "QU"]   
+        non_oak = [x for x in self.broadleaf_species if not x[0:2] == "QU"]        
+        level_2 = df[df.taxonID.isin(self.broadleaf_species)]
         level_label_dict = {value:key for key, value in enumerate(non_oak)}
         
-        if len(oak) > 2:
-            oak = [x for x in broadleaf_species if x[0:2] == "QU"]
+        if len(oak) > 1:
+            oak = [x for x in self.broadleaf_species if x[0:2] == "QU"]
             level_label_dict["OAK"] = len(level_label_dict) 
             level_2.loc[level_2.taxonID.isin(oak),"taxonID"] = "OAK"
             
@@ -180,14 +157,8 @@ class MultiStage(LightningModule):
         
         return level_2_ds, level_2, level_label_dict
         
-    def oak_model(self, df, level_label_dict=None):
-        broadleaf = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID
-        common_species = df.taxonID.value_counts().reset_index()
-        common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]        
-        broadleaf_species = [x for x in df.taxonID.unique() if x in broadleaf.values] 
-        broadleaf_species = [x for x in broadleaf_species if not x in common_species.values]       
-        oak = [x for x in broadleaf_species if x[0:2] == "QU"]        
-        
+    def oak_model(self, df): 
+        oak = [x for x in self.broadleaf_species if x[0:2] == "QU"]        
         if not len(oak) > 2:
             raise ValueError("Not enough Oak Species")
         
@@ -199,57 +170,58 @@ class MultiStage(LightningModule):
         level_3_ds = TreeDataset(df=level_3, config=self.config)
         
         return level_3_ds, level_3, level_label_dict
-                
+    
+    def flat_model(self, df):        
+        level_label_dict = {value:key for key, value in enumerate(df.taxonID.unique())}
+                            
+        # Create labels
+        df["label"] = [level_label_dict[x] for x in df.taxonID]
+        ds = TreeDataset(df=df, config=self.config)
+        
+        return ds, df, level_label_dict
+    
     def create_datasets(self, df, level_label_dicts=None):
         """Create a hierarchical set of dataloaders by splitting into taxonID groups
         train: whether to sample the training labels
         """
         datasets = {}
         dataframes = {}
+        level_label_dicts = {}
         
-        if level_label_dicts is None:
-            level_label_dicts = {}
-            level_label_dicts["dominant_class"] = None
-            level_label_dicts["conifer"] = None
-            level_label_dicts["broadleaf"] = None
-            level_label_dicts["oak"] = None
         try:
-            level_ds, level_df, level_label_dict = self.dominant_class_model(df=df, level_label_dict=level_label_dicts["dominant_class"])
+            level_ds, level_df, level_label_dict = self.dominant_class_model(df=df)
             level_label_dicts["dominant_class"] = level_label_dict
             dataframes["dominant_class"] = level_df
             datasets["dominant_class"] = level_ds            
         except:
-            print("No data with samples more than {} samples".format(self.config["head_class_minimum_samples"]))
-            traceback.print_exc()            
-        try:
-            level_ds, level_df, level_label_dict = self.conifer_model(df, level_label_dict=level_label_dicts["conifer"])
+            print("Not enough species to split into broadleaf, conifer and head class, running a flat model instead".format(self.config["head_class_minimum_samples"]))
+            traceback.print_exc()  
+            level_ds, level_df, level_label_dict = self.flat_model(df=df)  
+            level_label_dicts["flat"] = level_label_dict
+            dataframes["flat"] = level_df
+            datasets["flat"] = level_ds              
+        
+        if len(self.conifer_species) > 1:
+            level_ds, level_df, level_label_dict = self.conifer_model(df)
             level_label_dicts["conifer"] = level_label_dict
             dataframes["conifer"] = level_df
             datasets["conifer"] = level_ds           
-        except:
-            print("Conifer model failed")
-            traceback.print_exc()
         
-        try:
-            level_ds, level_df, level_label_dict = self.broadleaf_model(df, level_label_dict=level_label_dicts["broadleaf"])
+        if len(self.broadleaf_species) > 1:
+            level_ds, level_df, level_label_dict = self.broadleaf_model(df)
             level_label_dicts["broadleaf"] = level_label_dict
             dataframes["broadleaf"] = level_df
-            datasets["broadleaf"] = level_ds           
-        except:
-            print("broadleaf model failed")
-            traceback.print_exc()                
-        try:
-            level_ds, level_df, level_label_dict = self.oak_model(df, level_label_dict=level_label_dicts["oak"])
-            level_label_dicts["oak"] = level_label_dict
-            dataframes["oak"] = level_df
-            datasets["oak"] = level_ds           
-        except:
-            print("Oak model failed")
-            traceback.print_exc()
-        
-        #Delete any empty keys
-        level_label_dicts = {k: v for k, v in level_label_dicts.items() if v}
-        
+            datasets["broadleaf"] = level_ds  
+            
+            try:
+                level_ds, level_df, level_label_dict = self.oak_model(df)
+                level_label_dicts["oak"] = level_label_dict
+                dataframes["oak"] = level_df
+                datasets["oak"] = level_ds           
+            except:
+                print("Oak model failed")
+                traceback.print_exc()
+                
         return datasets, dataframes, level_label_dicts
     
     def train_dataloader(self):

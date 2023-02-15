@@ -58,10 +58,11 @@ bands: 349
 head_class_minimum_samples: 1000
 
 # Learning rates
-lr_dominant_class: 0.000005
-lr_conifer: 0.0000005
-lr_broadleaf: 0.0000005
+lr_dominant_class: 0.00005
+lr_conifer: 0.000005
+lr_broadleaf: 0.000005
 lr_oak: 0.000001
+lr_flat: 0.00001
 
 fast_dev_run: False
 accelerator: auto
