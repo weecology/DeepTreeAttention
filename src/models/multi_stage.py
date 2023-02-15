@@ -460,9 +460,9 @@ class MultiStage(LightningModule):
         )
                         
         if experiment:
-            experiment.log_metric("ensemble_macro", ensemble_macro_accuracy)
-            experiment.log_metric("ensemble_micro", ensemble_accuracy) 
-            experiment.log_metric("ensemble_precision", ensemble_precision) 
+            experiment.log_metric("overall_macro", ensemble_macro_accuracy)
+            experiment.log_metric("overall_micro", ensemble_accuracy) 
+            experiment.log_metric("overal_precision", ensemble_precision) 
         
         #Species Accuracy
         taxon_accuracy = torchmetrics.functional.accuracy(
