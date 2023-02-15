@@ -98,7 +98,7 @@ class MultiStage(LightningModule):
         """A level 0 model splits out the dominant class and compares to all other samples"""
         if level_label_dict is None:
             common_species = df.taxonID.value_counts().reset_index()
-            common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]
+            common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"].values
             level_label_dict = {value:key for key, value in enumerate(common_species)}
             level_label_dict["BROADLEAF"] = len(level_label_dict)                        
             level_label_dict["CONIFER"] = len(level_label_dict)            
@@ -112,12 +112,12 @@ class MultiStage(LightningModule):
         tail_classes = df[~df.taxonID.isin(common_species)]
         conifer = self.taxonomy[(self.taxonomy.families=="Pinidae")].taxonID        
         conifer_species = [x for x in df.taxonID.unique() if x in conifer.values] 
-        conifer_species = [x for x in conifer_species if not x in common_species.values]
+        conifer_species = [x for x in conifer_species if not x in common_species]
         if not len(conifer_species) > 1:
             level_label_dict.pop("CONIFER")
         broadleaf = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID        
         broadleaf_species = [x for x in df.taxonID.unique() if x in broadleaf.values] 
-        broadleaf_species = [x for x in broadleaf_species if not x in common_species.values] 
+        broadleaf_species = [x for x in broadleaf_species if not x in common_species] 
         if not len(broadleaf_species) > 1:
             level_label_dict.pop("BROADLEAF")
             
