@@ -105,8 +105,14 @@ class MultiStage(LightningModule):
     def dominant_class_model(self, df):
         """A level 0 model splits out the dominant class and compares to all other samples"""
         level_label_dict = {value:key for key, value in enumerate(self.common_species)}
-        if len(self.conifer_species) > 1:
-            level_label_dict["CONIFER"] = len(level_label_dict)            
+        if len(self.conifer_species) == 1:
+            level_label_dict[self.conifer_species] = len(level_label_dict)    
+            self.conifer_species = []
+        elif len(self.conifer_species) > 1:
+            level_label_dict["CONIFER"] = len(level_label_dict)  
+        if len(self.broadleaf_species) == 1:
+            level_label_dict[self.broadleaf_species] = len(level_label_dict)        
+            self.broadleaf_species = []                        
         if len(self.broadleaf_species) > 1:
             level_label_dict["BROADLEAF"] = len(level_label_dict) 
         if not len(level_label_dict) > 1:
@@ -207,7 +213,7 @@ class MultiStage(LightningModule):
             dataframes["conifer"] = level_df
             datasets["conifer"] = level_ds           
         
-        if len(self.broadleaf_species) > 1:
+        if (len(self.broadleaf_species) > 1) and ("flat" not in dataframes.keys()):
             level_ds, level_df, level_label_dict = self.broadleaf_model(df)
             level_label_dicts["broadleaf"] = level_label_dict
             dataframes["broadleaf"] = level_df
@@ -286,7 +292,7 @@ class MultiStage(LightningModule):
 
         return optimizers     
         
-    def training_step(self, batch, batch_idx, optimizer_idx):
+    def training_step(self, batch, batch_idx, optimizer_idx=0):
         """Calculate train_df loss
         """
         level_name = self.level_names[optimizer_idx]
@@ -298,7 +304,7 @@ class MultiStage(LightningModule):
 
         return loss
     
-    def validation_step(self, batch, batch_idx, dataloader_idx):
+    def validation_step(self, batch, batch_idx, dataloader_idx=0):
         """Calculate val loss and on_epoch metrics
         """
         level_name = self.level_names[dataloader_idx]        
@@ -386,9 +392,15 @@ class MultiStage(LightningModule):
         ensemble_label = []
         ensemble_score = []
         
+        #If flat model, just take the result
+        
         #For each level, select the predicted taxonID and retrieve the original label order
         for index,row in results.iterrows():
-            if not row["dominant_class_taxa"] in ["CONIFER","BROADLEAF"]:
+            if "flat_taxa" in results.columns:
+                ensemble_taxonID.append(row["flat_taxa"])
+                ensemble_label.append(self.species_label_dict[row["flat_taxa"]])
+                ensemble_score.append(row["flat_score"])                   
+            elif not row["dominant_class_taxa"] in ["CONIFER","BROADLEAF"]:
                 ensemble_taxonID.append(row["dominant_class_taxa"])
                 ensemble_label.append(self.species_label_dict[row["dominant_class_taxa"]])
                 ensemble_score.append(row["dominant_class_score"])                
