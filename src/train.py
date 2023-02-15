@@ -113,7 +113,6 @@ def train_model(data_module, comet_logger, name):
         #Save model checkpoint
         if data_module.config["snapshot_dir"] is not None:
             trainer.save_checkpoint("{}/{}_{}.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
-            torch.save(m.model.state_dict(), "{}/{}_{}_state_dict.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
         
         ds = data.TreeDataset(df=data_module.test, train=False, config=data_module.config)
         predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
