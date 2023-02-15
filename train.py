@@ -30,7 +30,7 @@ if __name__ == "__main__":
     #sites = ["BART","BLAN", "BONA","CLBJ", "DEJU", "DELA", "GRSM", "HARV", "JERC",
                   #"LENO", "MLBS", "MOAB", "NIWO" ,"OSBS","RMNP","SCBI","SERC","SJER","SOAP",
                  #"STEI","TALL","TEAK","TREE","UKFS","UNDE","WREF","YELL"]
-    sites = "OSBS"
+    sites = ["BONA","OSBS"]
     for site in sites:
         try:
             train.main(git_branch, git_commit, config, site)

@@ -117,10 +117,8 @@ def train_model(data_module, comet_logger, name):
         ds = data.TreeDataset(df=data_module.test, train=False, config=data_module.config)
         predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
         results = m.gather_predictions(predictions)
-        results["label"] = data_module.test.label
-        results["siteID"] = data_module.test.siteID
-        results_with_data = results.merge(data_module.crowns, on="individual")
-        comet_logger.experiment.log_table("nested_predictions.csv", results_with_data)
+        results = results.merge(data_module.test[["individual","taxonID","label","siteID"]], on="individual")
+        comet_logger.experiment.log_table("nested_predictions.csv", results)
         
         ensemble_df = m.ensemble(results)
         ensemble_df = m.evaluation_scores(
