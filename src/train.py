@@ -78,14 +78,10 @@ def train_model(data_module, comet_logger, name):
         comet_logger.experiment.log_parameter("loss_weight", loss_weight)
         comet_logger.experiment.log_parameter("site", name)
         
-        
-        try:
-            m = multi_stage.MultiStage(
-            train_df=data_module.train, 
-            test_df=data_module.test, 
-            config=data_module.config)
-        except:
-            
+        m = multi_stage.MultiStage(
+        train_df=data_module.train, 
+        test_df=data_module.test, 
+        config=data_module.config)            
 
         for key, value in m.test_dataframes.items():
             comet_logger.experiment.log_table("test_{}.csv".format(key), value)
