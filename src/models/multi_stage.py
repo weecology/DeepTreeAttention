@@ -207,7 +207,7 @@ class MultiStage(LightningModule):
             dataframes["flat"] = level_df
             datasets["flat"] = level_ds              
         
-        if len(self.conifer_species) > 1:
+        if (len(self.conifer_species) > 1) and ("flat" not in dataframes.keys()):
             level_ds, level_df, level_label_dict = self.conifer_model(df)
             level_label_dicts["conifer"] = level_label_dict
             dataframes["conifer"] = level_df
