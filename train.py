@@ -4,7 +4,8 @@ import glob
 import pandas as pd
 from src import train, data
 import traceback
-
+import torch
+import gc
 if __name__ == "__main__":
     #Get branch name for the comet tag
     git_branch=sys.argv[1]
@@ -31,5 +32,7 @@ if __name__ == "__main__":
                  "STEI","TALL","TEAK","TREE","UKFS","UNDE","WREF","YELL"]:
         try:
             train.main(git_branch, git_commit, config, site)
+            torch.cuda.empty_cache() 
+            gc.collect()            
         except:
             print("{} failed with {}".format(site, traceback.print_exc()))
