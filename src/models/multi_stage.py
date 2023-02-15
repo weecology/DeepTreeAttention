@@ -157,6 +157,7 @@ class MultiStage(LightningModule):
         common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]        
         broadleaf_species = [x for x in df.taxonID.unique() if x in broadleaf.values] 
         broadleaf_species = [x for x in broadleaf_species if not x in common_species.values]
+        oak = [x for x in broadleaf_species if x[0:2] == "QU"]        
         
         level_2 = df[df.taxonID.isin(broadleaf_species)]
         
@@ -166,7 +167,7 @@ class MultiStage(LightningModule):
         non_oak = [x for x in broadleaf_species if not x[0:2] == "QU"]
         level_label_dict = {value:key for key, value in enumerate(non_oak)}
         
-        if len(non_oak) > 2:
+        if len(oak) > 2:
             oak = [x for x in broadleaf_species if x[0:2] == "QU"]
             level_label_dict["OAK"] = len(level_label_dict) 
             level_2.loc[level_2.taxonID.isin(oak),"taxonID"] = "OAK"
@@ -181,8 +182,8 @@ class MultiStage(LightningModule):
         broadleaf = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID
         common_species = df.taxonID.value_counts().reset_index()
         common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]        
-        broadleaf = broadleaf[~broadleaf.isin(common_species)]
-        broadleaf_species = [x for x in df.taxonID.unique() if x in broadleaf.values]        
+        broadleaf_species = [x for x in df.taxonID.unique() if x in broadleaf.values] 
+        broadleaf_species = [x for x in broadleaf_species if not x in common_species.values]       
         oak = [x for x in broadleaf_species if x[0:2] == "QU"]        
         
         if not len(oak) > 2:
