@@ -106,12 +106,12 @@ class MultiStage(LightningModule):
         """A level 0 model splits out the dominant class and compares to all other samples"""
         level_label_dict = {value:key for key, value in enumerate(self.common_species)}
         if len(self.conifer_species) == 1:
-            level_label_dict[self.conifer_species] = len(level_label_dict)    
+            level_label_dict[self.conifer_species[0]] = len(level_label_dict)    
             self.conifer_species = []
         elif len(self.conifer_species) > 1:
             level_label_dict["CONIFER"] = len(level_label_dict)  
         if len(self.broadleaf_species) == 1:
-            level_label_dict[self.broadleaf_species] = len(level_label_dict)        
+            level_label_dict[self.broadleaf_species[0]] = len(level_label_dict)        
             self.broadleaf_species = []                        
         if len(self.broadleaf_species) > 1:
             level_label_dict["BROADLEAF"] = len(level_label_dict) 
