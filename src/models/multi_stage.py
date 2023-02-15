@@ -133,8 +133,8 @@ class MultiStage(LightningModule):
         conifer = self.taxonomy[(self.taxonomy.families=="Pinidae")].taxonID
         common_species = df.taxonID.value_counts().reset_index()
         common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]        
-        conifer = conifer[~conifer.isin(common_species)]
-        conifer_species = [x for x in df.taxonID.unique() if x in conifer.values]        
+        conifer_species = [x for x in df.taxonID.unique() if x in conifer.values] 
+        conifer_species = [x for x in conifer_species if not x in common_species.values]
         
         if len(conifer_species) < 2:
             raise ValueError("Not enough conifer species")
@@ -155,8 +155,9 @@ class MultiStage(LightningModule):
         broadleaf = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID
         common_species = df.taxonID.value_counts().reset_index()
         common_species = common_species[common_species.taxonID > self.config["head_class_minimum_samples"]]["index"]        
-        broadleaf = broadleaf[~broadleaf.isin(common_species)]
-        broadleaf_species = [x for x in df.taxonID.unique() if x in broadleaf.values]        
+        broadleaf_species = [x for x in df.taxonID.unique() if x in broadleaf.values] 
+        broadleaf_species = [x for x in broadleaf_species if not x in common_species.values]
+        
         level_2 = df[df.taxonID.isin(broadleaf_species)]
         
         if len(broadleaf_species) < 2:
