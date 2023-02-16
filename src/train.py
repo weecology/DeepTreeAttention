@@ -63,78 +63,79 @@ def main(git_branch, git_commit, config, site=None):
     return comet_logger
     
 def train_model(data_module, comet_logger, name):
-    with comet_logger.experiment.context_manager(name):
-        print(data_module.species_label_dict)
-        loss_weight = []
-        for x in data_module.species_label_dict:
-            try:
-                lw = 1/data_module.train[data_module.train.taxonID==x].shape[0]
-            except:
-                lw = 0
-            loss_weight.append(lw)
-        loss_weight = np.array(loss_weight/np.max(loss_weight))
-        loss_weight[loss_weight < 0.5] = 0.5  
-        
-        comet_logger.experiment.log_parameter("loss_weight", loss_weight)
-        comet_logger.experiment.log_parameter("site", name)
-        
-        m = multi_stage.MultiStage(
-        train_df=data_module.train, 
-        test_df=data_module.test, 
-        config=data_module.config)            
+    """Model training loop"""
+    print(name)
+    print(data_module.species_label_dict)
+    loss_weight = []
+    for x in data_module.species_label_dict:
+        try:
+            lw = 1/data_module.train[data_module.train.taxonID==x].shape[0]
+        except:
+            lw = 0
+        loss_weight.append(lw)
+    loss_weight = np.array(loss_weight/np.max(loss_weight))
+    loss_weight[loss_weight < 0.5] = 0.5  
+    
+    comet_logger.experiment.log_parameter("loss_weight", loss_weight)
+    comet_logger.experiment.log_parameter("site", name)
+    
+    m = multi_stage.MultiStage(
+    train_df=data_module.train, 
+    test_df=data_module.test, 
+    config=data_module.config)            
 
-        for key, value in m.test_dataframes.items():
-            comet_logger.experiment.log_table("test_{}.csv".format(key), value)
+    for key, value in m.test_dataframes.items():
+        comet_logger.experiment.log_table("test_{}.csv".format(key), value)
 
-        for key, value in m.train_dataframes.items():
-            comet_logger.experiment.log_table("train_{}.csv".format(key), value)
+    for key, value in m.train_dataframes.items():
+        comet_logger.experiment.log_table("train_{}.csv".format(key), value)
+    
+    for key, level_label_dict in m.level_label_dicts.items():
+        print("Label dict for {} is {}".format(key, level_label_dict))
         
-        for key, level_label_dict in m.level_label_dicts.items():
-            print("Label dict for {} is {}".format(key, level_label_dict))
-            
-        comet_logger.experiment.log_parameters(data_module.train.taxonID.value_counts().to_dict())
-        
-        #Create trainer
-        lr_monitor = LearningRateMonitor(logging_interval='epoch')
-        trainer = Trainer(
-            gpus=data_module.config["gpus"],
-            fast_dev_run=data_module.config["fast_dev_run"],
-            max_epochs=data_module.config["epochs"],
-            accelerator=data_module.config["accelerator"],
-            num_sanity_val_steps=0,
-            check_val_every_n_epoch=data_module.config["validation_interval"],
-            callbacks=[lr_monitor],
-            enable_checkpointing=False,
-            logger=comet_logger)
-        
-        trainer.fit(m)
-        
-        #Save model checkpoint
-        if data_module.config["snapshot_dir"] is not None:
-            trainer.save_checkpoint("{}/{}_{}.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
-        
-        ds = data.TreeDataset(df=data_module.test, train=False, config=data_module.config)
-        predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
-        results = m.gather_predictions(predictions)
-        results = results.merge(data_module.test[["individual","taxonID","label","siteID"]], on="individual")
-        comet_logger.experiment.log_table("nested_predictions.csv", results)
-        
-        ensemble_df = m.ensemble(results)
-        ensemble_df = m.evaluation_scores(
-            ensemble_df,
-            experiment=comet_logger.experiment
-        )
-        
-        comet_logger.experiment.log_confusion_matrix(
-            ensemble_df.label.values,
-            ensemble_df.ens_label.values,
-            labels=list(data_module.species_label_dict.keys()),
-            max_categories=len(data_module.species_label_dict.keys()),
-            title=name,
-            file_name="{}.json".format(name)
-        )
-        
-        # Log prediction
-        comet_logger.experiment.log_table("test_predictions.csv", ensemble_df)
-        
-        return comet_logger
+    comet_logger.experiment.log_parameters(data_module.train.taxonID.value_counts().to_dict())
+    
+    #Create trainer
+    lr_monitor = LearningRateMonitor(logging_interval='epoch')
+    trainer = Trainer(
+        gpus=data_module.config["gpus"],
+        fast_dev_run=data_module.config["fast_dev_run"],
+        max_epochs=data_module.config["epochs"],
+        accelerator=data_module.config["accelerator"],
+        num_sanity_val_steps=0,
+        check_val_every_n_epoch=data_module.config["validation_interval"],
+        callbacks=[lr_monitor],
+        enable_checkpointing=False,
+        logger=comet_logger)
+    
+    trainer.fit(m)
+    
+    #Save model checkpoint
+    if data_module.config["snapshot_dir"] is not None:
+        trainer.save_checkpoint("{}/{}_{}.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
+    
+    ds = data.TreeDataset(df=data_module.test, train=False, config=data_module.config)
+    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
+    results = m.gather_predictions(predictions)
+    results = results.merge(data_module.test[["individual","taxonID","label","siteID"]], on="individual")
+    comet_logger.experiment.log_table("nested_predictions.csv", results)
+    
+    ensemble_df = m.ensemble(results)
+    ensemble_df = m.evaluation_scores(
+        ensemble_df,
+        experiment=comet_logger.experiment
+    )
+    
+    comet_logger.experiment.log_confusion_matrix(
+        ensemble_df.label.values,
+        ensemble_df.ens_label.values,
+        labels=list(data_module.species_label_dict.keys()),
+        max_categories=len(data_module.species_label_dict.keys()),
+        title=name,
+        file_name="{}.json".format(name)
+    )
+    
+    # Log prediction
+    comet_logger.experiment.log_table("test_predictions.csv", ensemble_df)
+    
+    return comet_logger
