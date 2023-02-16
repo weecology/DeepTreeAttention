@@ -1,7 +1,7 @@
 #Multiple stage model
 from src.models.year import learned_ensemble
 from src.data import TreeDataset
-from src import sampler
+from src import sampler, utils
 
 from pytorch_lightning import LightningModule
 import pandas as pd
@@ -71,10 +71,17 @@ class MultiStage(LightningModule):
         except:
             pass
         
+        if self.config["preload_image_dict"]:
+            self.train_image_dict = utils.preload_image_dict(self.train_df, self.config)
+            self.test_image_dict = utils.preload_image_dict(self.test_df, self.config)
+        else:
+            self.train_image_dict = None
+            self.test_image_dict = None
+        
         if train_mode:
             # Create the hierarchical structure
-            self.train_datasets, self.train_dataframes, self.level_label_dicts = self.create_datasets(self.train_df)
-            self.test_datasets, self.test_dataframes, _ = self.create_datasets(self.test_df, level_label_dicts=self.level_label_dicts)
+            self.train_datasets, self.train_dataframes, self.level_label_dicts = self.create_datasets(self.train_df, image_dict=self.train_image_dict)
+            self.test_datasets, self.test_dataframes, _ = self.create_datasets(self.test_df, level_label_dicts=self.level_label_dicts, image_dict=self.test_image_dict)
             
             #Create label dicts
             self.label_to_taxonIDs = {}
@@ -103,7 +110,7 @@ class MultiStage(LightningModule):
             if not debug:
                 self.save_hyperparameters()        
     
-    def dominant_class_model(self, df):
+    def dominant_class_model(self, df, image_dict=None):
         """A level 0 model splits out the dominant class and compares to all other samples"""
         level_label_dict = {value:key for key, value in enumerate(self.common_species)}
         if len(self.conifer_species) == 1:
@@ -130,11 +137,11 @@ class MultiStage(LightningModule):
         # Create labels
         level_0 = pd.concat([head_classes, tail_classes])                
         level_0["label"] = [level_label_dict[x] for x in level_0.taxonID]
-        level_0_ds = TreeDataset(df=level_0, config=self.config)
+        level_0_ds = TreeDataset(df=level_0, config=self.config, image_dict=image_dict)
         
         return level_0_ds, level_0, level_label_dict
     
-    def conifer_model(self, df):        
+    def conifer_model(self, df, image_dict=None):        
         level_label_dict = {value:key for key, value in enumerate(self.conifer_species)}
                     
         # Select head and tail classes
@@ -142,11 +149,11 @@ class MultiStage(LightningModule):
         
         # Create labels
         level_1["label"] = [level_label_dict[x] for x in level_1.taxonID]
-        level_1_ds = TreeDataset(df=level_1, config=self.config)
+        level_1_ds = TreeDataset(df=level_1, config=self.config, image_dict=image_dict)
         
         return level_1_ds, level_1, level_label_dict
     
-    def broadleaf_model(self, df):
+    def broadleaf_model(self, df, image_dict=None):
         """Model for the broadleaf species"""
         oak = [x for x in self.broadleaf_species if x[0:2] == "QU"]   
         non_oak = [x for x in self.broadleaf_species if not x[0:2] == "QU"]        
@@ -157,14 +164,17 @@ class MultiStage(LightningModule):
             oak = [x for x in self.broadleaf_species if x[0:2] == "QU"]
             level_label_dict["OAK"] = len(level_label_dict) 
             level_2.loc[level_2.taxonID.isin(oak),"taxonID"] = "OAK"
+        else:
+            for x in oak:
+                level_label_dict[x] = len(level_label_dict)
             
         # Select head and tail classes
         level_2["label"] = [level_label_dict[x] for x in level_2.taxonID]
-        level_2_ds = TreeDataset(df=level_2, config=self.config)
+        level_2_ds = TreeDataset(df=level_2, config=self.config, image_dict=image_dict)
         
         return level_2_ds, level_2, level_label_dict
         
-    def oak_model(self, df): 
+    def oak_model(self, df, image_dict=None): 
         oak = [x for x in self.broadleaf_species if x[0:2] == "QU"]        
         if not len(oak) > 2:
             raise ValueError("Not enough Oak Species")
@@ -174,20 +184,20 @@ class MultiStage(LightningModule):
         # Select head and tail classes
         level_3 = df[df.taxonID.isin(oak)]
         level_3["label"] = [level_label_dict[x] for x in level_3.taxonID]
-        level_3_ds = TreeDataset(df=level_3, config=self.config)
+        level_3_ds = TreeDataset(df=level_3, config=self.config, image_dict=image_dict)
         
         return level_3_ds, level_3, level_label_dict
     
-    def flat_model(self, df):        
+    def flat_model(self, df, image_dict=None):        
         level_label_dict = {value:key for key, value in enumerate(df.taxonID.unique())}
                             
         # Create labels
         df["label"] = [level_label_dict[x] for x in df.taxonID]
-        ds = TreeDataset(df=df, config=self.config)
+        ds = TreeDataset(df=df, config=self.config, image_dict=image_dict)
         
         return ds, df, level_label_dict
     
-    def create_datasets(self, df, level_label_dicts=None):
+    def create_datasets(self, df, level_label_dicts=None, image_dict=None):
         """Create a hierarchical set of dataloaders by splitting into taxonID groups
         train: whether to sample the training labels
         """
@@ -196,32 +206,32 @@ class MultiStage(LightningModule):
         level_label_dicts = {}
         
         try:
-            level_ds, level_df, level_label_dict = self.dominant_class_model(df=df)
+            level_ds, level_df, level_label_dict = self.dominant_class_model(df=df, image_dict=image_dict)
             level_label_dicts["dominant_class"] = level_label_dict
             dataframes["dominant_class"] = level_df
             datasets["dominant_class"] = level_ds            
         except:
             print("Not enough species to split into broadleaf, conifer and head class, running a flat model instead")
             traceback.print_exc()  
-            level_ds, level_df, level_label_dict = self.flat_model(df=df)  
+            level_ds, level_df, level_label_dict = self.flat_model(df=df, image_dict=image_dict)  
             level_label_dicts["flat"] = level_label_dict
             dataframes["flat"] = level_df
             datasets["flat"] = level_ds              
         
         if (len(self.conifer_species) > 1) and ("flat" not in dataframes.keys()):
-            level_ds, level_df, level_label_dict = self.conifer_model(df)
+            level_ds, level_df, level_label_dict = self.conifer_model(df, image_dict=image_dict)
             level_label_dicts["conifer"] = level_label_dict
             dataframes["conifer"] = level_df
             datasets["conifer"] = level_ds           
         
         if (len(self.broadleaf_species) > 1) and ("flat" not in dataframes.keys()):
-            level_ds, level_df, level_label_dict = self.broadleaf_model(df)
+            level_ds, level_df, level_label_dict = self.broadleaf_model(df, image_dict=image_dict)
             level_label_dicts["broadleaf"] = level_label_dict
             dataframes["broadleaf"] = level_df
             datasets["broadleaf"] = level_ds  
             
             try:
-                level_ds, level_df, level_label_dict = self.oak_model(df)
+                level_ds, level_df, level_label_dict = self.oak_model(df, image_dict=image_dict)
                 level_label_dicts["oak"] = level_label_dict
                 dataframes["oak"] = level_df
                 datasets["oak"] = level_ds           

@@ -215,7 +215,7 @@ class TreeDataset(Dataset):
     Args:
        csv_file: path to csv file with image_path and label
     """
-    def __init__(self, df=None, csv_file=None, config=None, train=True):
+    def __init__(self, df=None, csv_file=None, config=None, train=True, image_dict=None):
         if csv_file:
             self.annotations = pd.read_csv(csv_file)
         else:
@@ -232,24 +232,23 @@ class TreeDataset(Dataset):
         
         # Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=self.image_size)
-        self.image_dict = {}
         
         # Pin data to memory if desired
         if self.config["preload_images"]:
-            for individual in self.individuals:
-                images = []
-                ind_annotations = self.image_paths[individual]
-                for year in self.years:
-                    try:
-                        year_annotations = ind_annotations[year]
-                        image_path = os.path.join(self.config["crop_dir"], year_annotations)
-                        image = load_image(image_path, image_size=self.image_size)                        
-                    except KeyError:
-                        image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
-                    if self.train:
-                        image = self.transformer(image)   
-                    images.append(image)
-                self.image_dict[individual] = images
+            if self.image_dict is None:
+                self.image_dict = {}
+                for individual in self.individuals:
+                    images = []
+                    ind_annotations = self.image_paths[individual]
+                    for year in self.years:
+                        try:
+                            year_annotations = ind_annotations[year]
+                            image_path = os.path.join(self.config["crop_dir"], year_annotations)
+                            image = load_image(image_path, image_size=self.image_size)                        
+                        except KeyError:
+                            image = torch.zeros(self.config["bands"], self.image_size, self.image_size)                                            
+                        images.append(image)
+                    self.image_dict[individual] = images
             
     def __len__(self):
         # 0th based index
@@ -257,9 +256,10 @@ class TreeDataset(Dataset):
 
     def __getitem__(self, index):
         inputs = {}
-        individual = self.individuals[index]        
+        individual = self.individuals[index]      
         if self.config["preload_images"]:
-            inputs["HSI"] = self.image_dict[individual]
+            image = self.image_dict[individual]
+            image = self.transformer(image)   
         else:
             images = []
             ind_annotations = self.image_paths[individual]
