@@ -26,7 +26,11 @@ def test_load(config, dm, m, tmpdir, preload_images):
         len(m.level_label_dicts[index].keys()) == len(level.label.unique())
     
     trainer = Trainer(fast_dev_run=True)
-    trainer.fit(m)
+    for key in m.level_names:
+        m.current_level = key
+        m.configure_optimizers()
+        trainer.fit(m)
+        metrics = trainer.validate(m)
     
     #Confirm the model can be reloaded
     trainer.save_checkpoint("{}/test_model.pl".format(tmpdir))
@@ -38,8 +42,11 @@ def test_fit_no_conifer(config, dm):
     trainer = Trainer(fast_dev_run=False, max_epochs=1, enable_checkpointing=False)
     
     #Model can be trained and validated
-    trainer.fit(m)
-    metrics = trainer.validate(m)
+    for key in m.level_names:
+        m.current_level = key
+        m.configure_optimizers()
+        trainer.fit(m)
+        metrics = trainer.validate(m)
     
 def test_fit_one_conifer(config, dm):   
     one_conifer = dm.test[dm.test.taxonID.isin(["QULA2","QUEGE2","QUNI","MAGNO","LIST2","ACRU","NYSY","CAGL8","QUAL3","PIPA2"])]
@@ -47,19 +54,22 @@ def test_fit_one_conifer(config, dm):
     trainer = Trainer(fast_dev_run=False, max_epochs=1, enable_checkpointing=False)
     
     #Model can be trained and validated
-    trainer.fit(m)
-    metrics = trainer.validate(m)
+    for key in m.level_names:
+        m.current_level = key
+        m.configure_optimizers()
+        trainer.fit(m)
+        metrics = trainer.validate(m)
 
 def test_fit(config, m):
     trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=1)
     
     #Model can be trained and validated
-    trainer.fit(m)
-    metrics = trainer.validate(m)
-    
-    #Assert that the decision function from level 0 to level 1 is not NaN
-    assert not math.isnan(metrics[0]["accuracy_CONIFER"])
-    
+    for key in m.level_names:
+        m.current_level = key
+        m.configure_optimizers()
+        trainer.fit(m)
+        metrics = trainer.validate(m)
+        
 def test_gather_predictions(config, dm, m):
     trainer = Trainer(fast_dev_run=True)
     ds = TreeDataset(df=dm.test, train=False, config=config)

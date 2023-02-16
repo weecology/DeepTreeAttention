@@ -16,15 +16,15 @@ import traceback
 import warnings
 
 class base_model(Module):
-    def __init__(self, years, classes, config):
+    def __init__(self, years, classes, config, name):
         super().__init__()
         #Load from state dict of previous run
         self.model = learned_ensemble(classes=classes, years=years, config=config)
         micro_recall = Accuracy(average="micro")
-        macro_recall = Accuracy(average="macro", num_classes=classes)
+        macro_recall = Accuracy(average="macro", num_classes=classes,)
         self.metrics = MetricCollection(
-            {"Micro Accuracy":micro_recall,
-             "Macro Accuracy":macro_recall,
+            {"Micro Accuracy_{}".format(name):micro_recall,
+             "Macro Accuracy_{}".format(name):macro_recall,
              })
         
     def forward(self,x):
@@ -45,6 +45,7 @@ class MultiStage(LightningModule):
         self.label_to_taxonIDs = []   
         self.train_df = train_df
         self.test_df = test_df
+        self.current_level = None
         
         #Lookup taxonomic names
         self.taxonomy = pd.read_csv(config["taxonomic_csv"])
@@ -105,7 +106,7 @@ class MultiStage(LightningModule):
             self.classes = len(self.train_df.label.unique())
             for key, value in self.train_dataframes.items(): 
                 classes = len(value.label.unique())
-                base = base_model(classes=classes, years=len(self.years), config=self.config)
+                base = base_model(classes=classes, years=len(self.years), config=self.config, name=key)
                 self.models[key] = base           
             if not debug:
                 self.save_hyperparameters()        
@@ -241,38 +242,32 @@ class MultiStage(LightningModule):
                 
         return datasets, dataframes, level_label_dicts
     
-    def train_dataloader(self):
-        data_loaders = []
-                
-        for index, ds in self.train_datasets.items():
-            #Multi-balance
-            imbalance = self.train_dataframes[index]
-            one_hot = torch.nn.functional.one_hot(torch.tensor(imbalance.groupby("individual", sort=False).apply(lambda x: x.head(1)).label.values))
-            train_sampler = sampler.MultilabelBalancedRandomSampler(
-                labels=one_hot, indices=range(len(imbalance.individual.unique())), class_choice="cycle")
-            
-            data_loader = torch.utils.data.DataLoader(
-                ds,
-                batch_size=self.config["batch_size"],
-                sampler=train_sampler,
-                num_workers=self.config["workers"]
-            )
-            data_loaders.append(data_loader)
+    def train_dataloader(self):        
+        """Given the current hierarchical level, train a model and dataset"""
+        imbalance = self.train_dataframes[self.current_level]
+        ds = self.train_datasets[self.current_level]
+        one_hot = torch.nn.functional.one_hot(torch.tensor(imbalance.groupby("individual", sort=False).apply(lambda x: x.head(1)).label.values))
+        train_sampler = sampler.MultilabelBalancedRandomSampler(
+            labels=one_hot, indices=range(len(imbalance.individual.unique())), class_choice="cycle")
         
-        return data_loaders        
+        data_loader = torch.utils.data.DataLoader(
+            ds,
+            batch_size=self.config["batch_size"],
+            sampler=train_sampler,
+            num_workers=self.config["workers"]
+        )
+    
+        return data_loader        
 
     def val_dataloader(self):
-        data_loaders = []
-        for ds in self.test_datasets:
-            data_loader = torch.utils.data.DataLoader(
-                self.test_datasets[ds],
-                batch_size=self.config["batch_size"],
-                shuffle=False,
-                num_workers=self.config["workers"]
-            )
-            data_loaders.append(data_loader)
+        data_loader = torch.utils.data.DataLoader(
+            self.test_datasets[self.current_level],
+            batch_size=self.config["batch_size"],
+            shuffle=False,
+            num_workers=self.config["workers"]
+        )
         
-        return data_loaders 
+        return data_loader 
     
     def predict_dataloader(self, ds):
         data_loader = torch.utils.data.DataLoader(
@@ -286,54 +281,51 @@ class MultiStage(LightningModule):
         
     def configure_optimizers(self):
         """Create a optimizer for each level"""
-        optimizers = []
-        for x, ds in self.train_datasets.items():
-            optimizer = torch.optim.Adam(self.models[x].parameters(), lr=self.config["lr_{}".format(x)])
-            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                                             mode='min',
-                                                             factor=0.75,
-                                                             patience=8,
-                                                             verbose=True,
-                                                             threshold=0.0001,
-                                                             threshold_mode='rel',
-                                                             cooldown=0,
-                                                             eps=1e-08)
-            
-            optimizers.append({'optimizer':optimizer, 'lr_scheduler': {"scheduler":scheduler, "monitor":'val_loss_{}'.format(x), "frequency":self.config["validation_interval"], "interval":"epoch"}})
-
-        return optimizers     
+        optimizer = torch.optim.Adam(self.models[self.current_level].parameters(), lr=self.config["lr_{}".format(self.current_level)])
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                         mode='min',
+                                                         factor=0.75,
+                                                         patience=8,
+                                                         verbose=True,
+                                                         threshold=0.0001,
+                                                         threshold_mode='rel',
+                                                         cooldown=0,
+                                                         eps=1e-08)
         
-    def training_step(self, batch, batch_idx, optimizer_idx=0):
+        return {'optimizer':optimizer, 'lr_scheduler':
+                {"scheduler":scheduler, "monitor":'val_loss_{}'.format(self.current_level),
+                 "frequency":self.config["validation_interval"],
+                 "interval":"epoch"}}
+        
+    def training_step(self, batch, batch_idx):
         """Calculate train_df loss
         """
-        level_name = self.level_names[optimizer_idx]
-        individual, inputs, y = batch[optimizer_idx]
+        individual, inputs, y = batch
         images = inputs["HSI"]  
-        y_hat = self.models[level_name].forward(images)
+        y_hat = self.models[self.current_level].forward(images)
         loss = F.cross_entropy(y_hat, y)    
-        self.log("train_loss_{}".format(level_name),loss, on_epoch=True, on_step=False)
+        self.log("train_loss_{}".format(self.current_level),loss, on_epoch=True, on_step=False)
 
         return loss
     
-    def validation_step(self, batch, batch_idx, dataloader_idx=0):
+    def validation_step(self, batch, batch_idx):
         """Calculate val loss and on_epoch metrics
         """
-        level_name = self.level_names[dataloader_idx]        
         individual, inputs, y = batch
         images = inputs["HSI"]  
-        y_hat = self.models[level_name].forward(images)
+        y_hat = self.models[self.current_level].forward(images)
         loss = F.cross_entropy(y_hat, y)   
         
-        self.log("val_loss_{}".format(level_name),loss,add_dataloader_idx=False)
+        self.log("val_loss_{}".format(self.current_level),loss,add_dataloader_idx=False)
         try:
-            self.models[level_name].metrics(y_hat, y)
+            self.models[self.current_level].metrics(y_hat, y)
         except:
             print("Validation failed with targets {}".format(y))
             
-        self.log_dict(self.models[level_name].metrics, on_epoch=True, on_step=False)
+        self.log_dict(self.models[self.current_level].metrics, on_epoch=True, on_step=False)
         y_hat = F.softmax(y_hat, dim=1)
         
-        self.level_metrics[level_name].update(y_hat, y)
+        self.level_metrics[self.current_level].update(y_hat, y)
  
         return {"individual":individual, "yhat":y_hat, "label":y}  
     
@@ -355,10 +347,9 @@ class MultiStage(LightningModule):
         outputs = self.all_gather(outputs)
     
     def on_validation_epoch_end(self):
-        for level, ds in self.test_datasets.items():
-            class_metrics = self.level_metrics[level].compute()
-            self.log_dict(class_metrics, on_epoch=True, on_step=False)
-            self.level_metrics[level].reset()
+        class_metrics = self.level_metrics[self.current_level].compute()
+        self.log_dict(class_metrics, on_epoch=True, on_step=False)
+        self.level_metrics[self.current_level].reset()
         
     def gather_predictions(self, predict_df):
         """Post-process the predict method to create metrics"""
