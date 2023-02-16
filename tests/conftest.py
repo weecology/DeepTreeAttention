@@ -67,7 +67,7 @@ def config(ROOT):
     config["bands"] = 349
     config["classes"] = 3
     config["top_k"] = 1
-    config["head_class_minimum_samples"] = 10
+    config["head_class_minimum_ratio"] = 0.25
     config["convert_h5"] = False
     config["min_CHM_diff"] = None    
     config["dead_model"] = None

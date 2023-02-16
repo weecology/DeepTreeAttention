@@ -93,7 +93,7 @@ def train_model(data_module, comet_logger, name):
     for key, level_label_dict in m.level_label_dicts.items():
         print("Label dict for {} is {}".format(key, level_label_dict))
         
-    comet_logger.experiment.log_parameters(data_module.train.taxonID.value_counts().to_dict())
+    comet_logger.experiment.log_parameters(data_module.train.taxonID.value_counts().to_dict(), prefix="count")
     
     #Create trainer
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
