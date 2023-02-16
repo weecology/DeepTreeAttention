@@ -97,22 +97,22 @@ def train_model(data_module, comet_logger, name):
     
     #Create trainer
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
-    trainer = Trainer(
-        gpus=data_module.config["gpus"],
-        fast_dev_run=data_module.config["fast_dev_run"],
-        max_epochs=data_module.config["epochs"],
-        accelerator=data_module.config["accelerator"],
-        num_sanity_val_steps=0,
-        check_val_every_n_epoch=data_module.config["validation_interval"],
-        callbacks=[lr_monitor],
-        enable_checkpointing=False,
-        logger=comet_logger)
     
     for key in m.level_names:
+        trainer = Trainer(
+            gpus=data_module.config["gpus"],
+            fast_dev_run=data_module.config["fast_dev_run"],
+            max_epochs=data_module.config["epochs"],
+            accelerator=data_module.config["accelerator"],
+            num_sanity_val_steps=0,
+            check_val_every_n_epoch=data_module.config["validation_interval"],
+            callbacks=[lr_monitor],
+            enable_checkpointing=False,
+            logger=comet_logger)
+        
         m.current_level = key
         m.configure_optimizers()
         trainer.fit(m)
-        trainer.fit_loop.max_epochs += data_module.config["epochs"]                        
     
     #Save model checkpoint
     if data_module.config["snapshot_dir"] is not None:
