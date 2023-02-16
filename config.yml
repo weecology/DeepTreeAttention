@@ -66,7 +66,7 @@ lr_flat: 0.00001
 
 fast_dev_run: False
 accelerator: auto
-epochs: 120
+epochs: 200
 min_loss_weight: 10
 snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
 
