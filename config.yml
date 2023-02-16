@@ -47,7 +47,7 @@ existing_test_csv:
 image_size: 30
 preload_images: True
 preload_image_dict: True
-workers: 0
+workers: 5
 taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
 ### Training Parameters
