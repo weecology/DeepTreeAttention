@@ -31,6 +31,7 @@ def test_load(config, dm, m, tmpdir, preload_images):
         m.configure_optimizers()
         trainer.fit(m)
         metrics = trainer.validate(m)
+        trainer.fit_loop.max_epochs += 1                
     
     #Confirm the model can be reloaded
     trainer.save_checkpoint("{}/test_model.pl".format(tmpdir))
@@ -47,6 +48,7 @@ def test_fit_no_conifer(config, dm):
         m.configure_optimizers()
         trainer.fit(m)
         metrics = trainer.validate(m)
+        trainer.fit_loop.max_epochs += 1                
     
 def test_fit_one_conifer(config, dm):   
     one_conifer = dm.test[dm.test.taxonID.isin(["QULA2","QUEGE2","QUNI","MAGNO","LIST2","ACRU","NYSY","CAGL8","QUAL3","PIPA2"])]
@@ -59,6 +61,7 @@ def test_fit_one_conifer(config, dm):
         m.configure_optimizers()
         trainer.fit(m)
         metrics = trainer.validate(m)
+        trainer.fit_loop.max_epochs += 1                
 
 def test_fit(config, m):
     trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=1)
@@ -68,7 +71,8 @@ def test_fit(config, m):
         m.current_level = key
         m.configure_optimizers()
         trainer.fit(m)
-        metrics = trainer.validate(m)
+        metrics = trainer.validate(m)   
+        trainer.fit_loop.max_epochs += 1                
         
 def test_gather_predictions(config, dm, m):
     trainer = Trainer(fast_dev_run=True)

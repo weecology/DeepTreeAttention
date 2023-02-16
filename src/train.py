@@ -112,7 +112,7 @@ def train_model(data_module, comet_logger, name):
         m.current_level = key
         m.configure_optimizers()
         trainer.fit(m)
-        metrics = trainer.validate(m)
+        trainer.fit_loop.max_epochs += data_module.config["epochs"]                        
     
     #Save model checkpoint
     if data_module.config["snapshot_dir"] is not None:
