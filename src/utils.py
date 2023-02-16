@@ -108,3 +108,26 @@ def predictions_to_df(predictions):
     predictions["individual"] = individuals    
     
     return predictions
+
+def preload_image_dict(df, config):
+    """Load an entire dataset into memory and place it on device. This is useful for point to objects already in memory
+    Args:
+        df: a pandas dataframe with individual, tile_year and image_path columns for each image on disk
+        config: a DeepTreeAttention config
+    """
+    years = df.tile_year.unique()    
+    individuals = df.individual.unique()
+    image_paths = df.groupby("individual").apply(lambda x: x.set_index('tile_year').image_path.to_dict())    
+    image_dict = {}
+    for individual in individuals:
+        images = []
+        ind_annotations = image_paths[individual]
+        for year in years:
+            try:
+                year_annotations = ind_annotations[year]
+                image_path = os.path.join(config["crop_dir"], year_annotations)
+                image = load_image(image_path, image_size=config["image_size"])                        
+            except KeyError:
+                image = torch.zeros(config["bands"], config["image_size"], config["image_size"])                                            
+            images.append(image)
+        image_dict[individual] = images    
