@@ -27,10 +27,10 @@ if __name__ == "__main__":
         config["train_test_commit"] = original_commit
         config["existing_test_csv"] = None
     
-    #sites = ["BART","BLAN", "BONA","CLBJ", "DEJU", "DELA", "GRSM", "HARV", "JERC",
-    #              "LENO", "MLBS", "MOAB", "NIWO" ,"OSBS","RMNP","SCBI","SERC","SJER","SOAP",
-    #             "STEI","TALL","TEAK","TREE","UKFS","UNDE","WREF","YELL"]
-    sites = ["HARV"]
+    sites = ["BART","BLAN", "BONA","CLBJ", "DEJU", "DELA", "GRSM", "HARV", "JERC",
+                  "LENO", "MLBS", "MOAB", "NIWO" ,"OSBS","RMNP","SCBI","SERC","SJER","SOAP",
+                 "STEI","TALL","TEAK","TREE","UKFS","UNDE","WREF","YELL"]
+    #sites = ["HARV"]
     for site in sites:
         try:
             train.main(git_branch, git_commit, config, site)
