@@ -206,7 +206,7 @@ def random_crop(config, iteration):
             basename="HSI")
 
 if __name__ == "__main__":
-    client = start(cpus=80, mem_size = "25GB")    
+    client = start(cpus=100, mem_size = "25GB")    
     config = read_config("config.yml")    
     rgb_pool = glob.glob("/orange/ewhite/NeonData/*/DP3.30010.001/**/Camera/**/*.tif", recursive=True)
     rgb_pool = [x for x in rgb_pool if not "classified" in x]

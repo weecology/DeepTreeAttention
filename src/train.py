@@ -108,7 +108,11 @@ def train_model(data_module, comet_logger, name):
         enable_checkpointing=False,
         logger=comet_logger)
     
-    trainer.fit(m)
+    for key in m.level_names:
+        m.current_level = key
+        m.configure_optimizers()
+        trainer.fit(m)
+        metrics = trainer.validate(m)
     
     #Save model checkpoint
     if data_module.config["snapshot_dir"] is not None:
