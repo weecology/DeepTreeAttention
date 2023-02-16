@@ -227,6 +227,7 @@ class TreeDataset(Dataset):
         self.years = self.annotations.tile_year.unique()
         self.individuals = self.annotations.individual.unique()
         self.image_paths = self.annotations.groupby("individual").apply(lambda x: x.set_index('tile_year').image_path.to_dict())
+        self.image_dict = image_dict
         if train:
             self.labels = self.annotations.set_index("individual").label.to_dict()
         
@@ -258,8 +259,8 @@ class TreeDataset(Dataset):
         inputs = {}
         individual = self.individuals[index]      
         if self.config["preload_images"]:
-            image = self.image_dict[individual]
-            image = self.transformer(image)   
+            images = self.image_dict[individual]
+            images = [self.transformer(x) for x in images]
         else:
             images = []
             ind_annotations = self.image_paths[individual]
@@ -273,7 +274,7 @@ class TreeDataset(Dataset):
                 if self.train:
                     image = self.transformer(image)   
                 images.append(image)
-            inputs["HSI"] = images
+        inputs["HSI"] = images
         
         if self.train:
             label = self.labels[individual]

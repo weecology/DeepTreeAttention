@@ -12,7 +12,9 @@ def m(dm, config):
     
     return m
 
-def test_load(config, dm, m, tmpdir):
+@pytest.mark.parametrize("preload_images",[True, False])
+def test_load(config, dm, m, tmpdir, preload_images):
+    config["preload_images"] = preload_images
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train, config=config, debug=False)    
     
     for index, level in m.train_dataframes.items():
