@@ -161,7 +161,7 @@ class MultiStage(LightningModule):
         level_2 = df[df.taxonID.isin(self.broadleaf_species)]
         level_label_dict = {value:key for key, value in enumerate(non_oak)}
         
-        if len(oak) > 2:
+        if len(oak) > 2 & (non_oak > 1):
             oak = [x for x in self.broadleaf_species if x[0:2] == "QU"]
             level_label_dict["OAK"] = len(level_label_dict) 
             level_2.loc[level_2.taxonID.isin(oak),"taxonID"] = "OAK"
