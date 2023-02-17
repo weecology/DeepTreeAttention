@@ -54,7 +54,7 @@ taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 all_site_pretrain: False
 pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots//023735313c1e427e91b5524c3d8e7536_all_state_dict.pt
 gpus: 1
-batch_size: 48
+batch_size: 256
 bands: 349
 head_class_minimum_ratio: 0.25
 
