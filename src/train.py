@@ -65,18 +65,7 @@ def main(git_branch, git_commit, config, site=None):
 def train_model(data_module, comet_logger, name):
     """Model training loop"""
     print(name)
-    print(data_module.species_label_dict)
-    loss_weight = []
-    for x in data_module.species_label_dict:
-        try:
-            lw = 1/data_module.train[data_module.train.taxonID==x].shape[0]
-        except:
-            lw = 0
-        loss_weight.append(lw)
-    loss_weight = np.array(loss_weight/np.max(loss_weight))
-    loss_weight[loss_weight < 0.5] = 0.5  
-    
-    comet_logger.experiment.log_parameter("loss_weight", loss_weight)
+    print(data_module.species_label_dict)    
     comet_logger.experiment.log_parameter("site", name)
     
     m = multi_stage.MultiStage(
