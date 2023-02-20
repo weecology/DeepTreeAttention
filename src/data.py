@@ -341,7 +341,7 @@ class TreeData(LightningDataModule):
                 df = filter_data(self.csv_file, config=self.config)
                 if site:
                     if not site == "all":
-                        df = df[df.siteID==site]
+                        df = df[df.siteID.isin(site)]
                 # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config, client=self.client, site=site)
