@@ -434,7 +434,14 @@ class TreeData(LightningDataModule):
                 self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))               
         else:
             print("Loading previous data commit {}".format(self.config["use_data_commit"]))
-            self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir))            
+            if site == "all":
+                all_files = glob.glob("{}/annotations_*.csv".format(self.data_dir))
+                dfs = [pd.read_csv(x) for x in all_files]
+                self.annotations = pd.concat(dfs)
+                self.annotations.reset_index(drop=True)
+            else:
+                self.annotations = pd.read_csv("{}/annotations_{}.csv".format(self.data_dir, site)) 
+                
             if self.config["train_test_commit"] is None:
                 print("Using data commit {} creating a new train-test split for site {}".format(self.config["use_data_commit"],self.site))
                 self.create_train_test_split(ID=self.experiment_id)
@@ -442,11 +449,28 @@ class TreeData(LightningDataModule):
                 print("Loading a train-test split from {}/{}".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))
                 self.train = pd.read_csv("{}/train_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
                 self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
-            self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
             
+            if site == "all":
+                all_files = glob.glob("{}/crowns_*.shp".format(self.data_dir))
+                dfs = [gpd.read_file(x) for x in all_files]
+                self.crowns = pd.concat(dfs)
+                self.crowns.reset_index(drop=True)
+                self.crowns = gpd.GeoDataFrame(self.crowns, geometry="geometry")
+            else:
+                self.crowns = gpd.read_file("{}/crowns_{}.shp".format(self.data_dir, site))
+                            
             #mimic schema due to abbreviation when .shp is saved
             self.crowns["individual"] = self.crowns["individual"]
-            self.canopy_points = gpd.read_file("{}/canopy_points.shp".format(self.data_dir))
+            
+            if site == "all":
+                all_files = glob.glob("{}/canopy_points_*.shp".format(self.data_dir))
+                dfs = [gpd.read_file(x) for x in all_files]
+                self.canopy_points = pd.concat(dfs)
+                self.canopy_points.reset_index(drop=True)
+                self.canopy_points = gpd.GeoDataFrame(self.canopy_points, geometry="geometry")
+            else:
+                self.canopy_points = gpd.read_file("{}/canopy_points_{}.shp".format(self.data_dir, site))
+                
             self.canopy_points["individual"] = self.canopy_points["individual"]
         
         self.create_datasets(self.train, self.test)
