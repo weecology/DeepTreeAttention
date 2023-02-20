@@ -8,12 +8,14 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
 
-from src import data, start_cluster, metrics
-from src.models import multi_stage, Hang2020
+from src import data, start_cluster
+from src.models import multi_stage, Hang2020, baseline
+from src.data import __file__
 
-def main(git_branch, git_commit, config, site=None):
+def main(config, site=None, git_branch=None, git_commit=None):
     #Create datamodule
-    comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
+    ROOT = os.path.dirname(os.path.dirname(__file__))
+    comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")     
     
     #Generate new data or use previous run
     if config["use_data_commit"]:
@@ -22,7 +24,10 @@ def main(git_branch, git_commit, config, site=None):
     else:
         crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
         os.mkdir(crop_dir)
-        client = start_cluster.start(cpus=100, mem_size="4GB")    
+        try:
+            client = start_cluster.start(cpus=100, mem_size="4GB")   
+        except:
+            client = None
         config["crop_dir"] = crop_dir
     
     comet_logger.experiment.log_parameter("git branch",git_branch)
@@ -35,12 +40,34 @@ def main(git_branch, git_commit, config, site=None):
     comet_logger.experiment.log_parameters(config)
     
     data_module = data.TreeData(
-        csv_file="../data/raw/neon_vst_data_2022.csv",
+        csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),
         data_dir=config["crop_dir"],
         config=config,
         client=client,
         site=site,
         comet_logger=comet_logger)
+    
+    if config["create_pretrain_model"]:
+        config["existing_test_csv"] = "{}/test_{}.csv".format(data_module.data_dir, comet_logger.experiment.id)
+        pretrain_module = data.TreeData(
+            csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),
+            data_dir=config["crop_dir"],
+            config=config,
+            client=client,
+            site="all",
+            filter_species_site=site,
+            comet_logger=comet_logger)
+        
+        model = Hang2020.Single_Spectral_Model(bands=pretrain_module.config["bands"], classes=pretrain_module.num_classes)
+        m = baseline.TreeModel(
+            model=model,
+            classes=pretrain_module.num_classes,
+            label_dict=pretrain_module.species_label_dict,
+            config=pretrain_module.config) 
+        
+        m = train_model(pretrain_module, comet_logger, site, m)
+        torch.save(m.model.state_dict(), "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_state_dict.pt".format(comet_logger.experiment.id)) 
+        config["pretrain_state_dict"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/{}_state_dict.pt".format(comet_logger.experiment.id) 
     
     if client:
         client.close()
@@ -58,30 +85,31 @@ def main(git_branch, git_commit, config, site=None):
     if not config["use_data_commit"]:
         comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
     
-    comet_logger = train_model(data_module, comet_logger, site)
+    m = multi_stage.MultiStage(
+        train_df=data_module.train, 
+        test_df=data_module.test, 
+        config=data_module.config)          
+        
+    comet_logger = train_model(data_module, comet_logger, m, site)
     
     return comet_logger
     
-def train_model(data_module, comet_logger, name):
+def train_model(data_module, comet_logger, m, name):
     """Model training loop"""
     print(name)
     print(data_module.species_label_dict)    
-    comet_logger.experiment.log_parameter("site", name)
-    
-    m = multi_stage.MultiStage(
-    train_df=data_module.train, 
-    test_df=data_module.test, 
-    config=data_module.config)            
+    comet_logger.experiment.log_parameter("site", name)           
 
-    for key, value in m.test_dataframes.items():
-        comet_logger.experiment.log_table("test_{}.csv".format(key), value)
+    if type(m) == "multi_stage":
+        for key, value in m.test_dataframes.items():
+            comet_logger.experiment.log_table("test_{}.csv".format(key), value)
 
-    for key, value in m.train_dataframes.items():
-        comet_logger.experiment.log_table("train_{}.csv".format(key), value)
-    
-    for key, level_label_dict in m.level_label_dicts.items():
-        print("Label dict for {} is {}".format(key, level_label_dict))
+        for key, value in m.train_dataframes.items():
+            comet_logger.experiment.log_table("train_{}.csv".format(key), value)
         
+        for key, level_label_dict in m.level_label_dicts.items():
+            print("Label dict for {} is {}".format(key, level_label_dict))
+            
     comet_logger.experiment.log_parameters(data_module.train.taxonID.value_counts().to_dict(), prefix="count")
     
     #Create trainer
@@ -131,4 +159,4 @@ def train_model(data_module, comet_logger, name):
     # Log prediction
     comet_logger.experiment.log_table("test_predictions.csv", ensemble_df)
     
-    return comet_logger
+    return m

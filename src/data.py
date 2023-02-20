@@ -300,7 +300,7 @@ class TreeData(LightningDataModule):
     The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
     Use regenerate=True to override this behavior in setup()
     """
-    def __init__(self, csv_file, config, experiment_id=None, comet_logger=None, client = None, data_dir=None, site=None):
+    def __init__(self, csv_file, config, experiment_id=None, comet_logger=None, client = None, data_dir=None, site=None, filter_species_site=None):
         """
         Args:
             config: optional config file to override
@@ -360,7 +360,11 @@ class TreeData(LightningDataModule):
                     self.comet_logger.experiment.log_parameter("Species before CHM filter", len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples before CHM filter", df.shape[0])
                 
-                df.to_file("{}/unfiltered_points.shp".format(self.data_dir))
+                if filter_species_site:
+                    species_to_keep = df[df.siteID.isin(filter_species_site)].taxonID.unique()
+                    df = df[df.taxonID.isin(species_to_keep)]
+                    
+                df.to_file("{}/unfiltered_points_{}.shp".format(self.data_dir, site))
                 
                 #Filter points based on LiDAR height for NEON data
                 self.canopy_points = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],
@@ -368,7 +372,7 @@ class TreeData(LightningDataModule):
                                     max_CHM_diff=self.config["max_CHM_diff"], 
                                     CHM_height_limit=self.config["CHM_height_limit"])  
                 
-                self.canopy_points.to_file("{}/canopy_points.shp".format(self.data_dir))
+                self.canopy_points.to_file("{}/canopy_points_{}.shp".format(self.data_dir, site))
 
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after CHM filter", len(df.taxonID.unique()))
@@ -376,7 +380,7 @@ class TreeData(LightningDataModule):
             
                 # Create crown data
                 self.crowns = generate.points_to_crowns(
-                    field_data="{}/canopy_points.shp".format(self.data_dir),
+                    field_data="{}/canopy_points_{}.shp".format(self.data_dir, site),
                     rgb_dir=self.config["rgb_sensor_pool"],
                     savedir="{}/boxes/".format(self.data_dir),
                     raw_box_savedir="{}/boxes/".format(self.data_dir)
@@ -386,7 +390,7 @@ class TreeData(LightningDataModule):
                     #ADD IFAS back in, use polygons instead of deepforest boxes                    
                     self.crowns = gpd.GeoDataFrame(pd.concat([self.crowns, IFAS]))
                 
-                self.crowns.to_file("{}/crowns.shp".format(self.data_dir))                
+                self.crowns.to_file("{}/crowns_{}.shp".format(self.data_dir, site))                
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(self.crowns.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after crown prediction", self.crowns.shape[0])
@@ -406,7 +410,7 @@ class TreeData(LightningDataModule):
                     except:
                         print("No dead trees predicted")
             
-            self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
+            self.crowns = gpd.read_file("{}/crowns_{}.shp".format(self.data_dir, site))
             if self.config["replace_crops"]:    
                 self.annotations = generate.generate_crops(
                     self.crowns,
@@ -419,9 +423,9 @@ class TreeData(LightningDataModule):
                     as_numpy=True
                 )
             
-                self.annotations.to_csv("{}/annotations.csv".format(self.data_dir))
+                self.annotations.to_csv("{}/annotations_{}.csv".format(self.data_dir, site))
             else:
-                self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir))
+                self.annotations = pd.read_csv("{}/annotations_{}.csv".format(self.data_dir, site))
             if self.comet_logger:
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(self.annotations.taxonID.unique()))
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",self.annotations.shape[0])
@@ -434,13 +438,7 @@ class TreeData(LightningDataModule):
                 self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))               
         else:
             print("Loading previous data commit {}".format(self.config["use_data_commit"]))
-            if site == "all":
-                all_files = glob.glob("{}/annotations_*.csv".format(self.data_dir))
-                dfs = [pd.read_csv(x) for x in all_files]
-                self.annotations = pd.concat(dfs)
-                self.annotations.reset_index(drop=True)
-            else:
-                self.annotations = pd.read_csv("{}/annotations_{}.csv".format(self.data_dir, site)) 
+            self.annotations = pd.read_csv("{}/annotations_{}.csv".format(self.data_dir, site)) 
                 
             if self.config["train_test_commit"] is None:
                 print("Using data commit {} creating a new train-test split for site {}".format(self.config["use_data_commit"],self.site))
@@ -450,26 +448,11 @@ class TreeData(LightningDataModule):
                 self.train = pd.read_csv("{}/train_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
                 self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
             
-            if site == "all":
-                all_files = glob.glob("{}/crowns_*.shp".format(self.data_dir))
-                dfs = [gpd.read_file(x) for x in all_files]
-                self.crowns = pd.concat(dfs)
-                self.crowns.reset_index(drop=True)
-                self.crowns = gpd.GeoDataFrame(self.crowns, geometry="geometry")
-            else:
-                self.crowns = gpd.read_file("{}/crowns_{}.shp".format(self.data_dir, site))
+            self.crowns = gpd.read_file("{}/crowns_{}.shp".format(self.data_dir, site))
                             
             #mimic schema due to abbreviation when .shp is saved
             self.crowns["individual"] = self.crowns["individual"]
-            
-            if site == "all":
-                all_files = glob.glob("{}/canopy_points_*.shp".format(self.data_dir))
-                dfs = [gpd.read_file(x) for x in all_files]
-                self.canopy_points = pd.concat(dfs)
-                self.canopy_points.reset_index(drop=True)
-                self.canopy_points = gpd.GeoDataFrame(self.canopy_points, geometry="geometry")
-            else:
-                self.canopy_points = gpd.read_file("{}/canopy_points_{}.shp".format(self.data_dir, site))
+            self.canopy_points = gpd.read_file("{}/canopy_points_{}.shp".format(self.data_dir, site))
                 
             self.canopy_points["individual"] = self.canopy_points["individual"]
         
@@ -488,7 +471,7 @@ class TreeData(LightningDataModule):
     def create_train_test_split(self, ID):      
         if self.site:
             if not self.site == "all":
-                self.annotations = self.annotations[self.annotations.siteID==self.site].reset_index(drop=True)
+                self.annotations = self.annotations[self.annotations.siteID.isin(self.site)].reset_index(drop=True)
         if self.config["existing_test_csv"]:
             existing_test = pd.read_csv(self.config["existing_test_csv"])
             self.test = self.annotations[self.annotations.individual.isin(existing_test.individual)]  

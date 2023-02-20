@@ -393,9 +393,7 @@ class MultiStage(LightningModule):
         ensemble_taxonID = []
         ensemble_label = []
         ensemble_score = []
-        
-        #If flat model, just take the result
-        
+                
         #For each level, select the predicted taxonID and retrieve the original label order
         for index,row in results.iterrows():
             if "flat_taxa" in results.columns:
