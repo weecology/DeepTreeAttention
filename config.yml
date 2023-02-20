@@ -29,16 +29,16 @@ CHM_height_limit: 8
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Checkout data artifact from comet
-use_data_commit: 47eb94fc6d90ebabf96dcb2be17096c48da2c642
+use_data_commit:
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 
 # Rerun DeepForest boxes
-replace_bounding_boxes: False
+replace_bounding_boxes: True
 # Regenerate bounding box sensor crops
-replace_crops: False
+replace_crops: True
 # Recreate a train test split
-train_test_commit: 47eb94fc6d90ebabf96dcb2be17096c48da2c642
+train_test_commit:
 # Use existing plotIDs for train/test split
 existing_test_csv: 
 
@@ -52,7 +52,7 @@ taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
 ### Training Parameters
 all_site_pretrain: False
-pretrain_state_dict: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots//a35523664ea64adea7ca98bc242ddb6b_all_state_dict.pt
+pretrain_state_dict:
 gpus: 1
 batch_size: 128
 bands: 349
