@@ -14,7 +14,7 @@ from src.data import __file__
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 
-def main(config, site=None, git_branch=None, git_commit=None):
+def main(config, site=None, git_branch=None, git_commit=None, client=None):
     #Create datamodule
     comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")     
     
@@ -25,10 +25,6 @@ def main(config, site=None, git_branch=None, git_commit=None):
     else:
         crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
         os.mkdir(crop_dir)
-        if not git_branch == "pytest":
-            client = start_cluster.start(cpus=100, mem_size="4GB")   
-        else:
-            client = None
         config["crop_dir"] = crop_dir
     
     comet_logger.experiment.log_parameter("git branch",git_branch)

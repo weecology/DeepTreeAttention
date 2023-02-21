@@ -16,26 +16,32 @@ config = data.read_config("config.yml")
 
 sites = [["OSBS","JERC","TALL"], ["TEAK"],["CLBJ"]]
 
-if config["use_data_commit"] is None:
-    comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple") 
-    comet_logger.experiment.add_tag("per_site_multi_stage_data_generation")
-    client = start_cluster.start(cpus=50, mem_size="4GB")    
-    ROOT = os.path.dirname(os.path.dirname(data.__file__))    
-    crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
-    os.mkdir(crop_dir)    
-    data_module = data.TreeData(
-        csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),
-        data_dir=crop_dir,
-        experiment_id=git_commit,
-        config=config,
-        client=client,
-        site="all",
-        comet_logger=comet_logger)
-    config["use_data_commit"] = comet_logger.experiment.id 
+#if config["use_data_commit"] is None:
+    #comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple") 
+    #comet_logger.experiment.add_tag("per_site_multi_stage_data_generation")
+    #client = start_cluster.start(cpus=30, mem_size="4GB")    
+    #ROOT = os.path.dirname(os.path.dirname(data.__file__))    
+    #crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
+    #os.mkdir(crop_dir)    
+    #data_module = data.TreeData(
+        #csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),
+        #data_dir=crop_dir,
+        #experiment_id=git_commit,
+        #config=config,
+        #client=client,
+        #site="all",
+        #comet_logger=comet_logger)
+    #config["use_data_commit"] = comet_logger.experiment.id 
+
+# Create a single client
+if config["train_test_commit"] is None:
+    client = start_cluster.start(cpus=30, mem_size="4GB")    
+else:
+    client = None
     
 for site in sites:
     try:
-        train.main(site=site, config=config, git_branch=git_branch, git_commit=git_commit)
+        train.main(site=site, config=config, git_branch=git_branch, git_commit=git_commit, client=client)
         torch.cuda.empty_cache() 
         gc.collect()            
     except:
