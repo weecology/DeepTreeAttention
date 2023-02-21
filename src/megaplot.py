@@ -119,9 +119,9 @@ def load(directory, config, client=None, site=None):
             raise TypeError("site parameter should be a list of strings")
         all_sites = []
         for x in site:
-            formatted_data = read_files(directory=directory, config=config, client=client, site=x)
-            all_sites.append(formatted_data)
-        formatted_data = pd.concat(formatted_data)
+            df = read_files(directory=directory, config=config, client=client, site=x)
+            all_sites.append(df)
+        formatted_data = pd.concat(all_sites)
     else:
         formatted_data = read_files(directory=directory, config=config, client=client, site=site)
     
