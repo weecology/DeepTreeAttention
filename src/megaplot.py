@@ -107,7 +107,7 @@ def load(directory, config, client=None, site=None):
     Args:
         directory: location of .csv files of megaplot data
         client: optional dask client
-        site: a list of sites to include
+        site: a list of sites to include, "all" or None will bypass filter.
     Returns:
         crowndf: a geopandas dataframe of crowns for all sites
     """
@@ -117,11 +117,12 @@ def load(directory, config, client=None, site=None):
     if site is not None:
         if type(site) is not list:
             raise TypeError("site parameter should be a list of strings")
-        
-    all_sites = []
-    for x in site:
+        all_sites = []
+        for x in site:
+            formatted_data = read_files(directory=directory, config=config, client=client, site=site)
+            all_sites.append(formatted_data)
+        formatted_data = pd.concat(formatted_data)
+    else:
         formatted_data = read_files(directory=directory, config=config, client=client, site=site)
-        all_sites.append(formatted_data)
-    formatted_data = pd.concat(formatted_data)
     
     return formatted_data
