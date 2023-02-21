@@ -19,9 +19,11 @@ if config["use_data_commit"] is None:
     comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple") 
     client = start_cluster.start(cpus=50, mem_size="4GB")    
     ROOT = os.path.dirname(os.path.dirname(data.__file__))    
+    crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
+    os.mkdir(crop_dir)    
     data_module = data.TreeData(
         csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),
-        data_dir=config["crop_dir"],
+        data_dir=crop_dir,
         config=config,
         client=client,
         site="all",
