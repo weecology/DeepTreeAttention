@@ -1,7 +1,10 @@
 #Multiple stage model
+import os
+import warnings
+import traceback
+
 from src.models.year import learned_ensemble
-from src.data import TreeDataset
-from src import sampler, utils
+from src import sampler, utils, augmentation
 
 from pytorch_lightning import LightningModule
 import pandas as pd
@@ -12,9 +15,84 @@ from torch import nn
 import torchmetrics
 from torchmetrics import Accuracy, ClasswiseWrapper, Precision, MetricCollection
 import torch
-import traceback
-import warnings
+from torch.utils.data import Dataset
 
+
+# Dataset class
+class TreeDataset(Dataset):
+    """A csv file with a path to image crop and label
+    Args:
+       csv_file: path to csv file with image_path and label
+    """
+    def __init__(self, df=None, csv_file=None, config=None, train=True, image_dict=None):
+        if csv_file:
+            self.annotations = pd.read_csv(csv_file)
+        else:
+            self.annotations = df
+        
+        self.train = train
+        self.config = config         
+        self.image_size = config["image_size"]
+        self.years = self.annotations.tile_year.unique()
+        self.individuals = self.annotations.individual.unique()
+        self.image_paths = self.annotations.groupby("individual").apply(lambda x: x.set_index('tile_year').image_path.to_dict())
+        self.image_dict = image_dict
+        if train:
+            self.labels = self.annotations.set_index("individual").label.to_dict()
+        
+        # Create augmentor
+        self.transformer = augmentation.train_augmentation(image_size=self.image_size)
+        
+        # Pin data to memory if desired
+        if self.config["preload_images"]:
+            if self.image_dict is None:
+                self.image_dict = {}
+                for individual in self.individuals:
+                    images = []
+                    ind_annotations = self.image_paths[individual]
+                    for year in self.years:
+                        try:
+                            year_annotations = ind_annotations[year]
+                            image_path = os.path.join(self.config["crop_dir"], year_annotations)
+                            image = utils.load_image(image_path, image_size=self.image_size)                        
+                        except KeyError:
+                            image = torch.zeros(self.config["bands"], self.image_size, self.image_size)                                            
+                        images.append(image)
+                    self.image_dict[individual] = images
+            
+    def __len__(self):
+        # 0th based index
+        return len(self.individuals)
+
+    def __getitem__(self, index):
+        inputs = {}
+        individual = self.individuals[index]      
+        if self.config["preload_images"]:
+            images = self.image_dict[individual]
+            images = [self.transformer(x) for x in images]
+        else:
+            images = []
+            ind_annotations = self.image_paths[individual]
+            for year in self.years:
+                try:
+                    year_annotations = ind_annotations[year]
+                    image_path = os.path.join(self.config["crop_dir"], year_annotations)
+                    image = utils.load_image(image_path, image_size=self.image_size)                        
+                except Exception:
+                    image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
+                if self.train:
+                    image = self.transformer(image)   
+                images.append(image)
+        inputs["HSI"] = images
+        
+        if self.train:
+            label = self.labels[individual]
+            label = torch.tensor(label, dtype=torch.long)
+
+            return individual, inputs, label
+        else:
+            return individual, inputs
+        
 class base_model(Module):
     def __init__(self, years, classes, config, name):
         super().__init__()
