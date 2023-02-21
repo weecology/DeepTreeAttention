@@ -14,7 +14,7 @@ from pytorch_lightning import Trainer
 from src.models import dead
 from src.CHM import postprocess_CHM
 from src.generate import generate_crops
-from src.data import TreeDataset
+from src.models.multi_stage import TreeDataset
 
 def RGB_transform(augment):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],

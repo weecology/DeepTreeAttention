@@ -8,12 +8,15 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
 
-from src import data, start_cluster, metrics
-from src.models import multi_stage, Hang2020
+from src import data, start_cluster
+from src.models import multi_stage, Hang2020, baseline
+from src.data import __file__
 
-def main(git_branch, git_commit, config, site=None):
+ROOT = os.path.dirname(os.path.dirname(__file__))
+
+def main(config, site=None, git_branch=None, git_commit=None):
     #Create datamodule
-    comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
+    comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")     
     
     #Generate new data or use previous run
     if config["use_data_commit"]:
@@ -22,7 +25,10 @@ def main(git_branch, git_commit, config, site=None):
     else:
         crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
         os.mkdir(crop_dir)
-        client = start_cluster.start(cpus=100, mem_size="4GB")    
+        if not git_branch == "pytest":
+            client = start_cluster.start(cpus=100, mem_size="4GB")   
+        else:
+            client = None
         config["crop_dir"] = crop_dir
     
     comet_logger.experiment.log_parameter("git branch",git_branch)
@@ -35,13 +41,16 @@ def main(git_branch, git_commit, config, site=None):
     comet_logger.experiment.log_parameters(config)
     
     data_module = data.TreeData(
-        csv_file="../data/raw/neon_vst_data_2022.csv",
+        csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),
         data_dir=config["crop_dir"],
         config=config,
         client=client,
         site=site,
         comet_logger=comet_logger)
     
+    if config["create_pretrain_model"]:
+        config["existing_test_csv"] = "{}/test_{}.csv".format(data_module.data_dir, data_module.experiment_id)
+        config["pretrain_state_dict"] = pretrain_model(comet_logger, config)
     if client:
         client.close()
     
@@ -58,20 +67,60 @@ def main(git_branch, git_commit, config, site=None):
     if not config["use_data_commit"]:
         comet_logger.experiment.log_table("novel_species.csv", data_module.novel)
     
-    comet_logger = train_model(data_module, comet_logger, site)
+    m = multi_stage.MultiStage(
+        train_df=data_module.train, 
+        test_df=data_module.test, 
+        config=data_module.config)          
+        
+    comet_logger = train_model(data_module, comet_logger, m, site)
     
     return comet_logger
-    
-def train_model(data_module, comet_logger, name):
+
+def pretrain_model(comet_logger, config, client=None):
+    """Pretain a model with samples from other sites
+    Args:
+        comet_logger: a cometML logger
+    Returns:
+        path: a path on disk for trained model state dict
+    """
+    with comet_logger.experiment.context_manager("pretrain"):
+        pretrain_module = data.TreeData(
+            csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),
+            data_dir=config["crop_dir"],
+            config=config,
+            client=client,
+            site="all",
+            filter_species_site=None,
+            comet_logger=comet_logger)
+        
+        model = Hang2020.Single_Spectral_Model(bands=pretrain_module.config["bands"], classes=pretrain_module.num_classes)
+        m = baseline.TreeModel(
+            model=model,
+            classes=pretrain_module.num_classes,
+            label_dict=pretrain_module.species_label_dict,
+            config=pretrain_module.config) 
+        
+        path = "{}/{}_state_dict.pt".format(config["snapshot_dir"], comet_logger.experiment.id)
+        torch.save(m.model.state_dict(), path) 
+        trainer = Trainer(
+            gpus=pretrain_module.config["gpus"],
+            fast_dev_run=pretrain_module.config["fast_dev_run"],
+            max_epochs=pretrain_module.config["epochs"],
+            accelerator=pretrain_module.config["accelerator"],
+            num_sanity_val_steps=0,
+            check_val_every_n_epoch=pretrain_module.config["validation_interval"],
+            enable_checkpointing=False,
+            logger=comet_logger)
+        
+        trainer.fit(m, datamodule=pretrain_module)
+        
+        return path
+        
+def train_model(data_module, comet_logger, m, name):
     """Model training loop"""
     print(name)
     print(data_module.species_label_dict)    
-    comet_logger.experiment.log_parameter("site", name)
-    
-    m = multi_stage.MultiStage(
-    train_df=data_module.train, 
-    test_df=data_module.test, 
-    config=data_module.config)            
+    comet_logger.experiment.log_parameter("site", name)           
 
     for key, value in m.test_dataframes.items():
         comet_logger.experiment.log_table("test_{}.csv".format(key), value)
@@ -86,7 +135,7 @@ def train_model(data_module, comet_logger, name):
     
     #Create trainer
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
-    
+        
     for key in m.level_names:
         trainer = Trainer(
             gpus=data_module.config["gpus"],
@@ -102,12 +151,12 @@ def train_model(data_module, comet_logger, name):
         m.current_level = key
         m.configure_optimizers()
         trainer.fit(m)
-    
+        
     #Save model checkpoint
     if data_module.config["snapshot_dir"] is not None:
         trainer.save_checkpoint("{}/{}_{}.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
     
-    ds = data.TreeDataset(df=data_module.test, train=False, config=data_module.config)
+    ds = multi_stage.TreeDataset(df=data_module.test, train=False, config=data_module.config)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)
     results = results.merge(data_module.test[["individual","taxonID","label","siteID"]], on="individual")
@@ -131,4 +180,4 @@ def train_model(data_module, comet_logger, name):
     # Log prediction
     comet_logger.experiment.log_table("test_predictions.csv", ensemble_df)
     
-    return comet_logger
+    return m

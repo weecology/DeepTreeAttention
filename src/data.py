@@ -16,6 +16,57 @@ import torch
 from torch.utils.data import Dataset
 import rasterio
 
+# Dataset class
+class TreeDataset(Dataset):
+    """A csv file with a path to image crop and label
+    Args:
+       csv_file: path to csv file with image_path and label
+       df: pandas dataframe
+    """
+    def __init__(self, csv_file=None, df=None, config=None, train=True):
+        if df is None:
+            self.annotations = pd.read_csv(csv_file)
+        else:
+            self.annotations = df
+        self.train = train
+        self.config = config         
+        self.image_size = config["image_size"]
+
+        # Create augmentor
+        self.transformer = augmentation.train_augmentation(image_size=self.image_size)
+
+        # Pin data to memory if desired
+        if self.config["preload_images"]:
+            self.image_dict = {}
+            for index, row in self.annotations.iterrows():
+                image_path = os.path.join(self.config["crop_dir"],row["image_path"])
+                self.image_dict[index] = load_image(image_path, image_size=self.image_size)
+
+    def __len__(self):
+        # 0th based index
+        return self.annotations.shape[0]
+
+    def __getitem__(self, index):
+        inputs = {}
+        image_path = self.annotations.image_path.iloc[index]      
+        individual = os.path.basename(os.path.splitext(image_path)[0])
+        if self.config["preload_images"]:
+            inputs["HSI"] = self.image_dict[index]
+        else:
+            image_basename = self.annotations.image_path.iloc[index]  
+            image_path = os.path.join(self.config["crop_dir"],image_basename)                
+            image = load_image(image_path, image_size=self.image_size)
+            inputs["HSI"] = image
+
+        if self.train:
+            label = self.annotations.label.iloc[index]
+            label = torch.tensor(label, dtype=torch.long)
+            inputs["HSI"] = self.transformer(inputs["HSI"])
+
+            return individual, inputs, label
+        else:
+            return individual, inputs
+        
 def filter_data(path, config):
     """Transform raw NEON data into clean shapefile   
     Args:
@@ -209,81 +260,6 @@ def train_test_split(shp, config, client = None):
     
     return train, test
 
-# Dataset class
-class TreeDataset(Dataset):
-    """A csv file with a path to image crop and label
-    Args:
-       csv_file: path to csv file with image_path and label
-    """
-    def __init__(self, df=None, csv_file=None, config=None, train=True, image_dict=None):
-        if csv_file:
-            self.annotations = pd.read_csv(csv_file)
-        else:
-            self.annotations = df
-        
-        self.train = train
-        self.config = config         
-        self.image_size = config["image_size"]
-        self.years = self.annotations.tile_year.unique()
-        self.individuals = self.annotations.individual.unique()
-        self.image_paths = self.annotations.groupby("individual").apply(lambda x: x.set_index('tile_year').image_path.to_dict())
-        self.image_dict = image_dict
-        if train:
-            self.labels = self.annotations.set_index("individual").label.to_dict()
-        
-        # Create augmentor
-        self.transformer = augmentation.train_augmentation(image_size=self.image_size)
-        
-        # Pin data to memory if desired
-        if self.config["preload_images"]:
-            if self.image_dict is None:
-                self.image_dict = {}
-                for individual in self.individuals:
-                    images = []
-                    ind_annotations = self.image_paths[individual]
-                    for year in self.years:
-                        try:
-                            year_annotations = ind_annotations[year]
-                            image_path = os.path.join(self.config["crop_dir"], year_annotations)
-                            image = load_image(image_path, image_size=self.image_size)                        
-                        except KeyError:
-                            image = torch.zeros(self.config["bands"], self.image_size, self.image_size)                                            
-                        images.append(image)
-                    self.image_dict[individual] = images
-            
-    def __len__(self):
-        # 0th based index
-        return len(self.individuals)
-
-    def __getitem__(self, index):
-        inputs = {}
-        individual = self.individuals[index]      
-        if self.config["preload_images"]:
-            images = self.image_dict[individual]
-            images = [self.transformer(x) for x in images]
-        else:
-            images = []
-            ind_annotations = self.image_paths[individual]
-            for year in self.years:
-                try:
-                    year_annotations = ind_annotations[year]
-                    image_path = os.path.join(self.config["crop_dir"], year_annotations)
-                    image = load_image(image_path, image_size=self.image_size)                        
-                except Exception:
-                    image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
-                if self.train:
-                    image = self.transformer(image)   
-                images.append(image)
-        inputs["HSI"] = images
-        
-        if self.train:
-            label = self.labels[individual]
-            label = torch.tensor(label, dtype=torch.long)
-
-            return individual, inputs, label
-        else:
-            return individual, inputs
-
 def filter_dead_annotations(crowns, config):
     """Given a set of annotations, predict whether RGB is dead
     Args:
@@ -300,7 +276,7 @@ class TreeData(LightningDataModule):
     The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
     Use regenerate=True to override this behavior in setup()
     """
-    def __init__(self, csv_file, config, experiment_id=None, comet_logger=None, client = None, data_dir=None, site=None):
+    def __init__(self, csv_file, config, experiment_id=None, comet_logger=None, client = None, data_dir=None, site=None, filter_species_site=None):
         """
         Args:
             config: optional config file to override
@@ -360,7 +336,11 @@ class TreeData(LightningDataModule):
                     self.comet_logger.experiment.log_parameter("Species before CHM filter", len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples before CHM filter", df.shape[0])
                 
-                df.to_file("{}/unfiltered_points.shp".format(self.data_dir))
+                if filter_species_site:
+                    species_to_keep = df[df.siteID.isin(filter_species_site)].taxonID.unique()
+                    df = df[df.taxonID.isin(species_to_keep)]
+                    
+                df.to_file("{}/unfiltered_points_{}.shp".format(self.data_dir, site))
                 
                 #Filter points based on LiDAR height for NEON data
                 self.canopy_points = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],
@@ -368,7 +348,7 @@ class TreeData(LightningDataModule):
                                     max_CHM_diff=self.config["max_CHM_diff"], 
                                     CHM_height_limit=self.config["CHM_height_limit"])  
                 
-                self.canopy_points.to_file("{}/canopy_points.shp".format(self.data_dir))
+                self.canopy_points.to_file("{}/canopy_points_{}.shp".format(self.data_dir, site))
 
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after CHM filter", len(df.taxonID.unique()))
@@ -376,17 +356,17 @@ class TreeData(LightningDataModule):
             
                 # Create crown data
                 self.crowns = generate.points_to_crowns(
-                    field_data="{}/canopy_points.shp".format(self.data_dir),
+                    field_data="{}/canopy_points_{}.shp".format(self.data_dir, site),
                     rgb_dir=self.config["rgb_sensor_pool"],
                     savedir="{}/boxes/".format(self.data_dir),
                     raw_box_savedir="{}/boxes/".format(self.data_dir)
                 )
                 
                 if self.config["megaplot_dir"]:
-                    #ADD IFAS back in, use polygons instead of deepforest boxes                    
+                    #Add IFAS back in, use polygons instead of deepforest boxes                    
                     self.crowns = gpd.GeoDataFrame(pd.concat([self.crowns, IFAS]))
                 
-                self.crowns.to_file("{}/crowns.shp".format(self.data_dir))                
+                self.crowns.to_file("{}/crowns_{}.shp".format(self.data_dir, site))                
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(self.crowns.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after crown prediction", self.crowns.shape[0])
@@ -406,7 +386,7 @@ class TreeData(LightningDataModule):
                     except:
                         print("No dead trees predicted")
             
-            self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
+            self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir, site))
             if self.config["replace_crops"]:    
                 self.annotations = generate.generate_crops(
                     self.crowns,
@@ -434,13 +414,7 @@ class TreeData(LightningDataModule):
                 self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))               
         else:
             print("Loading previous data commit {}".format(self.config["use_data_commit"]))
-            if site == "all":
-                all_files = glob.glob("{}/annotations_*.csv".format(self.data_dir))
-                dfs = [pd.read_csv(x) for x in all_files]
-                self.annotations = pd.concat(dfs)
-                self.annotations.reset_index(drop=True)
-            else:
-                self.annotations = pd.read_csv("{}/annotations_{}.csv".format(self.data_dir, site)) 
+            self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir, site)) 
                 
             if self.config["train_test_commit"] is None:
                 print("Using data commit {} creating a new train-test split for site {}".format(self.config["use_data_commit"],self.site))
@@ -450,26 +424,11 @@ class TreeData(LightningDataModule):
                 self.train = pd.read_csv("{}/train_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
                 self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
             
-            if site == "all":
-                all_files = glob.glob("{}/crowns_*.shp".format(self.data_dir))
-                dfs = [gpd.read_file(x) for x in all_files]
-                self.crowns = pd.concat(dfs)
-                self.crowns.reset_index(drop=True)
-                self.crowns = gpd.GeoDataFrame(self.crowns, geometry="geometry")
-            else:
-                self.crowns = gpd.read_file("{}/crowns_{}.shp".format(self.data_dir, site))
+            self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
                             
             #mimic schema due to abbreviation when .shp is saved
             self.crowns["individual"] = self.crowns["individual"]
-            
-            if site == "all":
-                all_files = glob.glob("{}/canopy_points_*.shp".format(self.data_dir))
-                dfs = [gpd.read_file(x) for x in all_files]
-                self.canopy_points = pd.concat(dfs)
-                self.canopy_points.reset_index(drop=True)
-                self.canopy_points = gpd.GeoDataFrame(self.canopy_points, geometry="geometry")
-            else:
-                self.canopy_points = gpd.read_file("{}/canopy_points_{}.shp".format(self.data_dir, site))
+            self.canopy_points = gpd.read_file("{}/canopy_points.shp".format(self.data_dir))
                 
             self.canopy_points["individual"] = self.canopy_points["individual"]
         
@@ -488,7 +447,7 @@ class TreeData(LightningDataModule):
     def create_train_test_split(self, ID):      
         if self.site:
             if not self.site == "all":
-                self.annotations = self.annotations[self.annotations.siteID==self.site].reset_index(drop=True)
+                self.annotations = self.annotations[self.annotations.siteID.isin(self.site)].reset_index(drop=True)
         if self.config["existing_test_csv"]:
             existing_test = pd.read_csv(self.config["existing_test_csv"])
             self.test = self.annotations[self.annotations.individual.isin(existing_test.individual)]  
@@ -501,7 +460,7 @@ class TreeData(LightningDataModule):
         individuals = np.concatenate([self.train.individual.unique(), self.test.individual.unique()])
         self.novel = self.annotations[~self.annotations.individual.isin(individuals)]
         self.novel = self.novel[~self.novel.taxonID.isin(np.concatenate([self.train.taxonID.unique(), self.test.taxonID.unique()]))]
-        self.novel.to_csv("{}/novel_species_{}.csv".format(self.data_dir, ID))  
+        self.novel.to_csv("{}/novel_species.csv".format(self.data_dir, self.site))  
         self.create_label_dict(self.train, self.test)
 
         #Encode the numeric class data
