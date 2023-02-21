@@ -4,6 +4,7 @@ from src import train, data
 import torch
 import gc
 import os
+from pytorch_lightning.loggers import CometLogger
 
 git_branch=sys.argv[1]
 git_commit=sys.argv[2] 
