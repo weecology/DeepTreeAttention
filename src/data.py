@@ -342,7 +342,7 @@ class TreeData(LightningDataModule):
                                     max_CHM_diff=self.config["max_CHM_diff"], 
                                     CHM_height_limit=self.config["CHM_height_limit"])  
                 
-                self.canopy_points.to_file("{}/canopy_points_{}.shp".format(self.data_dir, site))
+                self.canopy_points.to_file("{}/canopy_points.shp".format(self.data_dir))
 
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after CHM filter", len(df.taxonID.unique()))
@@ -350,7 +350,7 @@ class TreeData(LightningDataModule):
             
                 # Create crown data
                 self.crowns = generate.points_to_crowns(
-                    field_data="{}/canopy_points_{}.shp".format(self.data_dir, site),
+                    field_data="{}/canopy_points.shp".format(self.data_dir),
                     rgb_dir=self.config["rgb_sensor_pool"],
                     savedir="{}/boxes/".format(self.data_dir),
                     raw_box_savedir="{}/boxes/".format(self.data_dir)
@@ -360,7 +360,7 @@ class TreeData(LightningDataModule):
                     #Add IFAS back in, use polygons instead of deepforest boxes                    
                     self.crowns = gpd.GeoDataFrame(pd.concat([self.crowns, IFAS]))
                 
-                self.crowns.to_file("{}/crowns_{}.shp".format(self.data_dir, site))                
+                self.crowns.to_file("{}/crowns.shp".format(self.data_dir))                
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(self.crowns.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after crown prediction", self.crowns.shape[0])
