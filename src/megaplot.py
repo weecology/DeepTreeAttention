@@ -111,11 +111,12 @@ def load(directory, config, client=None, site=None):
     Returns:
         crowndf: a geopandas dataframe of crowns for all sites
     """
+    if site == "all":
+        site = None
+        
     if site is not None:
         if type(site) is not list:
             raise TypeError("site parameter should be a list of strings")
-    if site == "all":
-        site = None
         
     all_sites = []
     for x in site:
