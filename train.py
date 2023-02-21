@@ -35,7 +35,7 @@ sites = [["OSBS","JERC","TALL"], "TEAK","CLBJ"]
     
 for site in sites:
     try:
-        train.main(site, config, git_branch, git_commit)
+        train.main(site=site, config=config, git_branch=git_branch, git_commit=git_commit)
         torch.cuda.empty_cache() 
         gc.collect()            
     except:
