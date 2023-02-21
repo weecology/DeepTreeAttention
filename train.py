@@ -1,8 +1,9 @@
 # Train
 import sys
-from src import train
+from src import train, data
 import torch
 import gc
+import os
 
 git_branch=sys.argv[1]
 git_commit=sys.argv[2] 
@@ -10,8 +11,22 @@ config = data.read_config("config.yml")
 #sites = ["BART","BLAN", "BONA","CLBJ", "DEJU", "DELA", "GRSM", "HARV", "JERC",
               #"LENO", "MLBS", "MOAB", "NIWO" ,"OSBS","RMNP","SCBI","SERC","SJER","SOAP",
              #"STEI","TALL","TEAK","TREE","UKFS","UNDE","WREF","YELL"]
+
 sites = [["OSBS","JERC","TALL"], "TEAK","CLBJ"]
 
+if config["use_data_commit"] is None:
+    comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple") 
+    client = start_cluster.start(cpus=50, mem_size="4GB")    
+    ROOT = os.path.dirname(os.path.dirname(data.__file__))    
+    data_module = data.TreeData(
+        csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),
+        data_dir=config["crop_dir"],
+        config=config,
+        client=client,
+        site="all",
+        comet_logger=comet_logger)
+    config["use_data_commit"] = comet_logger.experiment.id 
+    
 for site in sites:
     try:
         train.main(site, config, git_branch, git_commit)
