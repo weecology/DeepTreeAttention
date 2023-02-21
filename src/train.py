@@ -45,12 +45,13 @@ def main(config, site=None, git_branch=None, git_commit=None):
         data_dir=config["crop_dir"],
         config=config,
         client=client,
+        experiment_id=git_commit,
         site=site,
         comet_logger=comet_logger)
     
     if config["create_pretrain_model"]:
         config["existing_test_csv"] = "{}/test_{}.csv".format(data_module.data_dir, data_module.experiment_id)
-        config["pretrain_state_dict"] = pretrain_model(comet_logger, config)
+        config["pretrain_state_dict"] = pretrain_model(comet_logger, config, git_commit)
     if client:
         client.close()
     
@@ -76,7 +77,7 @@ def main(config, site=None, git_branch=None, git_commit=None):
     
     return comet_logger
 
-def pretrain_model(comet_logger, config, client=None):
+def pretrain_model(comet_logger, config, git_commit, client=None):
     """Pretain a model with samples from other sites
     Args:
         comet_logger: a cometML logger
@@ -89,6 +90,7 @@ def pretrain_model(comet_logger, config, client=None):
             data_dir=config["crop_dir"],
             config=config,
             client=client,
+            experiment_id=git_commit,            
             site="all",
             filter_species_site=None,
             comet_logger=comet_logger)

@@ -9,9 +9,9 @@ from pytorch_lightning import Trainer
 
 #Training module
 @pytest.fixture()
-def species_model_path(m, dm, tmpdir):
+def species_model_path(m, tmpdir):
     trainer = Trainer(fast_dev_run=True)
-    trainer.fit(m, datamodule=dm)
+    trainer.fit(m)
     trainer.save_checkpoint("{}/model.pl".format(tmpdir))
     
     return "{}/model.pl".format(tmpdir)

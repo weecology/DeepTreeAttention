@@ -291,13 +291,7 @@ class TreeData(LightningDataModule):
         self.csv_file = csv_file
         self.comet_logger = comet_logger
         self.site = site
-        if comet_logger is not None:
-            self.experiment_id = "{}_{}".format(comet_logger.experiment.get_parameter("commit hash"), site)
-        else:
-            try:
-                self.experiment_id = experiment_id
-            except:
-                raise ValueError("No comet logger or id specificied")
+        self.experiment_id = experiment_id
 
         # Default training location
         self.client = client

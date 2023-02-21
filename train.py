@@ -17,7 +17,6 @@ sites = [["OSBS","JERC","TALL"], "TEAK","CLBJ"]
 
 if config["use_data_commit"] is None:
     comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple") 
-    comet_logger.experiment.log_parameter("commit hash",git_commit)    
     client = start_cluster.start(cpus=50, mem_size="4GB")    
     ROOT = os.path.dirname(os.path.dirname(data.__file__))    
     crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
@@ -25,6 +24,7 @@ if config["use_data_commit"] is None:
     data_module = data.TreeData(
         csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),
         data_dir=crop_dir,
+        experiment_id=git_commit,
         config=config,
         client=client,
         site="all",
