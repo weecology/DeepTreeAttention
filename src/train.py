@@ -106,6 +106,7 @@ def pretrain_model(comet_logger, config, git_commit, client=None):
             model=model,
             classes=pretrain_module.num_classes,
             label_dict=pretrain_module.species_label_dict,
+            loss_weight=loss_weight,
             config=pretrain_module.config) 
         
         path = "{}/{}_state_dict.pt".format(config["snapshot_dir"], comet_logger.experiment.id)
