@@ -48,8 +48,6 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
     if config["create_pretrain_model"]:
         config["existing_test_csv"] = "{}/test_{}.csv".format(data_module.data_dir, data_module.experiment_id)
         config["pretrain_state_dict"] = pretrain_model(comet_logger, config, git_commit)
-    if client:
-        client.close()
     
     comet_logger.experiment.log_parameter("train_hash",hash_pandas_object(data_module.train))
     comet_logger.experiment.log_parameter("test_hash",hash_pandas_object(data_module.test))
