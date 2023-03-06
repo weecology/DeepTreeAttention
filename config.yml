@@ -11,7 +11,7 @@ HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/year/
 min_stem_diameter: 10
 
 # Minimum number of test samples per class to be included
-min_train_samples: 12
+min_train_samples: 24
 min_test_samples: 12 
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
@@ -29,7 +29,7 @@ CHM_height_limit: 8
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Checkout data artifact from comet
-use_data_commit: 1b4be93690f746988b5cad80a61b0690
+use_data_commit: 04a3c3001163490690ad7c90d7317ddf
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 
@@ -40,7 +40,7 @@ replace_crops: False
 # Recreate a train test split
 train_test_commit:
 # Use existing plotIDs for train/test split
-existing_test_csv: 
+existing_test_csv:
 
 ### Data loader Config
 # Resized pixel size of the crowns. Square crops around each pixel of size x
@@ -71,7 +71,7 @@ lr_flat: 0.0001
 
 fast_dev_run: False
 accelerator: auto
-epochs: 250
+epochs: 200
 snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
 
 ### Evaluation config
