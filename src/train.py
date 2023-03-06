@@ -109,8 +109,6 @@ def pretrain_model(comet_logger, config, git_commit, client=None):
             loss_weight=loss_weight,
             config=pretrain_module.config) 
         
-        path = "{}/{}_state_dict.pt".format(config["snapshot_dir"], comet_logger.experiment.id)
-        torch.save(m.model.state_dict(), path) 
         trainer = Trainer(
             gpus=pretrain_module.config["gpus"],
             fast_dev_run=pretrain_module.config["fast_dev_run"],
@@ -122,6 +120,9 @@ def pretrain_model(comet_logger, config, git_commit, client=None):
             logger=comet_logger)
         
         trainer.fit(m, datamodule=pretrain_module)
+        
+        path = "{}/{}_state_dict.pt".format(config["snapshot_dir"], comet_logger.experiment.id)
+        torch.save(m.model.state_dict(), path) 
         
         return path
         
