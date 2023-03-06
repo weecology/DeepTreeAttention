@@ -50,9 +50,12 @@ preload_image_dict: True
 workers: 0
 taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
-### Training Parameters
+### Pre-Training Parameters
 create_pretrain_model: True
 pretrain_state_dict:
+prtrain_epochs: 100
+
+### Training Parameters
 gpus: 1
 batch_size: 128
 bands: 349
