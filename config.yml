@@ -50,9 +50,12 @@ preload_image_dict: True
 workers: 0
 taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
-### Training Parameters
-create_pretrain_model: False
+### Pre-Training Parameters
+create_pretrain_model: True
 pretrain_state_dict:
+prtrain_epochs: 100
+
+### Training Parameters
 gpus: 1
 batch_size: 128
 bands: 349
@@ -66,9 +69,9 @@ lr_broadleaf: 0.0001
 lr_oak: 0.0001
 lr_flat: 0.0001
 
-fast_dev_run: True
+fast_dev_run: False
 accelerator: auto
-epochs: 250
+epochs: 200
 snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
 
 ### Evaluation config
