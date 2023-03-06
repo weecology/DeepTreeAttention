@@ -166,10 +166,13 @@ def train_model(data_module, comet_logger, m, name):
     if data_module.config["snapshot_dir"] is not None:
         trainer.save_checkpoint("{}/{}_{}.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
     
+    print("individuals in test data: {}".format(len(data_module.test.individual.unique())))
     ds = multi_stage.TreeDataset(df=data_module.test, train=False, config=data_module.config)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)
+    print("individuals in predicted data: {}".format(len(results.individual.unique())))
     results = results.merge(data_module.test[["individual","taxonID","label","siteID"]], on="individual")
+    print("individuals in merged data: {}".format(len(results.individual.unique())))    
     comet_logger.experiment.log_table("nested_predictions.csv", results)
     
     ensemble_df = m.ensemble(results)
