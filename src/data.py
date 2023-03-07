@@ -403,7 +403,7 @@ class TreeData(LightningDataModule):
             if self.config["train_test_commit"] is None:
                 self.train, self.test = self.create_train_test_split(self.experiment_id)  
             else:
-                print("Loading a train-test split from {}/{}".format(self.data_dir, self.config["train_test_commit"])      
+                print("Loading a train-test split from {}/{}".format(self.data_dir, self.config["train_test_commit"]))      
                 self.train = pd.read_csv("{}/test_{}.csv".format(self.data_dir, self.config["train_test_commit"]))               
                 self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, self.config["train_test_commit"]))                   
         else:
