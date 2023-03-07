@@ -53,7 +53,7 @@ taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 ### Pre-Training Parameters
 create_pretrain_model: True
 pretrain_state_dict:
-prtrain_epochs: 100
+pretrain_epochs: 100
 
 ### Training Parameters
 gpus: 1
