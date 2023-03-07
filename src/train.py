@@ -42,7 +42,7 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
         data_dir=config["crop_dir"],
         config=config,
         client=client,
-        experiment_id=git_commit,
+        experiment_id="{}_{}".format(git_commit, site),
         site=site,
         comet_logger=comet_logger)
     
@@ -87,7 +87,7 @@ def pretrain_model(comet_logger, config, git_commit, client=None):
             data_dir=config["crop_dir"],
             config=config,
             client=client,
-            experiment_id=git_commit,            
+            experiment_id="{}_{}".format(git_commit, "all"),            
             site="all",
             filter_species_site=None,
             comet_logger=comet_logger)
