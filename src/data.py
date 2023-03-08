@@ -408,7 +408,7 @@ class TreeData(LightningDataModule):
                 self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))               
         else:
             print("Loading previous data commit {}".format(self.config["use_data_commit"]))
-            self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir, site)) 
+            self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir)) 
                 
             if self.config["train_test_commit"] is None:
                 print("Using data commit {} creating a new train-test split for site {}".format(self.config["use_data_commit"],self.site))
