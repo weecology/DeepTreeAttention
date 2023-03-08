@@ -14,7 +14,7 @@ config = data.read_config("config.yml")
               #"LENO", "MLBS", "MOAB", "NIWO" ,"OSBS","RMNP","SCBI","SERC","SJER","SOAP",
              #"STEI","TALL","TEAK","TREE","UKFS","UNDE","WREF","YELL"]
 
-sites = [["OSBS","JERC","TALL"], ["TEAK"],["CLBJ"]]
+sites = [["TEAK"], ["OSBS","JERC","TALL"],["CLBJ"]]
 
 if config["use_data_commit"] is None:
     comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple") 
