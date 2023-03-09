@@ -11,11 +11,11 @@ import copy
 git_branch=sys.argv[1]
 git_commit=sys.argv[2] 
 config = data.read_config("config.yml")
-#sites = ["BART","BLAN", "BONA","CLBJ", "DEJU", "DELA", "GRSM", "HARV", "JERC",
-              #"LENO", "MLBS", "MOAB", "NIWO" ,"OSBS","RMNP","SCBI","SERC","SJER","SOAP",
-             #"STEI","TALL","TEAK","TREE","UKFS","UNDE","WREF","YELL"]
 
-sites = [["TEAK"], ["OSBS","JERC","TALL"],["CLBJ"]]
+
+sites = [["OSBS","JERC","TALL","DSNY"], ["TEAK","SOAP","YELL","ABBY"],["DELA","LENO"],[,"CLBJ","KONZ"],
+         ["MLBS","BLAN", "SCBI", "UKFS"], ["BART","HARV"],
+         ["NIWO","RMBP"],["MOAB","REDB"],["WREF"],["TREE","STEI","UNDE"], ["BONA","DEJU"], ["SJER"], ["SERC","GRSM"]]
 
 if config["use_data_commit"] is None:
     comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple") 
