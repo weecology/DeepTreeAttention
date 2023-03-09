@@ -48,7 +48,7 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
     
     if config["create_pretrain_model"]:
         config["existing_test_csv"] = "{}/test_{}.csv".format(data_module.data_dir, data_module.experiment_id)
-        config["pretrain_state_dict"] = pretrain_model(comet_logger, config, git_commit)
+        config["pretrain_state_dict"] = pretrain_model(comet_logger, config, git_commit, filter_species_site=site)
         torch.cuda.empty_cache()
         gc.collect()
     
@@ -74,7 +74,7 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
     
     return comet_logger
 
-def pretrain_model(comet_logger, config, git_commit, client=None):
+def pretrain_model(comet_logger, config, git_commit, client=None, filter_species_site=None):
     """Pretain a model with samples from other sites
     Args:
         comet_logger: a cometML logger
@@ -89,7 +89,7 @@ def pretrain_model(comet_logger, config, git_commit, client=None):
             client=client,
             experiment_id="{}_{}".format(git_commit, "all"),            
             site="all",
-            filter_species_site=None,
+            filter_species_site=filter_species_site,
             comet_logger=comet_logger)
         
         loss_weight = []
