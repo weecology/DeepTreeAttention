@@ -41,10 +41,10 @@ if config["train_test_commit"] is None:
 else:
     client = None
     
-original_config = copy.deepcopy(config)
 for site in sites:
+    new_config = copy.deepcopy(config)    
     try:
-        train.main(site=site, config=original_config, git_branch=git_branch, git_commit=git_commit, client=client)
+        train.main(site=site, config=new_config, git_branch=git_branch, git_commit=git_commit, client=client)
         torch.cuda.empty_cache() 
         gc.collect()            
     except:
