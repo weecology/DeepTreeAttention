@@ -69,7 +69,7 @@ lr_broadleaf: 0.00005
 lr_oak: 0.00005
 lr_flat: 0.00005
 
-fast_dev_run: True
+fast_dev_run: False
 accelerator: auto
 epochs: 180
 snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
