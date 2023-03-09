@@ -13,7 +13,7 @@ git_commit=sys.argv[2]
 config = data.read_config("config.yml")
 
 
-sites = [["OSBS","JERC","TALL","DSNY"], ["TEAK","SOAP","YELL","ABBY"],["DELA","LENO"],[,"CLBJ","KONZ"],
+sites = [["OSBS","JERC","TALL","DSNY"], ["TEAK","SOAP","YELL","ABBY"],["DELA","LENO"],["CLBJ","KONZ"],
          ["MLBS","BLAN", "SCBI", "UKFS"], ["BART","HARV"],
          ["NIWO","RMBP"],["MOAB","REDB"],["WREF"],["TREE","STEI","UNDE"], ["BONA","DEJU"], ["SJER"], ["SERC","GRSM"]]
 
