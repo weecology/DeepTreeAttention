@@ -26,4 +26,4 @@ cd ~/DeepTreeAttention/
 branch_name=$((git symbolic-ref HEAD 2>/dev/null || echo "(unnamed branch)")|cut -d/ -f3-)
 commit=$(git log --pretty=format:'%H' -n 1)
 export COMET_LOGGING_CONSOLE=info
-python train.py $branch_name $commit
+python train.py $branch_name $commit $3
