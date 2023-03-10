@@ -4,6 +4,6 @@
 SITES='["SCBI"]'
 for SITE in $SITES; do
 echo "${SITE}"
-sbatch SLURM/experiment.sbatch $1 $2 "${SITE}"
+sbatch experiment.sbatch $1 $2 "${SITE}"
 sleep 1 # pause to be kind to the scheduler
 done
