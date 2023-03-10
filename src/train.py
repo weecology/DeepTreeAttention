@@ -89,7 +89,7 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
             client=client,
             experiment_id="{}_{}".format(git_commit, "all"),            
             site="all",
-            filter_species_site=site,
+            filter_species_site=filter_species_site,
             comet_logger=comet_logger)
         
         loss_weight = []
