@@ -13,8 +13,7 @@ git_commit=sys.argv[2]
 config = data.read_config("config.yml")
 
 
-sites = [["BART","HARV"],
-         ["NIWO","RMBP"],["MOAB","REDB"],["WREF"],["TREE","STEI","UNDE"], ["BONA","DEJU"], ["SJER"], ["SERC","GRSM"], ["OSBS","JERC","TALL","DSNY"], ["TEAK","SOAP","YELL","ABBY"],["DELA","LENO"],["CLBJ","KONZ"],
+sites = [["NIWO","RMBP"],["MOAB","REDB"],["WREF"],["TREE","STEI","UNDE"], ["BONA","DEJU"], ["SJER"], ["SERC","GRSM"], ["BART","HARV"], ["OSBS","JERC","TALL","DSNY"], ["TEAK","SOAP","YELL","ABBY"],["DELA","LENO"],["CLBJ","KONZ"],
          ["MLBS","BLAN", "SCBI", "UKFS"]]
 
 if config["use_data_commit"] is None:
