@@ -7,13 +7,16 @@ import os
 from pytorch_lightning.loggers import CometLogger
 import traceback
 import copy
+import json
 
-git_branch=sys.argv[1]
-git_commit=sys.argv[2] 
+git_branch = sys.argv[1]
+git_commit = sys.argv[2] 
+site = sys.argv[3]
 config = data.read_config("config.yml")
 
-
-sites = [["MLBS","BLAN", "SCBI", "UKFS"], ["BART","HARV"], ["NIWO","RMBP"],["MOAB","REDB"],["WREF"],["TREE","STEI","UNDE"], ["BONA","DEJU"], ["SJER"], ["SERC","GRSM"], ["OSBS","JERC","TALL","DSNY"], ["TEAK","SOAP","YELL","ABBY"],["DELA","LENO"],["CLBJ","KONZ"]]
+#Sanitize string representation
+site = site.replace("_",", ")
+site = json.loads(site)
 
 if config["use_data_commit"] is None:
     comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple") 
@@ -39,11 +42,9 @@ if config["train_test_commit"] is None:
 else:
     client = None
     
-for site in sites:
-    new_config = copy.deepcopy(config)    
-    try:
-        train.main(site=site, config=new_config, git_branch=git_branch, git_commit=git_commit, client=client)
-        torch.cuda.empty_cache() 
-        gc.collect()            
-    except:
-        print("{} failed with {}".format(site, traceback.print_exc()))
+try:
+    train.main(site=site, config=config, git_branch=git_branch, git_commit=git_commit, client=client)
+    torch.cuda.empty_cache() 
+    gc.collect()            
+except:
+    print("{} failed with {}".format(site, traceback.print_exc()))
