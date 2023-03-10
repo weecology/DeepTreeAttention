@@ -53,7 +53,7 @@ taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 ### Pre-Training Parameters
 create_pretrain_model: True
 pretrain_state_dict:
-pretrain_epochs: 80
+pretrain_epochs: 90
 
 ### Training Parameters
 gpus: 1
@@ -71,7 +71,7 @@ lr_flat: 0.00005
 
 fast_dev_run: False
 accelerator: auto
-epochs: 180
+epochs: 40
 snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
 
 ### Evaluation config
