@@ -51,7 +51,7 @@ comet_logger.experiment.log_parameters(config)
 cpu_client = start(cpus=20, mem_size="10GB")
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
-config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1"
+config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/3fd4871aede4484b9a6d20817d520185"
 savedir = config["crop_dir"] 
 
 species_model_paths = {"TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/d14321cbbaec4559b070ddb1b57f7de1_['TEAK', 'SOAP', 'YELL', 'ABBY'].pt",
