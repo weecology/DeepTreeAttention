@@ -1,15 +1,15 @@
 #Predict
-from deepforest import main
-from deepforest.utilities import annotations_to_shapefile
 import glob
 import os
-import pandas as pd
 import geopandas as gpd
 import rasterio
 import numpy as np
 from torchvision import transforms
 import torch
 from pytorch_lightning import Trainer
+
+from deepforest import main
+from deepforest.utilities import annotations_to_shapefile
 
 from src.models import dead
 from src.CHM import postprocess_CHM
@@ -77,7 +77,7 @@ def generate_prediction_crops(crowns, config, client=None, as_numpy=True):
     
     return "{}/{}.shp".format(config["prediction_crop_dir"], basename)
 
-def predict_tile(crown_annotations, m, config, savedir, filter_dead=False):
+def predict_tile(crown_annotations, m, config, savedir, trainer, filter_dead=False):
     """Predict a set of crown labels from a annotations.shp
     Args:
         crown_annotations: geodataframe from predict.generate_prediction_crops
@@ -87,7 +87,7 @@ def predict_tile(crown_annotations, m, config, savedir, filter_dead=False):
         filter_dead: filter dead model
     """
     crown_annotations = gpd.read_file(crown_annotations) 
-    trees = predict_species(crowns=crown_annotations, m=m, config=config)
+    trees = predict_species(crowns=crown_annotations, m=m, trainer=trainer, config=config)
 
     if trees is None:
         return None
@@ -145,9 +145,9 @@ def predict_species(crowns, trainer, m, config):
     ds = TreeDataset(df=crowns, train=False, config=config)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)
-    results["label"] = crowns.test.label
-    results["siteID"] = crowns.test.siteID    
+    results = results.merge(crowns[["geometry","individual","taxonID","siteID","dead_label","dead_score"]], on="individual")
     ensemble_df = m.ensemble(results)
+    ensemble_df = gpd.GeoDataFrame(ensemble_df, geometry="geometry")
         
     return ensemble_df
 
