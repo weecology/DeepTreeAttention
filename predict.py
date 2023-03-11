@@ -19,17 +19,6 @@ def find_rgb_files(site, config, year="2021"):
     tiles = [x for x in tiles if "neon-aop-products" not in x]
     tiles = [x for x in tiles if "/{}/".format(year) in x]
     
-    #tiles = [x for x in tiles if "404000_3286000" in x] 
-    #Only allow tiles that are within OSBS station boundary
-    #osbs_tiles = []
-    #for rgb_path in tiles:
-        #basename = os.path.basename(rgb_path)
-        #geo_index = re.search("(\d+_\d+)_image", basename).group(1)
-        #if ((float(geo_index.split("_")[0]) > 399815.5) &
-        #(float(geo_index.split("_")[0]) < 409113.7) &
-        #(float(geo_index.split("_")[1]) > 3282308) &
-        #(float( geo_index.split("_")[1]) < 3290124)):
-            #osbs_tiles.append(rgb_path)
     return tiles
 
 
@@ -65,62 +54,62 @@ dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/67ec871c49cf472c8e1ae70b185addb1"
 savedir = config["crop_dir"] 
 
-species_model_paths = ["/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0df3483cc211460caefb73b6fd369c4b.pt"]                    
+species_model_paths = {"TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/d14321cbbaec4559b070ddb1b57f7de1_['TEAK', 'SOAP', 'YELL', 'ABBY'].pt",
+                       "SOAP":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/d14321cbbaec4559b070ddb1b57f7de1_['TEAK', 'SOAP', 'YELL', 'ABBY'].pt"}                    
 
-#generate HSI_tif data if needed.
-h5_pool = glob(config["HSI_sensor_pool"], recursive=True)
-h5_pool = [x for x in h5_pool if not "neon-aop-products" in x]
-hyperspectral_pool = glob(config["HSI_tif_dir"]+"*")
-
-### Step 1 Find RGB Tiles and convert HSI
-tiles = find_rgb_files(site="JERC", config=config, year="2018")
-tif_futures = cpu_client.map(
-    convert,
-    tiles,
-    hyperspectral_pool=h5_pool,
-    savedir=config["HSI_tif_dir"])
-wait(tif_futures)
-
-for x in tiles:
-    basename = os.path.splitext(os.path.basename(x))[0]                
-    shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)      
-    if not os.path.exists(shpname):
+def create_landscape_map(site, model_path, config, cpu_client):
+    #generate HSI_tif data if needed.
+    h5_pool = glob(config["HSI_sensor_pool"], recursive=True)
+    h5_pool = [x for x in h5_pool if not "neon-aop-products" in x]
+    
+    ### Step 1 Find RGB Tiles and convert HSI
+    tiles = find_rgb_files(site=site, config=config, year="2020")[:5]
+    tif_futures = cpu_client.map(
+        convert,
+        tiles,
+        hyperspectral_pool=h5_pool,
+        savedir=config["HSI_tif_dir"])
+    wait(tif_futures)
+    
+    for x in tiles[:2]:
+        basename = os.path.splitext(os.path.basename(x))[0]                
+        shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)      
+        if not os.path.exists(shpname):
+            try:
+                crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)   
+                crowns.to_file(shpname)            
+            except Exception as e:
+                traceback.print_exc()
+                print("{} failed to build crowns with {}".format(shpname, e))
+                continue
+    
+    crown_annotations_paths = []
+    crown_annotations_futures = []
+    for x in tiles:
+        basename = os.path.splitext(os.path.basename(x))[0]                
+        shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)    
         try:
-            crowns = predict.find_crowns(rgb_path=x, config=config, dead_model_path=dead_model_path)   
-            crowns.to_file(shpname)            
-        except Exception as e:
-            traceback.print_exc()
-            print("{} failed to build crowns with {}".format(shpname, e))
+            crowns = gpd.read_file(shpname)    
+        except:
             continue
-
-crown_annotations_paths = []
-crown_annotations_futures = []
-for x in tiles:
-    basename = os.path.splitext(os.path.basename(x))[0]                
-    shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)    
-    try:
-        crowns = gpd.read_file(shpname)    
-    except:
-        continue
-    if not os.path.exists("/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/{}.shp".format(basename)):
-        written_file = predict.generate_prediction_crops(crowns, config, as_numpy=True, client=cpu_client)
-        crown_annotations_paths.append(written_file)
-    else:
-        crown_annotations_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/{}.shp".format(basename)       
-        crown_annotations_paths.append(crown_annotations_path)
-        
-#Recursive predict to avoid prediction levels that will be later ignored.
-trainer = Trainer(gpus=config["gpus"], logger=False, enable_checkpointing=False)
-
-## Step 2 - Predict Crowns
-for species_model_path in species_model_paths:
-    print(species_model_path)
+        if not os.path.exists("/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/{}.shp".format(basename)):
+            written_file = predict.generate_prediction_crops(crowns, config, as_numpy=True, client=cpu_client)
+            crown_annotations_paths.append(written_file)
+        else:
+            crown_annotations_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/{}.shp".format(basename)       
+            crown_annotations_paths.append(crown_annotations_path)
+            
+    #Recursive predict to avoid prediction levels that will be later ignored.
+    trainer = Trainer(gpus=config["gpus"], logger=False, enable_checkpointing=False)
+    
+    ## Step 2 - Predict Crowns
+    print(model_path)
     # Load species model
     #Do not preload weights
     config["pretrained_state_dict"] = None
-    m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)
+    m = multi_stage.MultiStage.load_from_checkpoint(model_path, config=config)
     prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
-                                  os.path.splitext(os.path.basename(species_model_path))[0])    
+                                  os.path.splitext(os.path.basename(model_path))[0])    
     try:
         os.mkdir(prediction_dir)
     except:
@@ -140,3 +129,6 @@ for species_model_path in species_model_paths:
             except Exception as e:
                 traceback.print_exc()
                 continue
+
+for site, model_path in species_model_paths.items():
+    create_landscape_map(site, model_path, config, cpu_client)
