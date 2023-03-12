@@ -19,6 +19,8 @@ def find_rgb_files(site, config, year="2021"):
     tiles = [x for x in tiles if "neon-aop-products" not in x]
     tiles = [x for x in tiles if "/{}/".format(year) in x]
     
+    if len(tiles) == 0:
+        raise ValueError("No tiles foud in {} for site {} in year {} ".format(config["rgb_sensor_pool"], site, year))
     return tiles
 
 
@@ -54,7 +56,7 @@ dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/3fd4871aede4484b9a6d20817d520185"
 savedir = config["crop_dir"] 
 
-species_model_paths = {"TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0c580b6730614574bc232245422a2600_['SJER'].pt"}
+species_model_paths = {"SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0c580b6730614574bc232245422a2600_['SJER'].pt"}
 
 def create_landscape_map(site, model_path, config, cpu_client):
     #generate HSI_tif data if needed.
