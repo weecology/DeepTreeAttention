@@ -54,8 +54,7 @@ dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/3fd4871aede4484b9a6d20817d520185"
 savedir = config["crop_dir"] 
 
-species_model_paths = {"TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/d14321cbbaec4559b070ddb1b57f7de1_['TEAK', 'SOAP', 'YELL', 'ABBY'].pt",
-                       "SOAP":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/d14321cbbaec4559b070ddb1b57f7de1_['TEAK', 'SOAP', 'YELL', 'ABBY'].pt"}                    
+species_model_paths = {"TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0c580b6730614574bc232245422a2600_['SJER'].pt"}
 
 def create_landscape_map(site, model_path, config, cpu_client):
     #generate HSI_tif data if needed.
@@ -107,7 +106,7 @@ def create_landscape_map(site, model_path, config, cpu_client):
     # Load species model
     #Do not preload weights
     config["pretrained_state_dict"] = None
-    m = multi_stage.MultiStage.load_from_checkpoint(model_path, config=config, train_mode=False)
+    m = multi_stage.MultiStage.load_from_checkpoint(model_path, config=config)
     prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
                                   os.path.splitext(os.path.basename(model_path))[0])    
     try:

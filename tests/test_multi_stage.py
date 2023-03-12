@@ -33,8 +33,8 @@ def test_load(config, dm, m, tmpdir, preload_images):
         metrics = trainer.validate(m)
         
     #Confirm the model can be reloaded
-    trainer.save_checkpoint("{}/test_model.pl".format(tmpdir))
-    m2 = multi_stage.MultiStage.load_from_checkpoint("{}/test_model.pl".format(tmpdir))
+    trainer.save_checkpoint("{}/test_model.pt".format(tmpdir))
+    m2 = multi_stage.MultiStage.load_from_checkpoint("{}/test_model.pt".format(tmpdir))
 
 def test_fit_no_conifer(config, dm):   
     one_conifer = dm.test[dm.test.taxonID.isin(["QULA2","QUEGE2","QUNI","MAGNO","LIST2","ACRU","NYSY","CAGL8","QUAL3"])]

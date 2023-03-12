@@ -187,7 +187,7 @@ class MultiStage(LightningModule):
                 base = base_model(classes=classes, years=len(self.years), config=self.config, name=key)
                 self.models[key] = base           
             if not debug:
-                self.save_hyperparameters()        
+                self.save_hyperparameters()           
     
     def dominant_class_model(self, df, image_dict=None):
         """A level 0 model splits out the dominant class and compares to all other samples"""
