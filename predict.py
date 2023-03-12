@@ -56,7 +56,9 @@ dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/3fd4871aede4484b9a6d20817d520185"
 savedir = config["crop_dir"] 
 
-species_model_paths = {"SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0c580b6730614574bc232245422a2600_['SJER'].pt"}
+species_model_paths = {"NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/234a38632f2142beb82e7d0ad701e4f7_['NIWO', 'REDB'].pt",
+                       "SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0c580b6730614574bc232245422a2600_['SJER'].pt",
+                       }
 
 def create_landscape_map(site, model_path, config, cpu_client):
     #generate HSI_tif data if needed.
