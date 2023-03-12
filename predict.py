@@ -13,7 +13,7 @@ import re
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning import Trainer
 
-def find_rgb_files(site, config, year="2021"):
+def find_rgb_files(site, config, year="2020"):
     tiles = glob(config["rgb_sensor_pool"], recursive=True)
     tiles = [x for x in tiles if site in x]
     tiles = [x for x in tiles if "neon-aop-products" not in x]
