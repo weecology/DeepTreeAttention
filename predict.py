@@ -62,7 +62,7 @@ def create_landscape_map(site, model_path, config, cpu_client):
     h5_pool = [x for x in h5_pool if not "neon-aop-products" in x]
     
     ### Step 1 Find RGB Tiles and convert HSI
-    tiles = find_rgb_files(site=site, config=config, year="2020")[:5]
+    tiles = find_rgb_files(site=site, config=config, year="2021")[:5]
     tif_futures = cpu_client.map(
         convert,
         tiles,
