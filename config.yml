@@ -5,7 +5,7 @@
 rgb_sensor_pool: /orange/ewhite/NeonData/*/DP3.30010.001/**/Camera/**/*.tif 
 HSI_sensor_pool: /orange/ewhite/NeonData/*/DP3.30006.001/**/Reflectance/*.h5
 CHM_pool: /orange/ewhite/NeonData/**/CanopyHeightModelGtif/*.tif
-HSI_tif_dir: /orange/idtrees-collab/Hyperspectral_tifs/year/
+HSI_tif_dir: /orange/ewhite/b.weinstein/DeepTreeAttention/Hyperspectral_tifs/year/
 
 ### NEON data filtering
 min_stem_diameter: 10
