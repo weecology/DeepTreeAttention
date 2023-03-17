@@ -53,7 +53,7 @@ taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 ### Pre-Training Parameters
 create_pretrain_model: True
 pretrain_state_dict:
-pretrain_epochs: 80
+pretrain_epochs: 30
 
 ### Training Parameters
 gpus: 1
@@ -64,8 +64,8 @@ head_class_minimum_ratio: 0.4
 # Learning rates
 lr: 0.001
 lr_dominant_class: 0.000005
-lr_conifer: 0.00005
-lr_broadleaf: 0.00005
+lr_conifer: 0.000005
+lr_broadleaf: 0.000005
 lr_oak: 0.00005
 lr_flat: 0.00005
 
