@@ -81,6 +81,11 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
     Returns:
         path: a path on disk for trained model state dict
     """
+    
+    #If train test split does not exist create one
+    if not os.path.exists("{}/{}/train_{}_{}.csv".format(config["crop_dir"], config["use_data_commit"], git_commit, "all")):
+        config["train_test_commit"] = None
+    
     with comet_logger.experiment.context_manager("pretrain"):
         pretrain_module = data.TreeData(
             csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),

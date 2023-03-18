@@ -345,8 +345,8 @@ class TreeData(LightningDataModule):
                 self.canopy_points.to_file("{}/canopy_points.shp".format(self.data_dir))
 
                 if self.comet_logger:
-                    self.comet_logger.experiment.log_parameter("Species after CHM filter", len(df.taxonID.unique()))
-                    self.comet_logger.experiment.log_parameter("Samples after CHM filter", df.shape[0])
+                    self.comet_logger.experiment.log_parameter("Species after CHM filter", len(self.canopy_points .taxonID.unique()))
+                    self.comet_logger.experiment.log_parameter("Samples after CHM filter", self.canopy_points.shape[0])
             
                 # Create crown data
                 self.crowns = generate.points_to_crowns(
