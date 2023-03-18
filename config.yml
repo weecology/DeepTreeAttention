@@ -11,8 +11,8 @@ HSI_tif_dir: /orange/ewhite/b.weinstein/DeepTreeAttention/Hyperspectral_tifs/yea
 min_stem_diameter: 10
 
 # Minimum number of test samples per class to be included
-min_train_samples: 24
-min_test_samples: 12 
+min_train_samples: 48
+min_test_samples: 24
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
 # Set to 1 for debugging, no files will be written
