@@ -29,7 +29,7 @@ CHM_height_limit: 8
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Checkout data artifact from comet
-use_data_commit: 04a3c3001163490690ad7c90d7317ddf
+use_data_commit: fe902d874c4a41e4b8e5e0ddcfc9cb92
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 
@@ -53,19 +53,19 @@ taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 ### Pre-Training Parameters
 create_pretrain_model: True
 pretrain_state_dict:
-pretrain_epochs: 90
+pretrain_epochs: 30
 
 ### Training Parameters
 gpus: 1
 batch_size: 48
 bands: 349
-head_class_minimum_ratio: 0.4
+head_class_minimum_ratio: 0.2
 
 # Learning rates
-lr: 0.001
+lr: 0.0001
 lr_dominant_class: 0.000005
-lr_conifer: 0.00005
-lr_broadleaf: 0.00005
+lr_conifer: 0.000005
+lr_broadleaf: 0.000005
 lr_oak: 0.00005
 lr_flat: 0.00005
 
