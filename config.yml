@@ -51,7 +51,7 @@ workers: 0
 taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
 ### Pre-Training Parameters
-create_pretrain_model: True
+create_pretrain_model: False
 pretrain_state_dict:
 pretrain_epochs: 100
 
