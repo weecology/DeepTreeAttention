@@ -143,7 +143,7 @@ def create_landscape_map(site, model_path, config, cpu_client):
     # Load species model
     #Do not preload weights
     config["pretrained_state_dict"] = None
-    m = multi_stage.MultiStage.load_from_checkpoint(model_path, config=config)
+    m = multi_stage.MultiStage.load_from_checkpoint(model_path)
     prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
                                   os.path.splitext(os.path.basename(model_path))[0])    
     try:
