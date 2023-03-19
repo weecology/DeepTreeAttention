@@ -52,7 +52,7 @@ comet_logger.experiment.log_parameters(config)
 cpu_client = start(cpus=100, mem_size="10GB")
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
-config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops"
+config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops"
 savedir = config["crop_dir"] 
 
 species_model_paths = {
@@ -121,7 +121,7 @@ def create_landscape_map(site, model_path, config, cpu_client):
     
     # Crop Predicted Crowns
     try:
-        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/{}".format(site))
+        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}".format(site))
     except:
         pass
     
@@ -134,11 +134,11 @@ def create_landscape_map(site, model_path, config, cpu_client):
             crowns = gpd.read_file(shpname)    
         except:
             continue
-        if not os.path.exists("/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/{}/{}.shp".format(site, basename)):
+        if not os.path.exists("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}.shp".format(site, basename)):
             written_file = predict.generate_prediction_crops(crowns, config, as_numpy=True, client=cpu_client)
             crown_annotations_paths.append(written_file)
         else:
-            crown_annotations_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/{}/{}.shp".format(site, basename)       
+            crown_annotations_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}.shp".format(site, basename)       
             crown_annotations_paths.append(crown_annotations_path)
             
     #Recursive predict to avoid prediction levels that will be later ignored.
