@@ -156,7 +156,7 @@ def create_landscape_map(site, model_path, config, cpu_client):
         os.mkdir(prediction_dir)
     except:
         pass
-    for x in crown_annotations_paths:
+    for x in crown_annotations_paths[:1]:
         results_shp = os.path.join(prediction_dir, os.path.basename(x))  
         if not os.path.exists(results_shp):  
             print(x)
@@ -173,6 +173,7 @@ def create_landscape_map(site, model_path, config, cpu_client):
                 continue
 
 for site, model_path in species_model_paths.items():
+    print(site)
     try:
         create_landscape_map(site, model_path, config, cpu_client)
     except:
