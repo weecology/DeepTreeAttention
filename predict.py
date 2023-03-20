@@ -13,7 +13,7 @@ import re
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning import Trainer
 
-def find_rgb_files(site, config, year="2021"):
+def find_rgb_files(site, config, year="2020"):
     tiles = glob(config["rgb_sensor_pool"], recursive=True)
     tiles = [x for x in tiles if site in x]
     tiles = [x for x in tiles if "neon-aop-products" not in x]
@@ -56,15 +56,15 @@ config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_cr
 savedir = config["crop_dir"] 
 
 species_model_paths = {
-    "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/234a38632f2142beb82e7d0ad701e4f7_['NIWO', 'RMNP'].pt",
-    "SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0c580b6730614574bc232245422a2600_['SJER'].pt",
-    "MOAB":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7c7abe8e0b0040e1b7d7a62c1d8926e5_['MOAB', 'REDB'].pt",
-    "WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ab9eee4c0c6b44ce9a6fda25beab8e83_['WREF'].pt",
-    "REDB":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7c7abe8e0b0040e1b7d7a62c1d8926e5_['MOAB', 'REDB'].pt",
-    "SERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/cd1739965ac54da781b9cbc89ed4f131_['SERC', 'GRSM'].pt",
-    "GRSM":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/cd1739965ac54da781b9cbc89ed4f131_['SERC', 'GRSM'].pt",
-    "DEJU":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/da0d5a8500e54f0599bce7876e397f89_['BONA', 'DEJU'].pt",
-    "BONA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/da0d5a8500e54f0599bce7876e397f89_['BONA', 'DEJU'].pt",
+    #"NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/234a38632f2142beb82e7d0ad701e4f7_['NIWO', 'RMNP'].pt",
+    #"SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0c580b6730614574bc232245422a2600_['SJER'].pt",
+    #"MOAB":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7c7abe8e0b0040e1b7d7a62c1d8926e5_['MOAB', 'REDB'].pt",
+    #"WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ab9eee4c0c6b44ce9a6fda25beab8e83_['WREF'].pt",
+    #"REDB":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7c7abe8e0b0040e1b7d7a62c1d8926e5_['MOAB', 'REDB'].pt",
+    #"SERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/cd1739965ac54da781b9cbc89ed4f131_['SERC', 'GRSM'].pt",
+    #"GRSM":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/cd1739965ac54da781b9cbc89ed4f131_['SERC', 'GRSM'].pt",
+    #"DEJU":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/da0d5a8500e54f0599bce7876e397f89_['BONA', 'DEJU'].pt",
+    #"BONA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/da0d5a8500e54f0599bce7876e397f89_['BONA', 'DEJU'].pt",
     "TREE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0b8ea07340e44ba79f29682af1e93f3b_['TREE', 'STEI', 'UNDE'].pt",
     "STEI":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0b8ea07340e44ba79f29682af1e93f3b_['TREE', 'STEI', 'UNDE'].pt",
     "UNDE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0b8ea07340e44ba79f29682af1e93f3b_['TREE', 'STEI', 'UNDE'].pt",

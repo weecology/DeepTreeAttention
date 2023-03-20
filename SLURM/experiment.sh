@@ -5,7 +5,7 @@
 #SBATCH --account=ewhite
 #SBATCH --nodes=1                 # Number of MPI ran
 #SBATCH --cpus-per-task=2
-#SBATCH --mem=200GB
+#SBATCH --mem=100GB
 #SBATCH --time=48:00:00       #Time limit hrs:min:sec
 #SBATCH --output=/home/b.weinstein/logs/DeepTreeAttention_%j.out   # Standard output and error log
 #SBATCH --error=/home/b.weinstein/logs/DeepTreeAttention_%j.err
@@ -25,5 +25,5 @@ cd ~/DeepTreeAttention/
 #get branch and commit name
 branch_name=$((git symbolic-ref HEAD 2>/dev/null || echo "(unnamed branch)")|cut -d/ -f3-)
 commit=$(git log --pretty=format:'%H' -n 1)
-export COMET_LOGGING_CONSOLE=info
+CUDA_LAUNCH_BLOCKING=1
 python train.py $branch_name $commit $2
