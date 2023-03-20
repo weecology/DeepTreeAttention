@@ -84,7 +84,6 @@ species_model_paths = {
     "UKFS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6c292d5a990f420e81fe69f5697457ef_['MLBS','BLAN','SCBI','UKFS'].pt",
     "BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/15d88bbd39ea43faaa3abd0867ef5dee_['BART', 'HARV'].pt",
     "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/15d88bbd39ea43faaa3abd0867ef5dee_['BART', 'HARV'].pt"}
->>>>>>> 7afd0e85c04512b24d2035dcfe3409774f6e4532
 
 def create_landscape_map(site, model_path, config, cpu_client):
     #Prepare directories
