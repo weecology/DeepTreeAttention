@@ -128,15 +128,15 @@ def create_landscape_map(site, model_path, config, cpu_client):
                                        savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns")
             crown_futures.append(future)
     
-    for shpname in as_completed(crown_futures, with_results=True, raise_errors=False):
-        crowns = gpd.read_file(shpname)    
-        basename = os.path.splitext(os.path.basename(shpname))[0]        
+    for future, result in as_completed(crown_futures, with_results=True, raise_errors=False):
+        crowns = gpd.read_file(result)    
+        basename = os.path.splitext(os.path.basename(result))[0]        
         if not os.path.exists("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}.shp".format(site, basename)):
             crown_annotations_path = predict.generate_prediction_crops(crowns, config, as_numpy=True, client=cpu_client)
         else:
             crown_annotations_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}.shp".format(site, basename)       
         
-        results_shp = os.path.join(prediction_dir, os.path.basename(x))  
+        results_shp = os.path.join(prediction_dir, os.path.basename(result))  
         
         if not os.path.exists(results_shp):  
             species_future = gpu_client.submit(
