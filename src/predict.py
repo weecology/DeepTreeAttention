@@ -14,7 +14,7 @@ from deepforest.utilities import annotations_to_shapefile
 from src.models import dead
 from src.CHM import postprocess_CHM
 from src.generate import generate_crops
-from src.models.multi_stage import TreeDataset
+from src.models.multi_stage import TreeDataset, MultiStage
 
 def RGB_transform(augment):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -27,7 +27,7 @@ def RGB_transform(augment):
         data_transforms.append(transforms.RandomHorizontalFlip(0.5))
     return transforms.Compose(data_transforms)
     
-def find_crowns(rgb_path, config, dead_model_path=None):
+def find_crowns(rgb_path, config, dead_model_path=None, savedir=None):
     crowns = predict_crowns(rgb_path, config)
     if crowns is None:
         return None
@@ -52,7 +52,13 @@ def find_crowns(rgb_path, config, dead_model_path=None):
         filtered_crowns["dead_label"] = dead_label
         filtered_crowns["dead_score"] = dead_score
     
-    return filtered_crowns
+    if savedir:
+        basename = os.path.splitext(os.path.basename(rgb_path))[0]  
+        output_filename = "{}/{}.shp".format(savedir, basename)
+        filtered_crowns.to_file(output_filename)
+        return output_filename
+    else:
+        return filtered_crowns
 
 def generate_prediction_crops(crowns, config, client=None, as_numpy=True):
     """Create prediction crops for model.predict"""
@@ -77,7 +83,7 @@ def generate_prediction_crops(crowns, config, client=None, as_numpy=True):
     
     return "{}/{}.shp".format(config["prediction_crop_dir"], basename)
 
-def predict_tile(crown_annotations, m, config, savedir, trainer, filter_dead=False):
+def predict_tile(crown_annotations, model_path, config, savedir, filter_dead=False):
     """Predict a set of crown labels from a annotations.shp
     Args:
         crown_annotations: geodataframe from predict.generate_prediction_crops
@@ -86,7 +92,10 @@ def predict_tile(crown_annotations, m, config, savedir, trainer, filter_dead=Fal
         savedir: directory to save tile predictions
         filter_dead: filter dead model
     """
+    config["pretrained_state_dict"] = None
+    m = MultiStage.load_from_checkpoint(model_path, config=config)    
     crown_annotations = gpd.read_file(crown_annotations) 
+    trainer = Trainer(gpus=config["gpus"], logger=False, enable_checkpointing=False)    
     trees = predict_species(crowns=crown_annotations, m=m, trainer=trainer, config=config)
 
     if trees is None:
