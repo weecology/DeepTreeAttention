@@ -155,37 +155,6 @@ def create_landscape_map(site, model_path, config, cpu_client):
             traceback.print_exc()
             continue
     
-<<<<<<< HEAD
-    ## Step 2 - Predict Crowns
-    print(model_path)
-    # Load species model
-    #Do not preload weights
-    config["pretrained_state_dict"] = None
-    m = multi_stage.MultiStage.load_from_checkpoint(model_path)
-    prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
-                                  os.path.splitext(os.path.basename(model_path))[0])    
-    try:
-        os.mkdir(prediction_dir)
-    except:
-        pass
-    for x in crown_annotations_paths:
-        results_shp = os.path.join(prediction_dir, os.path.basename(x))  
-        if not os.path.exists(results_shp):  
-            print(x)
-            try:
-                predict.predict_tile(
-                        crown_annotations=x,
-                        filter_dead=True,
-                        trainer=trainer,
-                        m=m,
-                        savedir=prediction_dir,
-                        config=config)
-            except Exception as e:
-                traceback.print_exc()
-                continue
-
-=======
->>>>>>> 7afd0e85c04512b24d2035dcfe3409774f6e4532
 for site, model_path in species_model_paths.items():
     print(site)
     try:
