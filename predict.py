@@ -49,7 +49,7 @@ comet_logger.experiment.add_tag("prediction")
 comet_logger.experiment.log_parameters(config)
 
 cpu_client = start(cpus=30, mem_size="10GB")
-gpu_client = start(gpus=5, mem_size="10GB")
+gpu_client = start(gpus=2, mem_size="10GB")
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops"
