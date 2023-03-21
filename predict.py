@@ -89,10 +89,14 @@ def create_landscape_map(site, model_path, config, cpu_client):
     #Prepare directories
     # Crop Predicted Crowns
     try:
-        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}".format(site))
         prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
-                                      os.path.splitext(os.path.basename(model_path))[0]) 
+                                      os.path.splitext(os.path.basename(model_path))[0])     
         os.mkdir(prediction_dir)        
+    except:
+        pass
+    
+    try:
+        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}".format(site))
     except:
         pass
     
