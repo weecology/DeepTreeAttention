@@ -139,6 +139,7 @@ def create_landscape_map(site, model_path, config, cpu_client):
         except:
             traceback.print_exc()
             continue
+        print(result)
         crowns = gpd.read_file(result)    
         basename = os.path.splitext(os.path.basename(result))[0]        
         if not os.path.exists("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}.shp".format(site, basename)):
