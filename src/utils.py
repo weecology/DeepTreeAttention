@@ -11,7 +11,9 @@ import yaml
 import warnings
 import pandas as pd
 from torch.utils.data.dataloader import default_collate
+from glob import glob
 import os
+
 
 def read_config(config_path):
     """Read config yaml file"""
@@ -33,6 +35,23 @@ def read_config(config_path):
             config[key] = value
         
     return config
+
+def create_glob_lists(config):
+    """Creating glob lists is expensive, do it only once at the beginning of the run."""
+    rgb_pool = glob(config["rgb_sensor_pool"], recursive=True)
+    rgb_pool = [x for x in rgb_pool if "neon-aop-products" not in x]
+    rgb_pool = [x for x in rgb_pool if "classified" not in x]    
+    rgb_pool = [x for x in rgb_pool if not "point_cloud" in x]
+    
+    h5_pool = glob(config["HSI_sensor_pool"], recursive=True)
+    h5_pool = [x for x in h5_pool if not "neon-aop-products" in x]
+    h5_pool = [x for x in h5_pool if not "point_cloud" in x]
+    h5_pool = [x for x in h5_pool if not "products" in x]
+    
+    hsi_pool = glob("{}/*.tif".format(config["HSI_tif_dir"]))
+    CHM_pool = glob(config["CHM_pool"], recursive=True)
+    
+    return rgb_pool, h5_pool, hsi_pool, CHM_pool
 
 def preprocess_image(image, channel_is_first=False):
     """Preprocess a loaded image, if already C*H*W set channel_is_first=True"""
