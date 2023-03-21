@@ -123,6 +123,7 @@ def create_landscape_map(site, model_path, config, cpu_client):
         shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)      
         if not os.path.exists(shpname):
             future = gpu_client.submit(predict.find_crowns,
+                                       rgb_path=x,
                                        config=config,
                                        dead_model_path=dead_model_path,
                                        savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns")
