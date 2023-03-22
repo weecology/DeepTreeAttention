@@ -306,6 +306,7 @@ class TreeData(LightningDataModule):
         
         # Clean data from raw csv, regenerate from scratch or check for progress and complete                        
         if self.config["use_data_commit"] is None:
+            rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config)
             if self.config["replace_bounding_boxes"]: 
                 # Convert raw neon data to x,y tree locatins
                 df = filter_data(self.csv_file, config=self.config)
@@ -337,7 +338,7 @@ class TreeData(LightningDataModule):
                 df.to_file("{}/unfiltered_points_{}.shp".format(self.data_dir, site))
                 
                 #Filter points based on LiDAR height for NEON data
-                self.canopy_points = CHM.filter_CHM(df, CHM_pool=self.config["CHM_pool"],
+                self.canopy_points = CHM.filter_CHM(df, CHM_pool=CHM_pool,
                                     min_CHM_height=self.config["min_CHM_height"], 
                                     max_CHM_diff=self.config["max_CHM_diff"], 
                                     CHM_height_limit=self.config["CHM_height_limit"])  
@@ -369,7 +370,6 @@ class TreeData(LightningDataModule):
                     self.comet_logger.experiment.log_parameter("Species after dead filtering",len(self.crowns.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after dead filtering",self.crowns.shape[0])
                     try:
-                        rgb_pool = glob.glob(self.config["rgb_sensor_pool"], recursive=True)
                         for index, row in self.predicted_dead.iterrows():
                             left, bottom, right, top = row["geometry"].bounds                
                             img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=row["geometry"].bounds)
@@ -385,9 +385,9 @@ class TreeData(LightningDataModule):
                 self.annotations = generate.generate_crops(
                     self.crowns,
                     savedir=self.data_dir,
-                    sensor_glob=self.config["HSI_sensor_pool"],
+                    img_pool=hsi_pool,
                     convert_h5=self.config["convert_h5"],   
-                    rgb_glob=self.config["rgb_sensor_pool"],
+                    rgb_pool=rgb_pool,
                     HSI_tif_dir=self.config["HSI_tif_dir"],
                     client=self.client,
                     as_numpy=True

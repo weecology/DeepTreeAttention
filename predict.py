@@ -1,32 +1,26 @@
-from src import predict
-from src import data
-from src import neon_paths
-from glob import glob
 import geopandas as gpd
-
 import traceback
 from src.start_cluster import start
-from src.models import multi_stage
 from distributed import wait, as_completed
 import os
 import re
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning import Trainer
 
-def find_rgb_files(site, config, year="2020"):
-    tiles = glob(config["rgb_sensor_pool"], recursive=True)
-    tiles = [x for x in tiles if site in x]
-    tiles = [x for x in tiles if "neon-aop-products" not in x]
-    tiles = [x for x in tiles if "classified" not in x]
+from src import predict
+from src import data
+from src import neon_paths
+from src.utils import create_glob_lists 
+
+def find_rgb_files(site, rgb_pool, year="2020"):
+    tiles = [x for x in rgb_pool if site in x]
     tiles = [x for x in tiles if "/{}/".format(year) in x]
     return tiles
-
 
 def convert(rgb_path, hyperspectral_pool, savedir):
     #convert .h5 hyperspec tile if needed
     basename = os.path.basename(rgb_path)
     geo_index = re.search("(\d+_\d+)_image", basename).group(1)
-    
     h5_list = [x for x in hyperspectral_pool if geo_index in x]
     tif_paths = []
     for path in h5_list:
@@ -85,7 +79,7 @@ species_model_paths = {
     "BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/15d88bbd39ea43faaa3abd0867ef5dee_['BART', 'HARV'].pt",
     "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/15d88bbd39ea43faaa3abd0867ef5dee_['BART', 'HARV'].pt"}
 
-def create_landscape_map(site, model_path, config, cpu_client):
+def create_landscape_map(site, model_path, config, cpu_client, rgb_pool, hsi_pool, h5_pool, CHM_pool):
     #Prepare directories
     # Crop Predicted Crowns
     try:
@@ -99,14 +93,10 @@ def create_landscape_map(site, model_path, config, cpu_client):
         os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}".format(site))
     except:
         pass
-    
-    #generate HSI_tif data if needed.
-    h5_pool = glob(config["HSI_sensor_pool"], recursive=True)
-    h5_pool = [x for x in h5_pool if not "neon-aop-products" in x]
-    
+
     ### Step 1 Find RGB Tiles and convert HSI, prioritize 2022
     for year in [2022, 2021, 2020, 2019]:
-        tiles = find_rgb_files(site=site, config=config, year=year)
+        tiles = find_rgb_files(site=site, rgb_pool=rgb_pool, year=year)
         if len(tiles) > 0:
             break
         
@@ -139,11 +129,14 @@ def create_landscape_map(site, model_path, config, cpu_client):
         except:
             traceback.print_exc()
             continue
+        if crown_shp_path is None:
+            continue
+        
         print(crown_shp_path)
         crowns = gpd.read_file(crown_shp_path)    
         basename = os.path.splitext(os.path.basename(crown_shp_path))[0]        
         if not os.path.exists("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}.shp".format(site, basename)):
-            crown_annotations_path = predict.generate_prediction_crops(crowns, config, as_numpy=True, client=cpu_client)
+            crown_annotations_path = predict.generate_prediction_crops(crowns, config, as_numpy=True, client=cpu_client, img_pool=hsi_pool, rgb_pool=rgb_pool)
         else:
             crown_annotations_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}.shp".format(site, basename)       
         
@@ -165,11 +158,23 @@ def create_landscape_map(site, model_path, config, cpu_client):
         except:
             traceback.print_exc()
             continue
-    
+
+        
+#generate HSI_tif data if needed.
+rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config)
 for site, model_path in species_model_paths.items():
     print(site)
     try:
-        create_landscape_map(site, model_path, config, cpu_client)
+        create_landscape_map(
+            site,
+            model_path,
+            config,
+            cpu_client, 
+            rgb_pool=rgb_pool,
+            h5_pool=h5_pool,
+            hsi_pool=hsi_pool,
+            CHM_pool=CHM_pool)
+        )
     except:
         traceback.print_exc()
         continue

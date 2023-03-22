@@ -258,7 +258,7 @@ def write_crop(row, savedir, img_path, rasterio_src=None, as_numpy=False):
     
     return image_path
 
-def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=False, HSI_tif_dir=None, as_numpy=False):
+def generate_crops(gdf, img_pool, savedir, rgb_pool, client=None, convert_h5=False, HSI_tif_dir=None, as_numpy=False):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:
@@ -276,13 +276,6 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
     gdf = gdf.reset_index(drop=True)
     
     annotations = []
-    img_pool = glob.glob(sensor_glob, recursive=True)
-    rgb_pool = glob.glob(rgb_glob, recursive=True)
-
-    #There were erroneous point cloud .tif in the regex
-    img_pool = [x for x in img_pool if not "point_cloud" in x]
-    rgb_pool = [x for x in rgb_pool if not "point_cloud" in x]
-    img_pool = [x for x in img_pool if not "products" in x]
     
     #Looking up the rgb -> HSI tile naming is expensive and repetitive. Create a dictionary first.
     gdf["geo_index"] = gdf.geometry.apply(lambda x: bounds_to_geoindex(x.bounds))

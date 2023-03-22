@@ -1,5 +1,4 @@
 #Predict
-import glob
 import os
 import geopandas as gpd
 import rasterio
@@ -27,15 +26,14 @@ def RGB_transform(augment):
         data_transforms.append(transforms.RandomHorizontalFlip(0.5))
     return transforms.Compose(data_transforms)
     
-def find_crowns(rgb_path, config, dead_model_path=None, savedir=None):
+def find_crowns(rgb_path, config, dead_model_path=None, savedir=None, CHM_pool=None):
     crowns = predict_crowns(rgb_path, config)
     if crowns is None:
         return None
     crowns["tile"] = rgb_path
     
     #CHM filter
-    if config["CHM_pool"]:
-        CHM_pool = glob.glob(config["CHM_pool"], recursive=True)
+    if CHM_pool:
         crowns = postprocess_CHM(crowns, CHM_pool)
         #Rename column
         filtered_crowns = crowns[crowns.CHM_height > 3]
@@ -60,14 +58,14 @@ def find_crowns(rgb_path, config, dead_model_path=None, savedir=None):
     else:
         return filtered_crowns
 
-def generate_prediction_crops(crowns, config, client=None, as_numpy=True):
+def generate_prediction_crops(crowns, config, rgb_pool,img_pool, client=None, as_numpy=True):
     """Create prediction crops for model.predict"""
     crown_annotations = generate_crops(
         crowns,
         savedir=config["prediction_crop_dir"],
-        sensor_glob=config["HSI_sensor_pool"],
+        img_pool=img_pool,
         convert_h5=config["convert_h5"],   
-        rgb_glob=config["rgb_sensor_pool"],
+        rgb_pool=rgb_pool,
         HSI_tif_dir=config["HSI_tif_dir"],
         client=client,
         as_numpy=as_numpy
