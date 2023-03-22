@@ -173,7 +173,7 @@ for site, model_path in species_model_paths.items():
             rgb_pool=rgb_pool,
             h5_pool=h5_pool,
             hsi_pool=hsi_pool,
-            CHM_pool=CHM_pool)
+            CHM_pool=CHM_pool
         )
     except:
         traceback.print_exc()
