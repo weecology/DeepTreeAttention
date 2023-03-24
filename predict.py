@@ -136,9 +136,13 @@ def create_landscape_map(site, model_path, config, cpu_client, rgb_pool, hsi_poo
         crowns = gpd.read_file(crown_shp_path)    
         basename = os.path.splitext(os.path.basename(crown_shp_path))[0]        
         if not os.path.exists("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}.shp".format(site, basename)):
+            print("Cropping {}".format(basename))
             crown_annotations_path = predict.generate_prediction_crops(crowns, config, as_numpy=True, client=cpu_client, img_pool=hsi_pool, rgb_pool=rgb_pool)
         else:
+            print("Crops {} already exist".format(basename))            
             crown_annotations_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}.shp".format(site, basename)       
+        
+        wait(species_futures)
         
         #results_shp = os.path.join(prediction_dir, os.path.basename(crown_shp_path))  
         
@@ -151,7 +155,6 @@ def create_landscape_map(site, model_path, config, cpu_client, rgb_pool, hsi_poo
                 #savedir=prediction_dir,
                 #config=config)
             #species_futures.append(species_future)
-    #wait(species_futures)
     #for x in species_futures:
         #try:
             #x.result()
