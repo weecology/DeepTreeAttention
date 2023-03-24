@@ -386,6 +386,7 @@ class TreeData(LightningDataModule):
                     self.crowns,
                     savedir=self.data_dir,
                     img_pool=hsi_pool,
+                    h5_pool=h5_pool,
                     convert_h5=self.config["convert_h5"],   
                     rgb_pool=rgb_pool,
                     HSI_tif_dir=self.config["HSI_tif_dir"],

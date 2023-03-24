@@ -67,12 +67,13 @@ def find_crowns(rgb_path, config, dead_model_path=None, savedir=None, CHM_pool=N
     else:
         return filtered_crowns
 
-def generate_prediction_crops(crowns, config, rgb_pool,img_pool, client=None, as_numpy=True):
+def generate_prediction_crops(crowns, config, rgb_pool, h5_pool, img_pool, client=None, as_numpy=True):
     """Create prediction crops for model.predict"""
     crown_annotations = generate_crops(
         crowns,
         savedir=config["prediction_crop_dir"],
         img_pool=img_pool,
+        h5_pool=h5_pool,
         convert_h5=config["convert_h5"],   
         rgb_pool=rgb_pool,
         HSI_tif_dir=config["HSI_tif_dir"],

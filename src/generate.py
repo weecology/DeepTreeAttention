@@ -258,7 +258,7 @@ def write_crop(row, savedir, img_path, rasterio_src=None, as_numpy=False):
     
     return image_path
 
-def generate_crops(gdf, img_pool, savedir, rgb_pool, client=None, convert_h5=False, HSI_tif_dir=None, as_numpy=False):
+def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, convert_h5=False, HSI_tif_dir=None, as_numpy=False):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:
@@ -285,9 +285,14 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, client=None, convert_h5=Fal
         try:
             #Check if h5 -> tif conversion is complete
             if convert_h5:
-                img_path = lookup_and_convert(rgb_pool=rgb_pool, hyperspectral_pool=img_pool, savedir=HSI_tif_dir,  geo_index = geo_index, all_years=True)
+                img_path = lookup_and_convert(
+                    rgb_pool=rgb_pool,
+                    hyperspectral_pool=h5_pool,
+                    savedir=HSI_tif_dir,
+                    geo_index=geo_index,
+                    all_years=True)
             else:
-                img_path = find_sensor_path(lookup_pool = img_pool, geo_index=geo_index, all_years=True)  
+                img_path = find_sensor_path(lookup_pool=img_pool, geo_index=geo_index, all_years=True)  
         except:
             print("{} failed to find sensor path with traceback {}".format(geo_index, traceback.print_exc()))
             continue
