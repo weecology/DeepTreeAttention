@@ -87,9 +87,9 @@ def generate_prediction_crops(crowns, config, rgb_pool, h5_pool, img_pool, crop_
     crown_annotations = gpd.GeoDataFrame(crown_annotations, geometry="geometry")    
     crown_annotations = crown_annotations.merge(crowns[["individual","dead_label","dead_score"]])
     
-    crown_annotations.to_file("{}/{}.shp".format(config["prediction_crop_dir"],basename))  
+    crown_annotations.to_file("{}/{}.shp".format(crop_dir,basename))  
     
-    return "{}/{}.shp".format(config["prediction_crop_dir"], basename)
+    return "{}/{}.shp".format(crop_dir, basename)
 
 def predict_tile(crown_annotations, model_path, config, savedir, crop_dir, filter_dead=False):
     """Predict a set of crown labels from a annotations.shp
