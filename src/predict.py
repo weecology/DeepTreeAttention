@@ -67,11 +67,11 @@ def find_crowns(rgb_path, config, dead_model_path=None, savedir=None, CHM_pool=N
     else:
         return filtered_crowns
 
-def generate_prediction_crops(crowns, config, rgb_pool, h5_pool, img_pool, client=None, as_numpy=True):
+def generate_prediction_crops(crowns, config, rgb_pool, h5_pool, img_pool, crop_dir, client=None, as_numpy=True):
     """Create prediction crops for model.predict"""
     crown_annotations = generate_crops(
         crowns,
-        savedir=config["prediction_crop_dir"],
+        savedir=crop_dir,
         img_pool=img_pool,
         h5_pool=h5_pool,
         convert_h5=config["convert_h5"],   
@@ -91,7 +91,7 @@ def generate_prediction_crops(crowns, config, rgb_pool, h5_pool, img_pool, clien
     
     return "{}/{}.shp".format(config["prediction_crop_dir"], basename)
 
-def predict_tile(crown_annotations, model_path, config, savedir, filter_dead=False):
+def predict_tile(crown_annotations, model_path, config, savedir, crop_dir, filter_dead=False):
     """Predict a set of crown labels from a annotations.shp
     Args:
         crown_annotations: geodataframe from predict.generate_prediction_crops
@@ -104,7 +104,7 @@ def predict_tile(crown_annotations, model_path, config, savedir, filter_dead=Fal
     m = MultiStage.load_from_checkpoint(model_path, config=config)    
     crown_annotations = gpd.read_file(crown_annotations) 
     trainer = Trainer(gpus=config["gpus"], logger=False, enable_checkpointing=False)    
-    trees = predict_species(crowns=crown_annotations, m=m, trainer=trainer, config=config)
+    trees = predict_species(crowns=crown_annotations, m=m, trainer=trainer, config=config, crop_dir=crop_dir)
 
     if trees is None:
         return None
@@ -156,9 +156,9 @@ def predict_crowns(PATH, config):
     
     return gdf
 
-def predict_species(crowns, trainer, m, config):
+def predict_species(crowns, trainer, m, config, crop_dir):
     """Compute hierarchical prediction without predicting unneeded levels""" 
-    config["crop_dir"] = config["prediction_crop_dir"]
+    config["crop_dir"] = crop_dir
     ds = TreeDataset(df=crowns, train=False, config=config)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)
