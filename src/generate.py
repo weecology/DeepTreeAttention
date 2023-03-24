@@ -287,7 +287,7 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
             if convert_h5:
                 img_path = lookup_and_convert(
                     rgb_pool=rgb_pool,
-                    hyperspectral_pool=h5_pool,
+                    h5_pool=h5_pool,
                     savedir=HSI_tif_dir,
                     geo_index=geo_index,
                     all_years=True)
