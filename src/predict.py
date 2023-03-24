@@ -26,7 +26,16 @@ def RGB_transform(augment):
         data_transforms.append(transforms.RandomHorizontalFlip(0.5))
     return transforms.Compose(data_transforms)
     
-def find_crowns(rgb_path, config, dead_model_path=None, savedir=None, CHM_pool=None):
+def find_crowns(rgb_path, config, dead_model_path=None, savedir=None, CHM_pool=None, overwrite=False):
+    """Predict deepforest crowns"""
+    
+    basename = os.path.splitext(os.path.basename(rgb_path))[0]  
+    output_filename = "{}/{}.shp".format(savedir, basename)
+    
+    if not overwrite:
+        if os.path.exists(output_filename):
+            return output_filename
+        
     crowns = predict_crowns(rgb_path, config)
     if crowns is None:
         return None
