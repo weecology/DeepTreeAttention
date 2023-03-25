@@ -134,6 +134,7 @@ def predict_crowns(PATH, config):
         m.config["gpus"] = 1
         m.config["workers"] = config["DeepForest_workers"]
         m.config["preload_images"] = config["DeepForest_preload"]
+        m.config["batch_size"] = config["DeepForest_batch_size"]
     m.use_release(check_release=False)
     boxes = m.predict_tile(PATH)
     if boxes is None:

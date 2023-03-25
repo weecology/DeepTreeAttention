@@ -42,7 +42,7 @@ comet_logger.experiment.add_tag("prediction")
 
 comet_logger.experiment.log_parameters(config)
 
-cpu_client = start(cpus=200, mem_size="8GB")
+cpu_client = start(cpus=50, mem_size="8GB")
 gpu_client = start(gpus=1, mem_size="10GB")
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
@@ -110,29 +110,15 @@ def create_landscape_map(site, model_path, config, cpu_client, rgb_pool, hsi_poo
         savedir=config["HSI_tif_dir"])
     wait(tif_futures)
     
-    crown_futures = []
     species_futures = []
     for x in tiles:
         basename = os.path.splitext(os.path.basename(x))[0]
-        shpname = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns/{}.shp".format(basename)      
-        future = gpu_client.submit(predict.find_crowns,
+        crown_shp_path = predict.find_crowns(
                                    rgb_path=x,
                                    config=config,
                                    dead_model_path=dead_model_path,
                                    savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns",
                                    overwrite=False)
-        crown_futures.append(future)
-            
-    
-    for future in as_completed(crown_futures):
-        try:
-            crown_shp_path = future.result()
-        except:
-            traceback.print_exc()
-            continue
-        if crown_shp_path is None:
-            continue
-        
         print(crown_shp_path)
         crowns = gpd.read_file(crown_shp_path)    
         basename = os.path.splitext(os.path.basename(crown_shp_path))[0]        
@@ -150,9 +136,7 @@ def create_landscape_map(site, model_path, config, cpu_client, rgb_pool, hsi_poo
         else:
             print("Crops {} already exist".format(basename))            
             crown_annotations_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}.shp".format(site, basename)       
-        
-        wait(species_futures)
-        
+                
         #results_shp = os.path.join(prediction_dir, os.path.basename(crown_shp_path))  
         
         #if not os.path.exists(results_shp):  

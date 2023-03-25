@@ -84,8 +84,9 @@ validation_interval: 1
 predict_batch_size: 64
 dead_threshold: 0.95
 prediction_crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
-DeepForest_workers: 10
+DeepForest_workers: 2
 DeepForest_preload: True
+DeepForest_batch_size: 32
 
 #Comet dashboard
 comet_workspace: bw4sz
