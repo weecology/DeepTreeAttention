@@ -322,7 +322,8 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
                 indexes.append(geo_indexes[index])
                 filenames.append(filename)                
             except:
-                print("Future failed with {}".format(traceback.print_exc()))
+                continue
+                #print("Future failed with {}".format(traceback.print_exc()))
     else:
         #If no client is passed, loop through each tile and open then once in memory
         for geo_index in gdf.geo_index.unique():
