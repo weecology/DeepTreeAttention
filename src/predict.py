@@ -81,6 +81,10 @@ def generate_prediction_crops(crowns, config, rgb_pool, h5_pool, img_pool, crop_
         as_numpy=as_numpy
     )
     
+    if crown_annotations.empty:
+        print("No annotations created")
+        return None
+    
     #Write file alongside
     rgb_path = crown_annotations.RGB_tile.unique()[0]
     basename = os.path.splitext(os.path.basename(rgb_path))[0]         
