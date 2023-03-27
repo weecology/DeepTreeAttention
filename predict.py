@@ -133,6 +133,8 @@ def create_landscape_map(site, model_path, config, cpu_client, rgb_pool, hsi_poo
                 img_pool=hsi_pool,
                 h5_pool=h5_pool,
                 rgb_pool=rgb_pool)
+            if crown_annotations_path is None:
+                print("{} had no sucessful annotation crops".format(basename))
         else:
             print("Crops {} already exist".format(basename))            
             crown_annotations_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}.shp".format(site, basename)       
