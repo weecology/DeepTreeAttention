@@ -155,7 +155,7 @@ def filter_data(path, config):
     return shp
 
 
-def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
+def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1, max_train_samples=200):
     """Sample and split a pandas dataframe based on plotID
     Args:
         shp: pandas dataframe of filtered tree locations
@@ -189,7 +189,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
                 
     test = shp[shp.plotID.isin(test_plots)]
     train = shp[~shp.plotID.isin(test.plotID.unique())]
-
+    
     # Remove fixed boxes from test
     test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]    
     test = test.groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples)

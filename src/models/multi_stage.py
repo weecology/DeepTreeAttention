@@ -159,8 +159,8 @@ class MultiStage(LightningModule):
         
         if train_mode:
             # Create the hierarchical structure
-            self.train_datasets, self.train_dataframes, self.level_label_dicts = self.create_datasets(self.train_df, image_dict=self.train_image_dict)
-            self.test_datasets, self.test_dataframes, _ = self.create_datasets(self.test_df, level_label_dicts=self.level_label_dicts, image_dict=self.test_image_dict)
+            self.train_datasets, self.train_dataframes, self.level_label_dicts = self.create_datasets(self.train_df, image_dict=self.train_image_dict, max_samples_per_class=self.config["max_samples_per_class"])
+            self.test_datasets, self.test_dataframes, _ = self.create_datasets(self.test_df, level_label_dicts=self.level_label_dicts, image_dict=self.test_image_dict, max_samples_per_class=self.config["max_samples_per_class"])
             
             #Create label dicts
             self.label_to_taxonIDs = {}
@@ -276,14 +276,19 @@ class MultiStage(LightningModule):
         
         return ds, df, level_label_dict
     
-    def create_datasets(self, df, level_label_dicts=None, image_dict=None):
+    def create_datasets(self, df, level_label_dicts=None, image_dict=None, max_samples_per_class=None):
         """Create a hierarchical set of dataloaders by splitting into taxonID groups
         train: whether to sample the training labels
+        max_samples_per_class: limit the number of samples per class for balancing
         """
         datasets = {}
         dataframes = {}
         level_label_dicts = {}
         
+        if max_samples_per_class:
+            ids_to_keep = df.drop_duplicates(subset=["individualID"]).groupby("taxonID").apply(lambda x: x.head(max_samples_per_class)).reset_index(drop=True)            
+            df = df[df.individualID.isin(ids_to_keep.individualID)]
+            
         try:
             level_ds, level_df, level_label_dict = self.dominant_class_model(df=df, image_dict=image_dict)
             level_label_dicts["dominant_class"] = level_label_dict
