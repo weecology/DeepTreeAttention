@@ -5,6 +5,7 @@ import re
 import h5py
 import numpy as np
 from src import Hyperspectral
+import rasterio as rio
 
 def bounds_to_geoindex(bounds):
     """Convert an extent into NEONs naming schema
@@ -81,8 +82,11 @@ def lookup_and_convert(rgb_pool, h5_pool, savedir, bounds = None, geo_index=None
             year = year_from_tile(x)
             tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral_{}.tif".format(year)
             tif_path = "{}/{}".format(savedir, tif_basename)
-            if not os.path.exists(tif_path):
-                tif_path = convert_h5(x, rgb_path, savedir, year=year)  
+            # try to open file to confirm it exists and is valid.
+            try:
+                r = rio.open(tif_path)
+            except:
+                tif_path = convert_h5(x, rgb_path, savedir, year=year)                  
             tif_paths.append(tif_path)
                 
         return tif_paths
