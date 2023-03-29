@@ -113,12 +113,17 @@ def create_landscape_map(site, model_path, config, cpu_client, rgb_pool, hsi_poo
     species_futures = []
     for x in tiles:
         basename = os.path.splitext(os.path.basename(x))[0]
-        crown_shp_path = predict.find_crowns(
+        try:
+            crown_shp_path = predict.find_crowns(
                                    rgb_path=x,
                                    config=config,
                                    dead_model_path=dead_model_path,
                                    savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns",
                                    overwrite=False)
+        except:
+            traceback.print_exc()
+            continue
+            
         print(crown_shp_path)
         crowns = gpd.read_file(crown_shp_path)    
         basename = os.path.splitext(os.path.basename(crown_shp_path))[0]        
