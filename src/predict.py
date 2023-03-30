@@ -75,6 +75,8 @@ def generate_prediction_crops(crown_path, config, rgb_pool, h5_pool, img_pool, c
     if overwrite is False:
         if os.path.exists(output_name):
             return output_name
+        else:
+            crowns = gpd.read_file(crown_path)            
     else:
         crowns = gpd.read_file(crown_path)
         
@@ -114,7 +116,7 @@ def predict_tile(crown_annotations, model_path, config, savedir, crop_dir, filte
     config["pretrained_state_dict"] = None
     m = MultiStage.load_from_checkpoint(model_path, config=config)    
     crown_annotations = gpd.read_file(crown_annotations) 
-    trainer = Trainer(gpus=config["gpus"], logger=False, enable_checkpointing=False)    
+    trainer = Trainer(logger=False, enable_checkpointing=False)    
     trees = predict_species(crowns=crown_annotations, m=m, trainer=trainer, config=config, crop_dir=crop_dir)
 
     if trees is None:

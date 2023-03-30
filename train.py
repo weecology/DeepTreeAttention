@@ -38,7 +38,7 @@ if config["use_data_commit"] is None:
 
 # Create a single client
 if config["train_test_commit"] is None:
-    client = start_cluster.start(cpus=50, mem_size="4GB")    
+    client = start_cluster.start(cpus=5, mem_size="4GB")    
 else:
     client = None
     
