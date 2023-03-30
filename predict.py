@@ -78,7 +78,7 @@ species_model_paths = {
     "BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/15d88bbd39ea43faaa3abd0867ef5dee_['BART', 'HARV'].pt",
     "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/15d88bbd39ea43faaa3abd0867ef5dee_['BART', 'HARV'].pt"}
 
-def create_landscape_map(site, model_path, config, cpu_client, rgb_pool, hsi_pool, h5_pool, CHM_pool):
+def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h5_pool, CHM_pool):
     #Prepare directories
     # Crop Predicted Crowns
     try:
@@ -178,7 +178,7 @@ for site, model_path in species_model_paths.items():
             site,
             model_path,
             config,
-            cpu_client, 
+            client, 
             rgb_pool=rgb_pool,
             h5_pool=h5_pool,
             hsi_pool=hsi_pool,
