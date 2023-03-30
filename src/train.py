@@ -119,7 +119,6 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
             config=pretrain_module.config) 
         
         trainer = Trainer(
-            gpus=pretrain_module.config["gpus"],
             fast_dev_run=pretrain_module.config["fast_dev_run"],
             max_epochs=pretrain_module.config["pretrain_epochs"],
             accelerator=pretrain_module.config["accelerator"],
