@@ -286,7 +286,7 @@ class MultiStage(LightningModule):
         level_label_dicts = {}
         
         if max_samples_per_class:
-            ids_to_keep = df.drop_duplicates(subset=["individualID"]).groupby("taxonID").apply(lambda x: x.head(max_samples_per_class)).reset_index(drop=True)            
+            ids_to_keep = df.drop_duplicates(subset=["individual"]).groupby("taxonID").apply(lambda x: x.head(max_samples_per_class)).reset_index(drop=True)            
             df = df[df.individualID.isin(ids_to_keep.individualID)]
             
         try:
