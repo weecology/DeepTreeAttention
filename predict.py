@@ -43,7 +43,7 @@ comet_logger.experiment.add_tag("prediction")
 comet_logger.experiment.log_parameters(config)
 
 client = start(cpus=50, mem_size="8GB")
-gpu_client = start(gpus=2, gpu_memory="20GB", cpus_per_gpu=10)
+gpu_client = start(gpus=2, gpu_memory="80GB", cpus_per_gpu=10)
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops"
@@ -107,8 +107,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         convert,
         tiles,
         hyperspectral_pool=h5_pool,
-        savedir=config["HSI_tif_dir"],
-        resources={"cpu":1}
+        savedir=config["HSI_tif_dir"]
     )
     wait(tif_futures)
     

@@ -111,7 +111,7 @@ class AliveDead(pl.LightningModule):
         
         return loss
     
-    def on_validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self):
         val_metrics = self.metrics.compute()
         self.log("Alive Accuracy",val_metrics["Class Accuracy"][0])
         self.log("Dead Accuracy",val_metrics["Class Accuracy"][1])  
