@@ -42,7 +42,8 @@ comet_logger.experiment.add_tag("prediction")
 
 comet_logger.experiment.log_parameters(config)
 
-client = start(cpus=50, gpus=1, mem_size="8GB")
+client = start(cpus=50, mem_size="8GB")
+gpu_client = start(gpus=2, gpu_memory="20GB", cpus_per_gpu=10)
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops"
@@ -117,14 +118,13 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     
     # Predict crowns
     for x in tiles:
-        crown_future = client.submit(
+        crown_future = gpu_client.submit(
             predict.find_crowns,        
             rgb_path=x,
             config=config,
             dead_model_path=dead_model_path,
             savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns",
-            overwrite=False,
-            resources={"gpu":1}
+            overwrite=False
         )
         crown_futures.append(crown_future)
     
@@ -146,8 +146,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             img_pool=hsi_pool,
             h5_pool=h5_pool,
             rgb_pool=rgb_pool,
-            overwrite=False,
-            resources={"cpu":1}
+            overwrite=False
         )
         crop_futures.append(crop_future)
     
