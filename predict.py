@@ -106,7 +106,9 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         convert,
         tiles,
         hyperspectral_pool=h5_pool,
-        savedir=config["HSI_tif_dir"])
+        savedir=config["HSI_tif_dir"],
+        resources={"cpu":1}
+    )
     wait(tif_futures)
     
     species_futures = []
@@ -127,7 +129,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         crown_futures.append(crown_future)
     
     # Crop crowns
-    for future in as_completed(crop_futures):
+    for future in as_completed(crown_futures):
         try:
             crown_path = future.result()
         except:
