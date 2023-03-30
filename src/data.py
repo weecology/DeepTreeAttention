@@ -155,7 +155,7 @@ def filter_data(path, config):
     return shp
 
 
-def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1, max_train_samples=200):
+def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     """Sample and split a pandas dataframe based on plotID
     Args:
         shp: pandas dataframe of filtered tree locations
