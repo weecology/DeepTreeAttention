@@ -67,8 +67,17 @@ def find_crowns(rgb_path, config, dead_model_path=None, savedir=None, CHM_pool=N
     else:
         return filtered_crowns
 
-def generate_prediction_crops(crowns, config, rgb_pool, h5_pool, img_pool, crop_dir, client=None, as_numpy=True):
+def generate_prediction_crops(crown_path, config, rgb_pool, h5_pool, img_pool, crop_dir, client=None, as_numpy=True, overwrite=False):
     """Create prediction crops for model.predict"""
+    basename = os.path.splitext(os.path.basename(crown_path))[0]            
+    output_name = "{}/{}".format(crop_dir, basename)
+    
+    if overwrite is False:
+        if os.path.exists(output_name):
+            return output_name
+    else:
+        crowns = gpd.read_file(crown_path)
+        
     crown_annotations = generate_crops(
         crowns,
         savedir=crop_dir,
@@ -85,15 +94,13 @@ def generate_prediction_crops(crowns, config, rgb_pool, h5_pool, img_pool, crop_
         print("No annotations created")
         return None
     
-    #Write file alongside
-    rgb_path = crown_annotations.RGB_tile.unique()[0]
-    basename = os.path.splitext(os.path.basename(rgb_path))[0]         
+    #Write file alongside       
     crown_annotations = gpd.GeoDataFrame(crown_annotations, geometry="geometry")    
     crown_annotations = crown_annotations.merge(crowns[["individual","dead_label","dead_score"]])
     
-    crown_annotations.to_file("{}/{}.shp".format(crop_dir,basename))  
+    crown_annotations.to_file(output_name)  
     
-    return "{}/{}.shp".format(crop_dir, basename)
+    return output_name
 
 def predict_tile(crown_annotations, model_path, config, savedir, crop_dir, filter_dead=False):
     """Predict a set of crown labels from a annotations.shp

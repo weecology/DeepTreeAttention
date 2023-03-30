@@ -46,7 +46,7 @@ def start_tunnel():
     sys.stdout.flush()
 
 
-def start(cpus=0, gpus=0, mem_size="10GB"):
+def start(cpus=0, gpus=0, mem_size="10GB", cpus_per_gpu=10, gpu_memory="40GB"):
     #################
     # Setup dask cluster
     #################
@@ -81,8 +81,8 @@ def start(cpus=0, gpus=0, mem_size="10GB"):
         ]
 
         cluster = SLURMCluster(processes=1,
-                               cores=5,
-                               memory=mem_size,
+                               cores=cpus_per_gpu,
+                               memory=gpu_memory,
                                walltime='24:00:00',
                                job_extra=extra_args,
                                extra=['--resources gpu=1'],

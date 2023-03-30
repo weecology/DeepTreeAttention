@@ -42,8 +42,7 @@ comet_logger.experiment.add_tag("prediction")
 
 comet_logger.experiment.log_parameters(config)
 
-cpu_client = start(cpus=50, mem_size="8GB")
-#gpu_client = start(gpus=1, mem_size="10GB")
+client = start(cpus=50, gpus=1, mem_size="8GB")
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops"
@@ -103,7 +102,7 @@ def create_landscape_map(site, model_path, config, cpu_client, rgb_pool, hsi_poo
     if len(tiles) == 0:
         raise ValueError("There are no RGB tiles for any year since 2019 for {}".format(site))
     
-    tif_futures = cpu_client.map(
+    tif_futures = client.map(
         convert,
         tiles,
         hyperspectral_pool=h5_pool,
@@ -111,41 +110,47 @@ def create_landscape_map(site, model_path, config, cpu_client, rgb_pool, hsi_poo
     wait(tif_futures)
     
     species_futures = []
+    crown_futures = []
+    crop_futures = []
+    
+    # Predict crowns
     for x in tiles:
-        basename = os.path.splitext(os.path.basename(x))[0]
+        crown_future = client.submit(
+            predict.find_crowns,        
+            rgb_path=x,
+            config=config,
+            dead_model_path=dead_model_path,
+            savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns",
+            overwrite=False,
+            resources={"gpu":1}
+        )
+        crown_futures.append(crown_future)
+    
+    # Crop crowns
+    for future in as_completed(crop_futures):
         try:
-            crown_shp_path = predict.find_crowns(
-                                   rgb_path=x,
-                                   config=config,
-                                   dead_model_path=dead_model_path,
-                                   savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns",
-                                   overwrite=False)
+            crown_path = future.result()
         except:
             traceback.print_exc()
             continue
-            
-        print(crown_shp_path)
-        crowns = gpd.read_file(crown_shp_path)    
-        basename = os.path.splitext(os.path.basename(crown_shp_path))[0]        
-        if not os.path.exists("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}.shp".format(site, basename)):
-            print("Cropping {}".format(basename))
-            crown_annotations_path = predict.generate_prediction_crops(
-                crowns,
-                config,
-                crop_dir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}".format(site),
-                as_numpy=True,
-                client=cpu_client,
-                img_pool=hsi_pool,
-                h5_pool=h5_pool,
-                rgb_pool=rgb_pool)
-            if crown_annotations_path is None:
-                print("{} had no sucessful annotation crops".format(basename))
-        else:
-            print("Crops {} already exist".format(basename))            
-            crown_annotations_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}.shp".format(site, basename)       
-                
-        #results_shp = os.path.join(prediction_dir, os.path.basename(crown_shp_path))  
         
+        crop_future = client.submit(
+            predict.generate_prediction_crops,
+            crown_path,
+            config,
+            crop_dir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}".format(site),
+            as_numpy=True,
+            client=None,
+            img_pool=hsi_pool,
+            h5_pool=h5_pool,
+            rgb_pool=rgb_pool,
+            overwrite=False,
+            resources={"cpu":1}
+        )
+        crop_futures.append(crop_future)
+    
+
+    wait(crop_futures)
         #if not os.path.exists(results_shp):  
             #species_future = gpu_client.submit(
                 #predict.predict_tile, 
