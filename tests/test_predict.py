@@ -1,7 +1,9 @@
 import pytest
-from src import predict
 import geopandas as gpd
+
+from src import predict
 from src.models import dead, multi_stage
+from src import utils
 from pytorch_lightning import Trainer
 import cProfile
 import pstats
@@ -25,6 +27,7 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     config["CHM_pool"] = None
     config["prediction_crop_dir"] = tmpdir    
     
+    rgb_pool, hsi_pool, h5_pool, CHM_pool = utils.create_glob_lists(config)
     dead_model = dead.AliveDead(config)
     trainer = Trainer(fast_dev_run=True)    
     trainer.fit(dead_model)
@@ -36,7 +39,8 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
         
     crowns.to_file("{}/crowns.shp".format(tmpdir))
     
-    crown_annotations_path = predict.generate_prediction_crops(crowns=crowns, config=config)
+    crown_annotations_path = predict.generate_prediction_crops(crown_path="{}/crowns.shp".format(tmpdir), config=config,
+                                                               rgb_pool=rgb_pool, h5_pool=h5_pool, hsi_pool=hsi_pool, img_pool=hsi_pool)
     crown_annotations = gpd.read_file(crown_annotations_path)
     
     # Assert that the geometry is correctly mantained

@@ -49,7 +49,10 @@ def create_glob_lists(config):
     h5_pool = [x for x in h5_pool if not "products" in x]
     
     hsi_pool = glob("{}/*.tif".format(config["HSI_tif_dir"]))
-    CHM_pool = glob(config["CHM_pool"], recursive=True)
+    try:
+        CHM_pool = glob(config["CHM_pool"], recursive=True)
+    except:
+        CHM_pool = None
     
     return rgb_pool, h5_pool, hsi_pool, CHM_pool
 

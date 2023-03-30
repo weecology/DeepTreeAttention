@@ -168,6 +168,10 @@ def predict_crowns(PATH, config):
     gdf["taxonID"] = None
     gdf["RGB_tile"] = PATH
     
+    # Make sure dask worker doesn't hold on to memory.
+    del m
+    torch.cuda.empty_cache()
+    
     return gdf
 
 def predict_species(crowns, trainer, m, config, crop_dir):
