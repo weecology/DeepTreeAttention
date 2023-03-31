@@ -140,7 +140,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         )
         crop_futures.append(crop_future)
         
-        return crop_futures
+    return crop_futures
         #if not os.path.exists(results_shp):  
             #species_future = gpu_client.submit(
                 #predict.predict_tile, 
