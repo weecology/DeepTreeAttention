@@ -40,7 +40,7 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     crowns.to_file("{}/crowns.shp".format(tmpdir))
     
     crown_annotations_path = predict.generate_prediction_crops(crown_path="{}/crowns.shp".format(tmpdir), config=config,
-                                                               rgb_pool=rgb_pool, h5_pool=h5_pool, hsi_pool=hsi_pool, img_pool=hsi_pool)
+                                                               rgb_pool=rgb_pool, h5_pool=h5_pool, img_pool=hsi_pool, crop_dir=tmpdir)
     crown_annotations = gpd.read_file(crown_annotations_path)
     
     # Assert that the geometry is correctly mantained

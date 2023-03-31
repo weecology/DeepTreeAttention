@@ -42,8 +42,7 @@ comet_logger.experiment.add_tag("prediction")
 
 comet_logger.experiment.log_parameters(config)
 
-client = start(cpus=60, mem_size="8GB")
-gpu_client = start(gpus=3, gpu_memory="80GB", cpus_per_gpu=10)
+client = start(cpus=30, mem_size="8GB")
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops"
@@ -112,29 +111,21 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     wait(tif_futures)
     
     species_futures = []
-    crown_futures = []
     crop_futures = []
     
     # Predict crowns
     for x in tiles:
-        crown_future = gpu_client.submit(
-            predict.find_crowns,        
-            rgb_path=x,
-            config=config,
-            dead_model_path=dead_model_path,
-            savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns",
-            overwrite=False
-        )
-        crown_futures.append(crown_future)
-    
-    # Crop crowns
-    for future in as_completed(crown_futures):
+        print(x)
         try:
-            crown_path = future.result()
+            crown_path = predict.find_crowns(
+                rgb_path=x,
+                config=config,
+                dead_model_path=dead_model_path,
+                savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns",
+                overwrite=False)
         except:
             traceback.print_exc()
-            continue
-        
+
         crop_future = client.submit(
             predict.generate_prediction_crops,
             crown_path,
@@ -148,9 +139,8 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             overwrite=False
         )
         crop_futures.append(crop_future)
-    
-
-    wait(crop_futures)
+        
+        return crop_futures
         #if not os.path.exists(results_shp):  
             #species_future = gpu_client.submit(
                 #predict.predict_tile, 
@@ -174,7 +164,7 @@ rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config)
 for site, model_path in species_model_paths.items():
     print(site)
     try:
-        create_landscape_map(
+        futures = create_landscape_map(
             site,
             model_path,
             config,
@@ -187,3 +177,5 @@ for site, model_path in species_model_paths.items():
     except:
         traceback.print_exc()
         continue
+    
+wait(crop_futures)
