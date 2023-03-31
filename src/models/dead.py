@@ -172,7 +172,7 @@ class utm_dataset(Dataset):
         #Load crown and crop RGB
         geom = self.crowns.iloc[index].geometry
         left, bottom, right, top = geom.bounds
-        box = self.RGB_src.read(window=rasterio.windows.from_bounds(left-1, bottom-1, right+1, top+1, transform=RGB_src.transform))             
+        box = self.RGB_src.read(window=rasterio.windows.from_bounds(left-1, bottom-1, right+1, top+1, transform=self.RGB_src.transform))             
         
         # Channels last
         box = np.rollaxis(box,0,3)
