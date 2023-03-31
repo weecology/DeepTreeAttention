@@ -160,6 +160,7 @@ class utm_dataset(Dataset):
         self.crowns = crowns
         self.image_size = config["image_size"]
         self.transform = get_transform(augment=False)
+        self.RGB_src = rasterio.open(image_path)
  
     def __len__(self):
         #0th based index
@@ -170,8 +171,7 @@ class utm_dataset(Dataset):
         geom = self.crowns.iloc[index].geometry
         left, bottom, right, top = geom.bounds
         image_path = self.crowns.RGB_tile.iloc[index]
-        RGB_src = rasterio.open(image_path)
-        box = RGB_src.read(window=rasterio.windows.from_bounds(left-1, bottom-1, right+1, top+1, transform=RGB_src.transform))             
+        box = self.RGB_src.read(window=rasterio.windows.from_bounds(left-1, bottom-1, right+1, top+1, transform=RGB_src.transform))             
         
         # Channels last
         box = np.rollaxis(box,0,3)
