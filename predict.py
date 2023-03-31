@@ -1,7 +1,7 @@
 import geopandas as gpd
 import traceback
 from src.start_cluster import start
-from distributed import wait, as_completed
+from distributed import wait, as_completed, fire_and_forget
 import os
 import re
 from pytorch_lightning.loggers import CometLogger
@@ -138,6 +138,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             rgb_pool=rgb_pool,
             overwrite=False
         )
+        fire_and_forget(crop_future)
         crop_futures.append(crop_future)
         
     return crop_futures
