@@ -425,10 +425,7 @@ class MultiStage(LightningModule):
             y_hats.append(y_hat)
         
         return individual, y_hats
-    
-    def on_predict_epoch_end(self, outputs):
-        outputs = self.all_gather(outputs)
-    
+
     def on_validation_epoch_end(self):
         class_metrics = self.level_metrics[self.current_level].compute()
         self.log_dict(class_metrics, on_epoch=True, on_step=False)

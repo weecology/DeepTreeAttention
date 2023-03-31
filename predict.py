@@ -115,6 +115,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     
     # Predict crowns
     for x in tiles:
+        print(x)
         try:
             crown_path = predict.find_crowns(
                 rgb_path=x,
@@ -138,8 +139,8 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             overwrite=False
         )
         crop_futures.append(crop_future)
-    
-    wait(crop_futures)
+        
+        return crop_futures
         #if not os.path.exists(results_shp):  
             #species_future = gpu_client.submit(
                 #predict.predict_tile, 
@@ -163,7 +164,7 @@ rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config)
 for site, model_path in species_model_paths.items():
     print(site)
     try:
-        create_landscape_map(
+        futures = create_landscape_map(
             site,
             model_path,
             config,
@@ -176,3 +177,5 @@ for site, model_path in species_model_paths.items():
     except:
         traceback.print_exc()
         continue
+    
+wait(crop_futures)
