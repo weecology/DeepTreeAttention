@@ -154,13 +154,14 @@ class utm_dataset(Dataset):
     """A csv file with a path to image crop and label
     Args:
        crowns: geodataframe of crown locations from a single rasterio src
+       preload: there is only 1 RGB tile, load it just once on init
     """
-    def __init__(self, crowns, config=None):
+    def __init__(self, crowns, config=None, preload=True):
         self.config = config 
         self.crowns = crowns
         self.image_size = config["image_size"]
         self.transform = get_transform(augment=False)
-        image_path = self.crowns.RGB_tile.iloc[index]        
+        image_path = self.crowns.RGB_tile.iloc[0]        
         self.RGB_src = rasterio.open(image_path)
  
     def __len__(self):
