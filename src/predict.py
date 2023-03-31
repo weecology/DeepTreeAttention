@@ -202,6 +202,10 @@ def predict_dead(crowns, dead_model_path, config):
     label = np.argmax(stacked_outputs,1)
     score = np.max(stacked_outputs, 1)  
     
+    #Make dask doesn't hold on to memory
+    del dead_model
+    torch.cuda.empty_cache()
+    
     return label, score
 
 
