@@ -140,6 +140,8 @@ def train_model(data_module, comet_logger, m, name):
     print(data_module.species_label_dict)    
     comet_logger.experiment.log_parameter("site", name)           
 
+    m.setup("fit")
+
     for key, value in m.test_dataframes.items():
         comet_logger.experiment.log_table("test_{}.csv".format(key), value)
 

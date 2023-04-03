@@ -15,6 +15,7 @@ from shapely.geometry import Point
 import torch
 from torch.utils.data import Dataset
 import rasterio
+import tarfile
 
 # Dataset class
 class TreeDataset(Dataset):
@@ -34,13 +35,14 @@ class TreeDataset(Dataset):
 
         # Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=self.image_size)
-
+                        
         # Pin data to memory if desired
         if self.config["preload_images"]:
             self.image_dict = {}
             for index, row in self.annotations.iterrows():
                 image_path = os.path.join(self.config["crop_dir"],row["image_path"])
                 self.image_dict[index] = load_image(image_path, image_size=self.image_size)
+        
 
     def __len__(self):
         # 0th based index

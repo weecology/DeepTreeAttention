@@ -98,7 +98,7 @@ def resize_or_pad(image, image_size, pad=False):
         image = transforms.functional.pad(image, padding=[pad_width, pad_height])
     return image
 
-def load_image(img_path, image_size, pad=True):
+def load_image(img_path=None, image_size=30, pad=True):
     """Load and preprocess an image for training/prediction"""
     if os.path.splitext(img_path)[-1] == ".npy":
         try:
@@ -112,7 +112,7 @@ def load_image(img_path, image_size, pad=True):
             image = rio.open(img_path).read()
     else:
         raise ValueError("image path must be .npy or .tif, found {}".format(img_path))
-        
+
     image = preprocess_image(image, channel_is_first=True)
     
     #resize image

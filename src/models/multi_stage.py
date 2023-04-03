@@ -15,6 +15,7 @@ from torch import nn
 import torchmetrics
 from torchmetrics import Accuracy, ClasswiseWrapper, Precision, MetricCollection
 import torch
+import tarfile
 from torch.utils.data import Dataset
 
 
@@ -42,8 +43,8 @@ class TreeDataset(Dataset):
         
         # Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=self.image_size)
-        
-        # Pin data to memory if desired
+                     
+        # Pin data to memory if desired 
         if self.config["preload_images"]:
             if self.image_dict is None:
                 self.image_dict = {}
@@ -111,53 +112,67 @@ class base_model(Module):
         return score 
     
 class MultiStage(LightningModule):
-    def __init__(self, train_df, test_df, config, train_mode=True, debug=False):
+    def __init__(self, config, train_df=None, test_df=None, debug=False):
         super().__init__()
-        # Generate each model
-        self.years = train_df.tile_year.unique()
+        # Generate each model and the containers for metadata
         self.config = config
-        self.models = nn.ModuleDict()
-        self.species_label_dict = train_df[["taxonID","label"]].drop_duplicates().set_index("taxonID").to_dict()["label"]
-        self.index_to_label = {v:k for k,v in self.species_label_dict.items()}
         self.level_label_dicts = []    
         self.label_to_taxonIDs = []   
         self.train_df = train_df
         self.test_df = test_df
         self.current_level = None
+        self.models = nn.ModuleDict()        
+            
+    def on_save_checkpoint(self, checkpoint):
+        checkpoint["train_df"] = self.train_df
+        checkpoint["test_df"] = self.test_df
+    
+    def on_load_checkpoint(self, checkpoint):
+        self.train_df = checkpoint["train_df"] 
+        self.test_df = checkpoint["test_df"] 
         
-        #Lookup taxonomic names
-        self.taxonomy = pd.read_csv(config["taxonomic_csv"])
-        common_species = self.train_df.taxonID.value_counts()/self.train_df.shape[0]
-        self.common_species = common_species[common_species > self.config["head_class_minimum_ratio"]].index.values
+        #Don't preload images, since the dataset might not be around anymore.
+        self.config["preload_image_dict"] = False
         
-        conifer = self.taxonomy[(self.taxonomy.families=="Pinidae")].taxonID        
-        conifer_species = [x for x in self.train_df.taxonID.unique() if x in conifer.values] 
-        self.conifer_species = [x for x in conifer_species if not x in self.common_species]
-        broadleaf = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID        
-        broadleaf_species = [x for x in self.train_df.taxonID.unique() if x in broadleaf.values] 
-        self.broadleaf_species = [x for x in broadleaf_species if not x in self.common_species]
+        # Recreate models
+        self.setup("fit")
         
-        #remove anything not current in taxonomy and warn
-        missing_ids = self.train_df.loc[~self.train_df.taxonID.isin(self.taxonomy.taxonID)].taxonID.unique()
-        warnings.warn("The following ids are not in the taxonomy: {}!".format(missing_ids))
-        self.train_df = self.train_df[~self.train_df.taxonID.isin(missing_ids)]
-        self.test_df= self.test_df[~self.test_df.taxonID.isin(missing_ids)]
-        
-        #hotfix for old naming schema
-        try:
-            self.test_df["individual"] = self.test_df["individualID"]
-            self.train_df["individual"] = self.train_df["individualID"]
-        except:
-            pass
-        
-        if self.config["preload_image_dict"]:
-            self.train_image_dict = utils.preload_image_dict(self.train_df, self.config)
-            self.test_image_dict = utils.preload_image_dict(self.test_df, self.config)
-        else:
-            self.train_image_dict = None
-            self.test_image_dict = None
-        
-        if train_mode:
+    def setup(self, stage):
+        """Setup a nested set of modules if needed"""
+        if len(self.models.keys()) == 0:
+            
+            if self.train_df is None:
+                raise ValueError("Fitting, but no train_df specificied to MultiStage.init()")
+            
+            self.species_label_dict = self.train_df[["taxonID","label"]].drop_duplicates().set_index("taxonID").to_dict()["label"]
+            self.index_to_label = {v:k for k,v in self.species_label_dict.items()}
+            self.years = self.train_df.tile_year.unique()
+            
+            #mLookup taxonomic names
+            self.taxonomy = pd.read_csv(self.config["taxonomic_csv"])
+            common_species = self.train_df.taxonID.value_counts()/self.train_df.shape[0]
+            self.common_species = common_species[common_species > self.config["head_class_minimum_ratio"]].index.values
+            
+            conifer = self.taxonomy[(self.taxonomy.families=="Pinidae")].taxonID        
+            conifer_species = [x for x in self.train_df.taxonID.unique() if x in conifer.values] 
+            self.conifer_species = [x for x in conifer_species if not x in self.common_species]
+            broadleaf = self.taxonomy[~(self.taxonomy.families=="Pinidae")].taxonID        
+            broadleaf_species = [x for x in self.train_df.taxonID.unique() if x in broadleaf.values] 
+            self.broadleaf_species = [x for x in broadleaf_species if not x in self.common_species]
+            
+            #remove anything not current in taxonomy and warn
+            missing_ids = self.train_df.loc[~self.train_df.taxonID.isin(self.taxonomy.taxonID)].taxonID.unique()
+            warnings.warn("The following ids are not in the taxonomy: {}!".format(missing_ids))
+            self.train_df = self.train_df[~self.train_df.taxonID.isin(missing_ids)]
+            self.test_df= self.test_df[~self.test_df.taxonID.isin(missing_ids)]
+                    
+            if self.config["preload_image_dict"]:
+                self.train_image_dict = utils.preload_image_dict(self.train_df, self.config)
+                self.test_image_dict = utils.preload_image_dict(self.test_df, self.config)
+            else:
+                self.train_image_dict = None
+                self.test_image_dict = None
+                
             # Create the hierarchical structure
             self.train_datasets, self.train_dataframes, self.level_label_dicts = self.create_datasets(self.train_df, image_dict=self.train_image_dict, max_samples_per_class=self.config["max_samples_per_class"])
             self.test_datasets, self.test_dataframes, _ = self.create_datasets(self.test_df, level_label_dicts=self.level_label_dicts, image_dict=self.test_image_dict, max_samples_per_class=self.config["max_samples_per_class"])
@@ -180,15 +195,13 @@ class MultiStage(LightningModule):
                 "Species precision":ClasswiseWrapper(Precision(average="none", num_classes=num_classes),labels=taxon_level_labels),
                 })
                 self.level_metrics[key] = level_metric
-
+    
             self.classes = len(self.train_df.label.unique())
             for key, value in self.train_dataframes.items(): 
                 classes = len(value.label.unique())
                 base = base_model(classes=classes, years=len(self.years), config=self.config, name=key)
-                self.models[key] = base           
-            if not debug:
-                self.save_hyperparameters()           
-    
+                self.models[key] = base   
+            
     def dominant_class_model(self, df, image_dict=None):
         """A level 0 model splits out the dominant class and compares to all other samples"""
         level_label_dict = {value:key for key, value in enumerate(self.common_species)}
