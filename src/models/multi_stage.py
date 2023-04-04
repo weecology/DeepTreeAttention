@@ -47,18 +47,19 @@ class TreeDataset(Dataset):
         # Pin data to memory if desired 
         if self.config["preload_images"]:
             if self.image_dict is None:
-                self.image_dict = {}
+                self.image_dict = { }
                 for individual in self.individuals:
-                    images = []
+                    images = { }
                     ind_annotations = self.image_paths[individual]
                     for year in self.years:
                         try:
                             year_annotations = ind_annotations[year]
-                            image_path = os.path.join(self.config["crop_dir"], year_annotations)
-                            image = utils.load_image(image_path, image_size=self.image_size)                        
                         except KeyError:
-                            image = torch.zeros(self.config["bands"], self.image_size, self.image_size)                                            
-                        images.append(image)
+                            images[str(year)] = image = torch.zeros(self.config["bands"], self.image_size, self.image_size)  
+                            continue
+                        image_path = os.path.join(self.config["crop_dir"], year_annotations)
+                        image = utils.load_image(image_path, image_size=self.image_size)                        
+                        images[str(year)] = image
                     self.image_dict[individual] = images
             
     def __len__(self):
@@ -70,20 +71,22 @@ class TreeDataset(Dataset):
         individual = self.individuals[index]      
         if self.config["preload_images"]:
             images = self.image_dict[individual]
-            images = [self.transformer(x) for x in images]
+            images = {key: self.transformer(value) for key, value in images.items()}
         else:
-            images = []
+            images = { }
             ind_annotations = self.image_paths[individual]
             for year in self.years:
                 try:
                     year_annotations = ind_annotations[year]
-                    image_path = os.path.join(self.config["crop_dir"], year_annotations)
-                    image = utils.load_image(image_path, image_size=self.image_size)                        
-                except Exception:
-                    image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])                                            
+                except KeyError:
+                    images[str(year)] = image = torch.zeros(self.config["bands"], self.image_size, self.image_size)  
+                    continue
+                image_path = os.path.join(self.config["crop_dir"], year_annotations)
+                image = utils.load_image(image_path, image_size=self.image_size)                        
                 if self.train:
                     image = self.transformer(image)   
-                images.append(image)
+                images[str(year)] = image
+                
         inputs["HSI"] = images
         
         if self.train:
@@ -199,7 +202,7 @@ class MultiStage(LightningModule):
             self.classes = len(self.train_df.label.unique())
             for key, value in self.train_dataframes.items(): 
                 classes = len(value.label.unique())
-                base = base_model(classes=classes, years=len(self.years), config=self.config, name=key)
+                base = base_model(classes=classes, years=self.years, config=self.config, name=key)
                 self.models[key] = base   
             
     def dominant_class_model(self, df, image_dict=None):

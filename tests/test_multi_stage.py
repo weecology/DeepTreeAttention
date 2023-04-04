@@ -1,15 +1,15 @@
 #Test multi_stage
 import numpy as np
-import math
 from pytorch_lightning import Trainer
 from src.models import multi_stage
 from src.models.multi_stage import TreeDataset
 import pytest
 
 @pytest.fixture()
-def m(dm, config):    
+def m(dm, config,ROOT):    
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train, config=config, debug=True)
     m.setup("fit")    
+    
     return m
 
 @pytest.mark.parametrize("preload_images",[True, False])

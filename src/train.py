@@ -9,7 +9,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
 
-from src import data, start_cluster
+from src import data
 from src.models import multi_stage, Hang2020, baseline
 from src.data import __file__
 
@@ -46,8 +46,9 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
         site=site,
         comet_logger=comet_logger)
     
+    
     if config["create_pretrain_model"]:
-        config["existing_test_csv"] = "{}/test_{}.csv".format(data_module.data_dir, data_module.experiment_id)
+        config["existing_test_csv"] = "{}/test_{}_{}.csv".format(data_module.data_dir, config["train_test_commit"], site)
         config["pretrain_state_dict"] = pretrain_model(comet_logger, config, git_commit, filter_species_site=site)
         torch.cuda.empty_cache()
         gc.collect()
@@ -81,11 +82,9 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
     Returns:
         path: a path on disk for trained model state dict
     """
-    
     #If train test split does not exist create one
-    if not os.path.exists("{}/{}/train_{}_{}.csv".format(config["crop_dir"], config["use_data_commit"], git_commit, "all")):
+    if not os.path.exists("{}/train_{}_{}.csv".format(config["crop_dir"], git_commit, "all")):
         config["train_test_commit"] = None
-        config["existing_test_csv"]
     
     with comet_logger.experiment.context_manager("pretrain"):
         pretrain_module = data.TreeData(

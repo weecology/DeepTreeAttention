@@ -143,16 +143,20 @@ def preload_image_dict(df, config):
     years = df.tile_year.unique()    
     individuals = df.individual.unique()
     image_paths = df.groupby("individual").apply(lambda x: x.set_index('tile_year').image_path.to_dict())    
-    image_dict = {}
+    image_dict = { }
     for individual in individuals:
-        images = []
+        images = { }
         ind_annotations = image_paths[individual]
         for year in years:
             try:
                 year_annotations = ind_annotations[year]
-                image_path = os.path.join(config["crop_dir"], year_annotations)
-                image = load_image(image_path, image_size=config["image_size"])                        
             except KeyError:
-                image = torch.zeros(config["bands"], config["image_size"], config["image_size"])                                            
-            images.append(image)
-        image_dict[individual] = images    
+                images[str(year)] = image = torch.zeros(config["bands"], config["image_size"],  config["image_size"])  
+                continue
+            image_path = os.path.join(config["crop_dir"], year_annotations)
+            image = load_image(image_path, image_size=config["image_size"])                        
+            images[str(year)] = image
+        image_dict[individual] = images 
+    
+    return image_dict
+
