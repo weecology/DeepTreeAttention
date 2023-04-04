@@ -62,7 +62,6 @@ def config(ROOT):
     config["HSI_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
     config["min_train_samples"] = 1
     config["min_test_samples"] = 1
-    config["crop_dir"] = "{}/tests/data/110ac77ae89043898f618466359c2a2e".format(ROOT)
     config["data_dir"] = "{}/tests/data/".format(ROOT)
     config["bands"] = 349
     config["classes"] = 3
@@ -87,6 +86,7 @@ def config(ROOT):
     config["snapshot_dir"] = None
     config["train_test_commit"] = "110ac77ae89043898f618466359c2a2e"
     config["taxonomic_csv"] = "{}/data/raw/families.csv".format(ROOT)
+    config["crop_dir"] = "{}/tests/data/110ac77ae89043898f618466359c2a2e".format(ROOT)
 
     return config
 
@@ -114,5 +114,6 @@ def experiment():
 def m(config, dm, ROOT):
     m = multi_stage.MultiStage(train_df=dm.train, test_df=dm.test, config=config)
     m.ROOT = "{}/tests/".format(ROOT)
+    m.setup("fit")
     
     return m

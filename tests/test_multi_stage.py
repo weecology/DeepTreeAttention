@@ -1,14 +1,14 @@
 #Test multi_stage
 import numpy as np
-import math
 from pytorch_lightning import Trainer
 from src.models import multi_stage
-from src.data import TreeDataset
+from src.models.multi_stage import TreeDataset
 import pytest
 
 @pytest.fixture()
-def m(dm, config):    
+def m(dm, config,ROOT):    
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train, config=config, debug=True)
+    m.setup("fit")    
     
     return m
 
@@ -16,7 +16,7 @@ def m(dm, config):
 def test_load(config, dm, m, tmpdir, preload_images):
     config["preload_images"] = preload_images
     m  = multi_stage.MultiStage(train_df=dm.train, test_df=dm.train, config=config, debug=False)    
-    
+    m.setup("fit")
     for index, level in m.train_dataframes.items():
         len(m.label_to_taxonIDs[index].keys()) == len(level.label.unique())
         len(m.level_label_dicts[index].keys()) == len(level.label.unique())
@@ -34,11 +34,12 @@ def test_load(config, dm, m, tmpdir, preload_images):
         
     #Confirm the model can be reloaded
     trainer.save_checkpoint("{}/test_model.pt".format(tmpdir))
-    m2 = multi_stage.MultiStage.load_from_checkpoint("{}/test_model.pt".format(tmpdir))
+    m2 = multi_stage.MultiStage.load_from_checkpoint("{}/test_model.pt".format(tmpdir), config=config)
 
 def test_fit_no_conifer(config, dm):   
     one_conifer = dm.test[dm.test.taxonID.isin(["QULA2","QUEGE2","QUNI","MAGNO","LIST2","ACRU","NYSY","CAGL8","QUAL3"])]
     m  = multi_stage.MultiStage(train_df=one_conifer, test_df=one_conifer, config=config)
+    m.setup("fit")
     trainer = Trainer(fast_dev_run=False, max_epochs=1, enable_checkpointing=False)
     
     #Model can be trained and validated
@@ -51,9 +52,12 @@ def test_fit_no_conifer(config, dm):
 def test_fit_one_conifer(config, dm):   
     one_conifer = dm.test[dm.test.taxonID.isin(["QULA2","QUEGE2","QUNI","MAGNO","LIST2","ACRU","NYSY","CAGL8","QUAL3","PIPA2"])]
     m  = multi_stage.MultiStage(train_df=one_conifer, test_df=one_conifer, config=config)
+    
     trainer = Trainer(fast_dev_run=False, max_epochs=1, enable_checkpointing=False)
     
     #Model can be trained and validated
+    m.setup("fit")
+    
     for key in m.level_names:
         m.current_level = key
         m.configure_optimizers()

@@ -37,9 +37,9 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     crowns = predict.find_crowns(rgb_path, config, dead_model_path=dead_model_path)
     assert len(crowns.individual.unique()) == crowns.shape[0]
         
-    crowns.to_file("{}/crowns.shp".format(tmpdir))
+    crowns.to_file("{}/prediction_crowns.shp".format(tmpdir))
     
-    crown_annotations_path = predict.generate_prediction_crops(crown_path="{}/crowns.shp".format(tmpdir), config=config,
+    crown_annotations_path = predict.generate_prediction_crops(crown_path="{}/prediction_crowns.shp".format(tmpdir), config=config,
                                                                rgb_pool=rgb_pool, h5_pool=h5_pool, img_pool=hsi_pool, crop_dir=tmpdir)
     crown_annotations = gpd.read_file(crown_annotations_path)
     
@@ -49,13 +49,11 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     #There should be two of each individual, with the same geoemetry
     assert crown_annotations[crown_annotations.individual == crown_annotations.iloc[0].individual].shape[0] == 2
     assert len(crown_annotations[crown_annotations.individual == crown_annotations.iloc[0].individual].bounds.minx.unique()) == 1
-    m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)        
     
     trees = predict.predict_tile(
         crown_annotations=crown_annotations_path,
-        m=m,
+        model_path=species_model_path,
         filter_dead=True,
-        trainer=trainer,
         savedir=tmpdir,
         config=config)
     

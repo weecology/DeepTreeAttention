@@ -148,7 +148,6 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
                 #crown_annotations=crown_annotations_path,
                 #filter_dead=True,
                 #model_path=model_path,
-                #crop_dir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}".format(site)
                 #savedir=prediction_dir,
                 #config=config)
             #species_futures.append(species_future)

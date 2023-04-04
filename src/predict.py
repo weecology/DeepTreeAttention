@@ -5,6 +5,8 @@ import rasterio
 import numpy as np
 from torchvision import transforms
 import torch
+import tarfile
+import tempfile
 from pytorch_lightning import Trainer
 
 from deepforest import main
@@ -102,22 +104,35 @@ def generate_prediction_crops(crown_path, config, rgb_pool, h5_pool, img_pool, c
     
     crown_annotations.to_file(output_name)  
     
+    # Tar each archive.
+    tar_name = "{}/{}.tar.gz".format(crop_dir, basename)
+    with tarfile.open(tar_name,"w") as tfile:
+        for path in crown_annotations.image_path:
+            filename = "{}/{}".format(crop_dir, path)
+            tfile.add(filename, arcname=path)
+            os.remove(filename)
+    
     return output_name
 
-def predict_tile(crown_annotations, model_path, config, savedir, crop_dir, filter_dead=False):
+def predict_tile(crown_annotations, model_path, config, savedir, filter_dead=False):
     """Predict a set of crown labels from a annotations.shp
     Args:
-        crown_annotations: geodataframe from predict.generate_prediction_crops
+        crown_annotations: path .shp from predict.generate_prediction_crops
         m: pytorch model to predict data
         config: config.yml
         savedir: directory to save tile predictions
         filter_dead: filter dead model
     """
-    config["pretrained_state_dict"] = None
-    m = MultiStage.load_from_checkpoint(model_path, config=config)    
-    crown_annotations = gpd.read_file(crown_annotations) 
-    trainer = Trainer(logger=False, enable_checkpointing=False)    
-    trees = predict_species(crowns=crown_annotations, m=m, trainer=trainer, config=config, crop_dir=crop_dir)
+    
+    # When specifying a tarfile, we save crops into local storage
+    config["crop_dir"] = tempfile.TemporaryDirectory().name     
+    config["pretrained_state_dict"] = None 
+    
+    tarfilename = "{}.tar.gz".format(os.path.splitext(crown_annotations)[0])
+    with tarfile.open(tarfilename, 'r') as archive:
+        archive.extractall(config["crop_dir"])   
+        
+    trees = predict_species(crowns=crown_annotations, model_path=model_path, config=config)
 
     if trees is None:
         return None
@@ -134,8 +149,7 @@ def predict_tile(crown_annotations, model_path, config, savedir, crop_dir, filte
     print("{} trees predicted".format(trees.shape[0]))
     
     #Save .shp
-    basename = os.path.splitext(os.path.basename(crown_annotations.RGB_tile.unique()[0]))[0]
-    trees.to_file(os.path.join(savedir, "{}.shp".format(basename)))
+    trees.to_file(os.path.join(savedir, "{}.shp".format(os.path.basename(crown_annotations))))
     
     return trees
 
@@ -174,10 +188,12 @@ def predict_crowns(PATH, config):
     
     return gdf
 
-def predict_species(crowns, trainer, m, config, crop_dir):
+def predict_species(crowns, model_path, config):
     """Compute hierarchical prediction without predicting unneeded levels""" 
-    config["crop_dir"] = crop_dir
+    crowns = gpd.read_file(crowns)
     ds = TreeDataset(df=crowns, train=False, config=config)
+    trainer = Trainer(logger=False, enable_checkpointing=False)    
+    m = MultiStage.load_from_checkpoint(model_path, config=config)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)
     results = results.merge(crowns[["geometry","individual","taxonID","siteID","dead_label","dead_score"]], on="individual")
@@ -187,6 +203,7 @@ def predict_species(crowns, trainer, m, config, crop_dir):
     return ensemble_df
 
 def predict_dead(crowns, dead_model_path, config):
+    """Classify RGB as alive or dead"""
     dead_model = dead.AliveDead.load_from_checkpoint(dead_model_path, config=config)
     
     # The batch norm statistics are not helpful in generalization, turn off.

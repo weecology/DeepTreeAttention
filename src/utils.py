@@ -98,7 +98,7 @@ def resize_or_pad(image, image_size, pad=False):
         image = transforms.functional.pad(image, padding=[pad_width, pad_height])
     return image
 
-def load_image(img_path, image_size, pad=True):
+def load_image(img_path=None, image_size=30, pad=True):
     """Load and preprocess an image for training/prediction"""
     if os.path.splitext(img_path)[-1] == ".npy":
         try:
@@ -112,7 +112,7 @@ def load_image(img_path, image_size, pad=True):
             image = rio.open(img_path).read()
     else:
         raise ValueError("image path must be .npy or .tif, found {}".format(img_path))
-        
+
     image = preprocess_image(image, channel_is_first=True)
     
     #resize image
@@ -143,16 +143,20 @@ def preload_image_dict(df, config):
     years = df.tile_year.unique()    
     individuals = df.individual.unique()
     image_paths = df.groupby("individual").apply(lambda x: x.set_index('tile_year').image_path.to_dict())    
-    image_dict = {}
+    image_dict = { }
     for individual in individuals:
-        images = []
+        images = { }
         ind_annotations = image_paths[individual]
         for year in years:
             try:
                 year_annotations = ind_annotations[year]
-                image_path = os.path.join(config["crop_dir"], year_annotations)
-                image = load_image(image_path, image_size=config["image_size"])                        
             except KeyError:
-                image = torch.zeros(config["bands"], config["image_size"], config["image_size"])                                            
-            images.append(image)
-        image_dict[individual] = images    
+                images[str(year)] = image = torch.zeros(config["bands"], config["image_size"],  config["image_size"])  
+                continue
+            image_path = os.path.join(config["crop_dir"], year_annotations)
+            image = load_image(image_path, image_size=config["image_size"])                        
+            images[str(year)] = image
+        image_dict[individual] = images 
+    
+    return image_dict
+
