@@ -89,7 +89,7 @@ def generate_prediction_crops(crown_path, config, rgb_pool, h5_pool, img_pool, c
         h5_pool=h5_pool,
         convert_h5=config["convert_h5"],   
         rgb_pool=rgb_pool,
-        HSI_tif_dir=config["HSI_tif_dir"],
+        HSI_tif_dir=os.environ["TMPDIR"],
         client=client,
         as_numpy=as_numpy
     )

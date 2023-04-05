@@ -2,6 +2,7 @@ import numpy as np
 import h5py
 import os
 import rasterio
+from rasterio.transform import Affine
 
 def h5refl2array(refl_filename):
     """
@@ -91,7 +92,7 @@ def subset_clean_band(reflArray, reflArray_metadata, clipIndex, bandIndex):
 
 #    array2raster(tilename, hyperspec_raster, sub_meta, clipExtent, save_dir)
 
-def array2raster(newRaster, reflBandArray, reflArray_metadata, extent, ras_dir):
+def array2raster(newRaster, reflBandArray, reflArray_metadata, extent, ras_dir = None):
     """
     newRaster: filename of the raster object
     reflBandArray: Clipped wavelength data,
@@ -99,7 +100,6 @@ def array2raster(newRaster, reflBandArray, reflArray_metadata, extent, ras_dir):
     extent: The UTM coordinate extent
     ras_dir: Where to save the file
     """
-    from rasterio.transform import Affine
     cols = reflBandArray.shape[1]
     rows = reflBandArray.shape[0]
     bands = reflBandArray.shape[2]
@@ -108,7 +108,7 @@ def array2raster(newRaster, reflBandArray, reflArray_metadata, extent, ras_dir):
     res = reflArray_metadata['res']['pixelWidth']
     transform = Affine.translation(originX, originY) * Affine.scale(res, -res)
     reflBandArray = np.moveaxis(reflBandArray,2,0)  
-    with rasterio.open(
+    src = rasterio.open(
         "{}/{}".format(ras_dir,newRaster),
          'w',
          driver='GTiff',
@@ -117,23 +117,11 @@ def array2raster(newRaster, reflBandArray, reflArray_metadata, extent, ras_dir):
          count=bands,
          dtype=reflBandArray.dtype,
          crs=rasterio.crs.CRS.from_dict(init='epsg:'+str(reflArray_metadata["epsg"])),
-         transform=transform,) as dst:
-        dst.write(reflBandArray)
-        
-    # outRaster = driver.Create(newRaster, cols, rows, bands, gdaltype)
-    # outRaster.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
-    # # outband = outRaster.GetRasterBand(1)
-    # # outband.WriteArray(reflBandArray[:,:,x])
-
-    # for band in range(bands):
-    #     outRaster.GetRasterBand(band + 1).WriteArray(reflBandArray[:, :, band])
-
-    # outRasterSRS = osr.SpatialReference()
-    # #outRasterSRS.ImportFromEPSG(reflArray_metadata['epsg'])
-    # outRaster.SetProjection(outRasterSRS.ExportToWkt())
-    # outRaster.FlushCache()
-    # os.chdir(pwd)
-
+         transform=transform)    
+    if ras_dir:
+            src.write(reflBandArray)
+    else:
+        return src
 
 def calc_clip_index(clipExtent, h5Extent, xscale=1, yscale=1):
     """Extract numpy index for the utm coordinates"""
@@ -149,7 +137,7 @@ def calc_clip_index(clipExtent, h5Extent, xscale=1, yscale=1):
     return ind_ext
 
 
-def generate_raster(h5_path, save_dir, rgb_filename=None, bands="no_water", bounds = False, suffix=None):
+def generate_raster(h5_path, save_dir=None, rgb_filename=None, bands="no_water", bounds = False, suffix=None):
     """
     h5_path: input path to h5 file on disk
     bands: "all" bands or "false color", "no_water" bands
@@ -214,6 +202,9 @@ def generate_raster(h5_path, save_dir, rgb_filename=None, bands="no_water", boun
             os.path.basename(rgb_filename))[0] + "_hyperspectral{}.tif".format(suffix)
 
     #Save georeference crop to file
-    array2raster(tilename, refl, metadata, clipExtent, save_dir)
+    src = array2raster(tilename, refl, metadata, clipExtent, save_dir)
 
-    return tilename
+    if save_dir:
+        return tilename
+    else:
+        return src
