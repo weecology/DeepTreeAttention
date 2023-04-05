@@ -13,7 +13,7 @@ min_stem_diameter: 10
 # Minimum number of test samples per class to be included
 min_train_samples: 48
 min_test_samples: 24
-max_samples_per_class: 200
+max_samples_per_class: 50
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
 # Set to 1 for debugging, no files will be written
@@ -39,7 +39,7 @@ replace_bounding_boxes: False
 # Regenerate bounding box sensor crops
 replace_crops: False
 # Recreate a train test split
-train_test_commit:
+train_test_commit: 83765201df47ba137ae73dc3d531c93c68367dea
 # Use existing plotIDs for train/test split
 existing_test_csv:
 
@@ -52,7 +52,7 @@ workers: 0
 taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
 ### Pre-Training Parameters
-create_pretrain_model: False
+create_pretrain_model: True
 pretrain_state_dict:
 pretrain_epochs: 100
 
