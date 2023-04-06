@@ -15,7 +15,6 @@ from torch import nn
 import torchmetrics
 from torchmetrics import Accuracy, ClasswiseWrapper, Precision, MetricCollection
 import torch
-import tarfile
 from torch.utils.data import Dataset
 
 
