@@ -100,4 +100,4 @@ dead:
     lr: 0.0001
     savedir: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/
     batch_size: 128
-    num_workers: 10
+    num_workers: 0
