@@ -72,7 +72,7 @@ def find_crowns(rgb_path, config, dead_model_path=None, savedir=None, CHM_pool=N
 def generate_prediction_crops(crown_path, config, rgb_pool, h5_pool, img_pool, crop_dir, client=None, as_numpy=True, overwrite=False):
     """Create prediction crops for model.predict"""
     basename = os.path.splitext(os.path.basename(crown_path))[0]            
-    output_name = "{}/{}".format(crop_dir, basename)
+    output_name = "{}/{}.shp".format(crop_dir, basename)
     
     if overwrite is False:
         if os.path.exists(output_name):
