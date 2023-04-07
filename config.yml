@@ -13,7 +13,7 @@ min_stem_diameter: 10
 # Minimum number of test samples per class to be included
 min_train_samples: 48
 min_test_samples: 24
-max_samples_per_class: 50
+max_samples_per_class: 5000
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
 # Set to 1 for debugging, no files will be written
@@ -85,7 +85,7 @@ validation_interval: 1
 predict_batch_size: 64
 dead_threshold: 0.95
 prediction_crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
-DeepForest_workers: 2
+DeepForest_workers: 0
 DeepForest_preload: True
 DeepForest_batch_size: 32
 
@@ -100,4 +100,4 @@ dead:
     lr: 0.0001
     savedir: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/
     batch_size: 128
-    num_workers: 10
+    num_workers: 0
