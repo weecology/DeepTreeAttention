@@ -142,24 +142,21 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         )
         crop_futures.append(crop_future)
         
-    return crop_futures
-        #if not os.path.exists(results_shp):  
-            #species_future = gpu_client.submit(
-                #predict.predict_tile, 
-                #crown_annotations=crown_annotations_path,
-                #filter_dead=True,
-                #model_path=model_path,
-                #savedir=prediction_dir,
-                #config=config)
-            #species_futures.append(species_future)
-    #for x in species_futures:
-        #try:
-            #x.result()
-        #except:
-            #traceback.print_exc()
-            #continue
-
-        
+        for finished_crop in as_completed(crop_futures[:3]):
+            try:
+                crown_annotations_path = finished_crop.result()
+            except:
+                traceback.print_exc()
+                continue
+            species_prediction = predict.predict_tile(
+                crown_annotations=crown_annotations_path,
+                filter_dead=True,
+                model_path=model_path,
+                savedir=prediction_dir,
+                config=config)
+                    
+        return crop_futures
+            
 #generate HSI_tif data if needed.
 all_site_crops = []
 rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config)

@@ -125,9 +125,10 @@ def predict_tile(crown_annotations, model_path, config, savedir, filter_dead=Fal
     """
     
     # When specifying a tarfile, we save crops into local storage
-    config["crop_dir"] = tempfile.TemporaryDirectory().name     
+    config["crop_dir"] = os.environ["TMPDIR"]    
     config["pretrained_state_dict"] = None 
     
+    tarfilename = crown_annotations.replace("shp","tar")
     tarfilename = "{}.tar.gz".format(os.path.splitext(crown_annotations)[0])
     with tarfile.open(tarfilename, 'r') as archive:
         archive.extractall(config["crop_dir"])   
