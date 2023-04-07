@@ -129,7 +129,7 @@ def predict_tile(crown_annotations, model_path, config, savedir, filter_dead=Fal
     config["pretrained_state_dict"] = None 
     
     tarfilename = crown_annotations.replace("shp","tar")
-    tarfilename = "{}.tar.gz".format(os.path.splitext(crown_annotations)[0])
+    tarfilename = "{}.tar.gz".format(os.path.splitext(tarfilename)[0])
     with tarfile.open(tarfilename, 'r') as archive:
         archive.extractall(config["crop_dir"])   
         
