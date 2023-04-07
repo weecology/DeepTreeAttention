@@ -142,19 +142,19 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         )
         crop_futures.append(crop_future)
         
-        for finished_crop in as_completed(crop_futures[:3]):
-            try:
-                crown_annotations_path = finished_crop.result()
-            except:
-                traceback.print_exc()
-                continue
-            species_prediction = predict.predict_tile(
-                crown_annotations=crown_annotations_path,
-                filter_dead=True,
-                model_path=model_path,
-                savedir=prediction_dir,
-                config=config)
-                    
+    for finished_crop in as_completed(crop_futures[:3]):
+        try:
+            crown_annotations_path = finished_crop.result()
+        except:
+            traceback.print_exc()
+            continue
+        species_prediction = predict.predict_tile(
+            crown_annotations=crown_annotations_path,
+            filter_dead=True,
+            model_path=model_path,
+            savedir=prediction_dir,
+            config=config)
+                
         return crop_futures
             
 #generate HSI_tif data if needed.
