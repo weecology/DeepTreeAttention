@@ -61,16 +61,16 @@ species_model_paths = {
     #"TREE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0b8ea07340e44ba79f29682af1e93f3b_['TREE', 'STEI', 'UNDE'].pt",
     #"STEI":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0b8ea07340e44ba79f29682af1e93f3b_['TREE', 'STEI', 'UNDE'].pt",
     #"UNDE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0b8ea07340e44ba79f29682af1e93f3b_['TREE', 'STEI', 'UNDE'].pt",
-    #"DELA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9865034de3cc4ec4b861c32e1bae19b7_['DELA', 'LENO'].pt",
-    #"LENO":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9865034de3cc4ec4b861c32e1bae19b7_['DELA', 'LENO'].pt",
-    #"OSBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/db9049a717634f049636ec7fd4c66b7a_['OSBS', 'JERC', 'TALL', 'DSNY'].pt",
-    #"JERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/db9049a717634f049636ec7fd4c66b7a_['OSBS', 'JERC', 'TALL', 'DSNY'].pt",
-    #"TALL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/db9049a717634f049636ec7fd4c66b7a_['OSBS', 'JERC', 'TALL', 'DSNY'].pt",
-    #"DSNY":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/db9049a717634f049636ec7fd4c66b7a_['OSBS', 'JERC', 'TALL', 'DSNY'].pt",
-    #"CLBJ":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/c51bfd7418ba4e198bdd31bc852e6d44_['CLBJ', 'KONZ'].pt",
-    #"TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6c292d5a990f420e81fe69f5697457ef_['TEAK', 'SOAP', 'YELL', 'ABBY'].pt",
-    #"SOAP":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6c292d5a990f420e81fe69f5697457ef_['TEAK', 'SOAP', 'YELL', 'ABBY'].pt",
-    #"YELL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6c292d5a990f420e81fe69f5697457ef_['TEAK', 'SOAP', 'YELL', 'ABBY'].pt",                       
+    "DELA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9865034de3cc4ec4b861c32e1bae19b7_['DELA', 'LENO'].pt",
+    "LENO":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9865034de3cc4ec4b861c32e1bae19b7_['DELA', 'LENO'].pt",
+    "OSBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/db9049a717634f049636ec7fd4c66b7a_['OSBS', 'JERC', 'TALL', 'DSNY'].pt",
+    "JERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/db9049a717634f049636ec7fd4c66b7a_['OSBS', 'JERC', 'TALL', 'DSNY'].pt",
+    "TALL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/db9049a717634f049636ec7fd4c66b7a_['OSBS', 'JERC', 'TALL', 'DSNY'].pt",
+    "DSNY":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/db9049a717634f049636ec7fd4c66b7a_['OSBS', 'JERC', 'TALL', 'DSNY'].pt",
+    "CLBJ":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/c51bfd7418ba4e198bdd31bc852e6d44_['CLBJ', 'KONZ'].pt",
+    "TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6c292d5a990f420e81fe69f5697457ef_['TEAK', 'SOAP', 'YELL', 'ABBY'].pt",
+    "SOAP":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6c292d5a990f420e81fe69f5697457ef_['TEAK', 'SOAP', 'YELL', 'ABBY'].pt",
+    "YELL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6c292d5a990f420e81fe69f5697457ef_['TEAK', 'SOAP', 'YELL', 'ABBY'].pt",                       
     "MLBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6c292d5a990f420e81fe69f5697457ef_['MLBS','BLAN','SCBI','UKFS'].pt",
     "BLAN":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6c292d5a990f420e81fe69f5697457ef_['MLBS','BLAN','SCBI','UKFS'].pt",
     "SCBI":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6c292d5a990f420e81fe69f5697457ef_['MLBS','BLAN','SCBI','UKFS'].pt",
@@ -90,6 +90,8 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     
     try:
         os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}".format(site))
+        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/tar".format(site))
+        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/shp".format(site))
     except:
         pass
 
@@ -138,7 +140,6 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             rgb_pool=rgb_pool,
             overwrite=False
         )
-        fire_and_forget(crop_future)
         crop_futures.append(crop_future)
         
     return crop_futures
@@ -160,6 +161,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
 
         
 #generate HSI_tif data if needed.
+all_site_crops = []
 rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config)
 for site, model_path in species_model_paths.items():
     print(site)
@@ -172,10 +174,9 @@ for site, model_path in species_model_paths.items():
             rgb_pool=rgb_pool,
             h5_pool=h5_pool,
             hsi_pool=hsi_pool,
-            CHM_pool=CHM_pool
-        )
+            CHM_pool=CHM_pool)
     except:
         traceback.print_exc()
         continue
-    
-wait(crop_futures)
+    all_site_crops.append(futures)
+wait(all_site_crops)
