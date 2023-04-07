@@ -155,7 +155,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             #savedir=prediction_dir,
             #config=config)
                 
-        return crop_futures
+    return crop_futures
             
 #generate HSI_tif data if needed.
 all_site_crops = []
