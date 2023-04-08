@@ -118,6 +118,12 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     # Predict crowns
     for x in tiles:
         print(x)
+        basename = os.path.splitext(os.path.basename(x))[0]
+        crop_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}".format(site, basename)
+        try:
+            os.mkdir(crop_dir)
+        except:
+            pass
         try:
             crown_path = predict.find_crowns(
                 rgb_path=x,
@@ -132,7 +138,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             predict.generate_prediction_crops,
             crown_path,
             config,
-            crop_dir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}".format(site),
+            crop_dir=crop_dir,
             as_numpy=True,
             client=None,
             img_pool=hsi_pool,
