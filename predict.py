@@ -3,6 +3,7 @@ import traceback
 from src.start_cluster import start
 from distributed import wait, as_completed, fire_and_forget
 import os
+import numpy as np
 import glob
 import re
 from pytorch_lightning.loggers import CometLogger
