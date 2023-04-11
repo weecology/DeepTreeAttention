@@ -16,6 +16,7 @@ from src.models import dead
 from src.CHM import postprocess_CHM
 from src.generate import generate_crops
 from src.models.multi_stage import TreeDataset, MultiStage
+from src.neon_paths import year_from_tile
 
 def RGB_transform(augment):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -150,8 +151,12 @@ def predict_tile(crown_annotations, model_path, config, savedir, filter_dead=Fal
     trees = gpd.GeoDataFrame(trees, geometry="geometry")    
     print("{} trees predicted".format(trees.shape[0]))
     
+    #site ID
+    trees["siteID"] = trees.RGB_tile.iloc[0].split("/")[4]
+    
     #Save .shp
-    trees.to_file(os.path.join(savedir, "{}.shp".format(os.path.basename(crown_annotations))))
+    output_name = os.path.splitext(os.path.basename(crown_annotations))[0]
+    trees.to_file(os.path.join(savedir, "{}.shp".format(output_name)))
     
     return trees
 

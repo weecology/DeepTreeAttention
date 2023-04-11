@@ -83,10 +83,10 @@ species_model_paths = {
 def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h5_pool, CHM_pool):
     #Prepare directories
     # Crop Predicted Crowns
+    model_name = os.path.splitext(os.path.basename(model_path))[0]
     try:
-        prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
-                                      os.path.splitext(os.path.basename(model_path))[0])     
-        os.mkdir(prediction_dir)        
+        prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}",site, model_name)
+        os.makedirs(prediction_dir, exist_ok=True)        
     except:
         pass
     
