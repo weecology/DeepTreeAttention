@@ -182,4 +182,11 @@ for site, model_path in species_model_paths.items():
         traceback.print_exc()
         continue
     all_site_crops.append(futures)
+
+for x in as_completed(all_site_crops):
+    try:
+        p = x.result()
+    except:
+        traceback.print_exc()
+    
 wait(all_site_crops)
