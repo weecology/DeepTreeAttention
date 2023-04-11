@@ -44,7 +44,7 @@ comet_logger.experiment.add_tag("prediction")
 
 comet_logger.experiment.log_parameters(config)
 
-client = start(cpus=150, mem_size="11GB")
+client = start(cpus=10, mem_size="11GB")
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops"
@@ -104,13 +104,13 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             break
     
     # remove existing files
-    tarfiles = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/tar/*.tar*".format(site))
-    tiles_to_run = []
-    for tile in tiles:
-        image_name = os.path.splitext(os.path.basename(tile))[0]
-        needs_to_be_run = np.sum([image_name in x for x in tarfiles]) == 0
-        if needs_to_be_run:
-            tiles_to_run.append(tile)
+    #tarfiles = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/tar/*.tar*".format(site))
+    #tiles_to_run = []
+    #for tile in tiles:
+        #image_name = os.path.splitext(os.path.basename(tile))[0]
+        #needs_to_be_run = np.sum([image_name in x for x in tarfiles]) == 0
+        #if needs_to_be_run:
+            #tiles_to_run.append(tile)
         
         if len(tiles_to_run) == 0:
             raise ValueError("There are no RGB tiles left to run for any year since 2019 for {}".format(site))
@@ -127,8 +127,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     crop_futures = []
     
     # Predict crowns
-    for x in tiles_to_run:
-        print(x)                    
+    for x in tiles:
         basename = os.path.splitext(os.path.basename(x))[0]
         crop_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}".format(site, basename)
         try:
@@ -159,24 +158,20 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         )
         crop_futures.append(crop_future)
         
-    #for finished_crop in as_completed(crop_futures[:3]):
-        #try:
-            #crown_annotations_path = finished_crop.result()
-        #except:
-            #traceback.print_exc()
-            #continue
-        #species_prediction = predict.predict_tile(
-            #crown_annotations=crown_annotations_path,
-            #filter_dead=True,
-            #model_path=model_path,
-            #savedir=prediction_dir,
-            #config=config)
-    
-    for x in as_completed(crop_futures):
+    for finished_crop in as_completed(crop_futures):
         try:
-            p = x.result()
+            crown_annotations_path = finished_crop.result()
         except:
-            traceback.print_exc()    
+            traceback.print_exc()
+            continue
+        
+        print(crown_annotations_path)
+        species_prediction = predict.predict_tile(
+            crown_annotations=crown_annotations_path,
+            filter_dead=True,
+            model_path=model_path,
+            savedir=prediction_dir,
+            config=config)
             
     return crop_futures
             
