@@ -106,7 +106,6 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     tarfiles = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/tar/*.tar*".format(site))
     tiles_to_run = []
     for tile in tiles:
-        print(x)
         image_name = os.path.splitext(os.path.basename(tile))[0]
         needs_to_be_run = np.sum([image_name in x for x in tarfiles]) == 0
         if needs_to_be_run:
@@ -128,6 +127,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     
     # Predict crowns
     for x in tiles_to_run:
+        print(x)                    
         basename = os.path.splitext(os.path.basename(x))[0]
         crop_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}".format(site, basename)
         try:
