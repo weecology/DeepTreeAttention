@@ -106,6 +106,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     tarfiles = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/tar/*.tar*".format(site))
     tiles_to_run = []
     for tile in tiles:
+        print(x)
         image_name = os.path.splitext(os.path.basename(tile))[0]
         needs_to_be_run = np.sum([image_name in x for x in tarfiles]) == 0
         if needs_to_be_run:
@@ -169,7 +170,13 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             #model_path=model_path,
             #savedir=prediction_dir,
             #config=config)
-                
+    
+    for x in as_completed(crop_futures):
+        try:
+            p = x.result()
+        except:
+            traceback.print_exc()    
+            
     return crop_futures
             
 #generate HSI_tif data if needed.
@@ -191,11 +198,4 @@ for site, model_path in species_model_paths.items():
         traceback.print_exc()
         continue
     all_site_crops.append(futures)
-
-for x in as_completed(all_site_crops):
-    try:
-        p = x.result()
-    except:
-        traceback.print_exc()
     
-wait(all_site_crops)
