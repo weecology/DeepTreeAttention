@@ -112,9 +112,9 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         #if needs_to_be_run:
             #tiles_to_run.append(tile)
         
-        if len(tiles) == 0:
-            raise ValueError("There are no RGB tiles left to run for any year since 2019 for {}".format(site))
-        
+    if len(tiles) == 0:
+        raise ValueError("There are no RGB tiles left to run for any year since 2019 for {}".format(site))
+    
     #tif_futures = client.map(
         #convert,
         #tiles,
