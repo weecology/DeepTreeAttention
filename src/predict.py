@@ -116,7 +116,7 @@ def generate_prediction_crops(crown_path, config, rgb_pool, h5_pool, img_pool, c
     
     return output_name
 
-def predict_tile(crown_annotations, model_path, config, savedir, filter_dead=False):
+def predict_tile(crown_annotations, model_path, config, savedir, site, filter_dead=False):
     """Predict a set of crown labels from a annotations.shp
     Args:
         crown_annotations: path .shp from predict.generate_prediction_crops
@@ -152,7 +152,7 @@ def predict_tile(crown_annotations, model_path, config, savedir, filter_dead=Fal
     print("{} trees predicted".format(trees.shape[0]))
     
     #site ID
-    trees["siteID"] = trees.RGB_tile.iloc[0].split("/")[4]
+    trees["siteID"] = site
     
     #Save .shp
     output_name = os.path.splitext(os.path.basename(crown_annotations))[0]
