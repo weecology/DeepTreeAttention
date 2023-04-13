@@ -174,6 +174,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         output_name = os.path.join(prediction_dir, "{}.shp".format(output_name))
         
         if os.path.exists(output_name):
+            print("{} exists".format(output_name))
             continue
         
         species_prediction = predict.predict_tile(
