@@ -170,6 +170,12 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             continue
         
         print(crown_annotations_path)
+        output_name = os.path.splitext(os.path.basename(crown_annotations_path))[0]
+        output_name = os.path.join(prediction_dir, "{}.shp".format(output_name))
+        
+        if os.path.exists(output_name):
+            continue
+        
         species_prediction = predict.predict_tile(
             crown_annotations=crown_annotations_path,
             filter_dead=True,
