@@ -161,6 +161,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     
     # load model
     m = multi_stage.MultiStage.load_from_checkpoint(model_path, config=config)
+    trainer = Trainer()
     for finished_crop in as_completed(crop_futures):
         try:
             crown_annotations_path = finished_crop.result()
