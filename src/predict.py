@@ -8,6 +8,7 @@ import torch
 import tarfile
 import tempfile
 from pytorch_lightning import Trainer
+import shutil
 
 from deepforest import main
 from deepforest.utilities import annotations_to_shapefile
@@ -116,7 +117,7 @@ def generate_prediction_crops(crown_path, config, rgb_pool, h5_pool, img_pool, c
     
     return output_name
 
-def predict_tile(crown_annotations, model_path, config, savedir, site, filter_dead=False):
+def predict_tile(crown_annotations, m, config, savedir, site, trainer, filter_dead=False):
     """Predict a set of crown labels from a annotations.shp
     Args:
         crown_annotations: path .shp from predict.generate_prediction_crops
@@ -127,7 +128,8 @@ def predict_tile(crown_annotations, model_path, config, savedir, site, filter_de
     """
     
     # When specifying a tarfile, we save crops into local storage
-    config["crop_dir"] = os.environ["TMPDIR"]    
+    config["crop_dir"] = os.path.join(os.environ["TMPDIR"],site)
+    os.makedirs(config["crop_dir"], exist_ok=True)
     config["pretrained_state_dict"] = None 
     
     tarfilename = crown_annotations.replace("shp","tar")
@@ -135,7 +137,7 @@ def predict_tile(crown_annotations, model_path, config, savedir, site, filter_de
     with tarfile.open(tarfilename, 'r') as archive:
         archive.extractall(config["crop_dir"])   
         
-    trees = predict_species(crowns=crown_annotations, model_path=model_path, config=config)
+    trees = predict_species(crowns=crown_annotations, m=m, config=config, trainer=trainer)
 
     if trees is None:
         return None
@@ -157,6 +159,9 @@ def predict_tile(crown_annotations, model_path, config, savedir, site, filter_de
     #Save .shp
     output_name = os.path.splitext(os.path.basename(crown_annotations))[0]
     trees.to_file(os.path.join(savedir, "{}.shp".format(output_name)))
+    
+    #remove files
+    shutil.rmtree(config["crop_dir"])
     
     return trees
 
@@ -195,12 +200,10 @@ def predict_crowns(PATH, config):
     
     return gdf
 
-def predict_species(crowns, model_path, config):
+def predict_species(crowns, m, trainer, config):
     """Compute hierarchical prediction without predicting unneeded levels""" 
     crowns = gpd.read_file(crowns)
     ds = TreeDataset(df=crowns, train=False, config=config)
-    trainer = Trainer(logger=False, enable_checkpointing=False)    
-    m = MultiStage.load_from_checkpoint(model_path, config=config)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)
     results = results.merge(crowns[["geometry","individual","taxonID","siteID","dead_label","dead_score"]], on="individual")

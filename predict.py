@@ -13,6 +13,7 @@ from src import predict
 from src import data
 from src import neon_paths
 from src.utils import create_glob_lists 
+from src.models import multi_stage
 
 def find_rgb_files(site, rgb_pool, year="2020"):
     tiles = [x for x in rgb_pool if site in x]
@@ -157,7 +158,9 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             overwrite=False
         )
         crop_futures.append(crop_future)
-        
+    
+    # load model
+    m = multi_stage.MultiStage.load_from_checkpoint(model_path, config=config)
     for finished_crop in as_completed(crop_futures):
         try:
             crown_annotations_path = finished_crop.result()
@@ -169,7 +172,8 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         species_prediction = predict.predict_tile(
             crown_annotations=crown_annotations_path,
             filter_dead=True,
-            model_path=model_path,
+            trainer=trainer,
+            m=m,
             savedir=prediction_dir,
             site=site,
             config=config)
