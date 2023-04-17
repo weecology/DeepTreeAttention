@@ -32,6 +32,7 @@ if config["use_data_commit"] is None:
         experiment_id=git_commit,
         config=config,
         client=client,
+        create_train_test=True,
         site="all",
         comet_logger=comet_logger)
     config["use_data_commit"] = comet_logger.experiment.id 

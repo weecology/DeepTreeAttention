@@ -37,14 +37,25 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
     comet_logger.experiment.log_parameter("commit hash",git_commit)
     comet_logger.experiment.log_parameters(config)
     
+    #If train test split does not exist create one
+    if not os.path.exists("{}/train_{}_{}.csv".format(config["crop_dir"], config["train_test_commit"], site)):
+        create_train_test = True
+    else:
+        create_train_test = False
+        
     data_module = data.TreeData(
         csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),
         data_dir=config["crop_dir"],
         config=config,
         client=client,
+        create_train_test=create_train_test,
         experiment_id="{}_{}".format(git_commit, site),
         site=site,
         comet_logger=comet_logger)
+    
+    #assign the new train test commit if created
+    if config["train_test_commit"] is None:
+        config["train_test_commit"] = git_commit
     
     if config["create_pretrain_model"]:
         config["existing_test_csv"] = "{}/test_{}_{}.csv".format(data_module.data_dir, config["train_test_commit"], site)
@@ -82,12 +93,18 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
         path: a path on disk for trained model state dict
     """
     #If train test split does not exist create one
+    if not os.path.exists("{}/train_{}_all.csv".format(config["crop_dir"], config["train_test_commit"])):
+        create_train_test = True
+    else:
+        create_train_test = False
+    
     with comet_logger.experiment.context_manager("pretrain"):
         pretrain_module = data.TreeData(
             csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),
             data_dir=config["crop_dir"],
             config=config,
             client=client,
+            create_train_test=create_train_test,
             experiment_id="{}_all".format(git_commit),            
             site="all",
             filter_species_site=filter_species_site,
