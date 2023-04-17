@@ -46,15 +46,15 @@ existing_test_csv:
 ### Data loader Config
 # Resized pixel size of the crowns. Square crops around each pixel of size x
 image_size: 30
-preload_images: True
-preload_image_dict: True
+preload_images: False
+preload_image_dict: False
 workers: 0
 taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
 ### Pre-Training Parameters
 create_pretrain_model: True
 pretrain_state_dict:
-pretrain_epochs: 100
+pretrain_epochs: 10
 
 ### Training Parameters
 gpus: 1

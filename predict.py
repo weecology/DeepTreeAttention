@@ -52,9 +52,9 @@ config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_cr
 savedir = config["crop_dir"] 
 
 species_model_paths = {
-    #"NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/4a962f4745204a82b3688ed505cd76d8_['NIWO', 'RMNP'].pt",
-    #"SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/87138a0b383c4dfea2df8fb3d6e48119_['SJER'].pt",
-    #"MOAB":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/54db5e883404420a95af36787f4395d3_['MOAB', 'REDB'].pt",
+    "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/4a962f4745204a82b3688ed505cd76d8_['NIWO', 'RMNP'].pt",
+    "SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/87138a0b383c4dfea2df8fb3d6e48119_['SJER'].pt",
+    "MOAB":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/54db5e883404420a95af36787f4395d3_['MOAB', 'REDB'].pt",
     "WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/f0f2e7eb0e33484dadcfa011bc6ac745_['WREF'].pt",
     "REDB":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/54db5e883404420a95af36787f4395d3_['MOAB', 'REDB'].pt",
     "SERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/920a0d718f894963a961437622be3a97_['SERC', 'GRSM'].pt",
