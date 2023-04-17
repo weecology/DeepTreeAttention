@@ -85,6 +85,7 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
     #If train test split does not exist create one
     if not os.path.exists("{}/train_{}_all.csv".format(config["crop_dir"], config["train_test_commit"])):
         config["train_test_commit"] = None
+        config["existing_test_csv"] = None
     
     with comet_logger.experiment.context_manager("pretrain"):
         pretrain_module = data.TreeData(
