@@ -132,6 +132,10 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
         path = "{}/{}_state_dict.pt".format(config["snapshot_dir"], comet_logger.experiment.id)
         torch.save(m.model.state_dict(), path) 
         
+        del m
+        gc.collect()
+        torch.cuda.empty_cache()
+        
         return path
         
 def train_model(data_module, comet_logger, m, name):
