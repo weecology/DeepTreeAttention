@@ -85,6 +85,7 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
     #If train test split does not exist create one
     if not os.path.exists("{}/train_{}_all.csv".format(config["crop_dir"], config["train_test_commit"])):
         config["train_test_commit"] = None
+        config["existing_test_csv"] = None
     
     with comet_logger.experiment.context_manager("pretrain"):
         pretrain_module = data.TreeData(
@@ -130,6 +131,10 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
         
         path = "{}/{}_state_dict.pt".format(config["snapshot_dir"], comet_logger.experiment.id)
         torch.save(m.model.state_dict(), path) 
+        
+        del m
+        gc.collect()
+        torch.cuda.empty_cache()
         
         return path
         
