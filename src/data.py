@@ -278,7 +278,7 @@ class TreeData(LightningDataModule):
     The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
     Use regenerate=True to override this behavior in setup()
     """
-    def __init__(self, csv_file, config, experiment_id=None, comet_logger=None, client = None, data_dir=None, site=None, filter_species_site=None):
+    def __init__(self, csv_file, config, experiment_id=None, comet_logger=None, client = None, data_dir=None, site=None, create_train_test=False, filter_species_site=None):
         """
         Args:
             config: optional config file to override
@@ -294,7 +294,8 @@ class TreeData(LightningDataModule):
         self.comet_logger = comet_logger
         self.site = site
         self.experiment_id = experiment_id
-
+        self.create_train_test = create_train_test
+        
         # Default training location
         self.client = client
         self.data_dir = data_dir
@@ -403,7 +404,7 @@ class TreeData(LightningDataModule):
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(self.annotations.taxonID.unique()))
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",self.annotations.shape[0])
     
-            if self.config["train_test_commit"] is None:
+            if create_train_test:
                 self.train, self.test = self.create_train_test_split(self.experiment_id)  
             else:
                 print("Loading a train-test split from {}/{}".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))
@@ -413,7 +414,7 @@ class TreeData(LightningDataModule):
             print("Loading previous data commit {}".format(self.config["use_data_commit"]))
             self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir)) 
                 
-            if self.config["train_test_commit"] is None:
+            if create_train_test:
                 print("Using data commit {} creating a new train-test split for site {}".format(self.config["use_data_commit"],self.site))
                 self.create_train_test_split(ID=self.experiment_id)
             else:
