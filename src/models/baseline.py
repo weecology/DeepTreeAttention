@@ -34,9 +34,9 @@ class TreeModel(LightningModule):
         self.model = model
         
         #Metrics
-        micro_recall = torchmetrics.Accuracy(average="micro")
-        macro_recall = torchmetrics.Accuracy(average="macro", num_classes=classes)
-        top_k_recall = torchmetrics.Accuracy(average="micro",top_k=self.config["top_k"])
+        micro_recall = torchmetrics.Accuracy(average="micro", num_classes=classes, task="multiclass")
+        macro_recall = torchmetrics.Accuracy(average="macro", num_classes=classes,  task="multiclass")
+        top_k_recall = torchmetrics.Accuracy(average="micro",top_k=self.config["top_k"],   num_classes=classes, task="multiclass")
 
         self.metrics = torchmetrics.MetricCollection(
             {"Micro Accuracy":micro_recall,

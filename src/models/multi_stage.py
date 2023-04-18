@@ -101,8 +101,8 @@ class base_model(Module):
         super().__init__()
         #Load from state dict of previous run
         self.model = learned_ensemble(classes=classes, years=years, config=config)
-        micro_recall = Accuracy(average="micro")
-        macro_recall = Accuracy(average="macro", num_classes=classes,)
+        micro_recall = Accuracy(average="micro", task="multiclass", num_classes=classes)
+        macro_recall = Accuracy(average="macro", num_classes=classes,task="multiclass")
         self.metrics = MetricCollection(
             {"Micro Accuracy_{}".format(name):micro_recall,
              "Macro Accuracy_{}".format(name):macro_recall,
@@ -193,8 +193,8 @@ class MultiStage(LightningModule):
                 taxon_level_labels = list(self.level_label_dicts[key].keys())
                 num_classes = len(self.level_label_dicts[key])
                 level_metric = MetricCollection({       
-                "Species accuracy":ClasswiseWrapper(Accuracy(average="none", num_classes=num_classes), labels=taxon_level_labels),
-                "Species precision":ClasswiseWrapper(Precision(average="none", num_classes=num_classes),labels=taxon_level_labels),
+                "Species accuracy":ClasswiseWrapper(Accuracy(average="none", num_classes=num_classes, task="multiclass"), labels=taxon_level_labels),
+                "Species precision":ClasswiseWrapper(Precision(average="none", num_classes=num_classes, task="multiclass"),labels=taxon_level_labels),
                 })
                 self.level_metrics[key] = level_metric
     
@@ -526,6 +526,7 @@ class MultiStage(LightningModule):
             preds=torch.tensor(ensemble_df.ens_label.values),
             target=torch.tensor(ensemble_df.label.values),
             average="micro",
+            task="multiclass",
             num_classes=len(self.species_label_dict)
         )
             
@@ -533,13 +534,15 @@ class MultiStage(LightningModule):
             preds=torch.tensor(ensemble_df.ens_label.values),
             target=torch.tensor(ensemble_df.label.values),
             average="macro",
+            task="multiclass",
             num_classes=len(self.species_label_dict)
         )
         
         ensemble_precision = torchmetrics.functional.precision(
             preds=torch.tensor(ensemble_df.ens_label.values),
             target=torch.tensor(ensemble_df.label.values),
-            num_classes=len(self.species_label_dict)
+            num_classes=len(self.species_label_dict),
+            task="multiclass"
         )
                         
         if experiment:
@@ -552,14 +555,16 @@ class MultiStage(LightningModule):
             preds=torch.tensor(ensemble_df.ens_label.values),
             target=torch.tensor(ensemble_df.label.values),
             average="none",
-            num_classes=len(self.species_label_dict)
+            num_classes=len(self.species_label_dict),
+            task="multiclass"
         )
             
         taxon_precision = torchmetrics.functional.precision(
             preds=torch.tensor(ensemble_df.ens_label.values),
             target=torch.tensor(ensemble_df.label.values),
             average="none",
-            num_classes=len(self.species_label_dict)
+            num_classes=len(self.species_label_dict),
+            task="multiclass"
         )        
         
         taxon_labels = list(self.species_label_dict)
@@ -583,6 +588,7 @@ class MultiStage(LightningModule):
                     preds=torch.tensor(group.ens_label.values),
                     target=torch.tensor(group.label.values),
                     average="macro",
+                    task="multiclass",
                     num_classes=len(self.species_label_dict))
                                 
                 experiment.log_metric("{}_macro".format(name), site_macro)

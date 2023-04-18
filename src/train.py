@@ -69,6 +69,18 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
     comet_logger.experiment.log_table("train.csv", data_module.train)
     comet_logger.experiment.log_table("test.csv", data_module.test)
     
+    test_species_per_site = data_module.test.groupby("siteID").apply(lambda x: len(x.taxonID.unique())).to_dict()
+    for site, value in test_species_per_site.items():
+        comet_logger.experiment.log_parameter("{}_species".format(site),value)
+    
+    test_samples_per_site = data_module.test.groupby("individual").apply(lambda x: x.head(1)).groupby("siteID").apply(lambda x: x.shape[0])
+    for site, value in test_samples_per_site.items():
+        comet_logger.experiment.log_parameter("{}_samples".format(site),value)
+    
+    train_samples_per_site = data_module.train.groupby("individual").apply(lambda x: x.head(1)).groupby("siteID").apply(lambda x: x.shape[0])
+    for site, value in test_samples_per_site.items():
+        comet_logger.experiment.log_parameter("{}_samples".format(site),value)
+        
     #always assert that there is no train in test, skip for debug
     if not git_branch == "pytest":
         assert data_module.train[data_module.train.individual.isin(data_module.test.individual)].empty
@@ -212,6 +224,22 @@ def train_model(data_module, comet_logger, m, name):
         file_name="{}.json".format(name)
     )
     
+    for site in ensemble_df.siteID.unique():
+        site_result = ensemble_df[ensemble_df.siteID==site]
+        combined_species = np.unique(site_result[['taxonID', 'ensembleTaxonID']].values)
+        site_labels = {value:key for key, value in enumerate(combined_species)}
+        y = [site_labels[x] for x in site_result.taxonID.values]
+        ypred = [site_labels[x] for x in site_result.ensembleTaxonID.values]
+        taxonlabels = [key for key, value in site_labels.items()]
+        comet_logger.experiment.log_confusion_matrix(
+            y,
+            ypred,
+            labels=taxonlabels,
+            max_categories=len(taxonlabels),
+            file_name="{}.json".format(site),
+            title=site
+        )
+        
     # Log prediction
     comet_logger.experiment.log_table("test_predictions.csv", ensemble_df)
     
