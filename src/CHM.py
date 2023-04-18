@@ -43,10 +43,9 @@ def CHM_height(shp, CHM_pool):
             config: DeepTreeAttention config file dict, parsed, see config.yml
         """    
         filtered_results = []
-        lookup_pool = glob.glob(CHM_pool, recursive=True)        
         for name, group in shp.groupby("plotID"):
             try:
-                result = postprocess_CHM(group, lookup_pool=lookup_pool)
+                result = postprocess_CHM(group, lookup_pool=CHM_pool)
                 filtered_results.append(result)
             except Exception as e:
                 print("plotID {} raised: {}".format(name,e))
