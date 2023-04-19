@@ -30,7 +30,7 @@ CHM_height_limit: 8
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Checkout data artifact from comet
-use_data_commit: 04a3c3001163490690ad7c90d7317ddf
+use_data_commit: 927f306b663b444cb31b1ea72437661d
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 
@@ -39,7 +39,7 @@ replace_bounding_boxes: False
 # Regenerate bounding box sensor crops
 replace_crops: False
 # Recreate a train test split
-train_test_commit: d75360fc4261b0789df125b5f82930dd2fde0eb5
+train_test_commit: a0da92dd6a6ceb42d6b94cc4d94ae19d38070cf1
 # Use existing plotIDs for train/test split
 existing_test_csv:
 
