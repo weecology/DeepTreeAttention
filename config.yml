@@ -39,7 +39,7 @@ replace_bounding_boxes: False
 # Regenerate bounding box sensor crops
 replace_crops: False
 # Recreate a train test split
-train_test_commit:
+train_test_commit: 22bf04a1c4d0a35036ee289819acf6b44fc13605
 # Use existing plotIDs for train/test split
 existing_test_csv:
 
@@ -52,9 +52,9 @@ workers: 0
 taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
 ### Pre-Training Parameters
-create_pretrain_model: True
+create_pretrain_model: False
 pretrain_state_dict:
-pretrain_epochs: 10
+pretrain_epochs: 0
 
 ### Training Parameters
 gpus: 1
