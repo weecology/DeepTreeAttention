@@ -36,7 +36,7 @@ if config["use_data_commit"] is None:
         site="all",
         comet_logger=comet_logger)
     config["use_data_commit"] = comet_logger.experiment.id 
-elif: config["train_test_commit"] is None:
+elif config["train_test_commit"] is None:
     client = start_cluster.start(cpus=30, mem_size="4GB")    
 else:
     client = None
