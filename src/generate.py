@@ -133,7 +133,6 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     cleaned_points = []
     for value, group in merged_boxes.groupby("box_id"):
         if group.shape[0] > 1:
-            print("removing {} points from {} within a deepforest box {}".format(group.shape[0]-1, group.plotID.unique(),group.box_id.unique()))
             selected_point = group[group.height == group.height.max()]
             if selected_point.shape[0] > 1:
                 try:
