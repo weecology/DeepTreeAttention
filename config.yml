@@ -60,7 +60,7 @@ pretrain_epochs: 50
 gpus: 1
 batch_size: 48
 bands: 349
-head_class_minimum_ratio: 0.4
+head_class_minimum_ratio: 0.25
 
 # Learning rates
 lr: 0.0001
