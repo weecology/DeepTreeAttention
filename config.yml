@@ -17,7 +17,7 @@ max_samples_per_class: 2000
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
 # Set to 1 for debugging, no files will be written
-iterations: 200
+iterations: 1000
 
 # Minimum CanopyModel height, leave blank to skip CHM filtering
 min_CHM_height: 1
@@ -39,7 +39,7 @@ replace_bounding_boxes: False
 # Regenerate bounding box sensor crops
 replace_crops: False
 # Recreate a train test split
-train_test_commit: 22bf04a1c4d0a35036ee289819acf6b44fc13605
+train_test_commit:
 # Use existing plotIDs for train/test split
 existing_test_csv:
 
