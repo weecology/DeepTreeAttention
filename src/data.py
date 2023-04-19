@@ -402,6 +402,8 @@ class TreeData(LightningDataModule):
                 self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir))
             if self.comet_logger:
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(self.annotations.taxonID.unique()))
+                num_individuals = self.annotations.groupby("individual").apply(lambda x: x.head(1)).shape[0]
+                self.comet_logger.experiment.log_parameter("Individuals after crop generation",num_individuals)                
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",self.annotations.shape[0])
     
             if create_train_test:

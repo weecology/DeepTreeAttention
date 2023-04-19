@@ -19,7 +19,7 @@ def postprocess_CHM(df, lookup_pool):
     try:
         CHM_path = neon_paths.find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds)
     except Exception as e:
-        raise ValueError("Cannot find CHM path for {} from plot {} in lookup_pool: {}".format(df.total_bounds, df.plotID.unique(),e))
+        df["CHM_height"] = np.nan
     
     #buffer slightly, CHM model can be patchy
     geom = df.geometry
@@ -69,7 +69,7 @@ def height_rules(df, min_CHM_height=1, max_CHM_diff=4, CHM_height_limit=8):
     keep = []
     for index, row in df.iterrows():
         if np.isnan(row["CHM_height"]):
-            keep.append(False)
+            keep.append(True)
         elif np.isnan(row["height"]):
             keep.append(True)
         elif row.CHM_height < min_CHM_height:
