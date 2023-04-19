@@ -20,6 +20,7 @@ def postprocess_CHM(df, lookup_pool):
         CHM_path = neon_paths.find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds)
     except Exception as e:
         df["CHM_height"] = np.nan
+        return df
     
     #buffer slightly, CHM model can be patchy
     geom = df.geometry
