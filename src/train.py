@@ -78,7 +78,7 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
         comet_logger.experiment.log_parameter("{}_test_samples".format(site),value)
     
     train_samples_per_site = data_module.train.groupby("individual").apply(lambda x: x.head(1)).groupby("siteID").apply(lambda x: x.shape[0])
-    for site, value in test_samples_per_site.items():
+    for site, value in train_samples_per_site.items():
         comet_logger.experiment.log_parameter("{}_train_samples".format(site),value)
         
     #always assert that there is no train in test, skip for debug
