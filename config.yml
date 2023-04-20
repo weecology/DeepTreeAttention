@@ -39,7 +39,7 @@ replace_bounding_boxes: False
 # Regenerate bounding box sensor crops
 replace_crops: False
 # Recreate a train test split
-train_test_commit:
+train_test_commit: 908d236cdf5fc3c7185ea25d628d3a9973164e2b
 # Use existing plotIDs for train/test split
 existing_test_csv:
 
@@ -77,7 +77,7 @@ snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
 
 ### Evaluation config
 #Top k class recall score
-top_k: 4
+top_k: 2
 # Epoch frequency of validation
 validation_interval: 1
 
