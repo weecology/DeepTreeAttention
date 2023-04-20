@@ -45,7 +45,7 @@ comet_logger.experiment.add_tag("prediction")
 
 comet_logger.experiment.log_parameters(config)
 
-client = start(cpus=3, mem_size="11GB")
+client = start(cpus=10, mem_size="11GB")
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops"
@@ -79,7 +79,7 @@ species_model_paths = {
     #"SCBI":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9af9ba5a9e1148daa365d3c893cde875_['MLBS','BLAN','SCBI','UKFS'].pt",
     #"UKFS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9af9ba5a9e1148daa365d3c893cde875_['MLBS','BLAN','SCBI','UKFS'].pt",
     #"BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9821d98c5b474b04bf41edbf0d3d4d96_['BART', 'HARV'].pt",
-    "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/69b49e1ea47e40d79760e564cbb7bd6e['HARV'].pt"}
+    "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/69b49e1ea47e40d79760e564cbb7bd6e_['HARV'].pt"}
 
 def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h5_pool, CHM_pool):
     #Prepare directories
