@@ -105,7 +105,7 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
         path: a path on disk for trained model state dict
     """
     #If train test split does not exist create one
-    if not os.path.exists("{}/train_{}_all.csv".format(config["crop_dir"], config["train_test_commit"])):
+    if not os.path.exists("{}/train_{}_{}_pretrain.csv".format(config["crop_dir"], config["train_test_commit"], filter_species_site)):
         create_train_test = True
     else:
         create_train_test = False
@@ -117,8 +117,8 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
             config=config,
             client=client,
             create_train_test=create_train_test,
-            experiment_id="{}_all".format(git_commit),            
-            site="all",
+            experiment_id="{}_{}_pretrain".format(git_commit, filter_species_site),            
+            site="pretrain",
             filter_species_site=filter_species_site,
             comet_logger=comet_logger)
         
