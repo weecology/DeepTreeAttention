@@ -314,7 +314,7 @@ class TreeData(LightningDataModule):
                 # Convert raw neon data to x,y tree locatins
                 df = filter_data(self.csv_file, config=self.config)
                 if site:
-                    if not site == "all":
+                    if not site == "pretrain":
                         df = df[df.siteID.isin(site)]
                 # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
@@ -357,7 +357,8 @@ class TreeData(LightningDataModule):
                     field_data="{}/canopy_points.shp".format(self.data_dir),
                     rgb_dir=self.config["rgb_sensor_pool"],
                     savedir="{}/boxes/".format(self.data_dir),
-                    raw_box_savedir="{}/boxes/".format(self.data_dir)
+                    raw_box_savedir="{}/boxes/".format(self.data_dir),
+                    client=client
                 )
                 
                 if self.config["megaplot_dir"]:
@@ -446,7 +447,7 @@ class TreeData(LightningDataModule):
         )    
     def create_train_test_split(self, ID):      
         if self.site:
-            if not self.site == "all":
+            if not self.site == "pretrain":
                 self.annotations = self.annotations[self.annotations.siteID.isin(self.site)].reset_index(drop=True)
         if self.config["existing_test_csv"]:
             print("Reading in existing test_csv: {}".format(self.config["existing_test_csv"]))

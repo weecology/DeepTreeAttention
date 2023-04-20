@@ -5,7 +5,7 @@ from src import neon_paths
 from src import start_cluster
 from distributed import wait
 
-client = start_cluster.start(cpus=30)
+client = start_cluster.start(cpus=5)
 rgb_pool = glob.glob("/orange/ewhite/NeonData/*/DP3.30010.001/**/Camera/**/*.tif", recursive=True)
 fils = glob.glob("/orange/ewhite/b.weinstein/DeepTreeAttention/Hyperspectral_tifs/year/*.tif")
 
