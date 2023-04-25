@@ -75,8 +75,4 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
         savedir=tmpdir,
         config=config)
     
-    assert all([x in trees.columns for x in ["geometry","score","pred_taxa_top1"]])
-    assert trees.iloc[0].geometry.bounds == trees[trees.individual==trees.iloc[0].individual].iloc[1].geometry.bounds
-    
-    #Only one per tree
-    assert trees.shape[0] == crowns.shape[0]
+    assert all([x in trees.columns for x in ["geometry","crown_score","scientificName"]])

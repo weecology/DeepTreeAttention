@@ -164,7 +164,7 @@ def predict_tile(crown_annotations, m, config, savedir, site, trainer, filter_de
     trees = trees.merge(neon_taxonID, on="taxonID")
     trees["crown_score"] = trees["score"]
     trees = trees.drop(columns=["pred_taxa_top1","label","score","taxonID"])
-    trees = trees.groupby("individual").apply(lambda x: x.head(1))
+    trees = trees.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
     trees = gpd.GeoDataFrame(trees, geometry="geometry")    
     
     #Save .shp

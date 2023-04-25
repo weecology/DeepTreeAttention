@@ -63,6 +63,21 @@ def test_fit_one_conifer(config, dm):
         m.configure_optimizers()
         trainer.fit(m)
         metrics = trainer.validate(m)
+
+def test_two_species(config, dm):   
+    two_species = dm.test[dm.test.taxonID.isin(["MAGNO","LIST2"])]
+    m  = multi_stage.MultiStage(train_df=two_species, test_df=two_species, config=config)
+    
+    trainer = Trainer(fast_dev_run=False, max_epochs=1, enable_checkpointing=False)
+    
+    #Model can be trained and validated
+    m.setup("fit")
+    
+    for key in m.level_names:
+        m.current_level = key
+        m.configure_optimizers()
+        trainer.fit(m)
+        metrics = trainer.validate(m)
         
 def test_fit(config, m):
     trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=1)
