@@ -6,9 +6,9 @@ import numpy as np
 from torchvision import transforms
 import torch
 import tarfile
-import tempfile
-from pytorch_lightning import Trainer
 import shutil
+import pandas as pd
+from pytorch_lightning import Trainer
 
 from deepforest import main
 from deepforest.utilities import annotations_to_shapefile
@@ -17,7 +17,9 @@ from src.models import dead
 from src.CHM import postprocess_CHM
 from src.generate import generate_crops
 from src.models.multi_stage import TreeDataset, MultiStage
-from src.neon_paths import year_from_tile
+from src.data import __file__
+
+ROOT = os.path.dirname(os.path.dirname(__file__))
 
 def RGB_transform(augment):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -150,11 +152,20 @@ def predict_tile(crown_annotations, m, config, savedir, site, trainer, filter_de
         
     # Calculate crown area
     trees["crown_area"] = trees.geometry.apply(lambda x: x.area)
-    trees = gpd.GeoDataFrame(trees, geometry="geometry")    
     print("{} trees predicted".format(trees.shape[0]))
     
     #site ID
     trees["siteID"] = site
+    
+    #Merge taxonID and clean up columns
+    neon_taxonID = pd.read_csv("{}/data/raw/OS_TAXON_PLANT-20220330T142149.csv".format(ROOT))
+    neon_taxonID = neon_taxonID[["taxonID","scientificName"]]
+    trees["taxonID"] = trees["ensembleTaxonID"]
+    trees = trees.merge(neon_taxonID, on="taxonID")
+    trees["crown_score"] = trees["score"]
+    trees = trees.drop(columns=["pred_taxa_top1","label","score","taxonID"])
+    trees = trees.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
+    trees = gpd.GeoDataFrame(trees, geometry="geometry")    
     
     #Save .shp
     output_name = os.path.splitext(os.path.basename(crown_annotations))[0]
@@ -209,7 +220,8 @@ def predict_species(crowns, m, trainer, config):
     results = results.merge(crowns[["geometry","individual","taxonID","siteID","dead_label","dead_score"]], on="individual")
     ensemble_df = m.ensemble(results)
     ensemble_df = gpd.GeoDataFrame(ensemble_df, geometry="geometry")
-        
+    
+    
     return ensemble_df
 
 def predict_dead(crowns, dead_model_path, config):
