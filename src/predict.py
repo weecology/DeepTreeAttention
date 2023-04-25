@@ -152,7 +152,6 @@ def predict_tile(crown_annotations, m, config, savedir, site, trainer, filter_de
         
     # Calculate crown area
     trees["crown_area"] = trees.geometry.apply(lambda x: x.area)
-    trees = gpd.GeoDataFrame(trees, geometry="geometry")    
     print("{} trees predicted".format(trees.shape[0]))
     
     #site ID
@@ -166,6 +165,7 @@ def predict_tile(crown_annotations, m, config, savedir, site, trainer, filter_de
     trees["crown_score"] = trees["score"]
     trees = trees.drop(columns=["pred_taxa_top1","label","score","taxonID"])
     trees = trees.groupby("individual").apply(lambda x: x.head(1))
+    trees = gpd.GeoDataFrame(trees, geometry="geometry")    
     
     #Save .shp
     output_name = os.path.splitext(os.path.basename(crown_annotations))[0]
