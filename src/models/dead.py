@@ -36,9 +36,9 @@ class AliveDead(pl.LightningModule):
         self.model.fc = torch.nn.Linear(num_ftrs, 2)        
         
         # Metrics
-        self.accuracy = torchmetrics.Accuracy(average='none', num_classes=2)      
-        self.total_accuracy = torchmetrics.Accuracy()        
-        self.precision_metric = torchmetrics.Precision()
+        self.accuracy = torchmetrics.Accuracy(average='none', num_classes=2, task="multiclass")      
+        self.total_accuracy = torchmetrics.Accuracy(num_classes=2, task="multiclass")        
+        self.precision_metric = torchmetrics.Precision(num_classes=2, task="multiclass")
         self.metrics = torchmetrics.MetricCollection({"Class Accuracy":self.accuracy, "Accuracy":self.total_accuracy, "Precision":self.precision_metric})
         
         # Data
