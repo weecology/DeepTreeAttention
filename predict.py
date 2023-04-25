@@ -68,10 +68,10 @@ species_model_paths = {
     #"LENO":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/f418662238b84ef383f852c0821eab4b_['DELA', 'LENO'].pt",
     #"OSBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7c80b43d39e54bff955f4de68f548370_['OSBS', 'JERC', 'TALL', 'DSNY'].pt",
     #"JERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7c80b43d39e54bff955f4de68f548370_['OSBS', 'JERC', 'TALL', 'DSNY'].pt",
-    #"TALL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/3087af0dcc3c486db17a4a922c43eae9_TALL.pt",
+    "TALL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/3087af0dcc3c486db17a4a922c43eae9_TALL.pt"}
     #"DSNY":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7c80b43d39e54bff955f4de68f548370_['OSBS', 'JERC', 'TALL', 'DSNY'].pt",
     #"CLBJ":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/42846206ea4e403c9cdb4ba809f1097e_['CLBJ', 'KONZ'].pt",
-    "TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b9b6882705d24fe6abf12282936ababb_TEAK.pt",
+    #"TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b9b6882705d24fe6abf12282936ababb_TEAK.pt",
     #"SOAP":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/8b2940d920ee48b2ac47adf462fc99a6_['TEAK', 'SOAP', 'YELL', 'ABBY'].pt",
     #"YELL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/8b2940d920ee48b2ac47adf462fc99a6_['TEAK', 'SOAP', 'YELL', 'ABBY'].pt",                       
     #"MLBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9af9ba5a9e1148daa365d3c893cde875_['MLBS','BLAN','SCBI','UKFS'].pt",
