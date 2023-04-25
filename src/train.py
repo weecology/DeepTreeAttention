@@ -118,7 +118,7 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
             client=client,
             create_train_test=create_train_test,
             experiment_id="{}_{}_pretrain".format(git_commit, filter_species_site),            
-            site="pretrain",
+            site="{}_pretrain".format(filter_species_site),
             filter_species_site=filter_species_site,
             comet_logger=comet_logger)
         
