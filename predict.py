@@ -52,14 +52,14 @@ config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_cr
 savedir = config["crop_dir"] 
 
 species_model_paths = {
-    "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/287f10349eca4497957a03cf0d48b468_NIWO.pt",
-    "SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/702f6a7cf1b24307b8a23e25148f7559_SJER.pt",
-    "WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5d96ad72d18549d5ad200e3ad44aa429_'WREF'.pt",
+    #"NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/287f10349eca4497957a03cf0d48b468_NIWO.pt",
+    #"SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/702f6a7cf1b24307b8a23e25148f7559_SJER.pt",
+    #"WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5d96ad72d18549d5ad200e3ad44aa429_'WREF'.pt",
     #"SERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/920a0d718f894963a961437622be3a97_['SERC', 'GRSM'].pt",
-    "GRSM":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/422f3b1af269499dac4478619ec5f488_GRSM.pt",
-    "DEJU":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e3178ac37434aeb90ac207c18a9caf7_DEJU.pt",
+    #"GRSM":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/422f3b1af269499dac4478619ec5f488_GRSM.pt",
+    #"DEJU":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e3178ac37434aeb90ac207c18a9caf7_DEJU.pt",
     #"BONA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/a86cdf52b3d14568b2d7574a13185868_['BONA', 'DEJU'].pt",
-    "TREE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/a1bfa10f43f54f1e82f09b46488dcdac_TREE.pt",
+    #"TREE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/a1bfa10f43f54f1e82f09b46488dcdac_TREE.pt",
     "STEI":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7d69a3ee5c6241e8b48cdf09391e0bff_STEI.pt",
     #"UNDE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6efefee06802491f897e830d6fc3b19e_['TREE', 'STEI', 'UNDE'].pt",
     #"DELA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/f418662238b84ef383f852c0821eab4b_['DELA', 'LENO'].pt",

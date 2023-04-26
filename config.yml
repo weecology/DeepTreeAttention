@@ -39,15 +39,15 @@ replace_bounding_boxes: False
 # Regenerate bounding box sensor crops
 replace_crops: False
 # Recreate a train test split
-train_test_commit: 
+train_test_commit: 4cc54518d380c904673b92889c1e67aadf0aa38b
 # Use existing plotIDs for train/test split
 existing_test_csv:
 
 ### Data loader Config
 # Resized pixel size of the crowns. Square crops around each pixel of size x
 image_size: 30
-preload_images: True
-preload_image_dict: True
+preload_images: False
+preload_image_dict: False
 workers: 0
 taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
