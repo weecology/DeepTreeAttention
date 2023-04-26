@@ -72,7 +72,7 @@ lr_flat: 0.0005
 
 fast_dev_run: False
 accelerator: auto
-epochs: 150
+epochs: 200
 snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
 
 ### Evaluation config
