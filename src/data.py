@@ -447,7 +447,7 @@ class TreeData(LightningDataModule):
         )    
     def create_train_test_split(self, ID):      
         if self.site:
-            if not self.site == "pretrain":
+            if "pretrain" not in self.site:
                 self.annotations = self.annotations[self.annotations.siteID.isin(self.site)].reset_index(drop=True)
         if self.config["existing_test_csv"]:
             print("Reading in existing test_csv: {}".format(self.config["existing_test_csv"]))
