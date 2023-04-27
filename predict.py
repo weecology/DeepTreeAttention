@@ -178,14 +178,18 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             print("{} exists".format(output_name))
             continue
         
-        species_prediction = predict.predict_tile(
-            crown_annotations=crown_annotations_path,
-            filter_dead=True,
-            trainer=trainer,
-            m=m,
-            savedir=prediction_dir,
-            site=site,
-            config=config)
+        try:
+            species_prediction = predict.predict_tile(
+                crown_annotations=crown_annotations_path,
+                filter_dead=True,
+                trainer=trainer,
+                m=m,
+                savedir=prediction_dir,
+                site=site,
+                config=config)
+        except:
+            traceback.print_exc()
+            continue
             
     return crop_futures
             
