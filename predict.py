@@ -51,10 +51,7 @@ comet_logger.experiment.add_tag("prediction")
 comet_logger.experiment.log_parameters(config)
 
 #Get site arg
-parser = argparse.ArgumentParser()
-args = parser.parse_args()
-site = args[0]
-
+site= sys.argv[0]
 client = start(cpus=10, mem_size="11GB")
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
