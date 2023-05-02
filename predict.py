@@ -65,22 +65,22 @@ species_model_paths = {
     #"DEJU":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e3178ac37434aeb90ac207c18a9caf7_DEJU.pt",
     #"BONA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/a86cdf52b3d14568b2d7574a13185868_['BONA', 'DEJU'].pt",
     #"TREE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/a1bfa10f43f54f1e82f09b46488dcdac_TREE.pt",
-    #"STEI":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7d69a3ee5c6241e8b48cdf09391e0bff_STEI.pt"}
-    "UNDE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6676d7c457404a568838eb76dbe9b6f5_UNDE.pt"}
+    #"STEI":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7d69a3ee5c6241e8b48cdf09391e0bff_STEI.pt",
+    #"UNDE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6676d7c457404a568838eb76dbe9b6f5_UNDE.pt",
     #"DELA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/299e7aa3bdae413a9931542310da9d96_DELA.pt",
     #"LENO":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6b81242c32b34ee78273635b372f3186_LENO.pt",
     #"OSBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7c80b43d39e54bff955f4de68f548370_['OSBS', 'JERC', 'TALL', 'DSNY'].pt",
     #"JERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7c80b43d39e54bff955f4de68f548370_['OSBS', 'JERC', 'TALL', 'DSNY'].pt",
     #"TALL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/3087af0dcc3c486db17a4a922c43eae9_TALL.pt",
-    #"CLBJ":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/83c1d8fd4c69479185ed3224abb6e8f9_CLBJ.pt",
+    "CLBJ":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/83c1d8fd4c69479185ed3224abb6e8f9_CLBJ.pt",
     #"TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b9b6882705d24fe6abf12282936ababb_TEAK.pt",
     #"SOAP":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/8c3dd91e61e948c0809a46d6a824afc2_SOAP.pt",
     #"YELL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/27765ac5b3754d32bc2c626e257c296f_YELL.pt",                       
-    #"MLBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/e1770318881b4eb88a4c975e287573c5_MLBS.pt",
+    "#MLBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/e1770318881b4eb88a4c975e287573c5_MLBS.pt",
     #"BLAN":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9af9ba5a9e1148daa365d3c893cde875_['MLBS','BLAN','SCBI','UKFS'].pt",
     #"UKFS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9af9ba5a9e1148daa365d3c893cde875_['MLBS','BLAN','SCBI','UKFS'].pt",
     #"BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9821d98c5b474b04bf41edbf0d3d4d96_['BART', 'HARV'].pt",
-    #"HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/69b49e1ea47e40d79760e564cbb7bd6e_HARV.pt"}
+    "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/69b49e1ea47e40d79760e564cbb7bd6e_HARV.pt"}
 
 def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h5_pool, CHM_pool):
     #Prepare directories
