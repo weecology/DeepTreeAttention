@@ -4,7 +4,7 @@ from src.start_cluster import start
 from distributed import wait, as_completed, fire_and_forget
 import os
 import numpy as np
-import glob
+import argparse
 import re
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning import Trainer
@@ -50,11 +50,17 @@ comet_logger.experiment.add_tag("prediction")
 
 comet_logger.experiment.log_parameters(config)
 
+#Get site arg
+parser = argparse.ArgumentParser()
+args = parser.parse_args()
+site = args[0]
+
 client = start(cpus=10, mem_size="11GB")
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops"
 savedir = config["crop_dir"] 
+
 
 species_model_paths = {
     "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/287f10349eca4497957a03cf0d48b468_NIWO.pt",
@@ -193,23 +199,17 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             
     return crop_futures
             
-#generate HSI_tif data if needed.
-all_site_crops = []
 rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config)
-for site, model_path in species_model_paths.items():
-    print(site)
-    try:
-        futures = create_landscape_map(
-            site,
-            model_path,
-            config,
-            client, 
-            rgb_pool=rgb_pool,
-            h5_pool=h5_pool,
-            hsi_pool=hsi_pool,
-            CHM_pool=CHM_pool)
-    except:
-        traceback.print_exc()
-        continue
-    all_site_crops.append(futures)
+futures = create_landscape_map(
+    site,
+    species_model_paths[site],
+    config,
+    client, 
+    rgb_pool=rgb_pool,
+    h5_pool=h5_pool,
+    hsi_pool=hsi_pool,
+    CHM_pool=CHM_pool)
+
+
+
     
