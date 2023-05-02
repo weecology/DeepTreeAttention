@@ -1,10 +1,11 @@
+
 import geopandas as gpd
 import traceback
 from src.start_cluster import start
 from distributed import wait, as_completed, fire_and_forget
 import os
 import numpy as np
-import glob
+import argparse
 import re
 from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning import Trainer
@@ -46,37 +47,42 @@ def convert(rgb_path, hyperspectral_pool, savedir):
 config = data.read_config("config.yml")
 config["preload_images"] = False
 comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
-comet_logger.experiment.add_tag("prediction")
 
 comet_logger.experiment.log_parameters(config)
 
-client = start(cpus=3, mem_size="11GB")
+client = start(cpus=3, mem_size="5GB")
+
+#Get site arg
+parser = argparse.ArgumentParser()
+args = parser.parse_args()
+site = args[0]
+comet_logger.experiment.add_tag("prediction_{}".format(site))
 
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops"
 savedir = config["crop_dir"] 
 
 species_model_paths = {
-    #"NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/287f10349eca4497957a03cf0d48b468_NIWO.pt",
-    #"SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/702f6a7cf1b24307b8a23e25148f7559_SJER.pt",
-    #"WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5d96ad72d18549d5ad200e3ad44aa429_'WREF'.pt",
-    #"SERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/920a0d718f894963a961437622be3a97_['SERC', 'GRSM'].pt",
-    #"GRSM":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/422f3b1af269499dac4478619ec5f488_GRSM.pt",
-    #"DEJU":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e3178ac37434aeb90ac207c18a9caf7_DEJU.pt",
-    #"BONA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/a86cdf52b3d14568b2d7574a13185868_['BONA', 'DEJU'].pt",
-    #"TREE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/a1bfa10f43f54f1e82f09b46488dcdac_TREE.pt",
-    #"STEI":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7d69a3ee5c6241e8b48cdf09391e0bff_STEI.pt",
-    #"UNDE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6676d7c457404a568838eb76dbe9b6f5_UNDE.pt",
-    #"DELA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/299e7aa3bdae413a9931542310da9d96_DELA.pt",
-    #"LENO":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6b81242c32b34ee78273635b372f3186_LENO.pt",
+    "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/287f10349eca4497957a03cf0d48b468_NIWO.pt",
+    "SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/702f6a7cf1b24307b8a23e25148f7559_SJER.pt",
+    "WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5d96ad72d18549d5ad200e3ad44aa429_'WREF'.pt",
+    "SERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/920a0d718f894963a961437622be3a97_['SERC', 'GRSM'].pt",
+    "GRSM":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/422f3b1af269499dac4478619ec5f488_GRSM.pt",
+    "DEJU":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e3178ac37434aeb90ac207c18a9caf7_DEJU.pt",
+    "BONA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/a86cdf52b3d14568b2d7574a13185868_['BONA', 'DEJU'].pt",
+    "TREE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/a1bfa10f43f54f1e82f09b46488dcdac_TREE.pt",
+    "STEI":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7d69a3ee5c6241e8b48cdf09391e0bff_STEI.pt",
+    "UNDE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6676d7c457404a568838eb76dbe9b6f5_UNDE.pt",
+    "DELA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/299e7aa3bdae413a9931542310da9d96_DELA.pt",
+    "LENO":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6b81242c32b34ee78273635b372f3186_LENO.pt",
     #"OSBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7c80b43d39e54bff955f4de68f548370_['OSBS', 'JERC', 'TALL', 'DSNY'].pt",
     #"JERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7c80b43d39e54bff955f4de68f548370_['OSBS', 'JERC', 'TALL', 'DSNY'].pt",
-    #"TALL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/3087af0dcc3c486db17a4a922c43eae9_TALL.pt",
+    "TALL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/3087af0dcc3c486db17a4a922c43eae9_TALL.pt",
     "CLBJ":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/83c1d8fd4c69479185ed3224abb6e8f9_CLBJ.pt",
-    #"TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b9b6882705d24fe6abf12282936ababb_TEAK.pt",
-    #"SOAP":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/8c3dd91e61e948c0809a46d6a824afc2_SOAP.pt",
-    #"YELL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/27765ac5b3754d32bc2c626e257c296f_YELL.pt",                       
-    "#MLBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/e1770318881b4eb88a4c975e287573c5_MLBS.pt",
+    "TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b9b6882705d24fe6abf12282936ababb_TEAK.pt",
+    "SOAP":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/8c3dd91e61e948c0809a46d6a824afc2_SOAP.pt",
+    "YELL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/27765ac5b3754d32bc2c626e257c296f_YELL.pt",                       
+    "MLBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/e1770318881b4eb88a4c975e287573c5_MLBS.pt",
     #"BLAN":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9af9ba5a9e1148daa365d3c893cde875_['MLBS','BLAN','SCBI','UKFS'].pt",
     #"UKFS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9af9ba5a9e1148daa365d3c893cde875_['MLBS','BLAN','SCBI','UKFS'].pt",
     #"BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9821d98c5b474b04bf41edbf0d3d4d96_['BART', 'HARV'].pt",
@@ -193,23 +199,17 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             
     return crop_futures
             
-#generate HSI_tif data if needed.
-all_site_crops = []
 rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config)
-for site, model_path in species_model_paths.items():
-    print(site)
-    try:
-        futures = create_landscape_map(
-            site,
-            model_path,
-            config,
-            client, 
-            rgb_pool=rgb_pool,
-            h5_pool=h5_pool,
-            hsi_pool=hsi_pool,
-            CHM_pool=CHM_pool)
-    except:
-        traceback.print_exc()
-        continue
-    all_site_crops.append(futures)
+futures = create_landscape_map(
+    site,
+    species_model_paths[site],
+    config,
+    client, 
+    rgb_pool=rgb_pool,
+    h5_pool=h5_pool,
+    hsi_pool=hsi_pool,
+    CHM_pool=CHM_pool)
+
+
+
     
