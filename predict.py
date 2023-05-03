@@ -63,7 +63,7 @@ savedir = config["crop_dir"]
 species_model_paths = {
     "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/287f10349eca4497957a03cf0d48b468_NIWO.pt",
     "SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/702f6a7cf1b24307b8a23e25148f7559_SJER.pt",
-    "WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5d96ad72d18549d5ad200e3ad44aa429_'WREF'.pt",
+    "WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5d96ad72d18549d5ad200e3ad44aa429_WREF.pt",
     "SERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/920a0d718f894963a961437622be3a97_['SERC', 'GRSM'].pt",
     "GRSM":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/422f3b1af269499dac4478619ec5f488_GRSM.pt",
     "DEJU":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e3178ac37434aeb90ac207c18a9caf7_DEJU.pt",
