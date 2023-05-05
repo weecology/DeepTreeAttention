@@ -51,11 +51,11 @@ comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["
 
 comet_logger.experiment.log_parameters(config)
 
-client = start(cpus=3, mem_size="5GB")
+client = start(cpus=3, mem_size="20GB")
 
 #Get site arg
 site=str(sys.argv[1])
-
+comet_logger.experiment.add_tag("prediction_{}".format(site))
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops"
 savedir = config["crop_dir"] 
@@ -63,7 +63,7 @@ savedir = config["crop_dir"]
 species_model_paths = {
     "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/287f10349eca4497957a03cf0d48b468_NIWO.pt",
     "SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/702f6a7cf1b24307b8a23e25148f7559_SJER.pt",
-    "WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5d96ad72d18549d5ad200e3ad44aa429_'WREF'.pt",
+    "WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5d96ad72d18549d5ad200e3ad44aa429_WREF.pt",
     "SERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/920a0d718f894963a961437622be3a97_['SERC', 'GRSM'].pt",
     "GRSM":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/422f3b1af269499dac4478619ec5f488_GRSM.pt",
     "DEJU":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e3178ac37434aeb90ac207c18a9caf7_DEJU.pt",

@@ -81,7 +81,10 @@ class TreeDataset(Dataset):
                     images[str(year)] = image = torch.zeros(self.config["bands"], self.image_size, self.image_size)  
                     continue
                 image_path = os.path.join(self.config["crop_dir"], year_annotations)
-                image = utils.load_image(image_path, image_size=self.image_size)                        
+                try:
+                    image = utils.load_image(image_path, image_size=self.image_size)
+                except ValueError:
+                    return None
                 if self.train:
                     image = self.transformer(image)   
                 images[str(year)] = image
@@ -372,7 +375,8 @@ class MultiStage(LightningModule):
             ds,
             batch_size=self.config["predict_batch_size"],
             shuffle=False,
-            num_workers=self.config["workers"]
+            num_workers=self.config["workers"],
+            collate_fn=utils.skip_none_collate
         )
 
         return data_loader
