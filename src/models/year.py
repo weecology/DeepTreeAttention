@@ -25,9 +25,6 @@ class learned_ensemble(nn.Module):
             score = self.year_models[year](image)
             year_scores.append(score)
         
-        if len(year_scores) == 0:
-            return None
-        
         return torch.stack(year_scores, axis=1).mean(axis=1)
                 
     
