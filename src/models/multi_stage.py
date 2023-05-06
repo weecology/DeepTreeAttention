@@ -434,6 +434,9 @@ class MultiStage(LightningModule):
     def predict_step(self, batch, batch_idx):
         """Calculate predictions
         """
+        if batch is None:
+            return None
+        
         individual, inputs = batch
         images = inputs["HSI"]  
         
