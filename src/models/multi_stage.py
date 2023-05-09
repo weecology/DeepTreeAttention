@@ -499,12 +499,22 @@ class MultiStage(LightningModule):
         ensemble_score = []
                 
         #For each level, select the predicted taxonID and retrieve the original label order
-        for index,row in results.iterrows():
+        for index, row in results.iterrows():            
             if "flat_taxa" in results.columns:
+                if pd.isnull(row["flat_taxa"]):
+                    ensemble_taxonID.append(np.nan)
+                    ensemble_label.append(np.nan)
+                    ensemble_score.append(np.nan) 
+                    continue
                 ensemble_taxonID.append(row["flat_taxa"])
                 ensemble_label.append(self.species_label_dict[row["flat_taxa"]])
                 ensemble_score.append(row["flat_score"])                   
             elif not row["dominant_class_taxa"] in ["CONIFER","BROADLEAF"]:
+                if pd.isnull(row["dominant_class_taxa"]):
+                    ensemble_taxonID.append(np.nan)
+                    ensemble_label.append(np.nan)
+                    ensemble_score.append(np.nan) 
+                    continue
                 ensemble_taxonID.append(row["dominant_class_taxa"])
                 ensemble_label.append(self.species_label_dict[row["dominant_class_taxa"]])
                 ensemble_score.append(row["dominant_class_score"])                
