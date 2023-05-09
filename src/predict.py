@@ -217,10 +217,9 @@ def predict_species(crowns, m, trainer, config):
     ds = TreeDataset(df=crowns, train=False, config=config)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)
-    results = results.merge(crowns[["geometry","individual","taxonID","siteID","dead_label","dead_score"]], on="individual")
+    results = results.merge(crowns[["geometry","individual","taxonID","siteID","dead_label","dead_score"]], on="individual", how="right")
     ensemble_df = m.ensemble(results)
     ensemble_df = gpd.GeoDataFrame(ensemble_df, geometry="geometry")
-    
     
     return ensemble_df
 
