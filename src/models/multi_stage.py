@@ -460,6 +460,8 @@ class MultiStage(LightningModule):
         levels = []
         
         for output in predict_df:
+            if output is None:
+                continue
             for index, level_results in enumerate(output[1]):
                 batch_individuals = np.stack(output[0])
                 for individual, yhat in zip(batch_individuals, level_results):
