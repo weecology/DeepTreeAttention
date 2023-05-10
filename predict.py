@@ -81,7 +81,7 @@ species_model_paths = {
     "SOAP":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/8c3dd91e61e948c0809a46d6a824afc2_SOAP.pt",
     "YELL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/27765ac5b3754d32bc2c626e257c296f_YELL.pt",                       
     "MLBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/e1770318881b4eb88a4c975e287573c5_MLBS.pt",
-    #"BLAN":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9af9ba5a9e1148daa365d3c893cde875_['MLBS','BLAN','SCBI','UKFS'].pt",
+    "BLAN":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/166a8445e3304fc7840aef9ad113bfff_BLAN.pt",
     #"UKFS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9af9ba5a9e1148daa365d3c893cde875_['MLBS','BLAN','SCBI','UKFS'].pt",
     "BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b6296f0f28ea45459df495185b5f9c33_BART.pt",
     "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/69b49e1ea47e40d79760e564cbb7bd6e_HARV.pt"}
