@@ -39,7 +39,7 @@ replace_bounding_boxes: False
 # Regenerate bounding box sensor crops
 replace_crops: False
 # Recreate a train test split
-train_test_commit: 7c8fd840ef0671e2fa35ff7e121f861325ffceb2
+train_test_commit: 8fd09403aa07e1bb3f450b27065eb38239e5ae70
 # Use existing plotIDs for train/test split
 existing_test_csv:
 
@@ -54,7 +54,7 @@ taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 ### Pre-Training Parameters
 create_pretrain_model: True
 pretrain_state_dict:
-pretrain_epochs: 100
+pretrain_epochs: 200
 
 ### Training Parameters
 gpus: 1
@@ -72,7 +72,7 @@ lr_flat: 0.0005
 
 fast_dev_run: False
 accelerator: auto
-epochs: 300
+epochs: 100
 snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
 
 ### Evaluation config
