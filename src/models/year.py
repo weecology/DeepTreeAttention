@@ -22,7 +22,10 @@ class learned_ensemble(nn.Module):
             # Skip padding tensors
             if image.sum() == 0:
                 continue
-            score = self.year_models[year](image)
+            try:
+                score = self.year_models[year](image)
+            except KeyError:
+                continue
             year_scores.append(score)
         
         return torch.stack(year_scores, axis=1).mean(axis=1)
