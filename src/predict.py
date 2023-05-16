@@ -34,7 +34,6 @@ def RGB_transform(augment):
     
 def find_crowns(rgb_path, config, dead_model_path=None, savedir=None, CHM_pool=None, overwrite=False):
     """Predict deepforest crowns"""
-    
     basename = os.path.splitext(os.path.basename(rgb_path))[0]  
     output_filename = "{}/{}.shp".format(savedir, basename)
     
@@ -105,7 +104,7 @@ def generate_prediction_crops(crown_path, config, rgb_pool, h5_pool, img_pool, c
     
     #Write file alongside       
     crown_annotations = gpd.GeoDataFrame(crown_annotations, geometry="geometry")    
-    crown_annotations = crown_annotations.merge(crowns[["individual","dead_label","dead_score"]])
+    crown_annotations = crown_annotations.merge(crowns[["individual","dead_label","dead_score", "score"]])
     
     crown_annotations.to_file(output_name)  
     

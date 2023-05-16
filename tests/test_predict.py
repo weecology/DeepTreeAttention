@@ -60,7 +60,8 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     
     # Assert that the geometry is correctly mantained
     assert crown_annotations.iloc[0].geometry.bounds == crowns[crowns.individual==crown_annotations.iloc[0].individual].iloc[0].geometry.bounds
-    
+    assert all(~crown_annotations.score.isnull())
+        
     #There should be two of each individual, with the same geoemetry
     assert crown_annotations[crown_annotations.individual == crown_annotations.iloc[0].individual].shape[0] == 2
     assert len(crown_annotations[crown_annotations.individual == crown_annotations.iloc[0].individual].bounds.minx.unique()) == 1
@@ -76,3 +77,4 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
         config=config)
     
     assert all([x in trees.columns for x in ["geometry","crown_score","scientificName"]])
+    assert all(~trees.crown_score.isnull())
