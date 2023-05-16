@@ -529,7 +529,7 @@ class MultiStage(LightningModule):
             else:
                 ensemble_taxonID.append(row["oak_taxa"])
                 ensemble_label.append(self.species_label_dict[row["oak_taxa"]])
-                ensemble_score.append(row["oak_taxa"])                
+                ensemble_score.append(row["oak_score"])                
                 
         results["ensembleTaxonID"] = ensemble_taxonID
         results["ens_score"] = ensemble_score
