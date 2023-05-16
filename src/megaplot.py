@@ -111,7 +111,7 @@ def load(directory, config, client=None, site=None):
     Returns:
         crowndf: a geopandas dataframe of crowns for all sites
     """
-    if site == "all":
+    if site == "pretrain":
         site = None
         
     if site is not None:
