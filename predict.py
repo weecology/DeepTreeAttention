@@ -51,10 +51,10 @@ comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["
 
 comet_logger.experiment.log_parameters(config)
 
-client = start(cpus=3, mem_size="5GB")
+client = start(cpus=3, mem_size="10GB")
 
 #Get site arg
-site=str(sys.argv[0])
+site=str(sys.argv[1])
 comet_logger.experiment.add_tag("prediction_{}".format(site))
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops"

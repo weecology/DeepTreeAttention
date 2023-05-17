@@ -18,4 +18,4 @@ source activate DeepTreeAttention
 
 cd ~/DeepTreeAttention/
 module load git gcc
-python -m cProfile -o nodask_largebatch_8gpu.pstats predict.py
+python predict.py $1
