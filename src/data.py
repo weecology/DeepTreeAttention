@@ -352,13 +352,13 @@ class TreeData(LightningDataModule):
                     self.comet_logger.experiment.log_parameter("Species after CHM filter", len(self.canopy_points .taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after CHM filter", self.canopy_points.shape[0])
             
-                # Create crown data
+                # Create crown data on gpu
                 self.crowns = generate.points_to_crowns(
                     field_data="{}/canopy_points.shp".format(self.data_dir),
                     rgb_dir=self.config["rgb_sensor_pool"],
                     savedir="{}/boxes/".format(self.data_dir),
                     raw_box_savedir="{}/boxes/".format(self.data_dir),
-                    client=client
+                    client=None
                 )
                 
                 if self.config["megaplot_dir"]:
