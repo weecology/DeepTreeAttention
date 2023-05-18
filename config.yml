@@ -12,8 +12,8 @@ min_stem_diameter: 10
 
 # Minimum number of test samples per class to be included
 min_train_samples: 15
-min_test_samples: 20
-max_samples_per_class: 2000
+min_test_samples: 15
+max_samples_per_class: 5000
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
 # Set to 1 for debugging, no files will be written
@@ -30,14 +30,14 @@ CHM_height_limit: 8
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Checkout data artifact from comet
-use_data_commit:
+use_data_commit: f3fa3774bb5d47599b56a53545652929
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 
 # Rerun DeepForest boxes
-replace_bounding_boxes: True
+replace_bounding_boxes: False
 # Regenerate bounding box sensor crops
-replace_crops: True
+replace_crops: False
 # Recreate a train test split
 train_test_commit:
 # Use existing plotIDs for train/test split
@@ -58,7 +58,7 @@ pretrain_epochs: 200
 
 ### Training Parameters
 gpus: 1
-batch_size: 128
+batch_size: 96
 bands: 349
 head_class_minimum_ratio: 0.4
 
@@ -72,7 +72,7 @@ lr_flat: 0.0005
 
 fast_dev_run: False
 accelerator: auto
-epochs: 100
+epochs: 200
 snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
 
 ### Evaluation config
