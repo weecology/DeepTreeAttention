@@ -13,7 +13,7 @@ min_stem_diameter: 10
 # Minimum number of test samples per class to be included
 min_train_samples: 15
 min_test_samples: 20
-max_samples_per_class: 2000
+max_samples_per_class: 5000
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
 # Set to 1 for debugging, no files will be written
@@ -72,7 +72,7 @@ lr_flat: 0.0005
 
 fast_dev_run: False
 accelerator: auto
-epochs: 100
+epochs: 200
 snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
 
 ### Evaluation config
