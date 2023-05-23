@@ -51,7 +51,7 @@ comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["
 
 comet_logger.experiment.log_parameters(config)
 
-client = start(cpus=3, mem_size="10GB")
+client = start(cpus=3, mem_size="20GB")
 
 #Get site arg
 site=str(sys.argv[1])
@@ -68,8 +68,8 @@ species_model_paths = {
     "GRSM":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/422f3b1af269499dac4478619ec5f488_GRSM.pt",
     "DEJU":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e3178ac37434aeb90ac207c18a9caf7_DEJU.pt",
     "BONA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/e8b887dcae144d76a16d722d155b409f_BONA.pt",
-    "TREE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/bfa3f8cd14484008af41f7abfe128f26_TREE.pt",
-    "STEI":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/7d69a3ee5c6241e8b48cdf09391e0bff_STEI.pt",
+    "TREE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/e9125b5bc4d8415c9d9cbadcf1d7fed2_TREE.pt",
+    "STEI":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/951f766a48aa4a0baa943d9f6d26f3e0_STEI.pt",
     "UNDE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/37afb0af021348469406ce37ba41dda7_UNDE.pt",
     "DELA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/299e7aa3bdae413a9931542310da9d96_DELA.pt",
     "LENO":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/537b80fd46e64c77a1c367dcbef713e3_LENO.pt",
