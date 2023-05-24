@@ -35,9 +35,9 @@ data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 
 # Rerun DeepForest boxes
-replace_bounding_boxes: False
+replace_bounding_boxes: True
 # Regenerate bounding box sensor crops
-replace_crops: False
+replace_crops: True
 # Recreate a train test split
 train_test_commit:
 # Use existing plotIDs for train/test split
