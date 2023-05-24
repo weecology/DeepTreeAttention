@@ -323,6 +323,10 @@ class TreeData(LightningDataModule):
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config, client=self.client, site=site)
                     megaplot_data.loc[megaplot_data.taxonID=="MAGR4","taxonID"] = "MAGNO"  
                     
+                    # for BLAN arboretum, only include present species
+                    if site == "BLAN":
+                        megaplot_data = megaplot_data[megaplot_data.taxonID.isin(df.taxonID.unique())]
+                        
                     # Hold IFAS records seperarely to model on polygons
                     IFAS = megaplot_data[megaplot_data.filename.str.contains("IFAS")]
                     IFAS.geometry = IFAS.geometry.envelope
