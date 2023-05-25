@@ -103,7 +103,7 @@ def filter_data(path, config):
     field.loc[field.taxonID=="ACRUR","taxonID"] = "ACRU"
     field.loc[field.taxonID=="PICOL","taxonID"] = "PICO"
     field.loc[field.taxonID=="ABLAL","taxonID"] = "ABLA"
-    field.loc[field.taxonID=="ACSA3","taxonID"] = "ACSAS"
+    field.loc[field.taxonID=="ACSAS","taxonID"] = "ACSA3"
     field.loc[field.taxonID=="CECAC","taxonID"] = "CECA4"
     field.loc[field.taxonID=="PRSES","taxonID"] = "PRSE2"
     field.loc[field.taxonID=="PIPOS","taxonID"] = "PIPO"
@@ -322,11 +322,7 @@ class TreeData(LightningDataModule):
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config, client=self.client, site=site)
                     megaplot_data.loc[megaplot_data.taxonID=="MAGR4","taxonID"] = "MAGNO"  
-                    
-                    # for BLAN arboretum, only include present species
-                    if site == "BLAN":
-                        megaplot_data = megaplot_data[megaplot_data.taxonID.isin(df.taxonID.unique())]
-                        
+
                     # Hold IFAS records seperarely to model on polygons
                     IFAS = megaplot_data[megaplot_data.filename.str.contains("IFAS")]
                     IFAS.geometry = IFAS.geometry.envelope
@@ -391,7 +387,9 @@ class TreeData(LightningDataModule):
                         print("No dead trees predicted")
             
             self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir, site))
-            if self.config["replace_crops"]:    
+            if self.config["replace_crops"]:   
+                
+                #HSI crops
                 self.annotations = generate.generate_crops(
                     self.crowns,
                     savedir=self.data_dir,
@@ -405,6 +403,19 @@ class TreeData(LightningDataModule):
                 )
             
                 self.annotations.to_csv("{}/annotations.csv".format(self.data_dir))
+                
+                #self.annotations = generate.generate_crops(
+                    #self.crowns,
+                    #savedir=self.data_dir,
+                    #img_pool=rgb_pool,
+                    #h5_pool=h5_pool,
+                    #convert_h5=self.config["convert_h5"],   
+                    #rgb_pool=rgb_pool,
+                    #HSI_tif_dir=self.config["HSI_tif_dir"],
+                    #client=self.client,
+                    #as_numpy=True
+                #)
+                
             else:
                 self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir))
             if self.comet_logger:
