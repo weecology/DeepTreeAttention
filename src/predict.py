@@ -215,6 +215,8 @@ def predict_species(crowns, m, trainer, config):
     crowns = gpd.read_file(crowns)
     ds = TreeDataset(df=crowns, train=False, config=config)
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
+    
+    print(predictions)
     results = m.gather_predictions(predictions)
     results = results.merge(crowns[["geometry","individual","taxonID","siteID","dead_label","dead_score", "score"]], on="individual", how="right")
     ensemble_df = m.ensemble(results)

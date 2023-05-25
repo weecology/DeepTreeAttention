@@ -489,8 +489,9 @@ class MultiStage(LightningModule):
         results.columns = results.columns.str.replace("y","score")
         
         #Label taxa
-        print(results)
-        print(self.label_to_taxonIDs)
+        if results.empty:
+            raise ValueError("No predictions made")
+        
         for level, label_dict in self.label_to_taxonIDs.items():
             results["{}_taxa".format(level)] = results["{}_label".format(level)].apply(lambda x: label_dict[x])
         
