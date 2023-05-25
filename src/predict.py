@@ -214,9 +214,7 @@ def predict_species(crowns, m, trainer, config):
     """Compute hierarchical prediction without predicting unneeded levels""" 
     crowns = gpd.read_file(crowns)
     ds = TreeDataset(df=crowns, train=False, config=config)
-    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
-    
-    print(predictions)
+    predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))    
     results = m.gather_predictions(predictions)
     results = results.merge(crowns[["geometry","individual","taxonID","siteID","dead_label","dead_score", "score"]], on="individual", how="right")
     ensemble_df = m.ensemble(results)
