@@ -138,6 +138,8 @@ class MultiStage(LightningModule):
         
         #Don't preload images, since the dataset might not be around anymore.
         self.config["preload_image_dict"] = False
+        self.config["preload_images"] = False
+        self.config["head_class_minimum_ratio"] = self.config["head_class_minimum_ratio"]
         
         # Recreate models
         self.setup("fit")
@@ -487,6 +489,8 @@ class MultiStage(LightningModule):
         results.columns = results.columns.str.replace("y","score")
         
         #Label taxa
+        print(results)
+        print(self.label_to_taxonIDs)
         for level, label_dict in self.label_to_taxonIDs.items():
             results["{}_taxa".format(level)] = results["{}_label".format(level)].apply(lambda x: label_dict[x])
         
