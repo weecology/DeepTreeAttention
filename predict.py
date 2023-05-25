@@ -173,8 +173,10 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         except:
             traceback.print_exc()
             continue
-        
+        if crown_annotations_path is None:
+            continue
         print(crown_annotations_path)
+
         output_name = os.path.splitext(os.path.basename(crown_annotations_path))[0]
         output_name = os.path.join(prediction_dir, "{}.shp".format(output_name))
         
