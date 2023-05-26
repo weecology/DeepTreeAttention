@@ -399,22 +399,27 @@ class TreeData(LightningDataModule):
                     rgb_pool=rgb_pool,
                     HSI_tif_dir=self.config["HSI_tif_dir"],
                     client=self.client,
-                    as_numpy=True
+                    as_numpy=True,
+                    suffix="HSI"
                 )
             
                 self.annotations.to_csv("{}/annotations.csv".format(self.data_dir))
                 
-                #self.annotations = generate.generate_crops(
-                    #self.crowns,
-                    #savedir=self.data_dir,
-                    #img_pool=rgb_pool,
-                    #h5_pool=h5_pool,
-                    #convert_h5=self.config["convert_h5"],   
-                    #rgb_pool=rgb_pool,
-                    #HSI_tif_dir=self.config["HSI_tif_dir"],
-                    #client=self.client,
-                    #as_numpy=True
-                #)
+                rgb_crowns = self.crowns.copy()
+                rgb_crowns.geometry = rgb_crowns.geometry.buffer(1)
+                rgb_annotations = generate.generate_crops(
+                    rgb_crowns,
+                    savedir=self.data_dir,
+                    img_pool=rgb_pool,
+                    h5_pool=h5_pool,
+                    rgb_pool=rgb_pool,
+                    convert_h5=False,   
+                    client=self.client,
+                    suffix="RGB"
+                )
+                rgb_annotations["RGB_image_path"] = rgb_annotations["image_path"]
+
+                self.annotations = self.annotations.merge(rgb_annotations[["individual","tile_year","RGB_image_path"]], on=["individual","tile_year"])
                 
             else:
                 self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir))

@@ -60,6 +60,7 @@ def config(ROOT):
     config["iterations"] = 1
     config["rgb_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
     config["HSI_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
+    config["HSI_tif_dir"] = "{}/tests/data/".format(ROOT)
     config["min_train_samples"] = 1
     config["min_test_samples"] = 1
     config["data_dir"] = "{}/tests/data/".format(ROOT)

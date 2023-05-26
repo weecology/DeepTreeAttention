@@ -46,7 +46,6 @@ def create_glob_lists(config):
 
     
     h5_pool = glob(config["HSI_sensor_pool"], recursive=True)
-    #h5_pool = [x for x in h5_pool if not "neon-aop-products" in x]
     h5_pool = [x for x in h5_pool if not "point_cloud" in x]
     h5_pool = [x for x in h5_pool if not "products" in x]
     
