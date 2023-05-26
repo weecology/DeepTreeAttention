@@ -1,53 +1,29 @@
-from descartes import PolygonPatch
 import glob
 import rasterio
 import tempfile
 import matplotlib.pyplot as plt
 
-from matplotlib.collections import PatchCollection
 from rasterio.plot import show
+from geopandas import GeoSeries
 
 from src import neon_paths
+from src.utils import load_image
 
-def plot_examples(df, test_crowns, plot_n_individuals, test_points, rgb_sensor_pool, experiment):
-    """Create a visualization of crowns and points overlaid on RGB"""
-    tmpdir = tempfile.gettempdir()
-    #load image pool and crown predicrions
-    rgb_pool = glob.glob(rgb_sensor_pool, recursive=True)  
-    plt.ion()
-    for index, row in df.sample(n=plot_n_individuals).iterrows():
-        fig = plt.figure(0)
-        ax = fig.add_subplot(1, 1, 1)                
-        individual = row["individual"]
-        try:
-            geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
-        except Exception as e:
-            print("Cannot find individual {} in crowns.shp with schema {}".format(individual, test_crowns.head()))
-            break
-            
-        left, bottom, right, top = geom.bounds
-        
-        #Find image
-        img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
-        src = rasterio.open(img_path)
-        img = src.read(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
-        img_transform = src.window_transform(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
-        
-        #Plot crown
-        patches = [PolygonPatch(geom, edgecolor='red', facecolor='none')]
-        show(img, ax=ax, transform=img_transform)                
-        ax.add_collection(PatchCollection(patches, match_original=True))
-        
-        #Plot field coordinate
-        stem = test_points[test_points.individual == individual]
-        stem.plot(ax=ax)
-        
-        plt.savefig("{}/{}.png".format(tmpdir, row["individual"]))
-        experiment.log_image("{}/{}.png".format(tmpdir, row["individual"]), name = "crown: {}, True: {}, Predicted {}".format(row["individual"], row.true_taxa,row.pred_taxa_top1))
-        src.close()
-        plt.close("all")
-    plt.ioff()
-            
+def crown_plot(img_path, geom, point):
+    #Find image
+    fig, ax = plt.subplots(figsize=(4, 4))
+    src = rasterio.open(img_path)
+    
+    #Plot crown
+    show(src, ax=ax)                    
+    g = GeoSeries([geom])
+    g.plot(ax=ax, facecolor="none", edgecolor="red")
+    
+    #Plot field coordinate
+    p = GeoSeries([point])
+    p.plot(ax=ax)
+    
+    
 def index_to_example(index, test, test_crowns, test_points, rgb_pool, comet_experiment):
     """Function to plot an RGB image, the NEON field point and the deepforest crown given a test index
     Args:
@@ -63,27 +39,11 @@ def index_to_example(index, test, test_crowns, test_points, rgb_pool, comet_expe
     """
     tmpdir = tempfile.gettempdir()
     individual = test.loc[index]["individual"]
-    
-    fig = plt.figure(0)
-    ax = fig.add_subplot(1, 1, 1)                
+    point = test_points[test_points.individual == individual]
     geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
-    left, bottom, right, top = geom.bounds
-    
-    #Find image
-    img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=geom.bounds)
-    src = rasterio.open(img_path)
-    img = src.read(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
-    img_transform = src.window_transform(window=rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform))  
-    
-    #Plot crown
-    patches = [PolygonPatch(geom, edgecolor='red', facecolor='none')]
-    show(img, ax=ax, transform=img_transform)                
-    ax.add_collection(PatchCollection(patches, match_original=True))
-    
-    #Plot field coordinate
-    stem = test_points[test_points.individual == individual]
-    stem.plot(ax=ax)
-    
+    img_path = test.loc[index]["RGB_image_path"]
+    figure = crown_plot(image_path, geom, point)
+
     image_name = "{}/{}_confusion.png".format(tmpdir,individual)
     plt.title("{}".format(individual))
     

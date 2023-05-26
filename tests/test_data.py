@@ -10,9 +10,10 @@ def test_TreeData_setup(config, ROOT):
     local_config["replace_bounding_boxes"] =True
     local_config["replace_crops"] = True
     local_config["train_test_commit"] = None
+    local_config["convert_h5"] = False
     
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)               
-    dm = data.TreeData(config=local_config, csv_file=csv_file, data_dir="{}/tests/data".format(ROOT), experiment_id="OSBS") 
+    dm = data.TreeData(config=local_config, csv_file=csv_file, data_dir="{}/tests/data".format(ROOT), experiment_id="OSBS", create_train_test=True) 
     
     test = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
     train = pd.read_csv("{}/tests/data/processed/train.csv".format(ROOT))
@@ -27,7 +28,7 @@ def test_TreeDataset(m, dm, config):
     #Train loader
     ds = data.TreeDataset(df=dm.train, config=dm.config)
     individuals, inputs, label = ds[0]    
-    assert inputs["HSI"][0].shape == (config["bands"], config["image_size"], config["image_size"])
+    assert inputs["HSI"].shape == (config["bands"], config["image_size"], config["image_size"])
     
 def test_sample_plots(dm, config):
     train, test = data.sample_plots(shp=dm.crowns, min_test_samples=10, min_train_samples=10)

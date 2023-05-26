@@ -25,8 +25,8 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=40):
     #DeepForest is trained on 400m crops, easiest to mantain this approximate size centered on points
     left, bottom, right, top = bounds
     expand_width = (expand - (right - left))/2
-    left = left - expand_width
-    right = right + expand_width
+    expand_left = left - expand_width
+    expand_right = right + expand_width
     
     expand_height = (expand - (top - bottom))/2 
     bottom = bottom - expand_height
@@ -34,7 +34,7 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=40):
     
     src = rasterio.open(rgb_path)
     pixelSizeX, pixelSizeY  = src.res    
-    img = src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform))
+    img = src.read(window=rasterio.windows.from_bounds(expand_left, bottom, expand_right, top, transform=src.transform), boundless=True)
     src.close()
     
     #roll to channels last
@@ -45,8 +45,8 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=40):
         return boxes
 
     #subtract origin. Recall that numpy origin is top left! Not bottom left.
-    boxes["xmin"] = (boxes["xmin"] *pixelSizeX) + left
-    boxes["xmax"] = (boxes["xmax"] * pixelSizeX) + left
+    boxes["xmin"] = (boxes["xmin"] *pixelSizeX) + expand_left
+    boxes["xmax"] = (boxes["xmax"] * pixelSizeX) + expand_left
     boxes["ymin"] = top - (boxes["ymin"] * pixelSizeY) 
     boxes["ymax"] = top - (boxes["ymax"] * pixelSizeY)
 
@@ -116,7 +116,8 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     
     if not missing_ids.empty:
         created_boxes= create_boxes(missing_ids)
-        merged_boxes = merged_boxes.append(created_boxes)
+        concat_boxes = pd.concat([merged_boxes,created_boxes])
+        merged_boxes = gpd.GeoDataFrame(concat_boxes)
     
     #If there are multiple boxes per point, take the center box
     grouped = merged_boxes.groupby("individual")
@@ -232,6 +233,7 @@ def points_to_crowns(
                 results.append(result)
             except Exception as e:
                 print("{} failed with {}".format(plot, e))
+                raise
     results = pd.concat(results)
     
     #In case any contrib data has the same CHM and height and sitting in the same deepforest box.Should be rare.
@@ -239,25 +241,31 @@ def points_to_crowns(
     
     return results
 
-def write_crop(row, savedir, img_path, rasterio_src=None, as_numpy=False):
+def write_crop(row, savedir, img_path, rasterio_src=None, as_numpy=False, suffix=None):
     """Wrapper to write a crop based on size and savedir
     Args:
         as_numpy: save as .npz files preprocessed, instead of .tif, useful for prediction
     """
+    
     tile_year = os.path.splitext(os.path.basename(img_path))[0].split("_")[-1]
+    if suffix:
+        basename = "{}_{}_{}".format(row["individual"], tile_year, suffix)
+    else:
+        basename = "{}_{}".format(row["individual"], tile_year)
+        
     filename = patches.crop(
         bounds=row["geometry"].bounds,
         sensor_path=img_path,
         savedir=savedir,
         rasterio_src=rasterio_src,
         as_numpy=as_numpy,
-        basename="{}_{}".format(row["individual"], tile_year))
+        basename=basename)
     
     image_path = os.path.basename(filename)
     
     return image_path
 
-def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, convert_h5=False, HSI_tif_dir=None, as_numpy=False):
+def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, convert_h5=False, HSI_tif_dir=None, as_numpy=False, suffix=None):
     """
     Given a shapefile of crowns in a plot, create pixel crops and a dataframe of unique names and labels"
     Args:
@@ -298,6 +306,9 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
         
         tile_to_path[geo_index] = img_path
     
+    if len(tile_to_path) == 0:
+        raise ValueError("No tiles found, check h5_pool and tif directory")
+    
     filenames = []  
     geo_indexes = []
     indexes = []
@@ -310,7 +321,7 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
                 continue
             
             for x in img_path:
-                future = client.submit(write_crop, row=row,img_path=x, savedir=savedir, as_numpy=as_numpy)
+                future = client.submit(write_crop, row=row,img_path=x, savedir=savedir, as_numpy=as_numpy, suffix=suffix)
                 futures.append(future)
                 geo_indexes.append(index)                
             
@@ -336,7 +347,7 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
                 #Write available crops
                 for index, row in tile_annotations.iterrows():
                     try:
-                        filename = write_crop(row=row, savedir=savedir, img_path=x, rasterio_src=rasterio_src, as_numpy=as_numpy)   
+                        filename = write_crop(row=row, savedir=savedir, img_path=x, rasterio_src=rasterio_src, as_numpy=as_numpy, suffix=suffix)   
                         indexes.append(index)
                         filenames.append(filename)                                                   
                     except Exception as e:
@@ -346,7 +357,7 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
     annotations = gdf.loc[indexes]
     print("shape of annotations is {}".format(annotations.shape))
     annotations["image_path"] = filenames       
-    annotations["tile_year"] = annotations.image_path.apply(lambda x: os.path.splitext(os.path.basename(x))[0].split("_")[-1] )
+    annotations["tile_year"] = annotations.image_path.apply(lambda x: os.path.splitext(os.path.basename(x))[0].split("_")[-2])
     annotations = annotations.loc[:,annotations.columns.isin(
         ["individual","geo_index","tile_year","CHM_height","plotID","height","geometry","taxonID","RGB_tile","filename","siteID","image_path","score","box_id"])]
 
