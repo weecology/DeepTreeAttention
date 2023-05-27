@@ -21,3 +21,23 @@ def test_crown_plot(rgb_path,plot_data):
     visualize.crown_plot(rgb_path, geom=geom, point=point)
     print("Visualize crown plot completed")
     #plt.show()
+
+def test_confusion_matrix(experiment, rgb_path, plot_data):
+    m = main.deepforest()
+    m.use_release(check_release=False)
+    boxes = generate.predict_trees(deepforest_model=m, rgb_path=rgb_path, bounds=plot_data.total_bounds)    
+    merged_boxes = gpd.sjoin(boxes, plot_data)    
+    
+    labels = plot_data.taxonID.unqiue()
+    yhats = plot_data.taxonID.astype('category').cat.codes
+    y = plot_data.taxonID.astype('category').cat.codes
+    
+    visualize.confusion_matrix(comet_experiment=experiment,
+                               yhats=yhats,
+                               y=y,
+                               labels = labels, 
+                               test=plot_data,
+                               test_points=plot_data,
+                               test_crowns=merged_boxes,
+                               name="pytest")
+    
