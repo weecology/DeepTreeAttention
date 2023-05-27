@@ -247,7 +247,11 @@ def write_crop(row, savedir, img_path, rasterio_src=None, as_numpy=False, suffix
         as_numpy: save as .npz files preprocessed, instead of .tif, useful for prediction
     """
     
-    tile_year = os.path.splitext(os.path.basename(img_path))[0].split("_")[-1]
+    if suffix is "RGB":
+        tile_year = os.path.splitext(os.path.basename(img_path))[0].split("_")[-1]
+    else:
+        tile_year = os.path.splitext(os.path.basename(img_path))[0].split("_")[0]
+        
     if suffix:
         basename = "{}_{}_{}".format(row["individual"], tile_year, suffix)
     else:
