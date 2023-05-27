@@ -28,7 +28,7 @@ def test_confusion_matrix(experiment, rgb_path, plot_data):
     boxes = generate.predict_trees(deepforest_model=m, rgb_path=rgb_path, bounds=plot_data.total_bounds)    
     merged_boxes = gpd.sjoin(boxes, plot_data)    
     
-    labels = plot_data.taxonID.unqiue()
+    labels = plot_data.taxonID.unique()
     yhats = plot_data.taxonID.astype('category').cat.codes
     y = plot_data.taxonID.astype('category').cat.codes
     
