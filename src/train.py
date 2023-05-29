@@ -224,33 +224,9 @@ def train_model(data_module, comet_logger, m, name):
         test=m.test_df,
         test_points=data_module.canopy_points,
         test_crowns=data_module.crowns,
+        crop_dir=data_module.config["crop_dir"],
         name=name
     )
-    
-    #comet_logger.experiment.log_confusion_matrix(
-        #ensemble_df.label.values,
-        #ensemble_df.ens_label.values,
-        #labels=list(data_module.species_label_dict.keys()),
-        #max_categories=len(data_module.species_label_dict.keys()),
-        #title=name,
-        #file_name="{}.json".format(name)
-    #)
-    
-    for site in ensemble_df.siteID.unique():
-        site_result = ensemble_df[ensemble_df.siteID==site]
-        combined_species = np.unique(site_result[['taxonID', 'ensembleTaxonID']].values)
-        site_labels = {value:key for key, value in enumerate(combined_species)}
-        y = [site_labels[x] for x in site_result.taxonID.values]
-        ypred = [site_labels[x] for x in site_result.ensembleTaxonID.values]
-        taxonlabels = [key for key, value in site_labels.items()]
-        comet_logger.experiment.log_confusion_matrix(
-            y,
-            ypred,
-            labels=taxonlabels,
-            max_categories=len(taxonlabels),
-            file_name="{}.json".format(site),
-            title=site
-        )
         
     # Log prediction
     comet_logger.experiment.log_table("test_predictions.csv", ensemble_df)

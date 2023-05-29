@@ -24,7 +24,7 @@ def crown_plot(img_path, geom, point):
     p.plot(ax=ax)
     
     
-def index_to_example(index, test, test_crowns, test_points, comet_experiment):
+def index_to_example(index, test, test_crowns, test_points, comet_experiment, crop_dir):
     """Function to plot an RGB image, the NEON field point and the deepforest crown given a test index
     Args:
         index: pandas index .loc for test.csv
@@ -52,7 +52,7 @@ def index_to_example(index, test, test_crowns, test_points, comet_experiment):
     # Return sample, assetId (index is added automatically)
     return {"sample": image_name, "assetId": results["imageId"]}
 
-def confusion_matrix(comet_experiment, yhats, y, labels, test, test_points, test_crowns, name):
+def confusion_matrix(comet_experiment, yhats, y, labels, test, test_points, test_crowns, name, crop_dir):
     #Confusion matrix
     comet_experiment.log_confusion_matrix(
         yhats,
@@ -65,6 +65,7 @@ def confusion_matrix(comet_experiment, yhats, y, labels, test, test_points, test
         test_crowns=test_crowns,
         comet_experiment=comet_experiment,
         title=name,
-        file_name="{}.json".format(name)
+        file_name="{}.json".format(name),
+        crop_dir=crop_dir
     )
 
