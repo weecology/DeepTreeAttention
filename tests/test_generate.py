@@ -98,11 +98,13 @@ def test_generate_crops(tmpdir, ROOT, rgb_path, sample_crowns):
     gdf["RGB_tile"] = rgb_path
     gdf["box_id"] = gdf.index
     
+    img_pool = glob.glob("{}/tests/data/*.tif".format(ROOT))
+    
     annotations = generate.generate_crops(
         gdf=gdf,
-        rgb_glob="{}/tests/data/*.tif".format(ROOT),
+        rgb_pool=img_pool,
         convert_h5=False,
-        sensor_glob="{}/tests/data/*.tif".format(ROOT),
+        img_pool=img_pool,
         savedir=tmpdir)
     
     assert len(annotations.tile_year.unique()) == 2 

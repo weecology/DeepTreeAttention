@@ -41,7 +41,7 @@ def index_to_example(index, test, test_crowns, test_points, comet_experiment):
     point = test_points[test_points.individual == individual]
     geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
     img_path = test.loc[index]["RGB_image_path"]
-    crown_plot(image_path, geom, point)
+    crown_plot(img_path, geom, point)
     image_name = "{}/{}_confusion.png".format(tmpdir,individual)
     plt.title("{}".format(individual))
     
@@ -64,6 +64,7 @@ def confusion_matrix(comet_experiment, yhats, y, labels, test, test_points, test
         test_points=test_points,
         test_crowns=test_crowns,
         comet_experiment=comet_experiment,
-        title=name
+        title=name,
+        file_name="{}.json".format(name)
     )
-    
+

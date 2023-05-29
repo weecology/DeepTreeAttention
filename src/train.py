@@ -12,6 +12,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor
 from src import data
 from src.models import multi_stage, Hang2020, baseline
 from src.data import __file__
+from src import visualize
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 
@@ -215,14 +216,25 @@ def train_model(data_module, comet_logger, m, name):
         experiment=comet_logger.experiment
     )
     
-    comet_logger.experiment.log_confusion_matrix(
-        ensemble_df.label.values,
-        ensemble_df.ens_label.values,
+    visualize.confusion_matrix(
+        comet_experiment=comet_logger.experiment,
+        yhats=ensemble_df.ens_label.values,
+        y=ensemble_df.label.values,
         labels=list(data_module.species_label_dict.keys()),
-        max_categories=len(data_module.species_label_dict.keys()),
-        title=name,
-        file_name="{}.json".format(name)
+        test=m.test_df,
+        test_points=data_module.canopy_points,
+        test_crowns=data_module.crowns,
+        name=name
     )
+    
+    #comet_logger.experiment.log_confusion_matrix(
+        #ensemble_df.label.values,
+        #ensemble_df.ens_label.values,
+        #labels=list(data_module.species_label_dict.keys()),
+        #max_categories=len(data_module.species_label_dict.keys()),
+        #title=name,
+        #file_name="{}.json".format(name)
+    #)
     
     for site in ensemble_df.siteID.unique():
         site_result = ensemble_df[ensemble_df.siteID==site]
