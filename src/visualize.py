@@ -40,7 +40,7 @@ def index_to_example(index, test, test_crowns, test_points, comet_experiment, cr
     individual = test.loc[index]["individual"]
     point = test_points[test_points.individual == individual]
     geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
-    img_path = test.loc[index]["RGB_image_path"]
+    img_path = "{}/{}".format(crop_dir, test.loc[index]["RGB_image_path"])
     crown_plot(img_path, geom, point)
     image_name = "{}/{}_confusion.png".format(tmpdir,individual)
     plt.title("{}".format(individual))
