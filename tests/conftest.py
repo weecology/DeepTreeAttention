@@ -56,6 +56,9 @@ def config(ROOT):
     print("Creating global config")
     #Turn of CHM filtering for the moment
     config = utils.read_config(config_path="{}/config.yml".format(ROOT))
+    config["use_data_commit"] = None
+    config["replace_bounding_boxes"] = True
+    config["replace_crops"] = True
     config["min_CHM_height"] = None
     config["iterations"] = 1
     config["rgb_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
@@ -73,7 +76,6 @@ def config(ROOT):
     config["dead_model"] = None
     config["dead_threshold"] = 0.95
     config["megaplot_dir"] = None
-    config["use_data_commit"] = "110ac77ae89043898f618466359c2a2e"
     config["dead"]["epochs"] = 1
     config["pretrain_state_dict"] = None
     config["preload_images"] = False
@@ -85,17 +87,16 @@ def config(ROOT):
     config["dead"]["batch_size"] = 2
     config["fast_dev_run"] = True
     config["snapshot_dir"] = None
-    config["train_test_commit"] = "110ac77ae89043898f618466359c2a2e"
     config["taxonomic_csv"] = "{}/data/raw/families.csv".format(ROOT)
-    config["crop_dir"] = "{}/tests/data/110ac77ae89043898f618466359c2a2e".format(ROOT)
+    config["crop_dir"] = "{}/tests/data/".format(ROOT)
 
     return config
 
 #Data module
 @pytest.fixture(scope="session")
 def dm(config, ROOT):
-    csv_file = "{}/tests/data/110ac77ae89043898f618466359c2a2e/train.csv".format(ROOT)
-    data_module = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data/110ac77ae89043898f618466359c2a2e".format(ROOT),site=["OSBS"]) 
+    csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)
+    data_module = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data/".format(ROOT),site=["HARV"], create_train_test=True) 
     
     return data_module
 

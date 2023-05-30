@@ -311,7 +311,7 @@ class TreeData(LightningDataModule):
         
         # Clean data from raw csv, regenerate from scratch or check for progress and complete                        
         if self.config["use_data_commit"] is None:
-            rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config)
+            self.rgb_pool, self.h5_pool, self.hsi_pool, self.CHM_pool = create_glob_lists(config)
             if self.config["replace_bounding_boxes"]: 
                 # Convert raw neon data to x,y tree locatins
                 df = filter_data(self.csv_file, config=self.config)
@@ -343,7 +343,7 @@ class TreeData(LightningDataModule):
                 df.to_file("{}/unfiltered_points_{}.shp".format(self.data_dir, site))
                 
                 #Filter points based on LiDAR height for NEON data
-                self.canopy_points = CHM.filter_CHM(df, CHM_pool=CHM_pool,
+                self.canopy_points = CHM.filter_CHM(df, CHM_pool=self.CHM_pool,
                                     min_CHM_height=self.config["min_CHM_height"], 
                                     max_CHM_diff=self.config["max_CHM_diff"], 
                                     CHM_height_limit=self.config["CHM_height_limit"])  
@@ -378,7 +378,7 @@ class TreeData(LightningDataModule):
                     try:
                         for index, row in self.predicted_dead.iterrows():
                             left, bottom, right, top = row["geometry"].bounds                
-                            img_path = neon_paths.find_sensor_path(lookup_pool=rgb_pool, bounds=row["geometry"].bounds)
+                            img_path = neon_paths.find_sensor_path(lookup_pool=self.rgb_pool, bounds=row["geometry"].bounds)
                             src = rasterio.open(img_path)
                             img = src.read(window=rasterio.windows.from_bounds(left-4, bottom-4, right+4, top+4, transform=src.transform))                      
                             img = np.rollaxis(img, 0, 3)
@@ -393,10 +393,10 @@ class TreeData(LightningDataModule):
                 self.annotations = generate.generate_crops(
                     self.crowns,
                     savedir=self.data_dir,
-                    img_pool=hsi_pool,
-                    h5_pool=h5_pool,
+                    img_pool=self.hsi_pool,
+                    h5_pool=self.h5_pool,
                     convert_h5=self.config["convert_h5"],   
-                    rgb_pool=rgb_pool,
+                    rgb_pool=self.rgb_pool,
                     HSI_tif_dir=self.config["HSI_tif_dir"],
                     client=self.client,
                     as_numpy=True,
@@ -410,9 +410,9 @@ class TreeData(LightningDataModule):
                 rgb_annotations = generate.generate_crops(
                     rgb_crowns,
                     savedir=self.data_dir,
-                    img_pool=rgb_pool,
-                    h5_pool=h5_pool,
-                    rgb_pool=rgb_pool,
+                    img_pool=self.rgb_pool,
+                    h5_pool=self.h5_pool,
+                    rgb_pool=self.rgb_pool,
                     convert_h5=False,   
                     client=self.client,
                     suffix="RGB"
