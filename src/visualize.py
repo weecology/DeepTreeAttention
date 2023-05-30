@@ -6,18 +6,20 @@ import matplotlib.pyplot as plt
 from rasterio.plot import show
 from geopandas import GeoSeries
 
-from src import neon_paths
-from src.utils import load_image
-
-def crown_plot(img_path, geom, point):
+def crown_plot(img_path, geom, point, expand=3):
     #Find image
-    fig, ax = plt.subplots(figsize=(4, 4))
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.axis('equal')
+    left, bottom, right, top = geom.buffer(expand).bounds 
     src = rasterio.open(img_path)
-    
+    window = rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform)
+    img = src.read(window=window) 
+    win_transform = src.window_transform(window)
+    show(img, ax=ax, transform=win_transform)                    
+
     #Plot crown
-    show(src, ax=ax)                    
     g = GeoSeries([geom])
-    g.plot(ax=ax, facecolor="none", edgecolor="red")
+    ax = g.plot(ax=ax, facecolor="none", edgecolor="red")
     
     #Plot field coordinate
     p = GeoSeries([point])
@@ -40,7 +42,7 @@ def index_to_example(index, test, test_crowns, test_points, comet_experiment, cr
     individual = test.loc[index]["individual"]
     point = test_points[test_points.individual == individual].geometry.iloc[0]
     geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
-    img_path = "{}/{}".format(crop_dir, test.loc[index]["RGB_image_path"])
+    img_path = test.loc[index]["RGB_tile"]
     crown_plot(img_path, geom, point)
     image_name = "{}/{}_confusion.png".format(tmpdir,individual)
     plt.title("{}".format(individual))
