@@ -67,7 +67,7 @@ def config(ROOT):
     config["min_train_samples"] = 1
     config["min_test_samples"] = 1
     config["data_dir"] = "{}/tests/data/".format(ROOT)
-    config["bands"] = 349
+    config["bands"] = 3
     config["classes"] = 3
     config["top_k"] = 1
     config["head_class_minimum_ratio"] = 0.25

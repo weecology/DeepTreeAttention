@@ -378,7 +378,7 @@ class MultiStage(LightningModule):
             batch_size=self.config["predict_batch_size"],
             shuffle=False,
             num_workers=self.config["workers"],
-            collate_fn=utils.skip_none_collate
+            collate_fn=utils.skip_none_collate,
         )
 
         return data_loader
