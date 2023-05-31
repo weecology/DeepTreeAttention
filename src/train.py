@@ -212,7 +212,7 @@ def train_model(data_module, comet_logger, m, name):
     results = m.gather_predictions(predictions)
     
     print("individuals in gather_predictions is {}".format(len(results.individual.unique())))
-    results = results.merge(data_module.test[["individual","taxonID","label","siteID"]], on="individual")
+    results = results.merge(data_module.test[["individual","taxonID","label","siteID","RGB_tile"]], on="individual")
     print("individuals in merged results is {}".format(len(results.individual.unique())))
     
     comet_logger.experiment.log_table("nested_predictions.csv", results)
