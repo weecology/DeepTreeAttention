@@ -83,6 +83,7 @@ def test_generate_crops_dask(tmpdir, ROOT, rgb_path, sample_crowns):
         img_pool=img_pool,
         convert_h5=False,
         rgb_pool=img_pool,
+        h5_pool=None,        
         savedir=tmpdir)
     
     assert len(annotations.tile_year.unique()) == 2 
@@ -107,6 +108,7 @@ def test_generate_crops(tmpdir, ROOT, rgb_path, sample_crowns):
         rgb_pool=img_pool,
         convert_h5=False,
         img_pool=img_pool,
+        h5_pool=None,
         savedir=tmpdir)
     
     assert len(annotations.tile_year.unique()) == 2 
