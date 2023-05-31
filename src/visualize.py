@@ -38,10 +38,10 @@ def index_to_example(index, test, test_crowns, test_points, comet_experiment, cr
         sample_id: comet id
     """
     tmpdir = tempfile.gettempdir()
-    individual = test.loc[index]["individual"]
+    individual = test.iloc[index]["individual"]
     point = test_points[test_points.individual == individual].geometry.iloc[0]
     geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
-    img_path = test.loc[index]["RGB_tile"]
+    img_path = test.iloc[index]["RGB_tile"]
     crown_plot(img_path, geom, point)
     image_name = "{}/{}_confusion.png".format(tmpdir,individual)
     plt.title("{}".format(individual))
