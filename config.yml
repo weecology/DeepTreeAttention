@@ -30,7 +30,7 @@ CHM_height_limit: 8
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Checkout data artifact from comet
-use_data_commit: f6c06aa175b84ecb9d5cd2cc4f0593d0
+use_data_commit: f3fa3774bb5d47599b56a53545652929
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 
