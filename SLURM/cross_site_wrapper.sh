@@ -1,6 +1,6 @@
 #cross_site_wrapper
 #!/bin/bash
-SITES='["MLBS"] ["BLAN"] ["UKFS"] ["SCBI"] ["BART"] ["HARV"] ["SERC"] ["GRSM"] ["NIWO"] ["RMNP"] ["WREF"] ["SJER"] ["BONA"] ["DEJU"] ["GUAN"] ["TREE"] ["STEI"] ["UNDE"] ["DELA"] ["LENO"] ["CLBJ"] ["TEAK"] ["SOAP"] ["YELL"] ["MOAB"] ["REDB"] ["OSBS"] ["JERC"] ["TALL"] ["DSNY"]'
+SITES='["OSBS"] ["BLAN"] ["UKFS"] ["SCBI"] ["BART"] ["HARV"] ["SERC"] ["GRSM"] ["NIWO"] ["RMNP"] ["WREF"] ["SJER"] ["BONA"] ["DEJU"] ["GUAN"] ["TREE"] ["STEI"] ["UNDE"] ["DELA"] ["LENO"] ["CLBJ"] ["TEAK"] ["SOAP"] ["YELL"] ["MOAB"] ["REDB"] ["MLBS"] ["JERC"] ["TALL"] ["DSNY"]'
 #SITES='["GRSM"]'
 for SITE in $SITES; do
 echo "${SITE}"
