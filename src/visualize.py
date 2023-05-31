@@ -56,8 +56,8 @@ def index_to_example(index, test, test_crowns, test_points, comet_experiment, cr
 def confusion_matrix(comet_experiment, yhats, y, labels, test, test_points, test_crowns, name, crop_dir):
     #Confusion matrix
     comet_experiment.log_confusion_matrix(
-        yhats,
-        y,
+        y_predicted=yhats,
+        y_true=y,
         labels=labels,
         max_categories=len(labels),
         index_to_example_function=index_to_example,
