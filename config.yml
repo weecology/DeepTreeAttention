@@ -39,7 +39,7 @@ replace_bounding_boxes: True
 # Regenerate bounding box sensor crops
 replace_crops: True
 # Recreate a train test split
-train_test_commit:
+train_test_commit: 96e83390f30c52579b94557a557917e3b157770e
 # Use existing plotIDs for train/test split
 existing_test_csv:
 
@@ -60,7 +60,7 @@ pretrain_epochs: 200
 gpus: 1
 batch_size: 96
 bands: 349
-head_class_minimum_ratio: 0.25
+head_class_minimum_ratio: 0.4
 
 # Learning rates
 lr: 0.0001
