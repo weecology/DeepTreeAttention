@@ -25,7 +25,7 @@ def crown_plot(img_path, geom, point, expand=3):
     p = GeoSeries([point])
     p.plot(ax=ax)
     
-def index_to_example(index, test, test_crowns, test_points, comet_experiment, crop_dir):
+def index_to_example(index, individuals,RGB_tiles, test_crowns, test_points, comet_experiment):
     """Function to plot an RGB image, the NEON field point and the deepforest crown given a test index
     Args:
         index: pandas index .loc for test.csv
@@ -38,10 +38,10 @@ def index_to_example(index, test, test_crowns, test_points, comet_experiment, cr
         sample_id: comet id
     """
     tmpdir = tempfile.gettempdir()
-    individual = test.iloc[index]["individual"]
+    individual = individuals[index]
     point = test_points[test_points.individual == individual].geometry.iloc[0]
     geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
-    img_path = test.iloc[index]["RGB_tile"]
+    img_path =  RGB_tiles[index]
     crown_plot(img_path, geom, point)
     image_name = "{}/{}_confusion.png".format(tmpdir,individual)
     plt.title("{}".format(individual))
@@ -53,20 +53,20 @@ def index_to_example(index, test, test_crowns, test_points, comet_experiment, cr
     # Return sample, assetId (index is added automatically)
     return {"sample": image_name, "assetId": results["imageId"]}
 
-def confusion_matrix(comet_experiment, yhats, y, labels, test, test_points, test_crowns, name, crop_dir):
+def confusion_matrix(comet_experiment, yhats, y, labels, individuals,RGB_tiles, test_points, test_crowns, name):
     #Confusion matrix
     comet_experiment.log_confusion_matrix(
         y_predicted=yhats,
         y_true=y,
+        individuals=individuals,
+        RGB_tiles=RGB_tiles,
         labels=labels,
         max_categories=len(labels),
         index_to_example_function=index_to_example,
-        test=test,
         test_points=test_points,
         test_crowns=test_crowns,
         comet_experiment=comet_experiment,
         title=name,
         file_name="{}.json".format(name),
-        crop_dir=crop_dir
     )
 

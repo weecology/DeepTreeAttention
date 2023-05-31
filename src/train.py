@@ -231,11 +231,11 @@ def train_model(data_module, comet_logger, m, name):
         comet_experiment=comet_logger.experiment,
         yhats=ensemble_df.ens_label.values,
         y=ensemble_df.label.values,
+        individuals=ensemble_df.individual.values,
+        RGB_tiles=ensemble_df.RGB_tile.values,
         labels=list(data_module.species_label_dict.keys()),
-        test=m.test_df,
         test_points=data_module.canopy_points,
         test_crowns=data_module.crowns,
-        crop_dir=data_module.config["crop_dir"],
         name=name
     )
         
