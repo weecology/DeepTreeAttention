@@ -212,7 +212,7 @@ def train_test_split(shp, config, client = None):
         None: train.shp and test.shp are written as side effect
         """    
     min_sampled = config["min_train_samples"] + config["min_test_samples"]
-    keep = shp.taxonID.groupby("individual").apply(lambda x: x.head(1)).value_counts() > (min_sampled)
+    keep = shp.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts() > (min_sampled)
     species_to_keep = keep[keep].index
     shp = shp[shp.taxonID.isin(species_to_keep)]
     print("splitting data into train test. Initial data has {} points from {} species with a min of {} samples".format(shp.shape[0],shp.taxonID.nunique(),min_sampled))
