@@ -27,11 +27,11 @@ def test_confusion_matrix(experiment, dm):
     visualize.confusion_matrix(
         comet_experiment=experiment,
         yhats=dm.test.label.values,
+        individuals=dm.test.individual,
         y=dm.test.label.values,
+        RGB_tiles=dm.test.RGB_tile.values,
         labels=list(dm.species_label_dict.keys()),
-        test=dm.test,
         test_points=dm.canopy_points,
         test_crowns=dm.crowns,
-        crop_dir=dm.config["crop_dir"],
         name="pytest"
     )    

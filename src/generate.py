@@ -314,8 +314,11 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
         raise ValueError("No tiles found, check h5_pool and tif directory")
     
     filenames = []  
+    HSI_tile = []
+    HSI_indexes = []
     geo_indexes = []
     indexes = []
+    
     if client:
         futures = []
         for index, row in gdf.iterrows():
@@ -327,14 +330,16 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
             for x in img_path:
                 future = client.submit(write_crop, row=row,img_path=x, savedir=savedir, as_numpy=as_numpy, suffix=suffix)
                 futures.append(future)
-                geo_indexes.append(index)                
+                geo_indexes.append(index)  
+                HSI_indexes.append(index)
             
         wait(futures)
         for index, x in enumerate(futures):
             try:
                 filename = x.result()
                 indexes.append(geo_indexes[index])
-                filenames.append(filename)                
+                filenames.append(filename) 
+                HSI_tile.append(HSI_indexes[index])
             except:
                 continue
                 #print("Future failed with {}".format(traceback.print_exc()))
@@ -347,22 +352,24 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
             for x in img_path:
                 rasterio_src = rasterio.open(x)
                 tile_annotations = gdf[gdf.geo_index == geo_index]
-                
+                                
                 #Write available crops
                 for index, row in tile_annotations.iterrows():
                     try:
                         filename = write_crop(row=row, savedir=savedir, img_path=x, rasterio_src=rasterio_src, as_numpy=as_numpy, suffix=suffix)   
                         indexes.append(index)
-                        filenames.append(filename)                                                   
+                        filenames.append(filename)  
+                        HSI_tile.append(x)
                     except Exception as e:
                         print("index {} failed with {}".format(index,e))
                         continue
                     
     annotations = gdf.loc[indexes]
     print("shape of annotations is {}".format(annotations.shape))
-    annotations["image_path"] = filenames       
+    annotations["image_path"] = filenames    
+    annotations["HSI_tile"] = HSI_tile
     annotations["tile_year"] = annotations.image_path.apply(lambda x: os.path.splitext(os.path.basename(x))[0].split("_")[-2])
     annotations = annotations.loc[:,annotations.columns.isin(
-        ["individual","geo_index","tile_year","CHM_height","plotID","height","geometry","taxonID","RGB_tile","filename","siteID","image_path","score","box_id"])]
+        ["individual","geo_index","tile_year","CHM_height","plotID","height","geometry","taxonID","RGB_tile","HSI_tile","filename","siteID","image_path","score","box_id"])]
 
     return annotations
