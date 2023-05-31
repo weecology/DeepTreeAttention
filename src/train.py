@@ -205,16 +205,27 @@ def train_model(data_module, comet_logger, m, name):
         trainer.save_checkpoint("{}/{}_{}.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
     
     ds = multi_stage.TreeDataset(df=data_module.test, train=False, config=data_module.config)
+    
+    print("length of ds is {}".format(len(ds)))
+    
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)
+    
+    print("individuals in gather_predictions is {}".format(len(results.individual.unique())))
     results = results.merge(data_module.test[["individual","taxonID","label","siteID"]], on="individual")
+    print("individuals in merged results is {}".format(len(results.individual.unique())))
+    
     comet_logger.experiment.log_table("nested_predictions.csv", results)
     
     ensemble_df = m.ensemble(results)
+    print("shape of ensemble is {}".format(results.shape))
+
     ensemble_df = m.evaluation_scores(
         ensemble_df,
         experiment=comet_logger.experiment
     )
+    
+    print("individuals in ensemble is {}".format(len(ensemble_df.individual.unique())))
     
     visualize.confusion_matrix(
         comet_experiment=comet_logger.experiment,

@@ -25,7 +25,6 @@ def crown_plot(img_path, geom, point, expand=3):
     p = GeoSeries([point])
     p.plot(ax=ax)
     
-    
 def index_to_example(index, test, test_crowns, test_points, comet_experiment, crop_dir):
     """Function to plot an RGB image, the NEON field point and the deepforest crown given a test index
     Args:
