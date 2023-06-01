@@ -248,9 +248,9 @@ def write_crop(row, savedir, img_path, rasterio_src=None, as_numpy=False, suffix
     """
     
     if suffix is "RGB":
-        tile_year = os.path.splitext(os.path.basename(img_path))[0].split("_")[-1]
+        tile_year = img_path.split("/")[-5].split("_")[0]    
     else:
-        tile_year = os.path.splitext(os.path.basename(img_path))[0].split("_")[0]
+        tile_year = os.path.splitext(os.path.basename(img_path))[0].split("_")[-1]
         
     if suffix:
         basename = "{}_{}_{}".format(row["individual"], tile_year, suffix)
@@ -331,7 +331,7 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
                 future = client.submit(write_crop, row=row,img_path=x, savedir=savedir, as_numpy=as_numpy, suffix=suffix)
                 futures.append(future)
                 geo_indexes.append(index)  
-                HSI_indexes.append(index)
+                HSI_indexes.append(x)
             
         wait(futures)
         for index, x in enumerate(futures):
