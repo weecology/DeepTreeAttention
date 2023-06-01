@@ -35,11 +35,11 @@ data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 
 # Rerun DeepForest boxes
-replace_bounding_boxes: False
+replace_bounding_boxes: True
 # Regenerate bounding box sensor crops
-replace_crops: False
+replace_crops: True
 # Recreate a train test split
-train_test_commit:
+train_test_commit: 
 # Use existing plotIDs for train/test split
 existing_test_csv:
 
@@ -58,7 +58,7 @@ pretrain_epochs: 200
 
 ### Training Parameters
 gpus: 1
-batch_size: 96
+batch_size: 24
 bands: 349
 head_class_minimum_ratio: 0.4
 
