@@ -74,13 +74,19 @@ def filter_data(path, config):
     Args:
         config: DeepTreeAttention config dict, see config.yml
     """
-    field = pd.read_csv(path)
-    field["individual"] = field["individualID"]
-    field = field[~field.itcEasting.isnull()]
+    raw_data = pd.read_csv(path)
+    raw_data["individual"] = raw_data["individualID"]
+    raw_data = raw_data[~raw_data.plantStatus.isnull()]  
+    
+    field = raw_data[~raw_data.itcEasting.isnull()]
     field = field[~field.growthForm.isin(["liana","small shrub"])]
     field = field[~field.growthForm.isnull()]
     field = field[~field.plantStatus.isnull()]        
     field = field[field.plantStatus.str.contains("Live")]    
+    
+    #Make sure there were not previously labeled dead
+    is_dead = raw_data[raw_data.plantStatus.str.contains("Dead | dead")]    
+    field = field[~field.individual.isin(is_dead.individual)]
     
     groups = field.groupby("individual")
     shaded_ids = []
@@ -96,17 +102,17 @@ def filter_data(path, config):
     field = field[(field.height > 3) | (field.height.isnull())]
     field = field[field.stemDiameter > config["min_stem_diameter"]]
     
-    #Subspecies filter
+    #Subspecies filter    
+    field.loc[field.taxonID=="PICOL","taxonID"] = "PICO"    
     field.loc[field.taxonID=="PSMEM","taxonID"] = "PSME"
+    field.loc[field.taxonID=="ABLAL","taxonID"] = "ABLA"    
+    field.loc[field.taxonID=="ACSAS","taxonID"] = "ACSA3"    
     field.loc[field.taxonID=="BEPAP","taxonID"] = "BEPA"
+    field.loc[field.taxonID=="PIPOS","taxonID"] = "PIPO"    
     field.loc[field.taxonID=="ACNEN","taxonID"] = "ACNE2"
     field.loc[field.taxonID=="ACRUR","taxonID"] = "ACRU"
-    field.loc[field.taxonID=="PICOL","taxonID"] = "PICO"
-    field.loc[field.taxonID=="ABLAL","taxonID"] = "ABLA"
-    field.loc[field.taxonID=="ACSAS","taxonID"] = "ACSA3"
     field.loc[field.taxonID=="CECAC","taxonID"] = "CECA4"
     field.loc[field.taxonID=="PRSES","taxonID"] = "PRSE2"
-    field.loc[field.taxonID=="PIPOS","taxonID"] = "PIPO"
     field.loc[field.taxonID=="BEPAC2","taxonID"] = "BEPA"
     field.loc[field.taxonID=="JUVIV","taxonID"] = "JUVI"
     field.loc[field.taxonID=="PRPEP","taxonID"] = "PRPE2"
@@ -114,7 +120,7 @@ def filter_data(path, config):
     field.loc[field.taxonID=="NYBI","taxonID"] = "NYSY"
     field.loc[field.taxonID=="ARVIM","taxonID"] = "ARVI4"
     
-    field = field[~field.taxonID.isin(["BETUL", "FRAXI", "HALES", "PICEA", "PINUS", "QUERC", "ULMUS", "2PLANT"])]
+    field = field[~field.taxonRank.isin(["speciesGroup", "subspecies", "genus","kingdom"])]
     field = field[~(field.eventID.str.contains("2014"))]
     with_heights = field[~field.height.isnull()]
     with_heights = with_heights.loc[with_heights.groupby('individual')['height'].idxmax()]
