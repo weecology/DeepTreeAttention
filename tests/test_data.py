@@ -1,20 +1,9 @@
 #Test data module
 import pandas as pd
-import copy
 from src import data
 
-def test_TreeData_setup(config, ROOT):
-    #One site's worth of data
-    local_config = copy.deepcopy(config)
-    local_config["use_data_commit"] = None
-    local_config["replace_bounding_boxes"] =True
-    local_config["replace_crops"] = True
-    local_config["train_test_commit"] = None
-    local_config["convert_h5"] = False
-    
-    csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)               
-    dm = data.TreeData(config=local_config, csv_file=csv_file, data_dir="{}/tests/data".format(ROOT), experiment_id="OSBS", create_train_test=True) 
-    
+def test_TreeData_setup(dm, ROOT):    
+    dm.setup()
     test = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
     train = pd.read_csv("{}/tests/data/processed/train.csv".format(ROOT))
     

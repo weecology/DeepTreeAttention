@@ -61,6 +61,7 @@ gpus: 1
 batch_size: 24
 bands: 349
 head_class_minimum_ratio: 0.4
+seperate_oak_model: False
 
 # Learning rates
 lr: 0.0001

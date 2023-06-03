@@ -42,6 +42,10 @@ else:
     client = None
     
 try:
+    #Specific site instructions
+    if "OSBS" in site:
+        config["seperate_oak_model"] = True
+        
     train.main(site=site, config=config, git_branch=git_branch, git_commit=git_commit, client=client)
     torch.cuda.empty_cache() 
     gc.collect()            

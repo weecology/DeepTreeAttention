@@ -182,7 +182,7 @@ def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, dee
 
 def points_to_crowns(
     field_data,
-    rgb_dir, 
+    rgb_pool, 
     savedir,
     raw_box_savedir,
     client=None):
@@ -199,7 +199,6 @@ def points_to_crowns(
     df = gpd.read_file(field_data)
     plot_names = df.plotID.unique()
     
-    rgb_pool = glob.glob(rgb_dir, recursive=True)
     results = []    
     if client:
         futures = []

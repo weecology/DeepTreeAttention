@@ -254,14 +254,43 @@ class MultiStage(LightningModule):
     
     def broadleaf_model(self, df, image_dict=None):
         """Model for the broadleaf species"""
-        level_2 = df[df.taxonID.isin(self.broadleaf_species)]
-        level_label_dict = {value:key for key, value in enumerate(self.broadleaf_species)}
         
+        if self.config["seperate_oak_model"]:
+            oak = [x for x in self.broadleaf_species if x[0:2] == "QU"]   
+            non_oak = [x for x in self.broadleaf_species if not x[0:2] == "QU"]        
+            level_2 = df[df.taxonID.isin(self.broadleaf_species)]
+            level_label_dict = {value:key for key, value in enumerate(non_oak)}
+            
+            if (len(oak) > 2) & (len(non_oak) > 1):
+                oak = [x for x in self.broadleaf_species if x[0:2] == "QU"]
+                level_label_dict["OAK"] = len(level_label_dict) 
+                level_2.loc[level_2.taxonID.isin(oak),"taxonID"] = "OAK"
+            else:
+                for x in oak:
+                    level_label_dict[x] = len(level_label_dict)
+        else:
+            level_2 = df[df.taxonID.isin(self.broadleaf_species)]
+            level_label_dict = {value:key for key, value in enumerate(self.broadleaf_species)}            
+            
         # Select head and tail classes
         level_2["label"] = [level_label_dict[x] for x in level_2.taxonID]
         level_2_ds = TreeDataset(df=level_2, config=self.config, image_dict=image_dict)
         
         return level_2_ds, level_2, level_label_dict
+        
+    def oak_model(self, df, image_dict=None): 
+        oak = [x for x in self.broadleaf_species if x[0:2] == "QU"]        
+        if not len(oak) > 2:
+            raise ValueError("Not enough Oak Species")
+        
+        level_label_dict = {value:key for key, value in enumerate(oak)}
+            
+        # Select head and tail classes
+        level_3 = df[df.taxonID.isin(oak)]
+        level_3["label"] = [level_label_dict[x] for x in level_3.taxonID]
+        level_3_ds = TreeDataset(df=level_3, config=self.config, image_dict=image_dict)
+        
+        return level_3_ds, level_3, level_label_dict
     
     def flat_model(self, df, image_dict=None):        
         level_label_dict = {value:key for key, value in enumerate(df.taxonID.unique())}
@@ -310,7 +339,16 @@ class MultiStage(LightningModule):
             dataframes["broadleaf"] = level_df
             datasets["broadleaf"] = level_ds  
             
-
+            if self.config["seperate_oak_model"]:
+                try:
+                    level_ds, level_df, level_label_dict = self.oak_model(df, image_dict=image_dict)
+                    level_label_dicts["oak"] = level_label_dict
+                    dataframes["oak"] = level_df
+                    datasets["oak"] = level_ds           
+                except:
+                    print("Oak model failed")
+                    traceback.print_exc()
+                
         return datasets, dataframes, level_label_dicts
     
     def train_dataloader(self):        
@@ -495,11 +533,15 @@ class MultiStage(LightningModule):
                 ensemble_taxonID.append(row["conifer_taxa"])
                 ensemble_label.append(self.species_label_dict[row["conifer_taxa"]])
                 ensemble_score.append(row["conifer_score"])                   
-            else:
+            elif not row["broadleaf_taxa"] =="OAK":
                 ensemble_taxonID.append(row["broadleaf_taxa"])
                 ensemble_label.append(self.species_label_dict[row["broadleaf_taxa"]])
                 ensemble_score.append(row["broadleaf_score"])
-
+            else:
+                ensemble_taxonID.append(row["oak_taxa"])
+                ensemble_label.append(self.species_label_dict[row["oak_taxa"]])
+                ensemble_score.append(row["oak_score"])                
+                
         results["ensembleTaxonID"] = ensemble_taxonID
         results["ens_score"] = ensemble_score
         results["ens_label"] = ensemble_label   

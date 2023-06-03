@@ -363,7 +363,7 @@ class TreeData(LightningDataModule):
                 # Create crown data on gpu
                 self.crowns = generate.points_to_crowns(
                     field_data="{}/canopy_points.shp".format(self.data_dir),
-                    rgb_dir=self.config["rgb_sensor_pool"],
+                    rgb_pool=self.rgb_pool,
                     savedir="{}/boxes/".format(self.data_dir),
                     raw_box_savedir="{}/boxes/".format(self.data_dir),
                     client=None
@@ -480,7 +480,11 @@ class TreeData(LightningDataModule):
     def create_train_test_split(self, ID):      
         if self.site:
             if "pretrain" not in self.site:
+                # Get species present at site, as well as those species from other sites
+                self.other_sites = self.annotations[~self.annotations.siteID.isin(self.site)].reset_index(drop=True)                
                 self.annotations = self.annotations[self.annotations.siteID.isin(self.site)].reset_index(drop=True)
+                self.other_sites[self.other_sites.taxonID.isin(self.annotations.taxonID.unique())]
+                
         if self.config["existing_test_csv"]:
             print("Reading in existing test_csv: {}".format(self.config["existing_test_csv"]))
             existing_test = pd.read_csv(self.config["existing_test_csv"])
@@ -494,7 +498,11 @@ class TreeData(LightningDataModule):
         individuals = np.concatenate([self.train.individual.unique(), self.test.individual.unique()])
         self.novel = self.annotations[~self.annotations.individual.isin(individuals)]
         self.novel = self.novel[~self.novel.taxonID.isin(np.concatenate([self.train.taxonID.unique(), self.test.taxonID.unique()]))]
-        self.novel.to_csv("{}/novel_species.csv".format(self.data_dir, self.site))  
+        
+        # Counts by discarded species
+        self.novel.taxonID.value_counts()
+        
+        self.novel.to_csv("{}/novel_species_{}.csv".format(self.data_dir, self.site))  
         self.create_label_dict(self.train, self.test)
 
         #Encode the numeric class data
