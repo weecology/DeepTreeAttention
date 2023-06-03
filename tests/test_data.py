@@ -3,7 +3,7 @@ import pandas as pd
 from src import data
 
 def test_TreeData_setup(dm, ROOT):    
-    dm.setup()
+    dm.setup("fit")
     test = pd.read_csv("{}/tests/data/processed/test.csv".format(ROOT))
     train = pd.read_csv("{}/tests/data/processed/train.csv".format(ROOT))
     

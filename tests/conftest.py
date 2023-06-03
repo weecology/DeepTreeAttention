@@ -62,7 +62,7 @@ def config(ROOT):
     config["min_CHM_height"] = None
     config["iterations"] = 1
     config["rgb_sensor_pool"] = "{}/tests/data/HARV/**/*.tif".format(ROOT)
-    config["HSI_sensor_pool"] = "{}/tests/data/*.tif".format(ROOT)
+    config["HSI_sensor_pool"] = config["rgb_sensor_pool"]
     config["HSI_tif_dir"] = "{}/tests/data/".format(ROOT)
     config["min_train_samples"] = 1
     config["min_test_samples"] = 1
