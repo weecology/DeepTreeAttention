@@ -69,6 +69,7 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
     comet_logger.experiment.log_parameter("num_species",data_module.num_classes)
     comet_logger.experiment.log_table("train.csv", data_module.train)
     comet_logger.experiment.log_table("test.csv", data_module.test)
+    comet_logger.experiment.log_table("novel.csv", data_module.novel)
     
     test_species_per_site = data_module.test.groupby("siteID").apply(lambda x: len(x.taxonID.unique())).to_dict()
     for site, value in test_species_per_site.items():
@@ -204,16 +205,10 @@ def train_model(data_module, comet_logger, m, name):
     if data_module.config["snapshot_dir"] is not None:
         trainer.save_checkpoint("{}/{}_{}.pt".format(data_module.config["snapshot_dir"], comet_logger.experiment.id, name))
     
-    ds = multi_stage.TreeDataset(df=data_module.test, train=False, config=data_module.config)
-    
-    print("length of ds is {}".format(len(ds)))
-    
+    ds = multi_stage.TreeDataset(df=data_module.test, train=False, config=data_module.config)    
     predictions = trainer.predict(m, dataloaders=m.predict_dataloader(ds))
     results = m.gather_predictions(predictions)
-    
-    print("individuals in gather_predictions is {}".format(len(results.individual.unique())))
     results = results.merge(data_module.test[["individual","taxonID","label","siteID","RGB_tile"]], on="individual")
-    print("individuals in merged results is {}".format(len(results.individual.unique())))
     
     comet_logger.experiment.log_table("nested_predictions.csv", results)
     
