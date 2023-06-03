@@ -2,7 +2,7 @@
 import geopandas as gpd
 import traceback
 from src.start_cluster import start
-from distributed import wait, as_completed, fire_and_forget
+from distributed import wait, as_completed, fire_and_forget, Client
 import os
 import numpy as np
 import argparse
@@ -51,7 +51,8 @@ comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["
 
 comet_logger.experiment.log_parameters(config)
 
-client = start(cpus=3, mem_size="20GB")
+client = Client()
+#client = start(cpus=3, mem_size="20GB")
 
 #Get site arg
 site=str(sys.argv[1])
@@ -61,7 +62,7 @@ config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_cr
 savedir = config["crop_dir"] 
 
 species_model_paths = {
-    "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/287f10349eca4497957a03cf0d48b468_NIWO.pt",
+    "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/def58fe6c0fa4b8991e5e80f63a20acd_NIWO.pt",
     "RMNP": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/bd761ac1c0d74268a59e87aa85b9fa9c_RMNP.pt",    
     "SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/702f6a7cf1b24307b8a23e25148f7559_SJER.pt",
     "WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/a5453bab67b14eb8b01da57f79590409_WREF.pt",
