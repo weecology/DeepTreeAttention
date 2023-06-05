@@ -502,7 +502,7 @@ class TreeData(LightningDataModule):
         # Counts by discarded species
         keep = self.novel.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts() > (self.config["min_test_samples"])
         species_to_keep = keep[keep].index
-        self.novel = self.novel[self.novel.taxonID.isin[species_to_keep]]
+        self.novel = self.novel[self.novel.taxonID.isin(species_to_keep)]
         self.other_sites = self.other_sites[self.other_sites.taxonID.isin(self.novel.taxonID.unique())]
         
         #Recover any individual from target site
