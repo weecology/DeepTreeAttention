@@ -498,6 +498,7 @@ class TreeData(LightningDataModule):
         individuals = np.concatenate([self.train.individual.unique(), self.test.individual.unique()])
         self.novel = self.annotations[~self.annotations.individual.isin(individuals)]
         self.novel = self.novel[~self.novel.taxonID.isin(np.concatenate([self.train.taxonID.unique(), self.test.taxonID.unique()]))]
+        self.novel = self.novel[self.novel.siteID.isin(self.site)]
         
         # Counts by discarded species
         keep = self.novel.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts() > (self.config["min_test_samples"])
