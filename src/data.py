@@ -483,7 +483,7 @@ class TreeData(LightningDataModule):
                 # Get species present at site, as well as those species from other sites
                 self.other_sites = self.annotations[~self.annotations.siteID.isin(self.site)].reset_index(drop=True)                
                 self.annotations = self.annotations[self.annotations.siteID.isin(self.site)].reset_index(drop=True)
-                self.other_sites[self.other_sites.taxonID.isin(self.annotations.taxonID.unique())]
+                self.other_sites = self.other_sites[self.other_sites.taxonID.isin(self.annotations.taxonID.unique())]
                 
         if self.config["existing_test_csv"]:
             print("Reading in existing test_csv: {}".format(self.config["existing_test_csv"]))
@@ -498,20 +498,16 @@ class TreeData(LightningDataModule):
         if "pretrain" not in self.site:
             individuals = np.concatenate([self.train.individual.unique(), self.test.individual.unique()])
             self.novel = self.annotations[~self.annotations.individual.isin(individuals)]
-            self.novel = self.novel[~self.novel.taxonID.isin(self.train.taxonID.unique())]
-            print(self.site)        
-            self.novel = self.novel[self.novel.siteID.isin(self.site)].reset_index(drop=True) 
             
             # Counts by discarded species
             keep = self.novel.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts() > (self.config["min_test_samples"])
             species_to_keep = keep[keep].index
-            self.other_sites = self.novel[self.novel.taxonID.isin(species_to_keep)]
-            self.other_sites = self.other_sites[self.other_sites.taxonID.isin(self.novel.taxonID.unique())]
+            self.novel = self.novel[self.novel.taxonID.isin(species_to_keep)]
+            self.other_sites = self.other_sites[self.other_sites.taxonID.isin(species_to_keep)]
             
             #Recover any individual from target site
-            recovered = self.annotations[self.annotations.taxonID.isin(species_to_keep)]
             self.test = pd.concat([self.test, self.novel])
-            self.train = pd.concat([self.train, self.other_sites, recovered])
+            self.train = pd.concat([self.train, self.other_sites])
             self.novel.to_csv("{}/novel_species_{}.csv".format(self.data_dir, self.site))  
             
         self.create_label_dict(self.train, self.test)
