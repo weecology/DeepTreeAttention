@@ -51,8 +51,8 @@ comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["
 
 comet_logger.experiment.log_parameters(config)
 
-client = Client()
-#client = start(cpus=3, mem_size="20GB")
+#client = Client()
+client = start(cpus=1, mem_size="10GB")
 
 #Get site arg
 site=str(sys.argv[1])
