@@ -1,6 +1,5 @@
 #Ligthning data module
 from . import __file__
-import ast
 from distributed import wait
 import glob
 import geopandas as gpd
@@ -301,7 +300,7 @@ class TreeData(LightningDataModule):
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
         self.csv_file = csv_file
         self.comet_logger = comet_logger
-        self.site = ast.literal_eval(site)
+        self.site = site
         self.experiment_id = experiment_id
         self.create_train_test = create_train_test
         
@@ -498,8 +497,9 @@ class TreeData(LightningDataModule):
         # Capture discarded species
         individuals = np.concatenate([self.train.individual.unique(), self.test.individual.unique()])
         self.novel = self.annotations[~self.annotations.individual.isin(individuals)]
-        self.novel = self.novel[~self.novel.taxonID.isin(np.concatenate([self.train.taxonID.unique(), self.test.taxonID.unique()]))]
-        self.novel = self.novel[self.novel.siteID.isin(self.site)]
+        self.novel = self.novel[~self.novel.taxonID.isin(self.train.taxonID.unique())]
+        print(self.site)        
+        self.novel = self.novel[self.novel.siteID.isin(self.site)].reset_index(drop=True) 
         
         # Counts by discarded species
         keep = self.novel.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts() > (self.config["min_test_samples"])
