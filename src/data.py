@@ -504,8 +504,11 @@ class TreeData(LightningDataModule):
         species_to_keep = keep[keep].index
         self.novel = self.novel[self.novel.taxonID.isin[species_to_keep]]
         self.other_sites = self.other_sites[self.other_sites.taxonID.isin(self.novel.taxonID.unique())]
+        
+        #Recover any individual from target site
+        recovered = self.annotations[self.annotations.taxonID.isin(species_to_keep)]
         self.test = pd.concat([self.test, self.novel])
-        self.train = pd.concat([self.train, self.other_sites])
+        self.train = pd.concat([self.train, self.other_sites, recovered])
         
         self.novel.to_csv("{}/novel_species_{}.csv".format(self.data_dir, self.site))  
         self.create_label_dict(self.train, self.test)
