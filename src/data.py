@@ -1,5 +1,6 @@
 #Ligthning data module
 from . import __file__
+import ast
 from distributed import wait
 import glob
 import geopandas as gpd
@@ -300,7 +301,7 @@ class TreeData(LightningDataModule):
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
         self.csv_file = csv_file
         self.comet_logger = comet_logger
-        self.site = site
+        self.site = ast.literal_eval(site)
         self.experiment_id = experiment_id
         self.create_train_test = create_train_test
         
