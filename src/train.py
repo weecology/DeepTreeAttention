@@ -69,7 +69,6 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
     comet_logger.experiment.log_parameter("num_species",data_module.num_classes)
     comet_logger.experiment.log_table("train.csv", data_module.train)
     comet_logger.experiment.log_table("test.csv", data_module.test)
-    comet_logger.experiment.log_table("novel.csv", data_module.novel)
     
     test_species_per_site = data_module.test.groupby("siteID").apply(lambda x: len(x.taxonID.unique())).to_dict()
     for site, value in test_species_per_site.items():

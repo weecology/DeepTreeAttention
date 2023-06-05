@@ -512,8 +512,8 @@ class TreeData(LightningDataModule):
             recovered = self.annotations[self.annotations.taxonID.isin(species_to_keep)]
             self.test = pd.concat([self.test, self.novel])
             self.train = pd.concat([self.train, self.other_sites, recovered])
+            self.novel.to_csv("{}/novel_species_{}.csv".format(self.data_dir, self.site))  
             
-        self.novel.to_csv("{}/novel_species_{}.csv".format(self.data_dir, self.site))  
         self.create_label_dict(self.train, self.test)
 
         #Encode the numeric class data
