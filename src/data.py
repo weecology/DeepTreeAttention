@@ -495,23 +495,24 @@ class TreeData(LightningDataModule):
             self.train, self.test = train_test_split(self.annotations, config=self.config, client=self.client) 
 
         # Capture discarded species
-        individuals = np.concatenate([self.train.individual.unique(), self.test.individual.unique()])
-        self.novel = self.annotations[~self.annotations.individual.isin(individuals)]
-        self.novel = self.novel[~self.novel.taxonID.isin(self.train.taxonID.unique())]
-        print(self.site)        
-        self.novel = self.novel[self.novel.siteID.isin(self.site)].reset_index(drop=True) 
-        
-        # Counts by discarded species
-        keep = self.novel.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts() > (self.config["min_test_samples"])
-        species_to_keep = keep[keep].index
-        self.other_sites = self.novel[self.novel.taxonID.isin(species_to_keep)]
-        self.other_sites = self.other_sites[self.other_sites.taxonID.isin(self.novel.taxonID.unique())]
-        
-        #Recover any individual from target site
-        recovered = self.annotations[self.annotations.taxonID.isin(species_to_keep)]
-        self.test = pd.concat([self.test, self.novel])
-        self.train = pd.concat([self.train, self.other_sites, recovered])
-        
+        if "pretrain" not in self.site:
+            individuals = np.concatenate([self.train.individual.unique(), self.test.individual.unique()])
+            self.novel = self.annotations[~self.annotations.individual.isin(individuals)]
+            self.novel = self.novel[~self.novel.taxonID.isin(self.train.taxonID.unique())]
+            print(self.site)        
+            self.novel = self.novel[self.novel.siteID.isin(self.site)].reset_index(drop=True) 
+            
+            # Counts by discarded species
+            keep = self.novel.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts() > (self.config["min_test_samples"])
+            species_to_keep = keep[keep].index
+            self.other_sites = self.novel[self.novel.taxonID.isin(species_to_keep)]
+            self.other_sites = self.other_sites[self.other_sites.taxonID.isin(self.novel.taxonID.unique())]
+            
+            #Recover any individual from target site
+            recovered = self.annotations[self.annotations.taxonID.isin(species_to_keep)]
+            self.test = pd.concat([self.test, self.novel])
+            self.train = pd.concat([self.train, self.other_sites, recovered])
+            
         self.novel.to_csv("{}/novel_species_{}.csv".format(self.data_dir, self.site))  
         self.create_label_dict(self.train, self.test)
 
