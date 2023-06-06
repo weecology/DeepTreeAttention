@@ -503,11 +503,8 @@ class TreeData(LightningDataModule):
             keep = self.novel.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts() > (self.config["min_test_samples"])
             species_to_keep = keep[keep].index
             self.novel = self.novel[self.novel.taxonID.isin(species_to_keep)]
-            self.other_sites = self.other_sites[self.other_sites.taxonID.isin(species_to_keep)]
             
             #Recover any individual from target site
-            self.test = pd.concat([self.test, self.novel])
-            self.train = pd.concat([self.train, self.other_sites])
             self.novel.to_csv("{}/novel_species_{}.csv".format(self.data_dir, self.site))  
             
         self.create_label_dict(self.train, self.test)
