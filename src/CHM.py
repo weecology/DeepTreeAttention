@@ -15,30 +15,38 @@ def non_zero_99_quantile(x):
 
 def postprocess_CHM(df, lookup_pool):
     """Field measured height must be within min_diff meters of canopy model"""
-    #Extract zonal stats, add a small offset, the min box can go to next tile.
-    try:
-        #Get all years of CHM data
-        CHM_paths = neon_paths.find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds, all_years=True)
-    except Exception as e:
-        df["CHM_height"] = np.nan
-        return df
-    
-    # Find the most recent year
-    survey_year = int(df.eventID.apply(lambda x: x.split("_")[-1]).max())
-    
-    #Check the next four years
-    for x in range(4):
-        check_year = "{}".format(str(x + survey_year))  
-        CHM_path = [x for x in CHM_paths if check_year in x]
-        if len(CHM_path)==0:
-            continue
-        else:
-            break
-    try:
-        CHM_path = CHM_path[0]
-    except:
-        print("No years of data for {} in CHM paths for plot {}".format(df.eventID.unique(), df.plotID.unique()))
+    # Extract zonal stats, add a small offset, the min box can go to next tile.
+    # Find the most recent year if labeled, contrib samples have no years 
+    if not df.iloc[0].eventID is None:
+        try:
+            #Get all years of CHM data
+            CHM_paths = neon_paths.find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds, all_years=True)
+        except Exception as e:
+            df["CHM_height"] = np.nan
+            return df
 
+        survey_year = int(df.eventID.apply(lambda x: x.str.split("_")[-1]).max())
+    
+        #Check the next four years
+        for x in range(10):
+            check_year = "{}".format(str(x + survey_year))  
+            CHM_path = [x for x in CHM_paths if check_year in x]
+            if len(CHM_path)==0:
+                continue
+            else:
+                break
+        try:
+            CHM_path = CHM_path[0]
+        except:
+            print("No years of data for {} in CHM paths for plot {}".format(df.eventID.unique(), df.plotID.unique()))
+    else:
+        try:
+            #Get all years of CHM data
+            CHM_path = neon_paths.find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds)
+        except Exception as e:
+            df["CHM_height"] = np.nan
+            return df
+    
     #buffer slightly, CHM model can be patchy
     geom = df.geometry
     draped_boxes = rasterstats.zonal_stats(geom,
