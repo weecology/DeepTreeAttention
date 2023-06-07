@@ -24,21 +24,10 @@ def postprocess_CHM(df, lookup_pool):
         except Exception as e:
             df["CHM_height"] = np.nan
             return df
-
         survey_year = int(df.eventID.apply(lambda x: x.split("_")[-1]).max())
-    
-        #Check the next four years
-        for x in range(10):
-            check_year = "{}".format(str(x + survey_year))  
-            CHM_path = [x for x in CHM_paths if check_year in x]
-            if len(CHM_path)==0:
-                continue
-            else:
-                break
-        try:
-            CHM_path = CHM_path[0]
-        except:
-            print("No years of data for {} in CHM paths for plot {}".format(df.eventID.unique(), df.plotID.unique()))
+        #Check the difference in date
+        CHM_years = [int(x.split("/")[-5].split("_")[0]) for x in CHM_paths]
+        CHM_path = CHM_paths[np.argmin([abs(survey_year - x) for x in CHM_years])]     
     else:
         try:
             #Get all years of CHM data
@@ -46,7 +35,7 @@ def postprocess_CHM(df, lookup_pool):
         except Exception as e:
             df["CHM_height"] = np.nan
             return df
-    
+
     #buffer slightly, CHM model can be patchy
     geom = df.geometry
     draped_boxes = rasterstats.zonal_stats(geom,
