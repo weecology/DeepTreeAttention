@@ -25,7 +25,7 @@ def postprocess_CHM(df, lookup_pool):
             df["CHM_height"] = np.nan
             return df
 
-        survey_year = int(df.eventID.apply(lambda x: x.str.split("_")[-1]).max())
+        survey_year = int(df.eventID.apply(lambda x: x.split("_")[-1]).max())
     
         #Check the next four years
         for x in range(10):
