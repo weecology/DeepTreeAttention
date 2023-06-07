@@ -18,25 +18,25 @@ def postprocess_CHM(df, lookup_pool):
     """Field measured height must be within min_diff meters of canopy model"""
     # Extract zonal stats, add a small offset, the min box can go to next tile.
     # Find the most recent year if labeled, contrib samples have no years 
-    if not df.iloc[0].eventID is None:
-        try:
-            #Get all years of CHM data
-            CHM_paths = neon_paths.find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds, all_years=True)
-        except Exception as e:
-            df["CHM_height"] = np.nan
-            return df
-        survey_year = int(df.eventID.apply(lambda x: x.split("_")[-1]).max())
-        #Check the difference in date
-        CHM_years = [int(x.split("/")[-5].split("_")[0]) for x in CHM_paths]
-        CHM_path = CHM_paths[np.argmin([abs(survey_year - x) for x in CHM_years])]     
-    else:
+    if "contrib" in df.plotID.iloc[0]:
         try:
             #Get all years of CHM data
             CHM_path = neon_paths.find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds)
-        except Exception as e:
+        except ValueError as e:
             df["CHM_height"] = np.nan
             return df
-
+    else:
+        try:
+            #Get all years of CHM data
+            CHM_paths = neon_paths.find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds, all_years=True)
+            survey_year = int(df.eventID.apply(lambda x: x.split("_")[-1]).max())
+            #Check the difference in date
+            CHM_years = [int(x.split("/")[-5].split("_")[0]) for x in CHM_paths]
+            CHM_path = CHM_paths[np.argmin([abs(survey_year - x) for x in CHM_years])]     
+        except ValueError as e:
+            df["CHM_height"] = np.nan
+            return df
+ 
     #buffer slightly, CHM model can be patchy
     geom = df.geometry
     draped_boxes = rasterstats.zonal_stats(geom,
