@@ -12,7 +12,7 @@ min_stem_diameter: 10
 
 # Minimum number of test samples per class to be included
 min_train_samples: 15
-min_test_samples: 15
+min_test_samples: 10
 max_samples_per_class: 5000
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
@@ -58,7 +58,7 @@ pretrain_epochs: 200
 
 ### Training Parameters
 gpus: 1
-batch_size: 96
+batch_size: 48
 bands: 349
 head_class_minimum_ratio: 0.4
 seperate_oak_model: False
