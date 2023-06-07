@@ -5,6 +5,7 @@ from src import neon_paths
 import rasterstats
 import geopandas as gpd
 import pandas as pd
+import traceback
 
 def non_zero_99_quantile(x):
     """Get height quantile of all cells that are no zero"""
@@ -63,7 +64,8 @@ def CHM_height(shp, CHM_pool):
                 result = postprocess_CHM(group, lookup_pool=CHM_pool)
                 filtered_results.append(result)
             except Exception as e:
-                print("plotID {} raised: {}".format(name,e))
+                print("plotID {} raised: {}".format(name,e))                
+                traceback.print_exc()
                 
         filtered_shp = gpd.GeoDataFrame(pd.concat(filtered_results,ignore_index=True))
         
