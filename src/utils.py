@@ -1,6 +1,5 @@
 #data utils
 import argparse
-import rasterio as rio
 import json
 import os
 import numpy as np
@@ -12,7 +11,7 @@ import warnings
 import pandas as pd
 from torch.utils.data.dataloader import default_collate
 from glob import glob
-import os
+import rasterio as rio
 
 
 def read_config(config_path):
