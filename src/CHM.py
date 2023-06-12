@@ -12,6 +12,7 @@ def non_zero_99_quantile(x):
     mdata = np.ma.masked_where(x < 0.5, x)
     mdata = np.ma.filled(mdata, np.nan)
     percentile = np.nanpercentile(mdata, 99)
+    
     return (percentile)
 
 def postprocess_CHM(df, lookup_pool):
@@ -35,6 +36,7 @@ def postprocess_CHM(df, lookup_pool):
             CHM_path = CHM_paths[np.argmin([abs(survey_year - x) for x in CHM_years])]     
         except ValueError as e:
             df["CHM_height"] = np.nan
+            
             return df
  
     #buffer slightly, CHM model can be patchy
