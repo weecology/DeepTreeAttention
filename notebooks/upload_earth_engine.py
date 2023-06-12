@@ -1,26 +1,24 @@
 # Earth engine upload, seeded by chatgpt
 import os
 import json
+import subprocess
 
 """
 This module assumes that predictions have already been uploaded using gsutil to a google cloud bucket.
-earthengine authenticate needs to be run
+gsutil and earthengine authenticate
 """     
-def save_shapefile_list(directory, output_file):
-    shapefile_list = []
+def save_shapefile_list(site):
+    shapefiles = subprocess.call("gsutil gs://earthengine_shapefiles/{}/*.shp", shell=True)  
+    if len(shapefiles) == 0:
+        return None
+    
     # Iterate over files in the directory
-    for file in os.listdir(directory):
-        if file.endswith(".shp"):  # Check if file is a shapefile
-            shapefile_name = file
-            shapefile_path = os.path.join(directory, file)
-            basename = os.path.basename(shapefile_name)
-            uris = {"uris":["gs://earthengine_shapefiles/{}".format(basename)]}
-            asset_name = "projects/earthengine-legacy/assets/users/benweinstein2010/earthengine_shapefiles/{}".format(basename)
-            shapefile_list.append({"name": asset_name, "sources":[uris]})
-    # Save shapefile list as JSON
-    with open(output_file, "w") as json_file:
-        json.dump(shapefile_list, json_file, indent=4)
-    print(f"Shapefile list saved to {output_file}")
+    for shp in shapefiles:
+        # Save shapefile list as JSON
+        basename = os.path.basename(shp)
+        asset_name = "projects/earthengine-legacy/assets/users/benweinstein2010/{}".format(basename)
+        print(asset_name)
+        subprocess.call("earthengine upload table --asset_id=users/username/{} {}".format(basename, shp), shell=True())
 
 species_model_paths = {
     "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/def58fe6c0fa4b8991e5e80f63a20acd_NIWO.pt",
@@ -51,10 +49,7 @@ species_model_paths = {
 
 for x in ["HARV"]:
     model_path = os.path.splitext(os.path.basename(species_model_paths[x]))[0]
-    directory_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}".format(x, model_path)
-    output_file_path =  "{}/{}_earthengine_manifest.json".format(directory_path, x)
-    save_shapefile_list(directory_path, output_file_path)
-    print(output_file_path)
+    save_shapefile_list(site=x)
 
 
 
