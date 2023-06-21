@@ -1,6 +1,7 @@
 # Earth engine upload, seeded by chatgpt
 import os
 import json
+from google.cloud import storage
 import subprocess
 
 """
@@ -8,17 +9,21 @@ This module assumes that predictions have already been uploaded using gsutil to 
 gsutil and earthengine authenticate
 """     
 def save_shapefile_list(site):
-    shapefiles = subprocess.call("gsutil gs://earthengine_shapefiles/{}/*.shp", shell=True)  
+    client = storage.Client()
+    shapefiles = []
+    for blob in client.list_blobs('earthengine_shapefiles', prefix=site):
+        if str(blob.name).endswith("shp"):
+            shapefiles.append(blob.name)
+
+    print(shapefiles)
     if len(shapefiles) == 0:
         return None
     
     # Iterate over files in the directory
     for shp in shapefiles:
         # Save shapefile list as JSON
-        basename = os.path.basename(shp)
-        asset_name = "projects/earthengine-legacy/assets/users/benweinstein2010/{}".format(basename)
-        print(asset_name)
-        subprocess.call("earthengine upload table --asset_id=users/username/{} {}".format(basename, shp), shell=True())
+        basename = os.path.splitext(os.path.basename(shp))[0]
+        subprocess.call("earthengine upload table --asset_id=users/benweinstein2010/{} gs://earthengine_shapefiles/{}".format(basename, shp), shell=True)
 
 species_model_paths = {
     "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/def58fe6c0fa4b8991e5e80f63a20acd_NIWO.pt",
