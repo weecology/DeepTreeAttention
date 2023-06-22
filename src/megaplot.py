@@ -27,6 +27,7 @@ def read_files(directory, site=None, config=None, client=None):
         for x in futures:
             print(x)            
             formatted_data = x.result()
+            formatted_data.set_crs("32616", inplace=True, allow_overide=True)
             sitedf.append(formatted_data)        
     else: 
         for index, x in enumerate(sites):
