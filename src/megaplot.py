@@ -33,7 +33,7 @@ def read_files(directory, site=None, config=None, client=None):
             print(x)
             formatted_data = format(site=x, gdf=shps[index], config=config)
             # Set as dummy crs, since different utm zones
-            formatted_data = formatted_data.set_crs("32616")
+            formatted_data.set_crs("32616", inplace=True, allow_overide=True)
             sitedf.append(formatted_data)
 
     sitedf = pd.concat(sitedf)
