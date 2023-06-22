@@ -27,14 +27,14 @@ def read_files(directory, site=None, config=None, client=None):
         for x in futures:
             print(x)            
             formatted_data = x.result()
-            formatted_data.set_crs("32616", inplace=True, allow_overide=True)
+            formatted_data.set_crs("32616", inplace=True, allow_override=True)
             sitedf.append(formatted_data)        
     else: 
         for index, x in enumerate(sites):
             print(x)
             formatted_data = format(site=x, gdf=shps[index], config=config)
             # Set as dummy crs, since different utm zones
-            formatted_data.set_crs("32616", inplace=True, allow_overide=True)
+            formatted_data.set_crs("32616", inplace=True, allow_override=True)
             sitedf.append(formatted_data)
 
     sitedf = pd.concat(sitedf)
