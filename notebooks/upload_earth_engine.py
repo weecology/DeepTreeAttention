@@ -8,22 +8,22 @@ import subprocess
 This module assumes that predictions have already been uploaded using gsutil to a google cloud bucket.
 gsutil and earthengine authenticate
 """     
-def save_shapefile_list(site):
+def create_csv_manifest(site):
     client = storage.Client()
-    shapefiles = []
+    csvs = []
     for blob in client.list_blobs('earthengine_shapefiles', prefix=site):
-        if str(blob.name).endswith("shp"):
-            shapefiles.append(blob.name)
+        if str(blob.name).endswith("csv"):
+            csvs.append(blob.name)
 
-    print(shapefiles)
-    if len(shapefiles) == 0:
+    print(csvs)
+    if len(csvs) == 0:
         return None
     
     # Iterate over files in the directory
-    for shp in shapefiles:
+    for csv in csvs:    
         # Save shapefile list as JSON
-        basename = os.path.splitext(os.path.basename(shp))[0]
-        subprocess.call("earthengine upload table --asset_id=users/benweinstein2010/{} gs://earthengine_shapefiles/{}".format(basename, shp), shell=True)
+        basename = os.path.splitext(os.path.basename(csv))[0]
+        subprocess.call("earthengine upload table --asset_id=users/benweinstein2010/{} gs://earthengine_shapefiles/{}".format(basename, csv), shell=True)
 
 species_model_paths = {
     "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/def58fe6c0fa4b8991e5e80f63a20acd_NIWO.pt",
@@ -52,9 +52,9 @@ species_model_paths = {
     "BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/01bfce34aacd455bb1a4b4d80deb16d2_BART.pt",
     "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/973a01b0c1a349ebaf4fc8454ffc624d_HARV.pt"}
 
-for x in ["HARV"]:
+for x in ["BART"]:
     model_path = os.path.splitext(os.path.basename(species_model_paths[x]))[0]
-    save_shapefile_list(site=x)
+    create_csv_manifest(site=x)
 
 
 
