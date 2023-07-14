@@ -3,7 +3,6 @@ from comet_ml import API
 import os
 import pandas as pd
 
-
 species_model_paths = {
     "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/def58fe6c0fa4b8991e5e80f63a20acd_NIWO.pt",
     "RMNP": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/bd761ac1c0d74268a59e87aa85b9fa9c_RMNP.pt",    
@@ -41,7 +40,9 @@ for site in species_model_paths:
         overall_micro = experiment.get_metrics("overall_micro")[0]["metricValue"]
         overall_macro = experiment.get_metrics("overall_macro")[0]["metricValue"]
         num_classes = experiment.get_parameters_summary("num_species")["valueCurrent"]
-        output_row = pd.DataFrame({"site":[site],"Micro-accuracy":[overall_micro],"Macro-accuracy":[overall_macro],"Species":[num_classes]})
+        train_samples = experiment.get_parameters_summary("train_samples")["valueCurrent"]
+        test_samples = experiment.get_parameters_summary("test_samples")["valueCurrent"]
+        output_row = pd.DataFrame({"site":[site],"Micro-accuracy":[overall_micro],"Macro-accuracy":[overall_macro],"Species":[num_classes],"Train Samples":[train_samples],"Test":[test_samples]})
         rows.append(output_row)
     except:
         print(site)
@@ -49,6 +50,6 @@ for site in species_model_paths:
     
 output_table = pd.concat(rows)
 output_table = output_table.sort_values("Micro-accuracy", ascending=False)
-output_table.to_csv("/Users/benweinstein/Dropbox/Weecology/Species/SpeciesMaps/Metrics.csv")
+output_table.to_csv("/home/b.weinstein/DeepTreeAttention/results/metrics.csv")
 
     

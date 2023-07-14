@@ -27,10 +27,13 @@ def clean_up(path):
 
     a.to_file(path)
 
-    return a
+    # Reproject for earth engine
+
+    b = a.to_crs("EPSG:4326")
+    return b
 
 
-client = start_cluster.start(cpus=30)
+client = start_cluster.start(cpus=60)
 species_model_paths = {
     "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/def58fe6c0fa4b8991e5e80f63a20acd_NIWO.pt",
     "RMNP": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/bd761ac1c0d74268a59e87aa85b9fa9c_RMNP.pt",
@@ -72,7 +75,7 @@ for site in ["BART"]:
         site_csv.append(pd.DataFrame(result))
     site_csv = pd.concat(site_csv)
     site_csv.to_csv(
-        "/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}/{}.csv".format(site, basename, site))
+        "/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}/{}.csv".format(site, basename, site), index=False)
 
 zipfilename = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}/{}.zip".format(
     site, basename, site)
