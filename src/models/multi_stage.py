@@ -151,15 +151,15 @@ class MultiStage(LightningModule):
             if self.train_df is None:
                 raise ValueError("Fitting, but no train_df specificied to MultiStage.init()")
             
-            self.species_label_dict = self.train_df[["taxonID","label"]].drop_duplicates().set_index("taxonID").to_dict()["label"]
+            self.species_label_dict = self.test_df[["taxonID","label"]].drop_duplicates().set_index("taxonID").to_dict()["label"]
             self.index_to_label = {v:k for k,v in self.species_label_dict.items()}
             self.years = self.train_df.tile_year.unique()
             
-            #mLookup taxonomic names
+            # Lookup taxonomic names
             self.taxonomy = pd.read_csv(self.config["taxonomic_csv"])
             common_species = self.train_df.taxonID.value_counts()/self.train_df.shape[0]
             self.common_species = common_species[common_species > self.config["head_class_minimum_ratio"]].index.values
-            
+
             conifer = self.taxonomy[(self.taxonomy.families=="Pinidae")].taxonID        
             conifer_species = [x for x in self.train_df.taxonID.unique() if x in conifer.values] 
             self.conifer_species = [x for x in conifer_species if not x in self.common_species]
@@ -227,7 +227,7 @@ class MultiStage(LightningModule):
         head_classes = df[df.taxonID.isin(self.common_species)]
         
         #Split tail classes into conifer and broadleaf
-        tail_classes = df[~df.taxonID.isin(self.common_species)]
+        tail_classes = df[~df.taxonID.isin(head_classes.taxonID)]
         if len(self.conifer_species) > 1:        
             tail_classes.loc[tail_classes.taxonID.isin(self.conifer_species),"taxonID"] = "CONIFER"
         if len(self.broadleaf_species) > 1:
@@ -235,7 +235,10 @@ class MultiStage(LightningModule):
         
         # Create labels
         level_0 = pd.concat([head_classes, tail_classes])                
-        level_0["label"] = [level_label_dict[x] for x in level_0.taxonID]
+        try:
+            level_0["label"] = [level_label_dict[x] for x in level_0.taxonID]
+        except:
+            raise
         level_0_ds = TreeDataset(df=level_0, config=self.config, image_dict=image_dict)
         
         return level_0_ds, level_0, level_label_dict
