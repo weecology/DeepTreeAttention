@@ -9,3 +9,6 @@ data/processed/
 *.png
 *.wpr
 *.wpu
+tests/data/
+*.pstats
+data/*
