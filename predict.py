@@ -185,7 +185,6 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         if os.path.exists(output_name):
             print("{} exists".format(output_name))
             continue
-        
         try:
             species_prediction = predict.predict_tile(
                 crown_annotations=crown_annotations_path,
@@ -211,7 +210,3 @@ futures = create_landscape_map(
     h5_pool=h5_pool,
     hsi_pool=hsi_pool,
     CHM_pool=CHM_pool)
-
-
-
-    

@@ -6,8 +6,7 @@ import dask.dataframe as dd
 import glob
 import os
 
-
-client = start_cluster.start(cpus=50)
+client = start_cluster.start(cpus=80)
 
 def read_shp(path):
     gdf = geopandas.read_file(path)
@@ -44,6 +43,7 @@ species_model_paths = {
 
 
 for site in species_model_paths:
+    print(site)
     try:
         x = species_model_paths[site]
         basename = os.path.splitext(os.path.basename(x))[0]
