@@ -12,7 +12,7 @@ min_stem_diameter: 10
 
 # Minimum number of test samples per class to be included
 min_train_samples: 10
-min_test_samples: 10
+min_test_samples: 8
 max_samples_per_class: 5000
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
