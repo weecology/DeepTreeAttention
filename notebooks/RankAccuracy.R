@@ -1,5 +1,7 @@
 library(tidyverse)
 library(scales)
+library(sf)
+library(meltr)
 fils <- list.files("/Users/benweinstein/Dropbox/Weecology/Species/Metrics/", full.names = T, pattern = "metrics")
 dfs<-list()
 for(fil in fils){
@@ -94,14 +96,13 @@ table_frame<-bind_rows(fil_list)
 table_frame<-table_frame %>% select(site, num_species, train_samples, overall_micro,overall_macro)
 write_csv(table_frame, "/Users/benweinstein/Dropbox/Weecology/Species/Metrics/output_table.csv")
 
-
 # Rank prediction abundance
 csvs<-list.files("/Users/benweinstein/Dropbox/Weecology/Species/SpeciesMaps/Abundances", full.names=T)
 abundances<-lapply(csvs, read.csv)
 names(abundances) <- sapply(csvs, function(x){ str_match(x, "/(\\w+)_species")[,2]})
 for (x in 1:length(abundances)){
   abundances[[x]]$site<-names(abundances)[x]
-  abundances[[x]]$proportion <-  abundances[[x]]$scientific/sum(abundances[[x]]$scientific)
+  abundances[[x]]$proportion <- abundances[[x]]$count/sum(abundances[[x]]$count)
   abundances[[x]] <- abundances[[x]] %>% arrange(desc(proportion)) %>% mutate(rank=1:nrow(.))
 }
 
@@ -117,10 +118,54 @@ ggplot(abundances, aes(x=rank, y=proportion, col=site)) +
 ggsave("/Users/benweinstein/Dropbox/Weecology/Species/Metrics/rank_abundance.png",height=5,width=7)
 
 # Number of individuals
-sum(abundances$scientific)
+sum(abundances$count)
 
 # Number of species
-length(unique(abundances$X))
+length(unique(abundances$scientific))
+length(unique(abundances$site))
+
+# Create site x species matrix
+all_points<-read_sf("/Users/benweinstein/Dropbox/Weecology/Species/SpeciesMaps/crops/canopy_points.shp")
+taxonomy<-read.csv("/Users/benweinstein/Documents/DeepTreeAttention/data/raw/OS_TAXON_PLANT-20220330T142149.csv")
+taxonomy<-taxonomy %>% select(scientificName, taxonID,taxonRank) %>% mutate(scientific=stringr::word(scientificName,0,2)) %>% filter(taxonRank=="species")
+sitexspp<-data.frame(table(abundances$scientific,abundances$site))
+colnames(sitexspp)<-c("scientific","site","present")
+rawspeciesmatrix<-all_points %>% group_by(taxonID,siteID) %>% filter(n() > 1) %>% group_by(taxonID, siteID) %>%
+  slice(1) %>% select(taxonID, siteID) %>% merge(taxonomy, "taxonID")
+
+sites <- unique(abundances$site)
+results_list <- list()
+for (x in sites){
+  species_present <- sitexspp %>% filter(site == x,present==1)
+  species_in_raw <- rawspeciesmatrix %>% filter(siteID==x) %>% distinct(scientific, taxonID)
+  raw_stems<-all_points %>% filter(siteID==x, taxonID %in% species_in_raw$taxonID)
+  included <- species_in_raw[species_in_raw$scientific %in% species_present$scientific,] 
+  missing <- species_in_raw[!species_in_raw$scientific %in% species_present$scientific,] 
+  proportion_present <- nrow(species_present)/nrow(species_in_raw)
+  stems_of_present_species<-raw_stems %>% filter(taxonID %in% included$taxonID)
+  stems_present<-nrow(stems_of_present_species)/nrow(raw_stems)
+  results_list[[x]] <- data.frame(site=x, Species=proportion_present, Stems=stems_present)
+}
+
+results<-bind_rows(results_list)
+pdf<-gather(results,"var",count,2:3)
+ggplot(pdf,aes(y=site,x=count,col=var)) + geom_point(size=4) + theme_bw() + scale_color_manual(values=c("grey","black")) + 
+  scale_x_continuous() + scale_x_continuous(labels = scales::percent) +
+  labs(x="Proportion included in model",color="") +
+  geom_vline(linetype="dashed",xintercept=mean(results$Species), color="grey",size=1.5) +
+  geom_vline(linetype="dashed",xintercept=mean(results$Stems), color="black",size=1.5) 
+  
+ggsave("/Users/benweinstein/Dropbox/Weecology/Species/Metrics/proportion_included.png",height=6,width=10)
+
+site_lists<-all_points %>% group_by(taxonID,siteID) %>%
+  filter(n() > 1) %>% group_by(taxonID, siteID) %>% 
+  select(taxonID, siteID) %>% merge(taxonomy, "taxonID") %>% 
+  group_by(scientific, siteID) %>% summarize(n=n()) %>% as.data.frame() %>% select(-geometry) %>% group_by(siteID) %>% arrange(siteID,desc(n))
+
+#label which are in the models.
+site_lists<-sitexspp %>% mutate(Included_in_Model=present,siteID=site) %>% select(-present, -site) %>% merge(site_lists, by=c("scientific","siteID"))  %>% arrange(siteID,desc(n))
+
+write.csv(site_lists,"/Users/benweinstein/Dropbox/Weecology/Species/SpeciesMaps/site_lists.csv")
 
 
-       
+
