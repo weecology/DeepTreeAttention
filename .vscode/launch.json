@@ -11,6 +11,7 @@
             "env": {
                 "PYTHONPATH":"${PYTHONPATH}:/home/b.weinstein/DeepTreeAttention/"
             },
+            "args": ["species_release","commit","MLBS"]
         }
     ]
 }

@@ -117,7 +117,7 @@ def load(directory, config, client=None, site=None):
     """
     if site == "pretrain":
         site = None
-        formatted_data = read_files(directory=directory, config=config, client=client, site=x)
+        formatted_data = read_files(directory=directory, config=config, client=client, site=None)
     else:
         formatted_data = read_files(directory=directory, config=config, client=client, site=site)
     
