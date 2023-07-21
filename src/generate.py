@@ -14,6 +14,7 @@ import traceback
 import warnings
 warnings.filterwarnings('ignore')
 
+
 def predict_trees(deepforest_model, rgb_path, bounds, expand=40):
     """Predict an rgb path at specific utm bounds
     Args:
@@ -105,14 +106,15 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     
     # Look for hand annotations of those crowns.
     plotID = plot_data.plotID.unique()[0]
-    hand_annotated_plots = glob.glob("{}/data/raw/crown_polygons/*.shp")
+    ROOT = os.path.dirname(os.path.dirname(patches.__file__))
+    hand_annotated_plots = glob.glob("{}/data/raw/crown_polygons/*.shp".format(ROOT))
     selected_hand_annotation = [x for x in hand_annotated_plots if plotID in x]
     if len(selected_hand_annotation) == 0:
         boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
     else:
         print("Loading hand annotation {} for plotID {}".format(selected_hand_annotation, plotID))
         boxes = gpd.read_file(selected_hand_annotation[0])
-        boxes["box_id"] = np.arange(boxes.shape[0])
+        boxes["box_id"] = ["hand_annotated_{}".format(x) for x in np.arange(boxes.shape[0])]
 
     if boxes is None:
         raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
