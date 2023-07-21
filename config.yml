@@ -17,7 +17,7 @@ max_samples_per_class: 5000
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
 # Set to 1 for debugging, no files will be written
-iterations: 1000
+iterations: 5000
 
 # Minimum CanopyModel height, leave blank to skip CHM filtering
 min_CHM_height: 1
@@ -70,7 +70,7 @@ lr_broadleaf: 0.00001
 lr_oak: 0.00005
 lr_flat: 0.001
 
-fast_dev_run: False
+fast_dev_run: True
 accelerator: auto
 epochs: 200
 snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
