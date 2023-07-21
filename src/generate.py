@@ -134,7 +134,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     cleaned_points = []
     for value, group in merged_boxes.groupby("box_id"):
         if group.shape[0] > 1:
-            selected_point = group[group.height == group.CHM_height.max()]
+            selected_point = group[group.CHM_height == group.CHM_height.max()]
             if selected_point.shape[0] > 1:
                 selected_point = selected_point.head(1)
                 #closest_stem = group.centroid.distance(selected_point).sort_values().index[0]
