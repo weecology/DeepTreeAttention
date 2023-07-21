@@ -15,8 +15,6 @@ site = sys.argv[3]
 config = data.read_config("config.yml")
 
 #Sanitize string representation
-site = site.replace("_",", ")
-site = json.loads(site)
 
 if config["use_data_commit"] is None:
     comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple") 

@@ -12,3 +12,4 @@ data/processed/
 tests/data/
 *.pstats
 data/*
+*.prof

@@ -14,7 +14,6 @@ import traceback
 import warnings
 warnings.filterwarnings('ignore')
 
-
 def predict_trees(deepforest_model, rgb_path, bounds, expand=40):
     """Predict an rgb path at specific utm bounds
     Args:
@@ -75,8 +74,7 @@ def create_boxes(plot_data, size=1):
     """If there are no deepforest boxes, fall back on selecting a fixed area around stem point"""
     fixed_boxes = plot_data.buffer(size).envelope
     
-    fixed_boxes = gpd.GeoDataFrame(geometry=fixed_boxes)
-    
+    fixed_boxes = gpd.GeoDataFrame(geometry=fixed_boxes)    
     #Mimic the existing structure
     fixed_boxes = gpd.sjoin(fixed_boxes, plot_data)
     fixed_boxes["score"] = None
@@ -122,7 +120,8 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     
     #Merge results with field data, buffer on edge 
     merged_boxes = gpd.sjoin(boxes, plot_data)
-    
+    merged_boxes.set_crs(inplace=True, crs=plot_data.crs, allow_override=True)
+
     ##If no remaining boxes just take a box around center
     missing_ids = plot_data[~plot_data.individual.isin(merged_boxes.individual)]
     
@@ -255,7 +254,7 @@ def write_crop(row, savedir, img_path, rasterio_src=None, as_numpy=False, suffix
         as_numpy: save as .npz files preprocessed, instead of .tif, useful for prediction
     """
     
-    if suffix is "RGB":
+    if suffix == "RGB":
         tile_year = img_path.split("/")[-5].split("_")[0]    
     else:
         tile_year = os.path.splitext(os.path.basename(img_path))[0].split("_")[0]

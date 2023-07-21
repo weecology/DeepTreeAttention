@@ -160,6 +160,9 @@ def filter_data(path, config):
     # There are a couple NEON plots within the OSBS megaplot, make sure they are removed
     shp = shp[~shp.plotID.isin(["OSBS_026","OSBS_029","OSBS_039","OSBS_027","OSBS_036"])]
 
+    #Create a epsg field
+    shp["epsg"] = shp.utmZone.apply(lambda x: "326{}".format(x[:2]))
+
     return shp
 
 
@@ -323,7 +326,7 @@ class TreeData(LightningDataModule):
                 df = filter_data(self.csv_file, config=self.config)
                 if site:
                     if not site == "pretrain":
-                        df = df[df.siteID.isin(site)]
+                        df = df[df.siteID ==site]
                 # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config, client=self.client, site=site)
@@ -345,7 +348,11 @@ class TreeData(LightningDataModule):
                 if filter_species_site:
                     species_to_keep = df[df.siteID.isin(filter_species_site)].taxonID.unique()
                     df = df[df.taxonID.isin(species_to_keep)]
-                    
+                
+                # To write a shapefile, you need a CRS, if there is a single non null CRS, use it, if not assign a dummy one
+                if df.crs is None:
+                    epsgs = df["epsg"].unique()
+                    df.set_crs(inplace=True, crs=epsgs[0], allow_override=True)
                 df.to_file("{}/unfiltered_points_{}.shp".format(self.data_dir, site))
                 
                 #Filter points based on LiDAR height for NEON data
