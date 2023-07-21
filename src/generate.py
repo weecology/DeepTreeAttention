@@ -115,6 +115,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
         print("Loading hand annotation {} for plotID {}".format(selected_hand_annotation, plotID))
         boxes = gpd.read_file(selected_hand_annotation[0])
         boxes["box_id"] = ["hand_annotated_{}".format(x) for x in np.arange(boxes.shape[0])]
+        boxes =  boxes[["geometry","box_id"]]
 
     if boxes is None:
         raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
