@@ -105,7 +105,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     
     # Look for hand annotations of those crowns.
     plotID = plot_data.plotID.unique()[0]
-    hand_annotated_plots = glob.glob("{}/data/raw/polygons/*.shp")
+    hand_annotated_plots = glob.glob("{}/data/raw/crown_polygons/*.shp")
     selected_hand_annotation = [x for x in hand_annotated_plots if plotID in x]
     if len(selected_hand_annotation) == 0:
         boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
