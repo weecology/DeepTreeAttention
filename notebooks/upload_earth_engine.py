@@ -14,11 +14,9 @@ def create_csv_manifest(site):
     for blob in client.list_blobs('earthengine_shapefiles', prefix=site):
         if str(blob.name).endswith("csv"):
             csvs.append(blob.name)
-
     print(csvs)
     if len(csvs) == 0:
         return None
-    
     # Iterate over files in the directory
     for csv in csvs:    
         # Save shapefile list as JSON
@@ -53,7 +51,6 @@ species_model_paths = {
     "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/973a01b0c1a349ebaf4fc8454ffc624d_HARV.pt"}
 
 for x in ["BART"]:
-    model_path = os.path.splitext(os.path.basename(species_model_paths[x]))[0]
     create_csv_manifest(site=x)
 
 
