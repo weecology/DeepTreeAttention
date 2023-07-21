@@ -34,7 +34,7 @@ if config["use_data_commit"] is None:
         config=config,
         client=client,
         create_train_test=True,
-        site=site[0],
+        site=site,
         comet_logger=comet_logger)
     config["use_data_commit"] = comet_logger.experiment.id 
 elif config["train_test_commit"] is None:
