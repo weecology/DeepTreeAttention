@@ -103,8 +103,17 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     except Exception as e:
         raise ValueError("cannot find RGB sensor for {}".format(plot_data.plotID.unique()))
     
-    boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
-    
+    # Look for hand annotations of those crowns.
+    plotID = plot_data.plotID.unique()[0]
+    hand_annotated_plots = glob.glob("{}/data/raw/polygons/*.shp")
+    selected_hand_annotation = [x for x in hand_annotated_plots if plotID in x]
+    if len(selected_hand_annotation) == 0:
+        boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
+    else:
+        print("Loading hand annotation {} for plotID {}".format(selected_hand_annotation, plotID))
+        boxes = gpd.read_file(selected_hand_annotation[0])
+        boxes["box_id"] = np.arange(boxes.shape[0])
+
     if boxes is None:
         raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
     
@@ -134,10 +143,9 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     cleaned_points = []
     for value, group in merged_boxes.groupby("box_id"):
         if group.shape[0] > 1:
-            selected_point = group[group.CHM_height == group.CHM_height.max()]
+            selected_point = group[group.height == group.height.max()]
             if selected_point.shape[0] > 1:
                 selected_point = selected_point.head(1)
-                #closest_stem = group.centroid.distance(selected_point).sort_values().index[0]
             cleaned_points.append(selected_point)
         else:
             cleaned_points.append(group)

@@ -372,7 +372,7 @@ class TreeData(LightningDataModule):
                 if self.config["megaplot_dir"]:
                     #Add IFAS back in, use polygons instead of deepforest boxes                    
                     self.crowns = gpd.GeoDataFrame(pd.concat([self.crowns, IFAS]))
-                
+                    
                 self.crowns.to_file("{}/crowns.shp".format(self.data_dir))                
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(self.crowns.taxonID.unique()))

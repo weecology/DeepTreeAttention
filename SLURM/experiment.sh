@@ -26,4 +26,4 @@ cd ~/DeepTreeAttention/
 branch_name=$((git symbolic-ref HEAD 2>/dev/null || echo "(unnamed branch)")|cut -d/ -f3-)
 commit=$(git log --pretty=format:'%H' -n 1)
 CUDA_LAUNCH_BLOCKING=1
-python train.py $branch_name $commit $2
+python -m cProfile -o generate_data.prof train.py $branch_name $commit $2
