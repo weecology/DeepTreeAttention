@@ -140,7 +140,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
         cleaned_boxes.append(choosen_box)
     
     merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_boxes),crs=merged_boxes.crs)
-    merged_boxes = merged_boxes.drop(columns=["xmin","xmax","ymin","ymax"])
+    merged_boxes = merged_boxes.drop(columns=["xmin","xmax","ymin","ymax"],errors="ignore")
     
     ##if there are multiple points per box, take the tallest point.
     cleaned_points = []
