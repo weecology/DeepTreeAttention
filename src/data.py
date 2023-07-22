@@ -488,7 +488,7 @@ class TreeData(LightningDataModule):
         if self.site:
             if "pretrain" not in self.site:
                 # Get species present at site, as well as those species from other sites
-                self.other_sites = self.annotations[~self.annotations.siteID == self.site].reset_index(drop=True)                
+                self.other_sites = self.annotations[~(self.annotations.siteID == self.site)].reset_index(drop=True)                
                 self.annotations = self.annotations[self.annotations.siteID == self.site].reset_index(drop=True)
                 self.other_sites = self.other_sites[self.other_sites.taxonID.isin(self.annotations.taxonID.unique())]
                 
