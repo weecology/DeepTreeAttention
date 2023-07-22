@@ -440,6 +440,7 @@ class TreeData(LightningDataModule):
                 
             else:
                 self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir))
+                
             if self.comet_logger:
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(self.annotations.taxonID.unique()))
                 num_individuals = self.annotations.groupby("individual").apply(lambda x: x.head(1)).shape[0]
@@ -502,7 +503,7 @@ class TreeData(LightningDataModule):
             self.train, self.test = train_test_split(self.annotations, config=self.config, client=self.client) 
 
         # Capture discarded species
-        if "pretrain" not in self.site:
+        if not "pretrain" in self.site:
             individuals = np.concatenate([self.train.individual.unique(), self.test.individual.unique()])
             self.novel = self.annotations[~self.annotations.individual.isin(individuals)]
             
