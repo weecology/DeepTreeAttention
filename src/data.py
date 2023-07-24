@@ -202,9 +202,11 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     train = shp[~shp.plotID.isin(test.plotID.unique())]
     
     # Remove fixed boxes from test
-    test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]    
-    test = test.groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples)
-    train = train.groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
+    test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]   
+    test_counts = test.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts()
+    test = test[test.taxonID.isin(test_counts[test_counts>min_test_samples].index)]
+    train_counts = train.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts()
+    train = train[train.taxonID.isin(train_counts[train_counts>min_train_samples].index)]
         
     train = train[train.taxonID.isin(test.taxonID)]    
     test = test[test.taxonID.isin(train.taxonID)]
@@ -262,7 +264,7 @@ def train_test_split(shp, config, client = None):
     # The size of the datasets
     if len(ties) > 1:
         print("The size of tied datasets with {} species is {}".format(test_species, [x[1].shape[0] for x in ties]))        
-        saved_train, saved_test = ties[np.argmax([x[1].shape[0] for x in ties])]
+        saved_train, saved_test = ties[np.argmin([x[1].shape[0] for x in ties])]
         
     train = saved_train
     test = saved_test    
