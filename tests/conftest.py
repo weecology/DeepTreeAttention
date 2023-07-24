@@ -29,19 +29,19 @@ def ROOT():
 
 @pytest.fixture(scope="session")
 def rgb_pool(ROOT):
-    rgb_pool = glob.glob("{}/tests/data/*.tif".format(ROOT))
+    rgb_pool = glob.glob("{}/tests/data/HARV/2019/FullSite/D01/2019_HARV_6/L3/Camera/Mosaic/*.tif".format(ROOT))
     
     return rgb_pool
 
 @pytest.fixture(scope="session")
 def rgb_path(ROOT):
-    rgb_path = "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop_2019.tif".format(ROOT)
+    rgb_path = "{}/tests/data/HARV/2019/FullSite/D01/2019_HARV_6/L3/Camera/Mosaic/2019_D01_HARV_DP3_726000_4699000_image.tif".format(ROOT)
     
     return rgb_path
 
 @pytest.fixture(scope="session")
 def sample_crowns(ROOT):
-    data_path = "{}/tests/data/sample.shp".format(ROOT)
+    data_path = "{}/tests/data/sample_crowns.shp".format(ROOT)
     
     return data_path
 

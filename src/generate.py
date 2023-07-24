@@ -107,29 +107,31 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     ROOT = os.path.dirname(os.path.dirname(patches.__file__))
     hand_annotated_plots = glob.glob("{}/data/raw/crown_polygons/*.shp".format(ROOT))
     selected_hand_annotation = [x for x in hand_annotated_plots if plotID in x]
-    if len(selected_hand_annotation) == 0:
-        boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
-    else:
-        print("Loading hand annotation {} for plotID {}".format(selected_hand_annotation, plotID))
-        boxes = gpd.read_file(selected_hand_annotation[0])
-        boxes["box_id"] = ["hand_annotated_{}".format(x) for x in np.arange(boxes.shape[0])]
-        boxes =  boxes[["geometry","box_id"]]
+    predicted_boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
 
-    if boxes is None:
+    if predicted_boxes is None:
         raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
     
-    #Merge results with field data, buffer on edge 
-    merged_boxes = gpd.sjoin(boxes, plot_data)
+    # Load any hand annotated boxes
+    if len(selected_hand_annotation) == 0:
+        print("Loading hand annotation {} for plotID {}".format(selected_hand_annotation, plotID))
+        hand_annotated = gpd.read_file(selected_hand_annotation[0])
+        hand_annotated = hand_annotated[["geometry"]]
+        hand_annotated = gpd.sjoin(hand_annotated, plot_data)
+        hand_annotated = hand_annotated[["geometry","individual"]]
+        hand_annotated["hand_annotated_box"] = hand_annotated.geometry.to_wkt()
+        hand_annotated = hand_annotated = hand_annotated[["hand_annotated_box","individual"]]
+        plot_data = plot_data.merge(hand_annotated, how="left")
+
+    # Merge results with field data, buffer on edge 
+    merged_boxes = gpd.sjoin(predicted_boxes, plot_data)
     merged_boxes.set_crs(inplace=True, crs=plot_data.crs, allow_override=True)
 
-    ##If no remaining boxes just take a box around center
-    missing_ids = plot_data[~plot_data.individual.isin(merged_boxes.individual)]
-    
-    if not missing_ids.empty:
-        created_boxes= create_boxes(missing_ids)
-        concat_boxes = pd.concat([merged_boxes,created_boxes])
-        merged_boxes = gpd.GeoDataFrame(concat_boxes)
-    
+    # Add fixed boxes if needed later
+    fixed_boxes = plot_data.buffer(1).envelope
+    fixed_df = pd.DataFrame({"fixed_box":fixed_boxes.geometry.to_wkt(), "individual":plot_data.individual})
+    predicted_boxes = predicted_boxes.merge(fixed_df)
+
     #If there are multiple boxes per point, take the center box
     grouped = merged_boxes.groupby("individual")
     
@@ -155,10 +157,10 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_points),crs=merged_boxes.crs)
     
     #Add tile information
-    boxes["RGB_tile"] = rgb_sensor_path
+    predicted_boxes["RGB_tile"] = rgb_sensor_path
     merged_boxes["RGB_tile"] = rgb_sensor_path
 
-    return merged_boxes, boxes 
+    return merged_boxes, predicted_boxes 
 
 def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, deepforest_model=None):
     """wrapper function for dask, see main.py"""
@@ -253,7 +255,6 @@ def write_crop(row, savedir, img_path, rasterio_src=None, as_numpy=False, suffix
     Args:
         as_numpy: save as .npz files preprocessed, instead of .tif, useful for prediction
     """
-    
     if suffix == "RGB":
         tile_year = img_path.split("/")[-5].split("_")[0]    
     else:
