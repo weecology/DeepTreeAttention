@@ -11,7 +11,7 @@
             "env": {
                 "PYTHONPATH":"${PYTHONPATH}:/home/b.weinstein/DeepTreeAttention/"
             },
-            "args": ["species_release","commit","NIWO"]
+            "args": ["species_release","commit","OSBS"]
         }
     ]
 }
