@@ -105,15 +105,16 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     # Look for hand annotations of those crowns.
     plotID = plot_data.plotID.unique()[0]
     ROOT = os.path.dirname(os.path.dirname(patches.__file__))
-    hand_annotated_plots = glob.glob("{}/data/raw/crown_polygons/*.shp".format(ROOT))
-    selected_hand_annotation = [x for x in hand_annotated_plots if plotID in x]
+
     predicted_boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
 
     if predicted_boxes is None:
         raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
     
     # Load any hand annotated boxes
-    if len(selected_hand_annotation) == 0:
+    hand_annotated_plots = glob.glob("{}/data/raw/crown_polygons/*.shp".format(ROOT))
+    selected_hand_annotation = [x for x in hand_annotated_plots if plotID in x]
+    if not len(selected_hand_annotation) == 0:
         print("Loading hand annotation {} for plotID {}".format(selected_hand_annotation, plotID))
         hand_annotated = gpd.read_file(selected_hand_annotation[0])
         hand_annotated = hand_annotated[["geometry"]]
@@ -121,7 +122,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
         hand_annotated = hand_annotated[["geometry","individual"]]
         hand_annotated["hand_annotated_box"] = hand_annotated.geometry.to_wkt()
         hand_annotated = hand_annotated = hand_annotated[["hand_annotated_box","individual"]]
-        plot_data = plot_data.merge(hand_annotated, how="left")
+        plot_data = plot_data.merge(hand_annotated, how="left", on="individual")
 
     # Merge results with field data, buffer on edge 
     merged_boxes = gpd.sjoin(predicted_boxes, plot_data)
@@ -130,7 +131,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     # Add fixed boxes if needed later
     fixed_boxes = plot_data.buffer(1).envelope
     fixed_df = pd.DataFrame({"fixed_box":fixed_boxes.geometry.to_wkt(), "individual":plot_data.individual})
-    predicted_boxes = predicted_boxes.merge(fixed_df)
+    predicted_boxes = merged_boxes.merge(fixed_df)
 
     #If there are multiple boxes per point, take the center box
     grouped = merged_boxes.groupby("individual")
