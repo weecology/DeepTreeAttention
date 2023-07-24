@@ -226,7 +226,10 @@ def train_test_split(shp, config, client = None):
     keep = shp.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts() > (min_sampled)
     species_to_keep = keep[keep].index
     shp = shp[shp.taxonID.isin(species_to_keep)]
-    print("splitting data into train test. Initial data has {} points from {} species with a min of {} samples".format(shp.shape[0],shp.taxonID.nunique(),min_sampled))
+    if shp.empty:
+        raise ValueError("No remaining samples left after min filtering")
+    else:
+        print("Initial train/test data has {} points from {} species with a min of {} samples".format(shp.shape[0],shp.taxonID.nunique(),min_sampled))
     test_species = 0
     ties = []
     if client:
@@ -264,7 +267,7 @@ def train_test_split(shp, config, client = None):
     # The size of the datasets
     if len(ties) > 1:
         print("The size of tied datasets with {} species is {}".format(test_species, [x[1].shape[0] for x in ties]))        
-        saved_train, saved_test = ties[np.argmin([x[1].shape[0] for x in ties])]
+        saved_train, saved_test = ties[np.argmax([x[1].shape[0] for x in ties])]
         
     train = saved_train
     test = saved_test    
