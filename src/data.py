@@ -194,7 +194,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
             if x in species_to_sample:
                 test_plots.append(plotID)
                 # Update species list                
-                counts = shp[shp.plotID.isin(test_plots)].taxonID.value_counts()                
+                counts = shp[shp.plotID.isin(test_plots)].groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts()                
                 species_completed = counts[counts > min_test_samples].index.tolist()
                 species_to_sample = [x for x in shp.taxonID.unique() if not x in species_completed]
                 
@@ -228,8 +228,12 @@ def train_test_split(shp, config, client = None):
     shp = shp[shp.taxonID.isin(species_to_keep)]
     if shp.empty:
         raise ValueError("No remaining samples left after min filtering")
+    elif shp.taxonID.value_counts().shape[0] < 3:
+        print("Initial train/test data has {} points from {} species with a min of {} samples".format(shp.shape[0],shp.taxonID.nunique(),min_sampled))
+        raise ValueError("Less than 3 species available for training for selected site")
     else:
         print("Initial train/test data has {} points from {} species with a min of {} samples".format(shp.shape[0],shp.taxonID.nunique(),min_sampled))
+    
     test_species = 0
     ties = []
     if client:
