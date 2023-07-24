@@ -7,7 +7,7 @@ m = main.deepforest()
 m.use_release()
 m.model.nms_thresh = 0.4
 
-src=rio.open("/orange/idtrees-collab/NeonTreeEvaluation/evaluation/RGB/MLBS_014_2018.tif")
+src=rio.open("/orange/idtrees-collab/NeonTreeEvaluation/evaluation/RGB/MLBS_020_2018.tif")
 img = src.read()
 img = np.rollaxis(img, 0, 3)
 boxes=m.predict_image(img, return_plot=True)
