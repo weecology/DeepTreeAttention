@@ -74,8 +74,7 @@ def create_boxes(plot_data, size=1):
     """If there are no deepforest boxes, fall back on selecting a fixed area around stem point"""
     fixed_boxes = plot_data.buffer(size).envelope
     
-    fixed_boxes = gpd.GeoDataFrame(geometry=fixed_boxes)
-    
+    fixed_boxes = gpd.GeoDataFrame(geometry=fixed_boxes)    
     #Mimic the existing structure
     fixed_boxes = gpd.sjoin(fixed_boxes, plot_data)
     fixed_boxes["score"] = None
@@ -103,14 +102,26 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     except Exception as e:
         raise ValueError("cannot find RGB sensor for {}".format(plot_data.plotID.unique()))
     
-    boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
-    
+    # Look for hand annotations of those crowns.
+    plotID = plot_data.plotID.unique()[0]
+    ROOT = os.path.dirname(os.path.dirname(patches.__file__))
+    hand_annotated_plots = glob.glob("{}/data/raw/crown_polygons/*.shp".format(ROOT))
+    selected_hand_annotation = [x for x in hand_annotated_plots if plotID in x]
+    if len(selected_hand_annotation) == 0:
+        boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
+    else:
+        print("Loading hand annotation {} for plotID {}".format(selected_hand_annotation, plotID))
+        boxes = gpd.read_file(selected_hand_annotation[0])
+        boxes["box_id"] = ["hand_annotated_{}".format(x) for x in np.arange(boxes.shape[0])]
+        boxes =  boxes[["geometry","box_id"]]
+
     if boxes is None:
         raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
     
     #Merge results with field data, buffer on edge 
     merged_boxes = gpd.sjoin(boxes, plot_data)
-    
+    merged_boxes.set_crs(inplace=True, crs=plot_data.crs, allow_override=True)
+
     ##If no remaining boxes just take a box around center
     missing_ids = plot_data[~plot_data.individual.isin(merged_boxes.individual)]
     
@@ -128,7 +139,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
         cleaned_boxes.append(choosen_box)
     
     merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_boxes),crs=merged_boxes.crs)
-    merged_boxes = merged_boxes.drop(columns=["xmin","xmax","ymin","ymax"])
+    merged_boxes = merged_boxes.drop(columns=["xmin","xmax","ymin","ymax"],errors="ignore")
     
     ##if there are multiple points per box, take the tallest point.
     cleaned_points = []
@@ -136,10 +147,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
         if group.shape[0] > 1:
             selected_point = group[group.height == group.height.max()]
             if selected_point.shape[0] > 1:
-                try:
-                    selected_point = selected_point[selected_point.CHM_height == selected_point.CHM_height.max()]
-                except:
-                    selected_point.head(1)
+                selected_point = selected_point.head(1)
             cleaned_points.append(selected_point)
         else:
             cleaned_points.append(group)
@@ -246,7 +254,7 @@ def write_crop(row, savedir, img_path, rasterio_src=None, as_numpy=False, suffix
         as_numpy: save as .npz files preprocessed, instead of .tif, useful for prediction
     """
     
-    if suffix is "RGB":
+    if suffix == "RGB":
         tile_year = img_path.split("/")[-5].split("_")[0]    
     else:
         tile_year = os.path.splitext(os.path.basename(img_path))[0].split("_")[0]

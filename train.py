@@ -15,17 +15,16 @@ site = sys.argv[3]
 config = data.read_config("config.yml")
 
 #Sanitize string representation
-site = site.replace("_",", ")
-site = json.loads(site)
 
 if config["use_data_commit"] is None:
     comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple") 
     comet_logger.experiment.add_tag("data_generation")
-    client = start_cluster.start(cpus=40, mem_size="4GB")    
+    client = start_cluster.start(cpus=120, mem_size="4GB")    
     ROOT = os.path.dirname(os.path.dirname(data.__file__))    
     crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
     os.mkdir(crop_dir) 
     config["crop_dir"] = crop_dir
+    
     data_module = data.TreeData(
         csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),
         data_dir=crop_dir,
@@ -33,7 +32,7 @@ if config["use_data_commit"] is None:
         config=config,
         client=client,
         create_train_test=True,
-        site="pretrain",
+        site=site,
         comet_logger=comet_logger)
     config["use_data_commit"] = comet_logger.experiment.id 
 elif config["train_test_commit"] is None:

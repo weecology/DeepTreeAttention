@@ -27,14 +27,14 @@ def read_files(directory, site=None, config=None, client=None):
         for x in futures:
             print(x)            
             formatted_data = x.result()
-            formatted_data.set_crs("32616", inplace=True, allow_override=True)
+            formatted_data.crs = None
             sitedf.append(formatted_data)        
     else: 
         for index, x in enumerate(sites):
             print(x)
             formatted_data = format(site=x, gdf=shps[index], config=config)
-            # Set as dummy crs, since different utm zones
-            formatted_data.set_crs("32616", inplace=True, allow_override=True)
+            # Set a null crs, since could be different utm zones
+            formatted_data.crs = None
             sitedf.append(formatted_data)
 
     sitedf = pd.concat(sitedf)
@@ -52,6 +52,7 @@ def format(site, gdf, config):
     gdf["individual"] = gdf.index.to_series().apply(lambda x: "{}.contrib.{}".format(site,x)) 
     gdf["filename"] = site
     gdf["siteID"] = site.split("_")[0]
+    gdf["epsg"] = gdf.crs.to_epsg()
     
     #PlotID variable to center on correct tile
     if gdf.shape[0] > 1000:
@@ -116,15 +117,7 @@ def load(directory, config, client=None, site=None):
     """
     if site == "pretrain":
         site = None
-        
-    if site is not None:
-        if type(site) is not list:
-            raise TypeError("site parameter should be a list of strings")
-        all_sites = []
-        for x in site:
-            df = read_files(directory=directory, config=config, client=client, site=x)
-            all_sites.append(df)
-        formatted_data = pd.concat(all_sites)
+        formatted_data = read_files(directory=directory, config=config, client=client, site=None)
     else:
         formatted_data = read_files(directory=directory, config=config, client=client, site=site)
     

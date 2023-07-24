@@ -160,6 +160,9 @@ def filter_data(path, config):
     # There are a couple NEON plots within the OSBS megaplot, make sure they are removed
     shp = shp[~shp.plotID.isin(["OSBS_026","OSBS_029","OSBS_039","OSBS_027","OSBS_036"])]
 
+    #Create a epsg field
+    shp["epsg"] = shp.utmZone.apply(lambda x: "326{}".format(x[:2]))
+
     return shp
 
 
@@ -199,9 +202,11 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     train = shp[~shp.plotID.isin(test.plotID.unique())]
     
     # Remove fixed boxes from test
-    test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]    
-    test = test.groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples)
-    train = train.groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples)
+    test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]   
+    test_counts = test.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts()
+    test = test[test.taxonID.isin(test_counts[test_counts>min_test_samples].index)]
+    train_counts = train.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts()
+    train = train[train.taxonID.isin(train_counts[train_counts>min_train_samples].index)]
         
     train = train[train.taxonID.isin(test.taxonID)]    
     test = test[test.taxonID.isin(train.taxonID)]
@@ -221,7 +226,10 @@ def train_test_split(shp, config, client = None):
     keep = shp.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts() > (min_sampled)
     species_to_keep = keep[keep].index
     shp = shp[shp.taxonID.isin(species_to_keep)]
-    print("splitting data into train test. Initial data has {} points from {} species with a min of {} samples".format(shp.shape[0],shp.taxonID.nunique(),min_sampled))
+    if shp.empty:
+        raise ValueError("No remaining samples left after min filtering")
+    else:
+        print("Initial train/test data has {} points from {} species with a min of {} samples".format(shp.shape[0],shp.taxonID.nunique(),min_sampled))
     test_species = 0
     ties = []
     if client:
@@ -323,7 +331,7 @@ class TreeData(LightningDataModule):
                 df = filter_data(self.csv_file, config=self.config)
                 if site:
                     if not site == "pretrain":
-                        df = df[df.siteID.isin(site)]
+                        df = df[df.siteID ==site]
                 # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
                     megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config, client=self.client, site=site)
@@ -345,7 +353,11 @@ class TreeData(LightningDataModule):
                 if filter_species_site:
                     species_to_keep = df[df.siteID.isin(filter_species_site)].taxonID.unique()
                     df = df[df.taxonID.isin(species_to_keep)]
-                    
+                
+                # To write a shapefile, you need a CRS, if there is a single non null CRS, use it, if not assign a dummy one
+                if df.crs is None:
+                    epsgs = df["epsg"].unique()
+                    df.set_crs(inplace=True, crs=epsgs[0], allow_override=True)
                 df.to_file("{}/unfiltered_points_{}.shp".format(self.data_dir, site))
                 
                 #Filter points based on LiDAR height for NEON data
@@ -372,7 +384,7 @@ class TreeData(LightningDataModule):
                 if self.config["megaplot_dir"]:
                     #Add IFAS back in, use polygons instead of deepforest boxes                    
                     self.crowns = gpd.GeoDataFrame(pd.concat([self.crowns, IFAS]))
-                
+                    
                 self.crowns.to_file("{}/crowns.shp".format(self.data_dir))                
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(self.crowns.taxonID.unique()))
@@ -433,6 +445,7 @@ class TreeData(LightningDataModule):
                 
             else:
                 self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir))
+                
             if self.comet_logger:
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(self.annotations.taxonID.unique()))
                 num_individuals = self.annotations.groupby("individual").apply(lambda x: x.head(1)).shape[0]
@@ -481,8 +494,8 @@ class TreeData(LightningDataModule):
         if self.site:
             if "pretrain" not in self.site:
                 # Get species present at site, as well as those species from other sites
-                self.other_sites = self.annotations[~self.annotations.siteID.isin(self.site)].reset_index(drop=True)                
-                self.annotations = self.annotations[self.annotations.siteID.isin(self.site)].reset_index(drop=True)
+                self.other_sites = self.annotations[~(self.annotations.siteID == self.site)].reset_index(drop=True)                
+                self.annotations = self.annotations[self.annotations.siteID == self.site].reset_index(drop=True)
                 self.other_sites = self.other_sites[self.other_sites.taxonID.isin(self.annotations.taxonID.unique())]
                 
         if self.config["existing_test_csv"]:
@@ -495,7 +508,7 @@ class TreeData(LightningDataModule):
             self.train, self.test = train_test_split(self.annotations, config=self.config, client=self.client) 
 
         # Capture discarded species
-        if "pretrain" not in self.site:
+        if not "pretrain" in self.site:
             individuals = np.concatenate([self.train.individual.unique(), self.test.individual.unique()])
             self.novel = self.annotations[~self.annotations.individual.isin(individuals)]
             
