@@ -121,7 +121,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
         hand_annotated = gpd.sjoin(hand_annotated, plot_data)
         hand_annotated = hand_annotated[["geometry","individual"]]
         hand_annotated["hand_annotated_box"] = hand_annotated.geometry.to_wkt()
-        hand_annotated = hand_annotated = hand_annotated[["hand_annotated_box","individual"]]
+        hand_annotated = hand_annotated[["hand_annotated_box","individual"]]
         plot_data = plot_data.merge(hand_annotated, how="left", on="individual")
 
     # Merge results with field data, buffer on edge 
@@ -131,7 +131,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     # Add fixed boxes if needed later
     fixed_boxes = plot_data.buffer(1).envelope
     fixed_df = pd.DataFrame({"fixed_box":fixed_boxes.geometry.to_wkt(), "individual":plot_data.individual})
-    predicted_boxes = merged_boxes.merge(fixed_df)
+    predicted_boxes = merged_boxes.merge(fixed_df, how="left")
 
     #If there are multiple boxes per point, take the center box
     grouped = merged_boxes.groupby("individual")
