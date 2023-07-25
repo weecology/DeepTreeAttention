@@ -11,13 +11,13 @@ HSI_tif_dir: /orange/ewhite/b.weinstein/DeepTreeAttention/Hyperspectral_tifs/yea
 min_stem_diameter: 10
 
 # Minimum number of test samples per class to be included
-min_train_samples: 8
-min_test_samples: 8
+min_train_samples: 5
+min_test_samples: 10
 max_samples_per_class: 5000
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
 # Set to 1 for debugging, no files will be written
-iterations: 1000
+iterations: 1500
 
 # Minimum CanopyModel height, leave blank to skip CHM filtering
 min_CHM_height: 1
@@ -39,7 +39,7 @@ replace_bounding_boxes: True
 # Regenerate bounding box sensor crops
 replace_crops: True
 # Recreate a train test split
-train_test_commit: f95cb39a7817643dac2a85f76192a074bc63c75b
+train_test_commit:
 # Use existing plotIDs for train/test split
 existing_test_csv:
 ### Data loader Config
@@ -57,7 +57,7 @@ pretrain_epochs: 200
 
 ### Training Parameters
 gpus: 1
-batch_size: 12
+batch_size: 48
 bands: 349
 head_class_minimum_ratio: 0.4
 seperate_oak_model: False
