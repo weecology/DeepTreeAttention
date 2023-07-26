@@ -542,9 +542,12 @@ class TreeData(LightningDataModule):
         self.test = self.test.reset_index(drop=True)
         self.train = self.train.reset_index(drop=True)
         
-        # Replace any hand annotated boxes in train geometry
-        self.train.loc[self.train.box_id.astype(str).str.contains("fixed"),"geometry"] = self.train.loc[self.train.box_id.astype(str).str.contains("fixed"),"hand_annotated_box"]
-
+        # Replace any hand annotated boxes in train geometry, if they exist
+        try:
+            self.train.loc[self.train.box_id.astype(str).str.contains("fixed"),"geometry"] = self.train.loc[self.train.box_id.astype(str).str.contains("fixed"),"hand_annotated_box"]
+        except KeyError:
+            pass
+        
         self.train.to_csv("{}/train_{}.csv".format(self.data_dir, ID), index=False)            
         self.test.to_csv("{}/test_{}.csv".format(self.data_dir, ID), index=False)            
         
