@@ -124,24 +124,24 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
             filter_species_site=filter_species_site,
             comet_logger=comet_logger)
         
-        loss_weight = []
-        for x in pretrain_module.species_label_dict:
-            try:
-                lw = 1/pretrain_module.train[pretrain_module.train.taxonID==x].shape[0]
-            except:
-                lw = 0
-            loss_weight.append(lw)
-        loss_weight = np.array(loss_weight/np.max(loss_weight))
-        loss_weight[loss_weight < 0.5] = 0.5  
+        # loss_weight = []
+        # for x in pretrain_module.species_label_dict:
+        #     try:
+        #         lw = 1/pretrain_module.train[pretrain_module.train.taxonID==x].shape[0]
+        #     except:
+        #         lw = 0
+        #     loss_weight.append(lw)
+        # loss_weight = np.array(loss_weight/np.max(loss_weight))
+        # loss_weight[loss_weight < 0.5] = 0.5  
         
-        comet_logger.experiment.log_parameter("loss_weight", loss_weight)
+        # comet_logger.experiment.log_parameter("loss_weight", loss_weight)
         
         model = Hang2020.Single_Spectral_Model(bands=pretrain_module.config["bands"], classes=pretrain_module.num_classes)
         m = baseline.TreeModel(
             model=model,
             classes=pretrain_module.num_classes,
             label_dict=pretrain_module.species_label_dict,
-            loss_weight=loss_weight,
+            loss_weight=None,
             config=pretrain_module.config) 
         
         trainer = Trainer(
