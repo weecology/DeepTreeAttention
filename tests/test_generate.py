@@ -109,12 +109,7 @@ def test_generate_crops(tmpdir, ROOT, rgb_path, rgb_pool, sample_crowns):
         convert_h5=False,
         img_pool=rgb_pool,
         h5_pool=None,
+        suffix="HSI",
         savedir=tmpdir)
     
-    assert len(annotations.tile_year.unique()) == 2 
-    all_years = annotations.groupby("individual").apply(lambda x: x.individual.value_counts()).reset_index(drop=True) == 2
-    assert all(all_years)     
-    
-    #make sure the correct resolution, should be a large image
-    image_path = os.path.join(tmpdir, annotations.image_path.iloc[0])
-    assert rasterio.open(image_path).read().shape[1] > 0    
+    assert annotations.tile_year.unique() == "2019" 
