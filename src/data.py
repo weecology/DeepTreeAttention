@@ -162,6 +162,9 @@ def filter_data(path, config):
 
     #Create a epsg field
     shp["epsg"] = shp.utmZone.apply(lambda x: "326{}".format(x[:2]))
+    # Alaska epsg need a leading 0
+    shp.loc[shp.epsg=="3266N","epsg"] = "32606"
+    shp.loc[shp.epsg=="3265N","epsg"] = "32605"
 
     return shp
 
@@ -363,7 +366,7 @@ class TreeData(LightningDataModule):
                 
                 # To write a shapefile, you need a CRS, if there is a single non null CRS, use it, if not assign a dummy one
                 if df.crs is None:
-                    epsgs = df["epsg"].unique()
+                    epsgs = df["epsg"].unique()                    
                     df.set_crs(inplace=True, crs=epsgs[0], allow_override=True)
                 df.to_file("{}/unfiltered_points_{}.shp".format(self.data_dir, site))
                 self.unfiltered_points = df
