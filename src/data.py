@@ -396,8 +396,11 @@ class TreeData(LightningDataModule):
                 self.view_tree_plots()
 
                 if self.config["megaplot_dir"]:
-                    #Add IFAS back in, use polygons instead of deepforest boxes                    
-                    self.crowns = gpd.GeoDataFrame(pd.concat([self.crowns, IFAS]))
+                    #Add IFAS back in, use polygons instead of deepforest boxes if exists                    
+                    try:
+                        self.crowns = gpd.GeoDataFrame(pd.concat([self.crowns, IFAS]))
+                    except:
+                        pass
                     
                 self.crowns.to_file("{}/crowns.shp".format(self.data_dir))                
                 if self.comet_logger:
@@ -420,7 +423,6 @@ class TreeData(LightningDataModule):
             
             self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir, site))
             if self.config["replace_crops"]:   
-                
                 #HSI crops
                 self.annotations = generate.generate_crops(
                     self.crowns,
@@ -452,7 +454,6 @@ class TreeData(LightningDataModule):
                 rgb_annotations["RGB_image_path"] = rgb_annotations["image_path"]
                 rgb_annotations.to_csv("{}/RGB_annotations.csv".format(self.data_dir))
                 self.annotations = self.annotations.merge(rgb_annotations[["individual","tile_year","RGB_image_path"]], on=["individual","tile_year"])
-
                 self.annotations.to_csv("{}/annotations.csv".format(self.data_dir))
                 
             else:
