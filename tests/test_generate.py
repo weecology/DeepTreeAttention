@@ -95,7 +95,7 @@ def test_generate_crops_dask(tmpdir, ROOT, rgb_path, sample_crowns):
     assert rasterio.open(image_path).read().shape[1] > 0
     
     
-def test_generate_crops(tmpdir, ROOT, rgb_path, sample_crowns):
+def test_generate_crops(tmpdir, ROOT, rgb_path, rgb_pool, sample_crowns):
     gdf = gpd.read_file(sample_crowns)
     gdf.geometry = gdf.geometry.buffer(1)
     gdf["RGB_tile"] = rgb_path
@@ -105,9 +105,9 @@ def test_generate_crops(tmpdir, ROOT, rgb_path, sample_crowns):
     
     annotations = generate.generate_crops(
         gdf=gdf,
-        rgb_pool=img_pool,
+        rgb_pool=rgb_pool,
         convert_h5=False,
-        img_pool=img_pool,
+        img_pool=rgb_pool,
         h5_pool=None,
         savedir=tmpdir)
     
