@@ -10,7 +10,7 @@ from pytorch_lightning import LightningDataModule
 from src import generate, CHM, augmentation, megaplot, neon_paths, sampler
 from src.models import dead
 from src.utils import *
-
+from src.visualize import view_plot
 from shapely.geometry import Point
 import torch
 from torch.utils.data import Dataset
@@ -338,17 +338,20 @@ class TreeData(LightningDataModule):
                         df = df[df.siteID ==site]
                 # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
-                    megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config, client=self.client, site=site)
-                    megaplot_data.loc[megaplot_data.taxonID=="MAGR4","taxonID"] = "MAGNO"  
-
-                    # Hold IFAS records seperarely to model on polygons
-                    IFAS = megaplot_data[megaplot_data.filename.str.contains("IFAS")]
-                    IFAS.geometry = IFAS.geometry.envelope
-                    IFAS["box_id"] = list(range(IFAS.shape[0]))
-                    IFAS = IFAS[["geometry","taxonID","individual","plotID","siteID","box_id"]]
-                    IFAS["individual"] = IFAS["individual"]
-                    megaplot_data = megaplot_data[~(megaplot_data.filename.str.contains("IFAS"))]
-                    df = pd.concat([megaplot_data, df])
+                    try:
+                        megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config, client=self.client, site=site)
+                        megaplot_data.loc[megaplot_data.taxonID=="MAGR4","taxonID"] = "MAGNO"  
+                        # Hold IFAS records seperarely to model on polygons
+                        IFAS = megaplot_data[megaplot_data.filename.str.contains("IFAS")]
+                        IFAS.geometry = IFAS.geometry.envelope
+                        IFAS["box_id"] = list(range(IFAS.shape[0]))
+                        IFAS = IFAS[["geometry","taxonID","individual","plotID","siteID","box_id"]]
+                        IFAS["individual"] = IFAS["individual"]
+                        megaplot_data = megaplot_data[~(megaplot_data.filename.str.contains("IFAS"))]
+                        df = pd.concat([megaplot_data, df])
+                    except ValueError:
+                        print("No megaplot data for selected site")
+                        pass
                     
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species before CHM filter", len(df.taxonID.unique()))
@@ -363,7 +366,8 @@ class TreeData(LightningDataModule):
                     epsgs = df["epsg"].unique()
                     df.set_crs(inplace=True, crs=epsgs[0], allow_override=True)
                 df.to_file("{}/unfiltered_points_{}.shp".format(self.data_dir, site))
-                
+                self.unfiltered_points = df
+
                 #Filter points based on LiDAR height for NEON data
                 self.canopy_points = CHM.filter_CHM(df, CHM_pool=self.CHM_pool,
                                     min_CHM_height=self.config["min_CHM_height"], 
@@ -385,6 +389,9 @@ class TreeData(LightningDataModule):
                     client=None
                 )
                 
+                # Loop through all plots and write them to file
+                self.view_tree_plots()
+
                 if self.config["megaplot_dir"]:
                     #Add IFAS back in, use polygons instead of deepforest boxes                    
                     self.crowns = gpd.GeoDataFrame(pd.concat([self.crowns, IFAS]))
@@ -440,11 +447,9 @@ class TreeData(LightningDataModule):
                     suffix="RGB"
                 )
                 rgb_annotations["RGB_image_path"] = rgb_annotations["image_path"]
-
                 rgb_annotations.to_csv("{}/RGB_annotations.csv".format(self.data_dir))
-
                 self.annotations = self.annotations.merge(rgb_annotations[["individual","tile_year","RGB_image_path"]], on=["individual","tile_year"])
-                
+
                 self.annotations.to_csv("{}/annotations.csv".format(self.data_dir))
                 
             else:
@@ -476,10 +481,9 @@ class TreeData(LightningDataModule):
             
             self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
                             
-            #mimic schema due to abbreviation when .shp is saved
+            # mimic schema due to abbreviation when .shp is saved
             self.crowns["individual"] = self.crowns["individual"]
             self.canopy_points = gpd.read_file("{}/canopy_points.shp".format(self.data_dir))
-                
             self.canopy_points["individual"] = self.canopy_points["individual"]
         
         self.create_datasets(self.train, self.test)
@@ -534,11 +538,25 @@ class TreeData(LightningDataModule):
         self.test = self.test.reset_index(drop=True)
         self.train = self.train.reset_index(drop=True)
         
+        # Replace any hand annotated boxes in train geometry
+        self.train.loc[self.train.box_id.astype(str).str.contains("fixed"),"geometry"] = self.train.loc[self.train.box_id.astype(str).str.contains("fixed"),"hand_annotated_box"]
+
         self.train.to_csv("{}/train_{}.csv".format(self.data_dir, ID), index=False)            
         self.test.to_csv("{}/test_{}.csv".format(self.data_dir, ID), index=False)            
         
         return self.train, self.test
     
+    def view_tree_plots(self):
+        plotIDs = self.crowns.plotID.unique()
+        for plotID in plotIDs:
+            unfiltered_points = self.unfiltered_points[self.unfiltered_points.plotID==plotID]
+            CHM_points = self.canopy_points[self.canopy_points.plotID==plotID]
+            crowns = self.crowns[self.crowns.plotID==plotID]
+            rgb_sensor_path = neon_paths.find_sensor_path(bounds=crowns.total_bounds, lookup_pool=self.rgb_pool)
+            view_plot(crowns=crowns, image_path=rgb_sensor_path, unfiltered_points=unfiltered_points, CHM_points=CHM_points, savedir=self.data_dir)
+            if self.comet_logger.experiment:
+                self.comet_logger.experiment.log_image("{}/{}.png".format(self.data_dir,plotID))
+
     def create_datasets(self, train, test):
         #Store class labels
         self.create_label_dict(train, test)

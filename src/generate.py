@@ -128,7 +128,15 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     merged_boxes = gpd.sjoin(predicted_boxes, plot_data)
     merged_boxes.set_crs(inplace=True, crs=plot_data.crs, allow_override=True)
 
-    # Add fixed boxes if needed later
+    ##If no remaining boxes just take a box around center
+    missing_ids = plot_data[~plot_data.individual.isin(merged_boxes.individual)]
+    
+    if not missing_ids.empty:
+        created_boxes= create_boxes(missing_ids)
+        concat_boxes = pd.concat([merged_boxes,created_boxes])
+        merged_boxes = gpd.GeoDataFrame(concat_boxes)
+
+    # Add fixed boxes if needed later for training.
     fixed_boxes = plot_data.buffer(1).envelope
     fixed_df = pd.DataFrame({"fixed_box":fixed_boxes.geometry.to_wkt(), "individual":plot_data.individual})
     predicted_boxes = merged_boxes.merge(fixed_df, how="left")
@@ -355,7 +363,10 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
     else:
         #If no client is passed, loop through each tile and open then once in memory
         for geo_index in gdf.geo_index.unique():
-            img_path = tile_to_path[geo_index]
+            try:
+                img_path = tile_to_path[geo_index]
+            except KeyError:
+                continue
             
             #For each year 
             for x in img_path:

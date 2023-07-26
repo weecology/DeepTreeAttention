@@ -6,6 +6,26 @@ import matplotlib.pyplot as plt
 from rasterio.plot import show
 from geopandas import GeoSeries
 
+def view_plot(crowns, unfiltered_points, CHM_points, image_path, savedir):
+    """Visualize the bounding box crowns and filtered points for each plotID"""
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.axis('equal')
+    left, bottom, right, top = crowns.total_bounds
+    src = rasterio.open(image_path)
+    window = rasterio.windows.from_bounds(left-10, bottom-10, right+10, top+10, transform=src.transform)
+    img = src.read(window=window) 
+    win_transform = src.window_transform(window)
+    show(img, ax=ax, transform=win_transform)   
+
+    #Plot crown
+    ax = crowns.plot(ax=ax, facecolor="none", edgecolor="red")
+    
+    #Plot field coordinate
+    ax = unfiltered_points.plot(ax=ax, color="red",markersize=100)
+    ax = CHM_points.plot(ax=ax, color="black")
+    plt.title(crowns.plotID.unique()[0])
+    plt.savefig("{}/{}.png".format(savedir, crowns.plotID.unique()[0]))
+
 def crown_plot(img_path, geom, point, expand=3):
     #Find image
     fig, ax = plt.subplots(figsize=(5, 5))
