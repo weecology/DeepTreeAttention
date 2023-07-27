@@ -372,11 +372,11 @@ class TreeData(LightningDataModule):
                 self.unfiltered_points = df
                 self.canopy_points = self.unfiltered_points
 
-                # #Filter points based on LiDAR height for NEON data
-                # self.canopy_points = CHM.filter_CHM(df, CHM_pool=self.CHM_pool,
-                #                     min_CHM_height=self.config["min_CHM_height"], 
-                #                     max_CHM_diff=self.config["max_CHM_diff"], 
-                #                     CHM_height_limit=self.config["CHM_height_limit"])  
+                # Filter points based on LiDAR height for NEON data
+                self.canopy_points = CHM.filter_CHM(df, CHM_pool=self.CHM_pool,
+                                     min_CHM_height=self.config["min_CHM_height"], 
+                                     max_CHM_diff=self.config["max_CHM_diff"], 
+                                     CHM_height_limit=self.config["CHM_height_limit"])  
                 
                 self.canopy_points.to_file("{}/canopy_points.shp".format(self.data_dir))
 

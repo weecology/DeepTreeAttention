@@ -47,11 +47,8 @@ def postprocess_CHM(df, lookup_pool):
     df["CHM_height"] = [x["q99"] for x in draped_boxes]
 
     #if height is null, try to assign it
-    try:
-        df.height.fillna(df["CHM_height"], inplace=True)
-    except:
-        print("No height column detected")  
-    
+    df.height.fillna(df["CHM_height"], inplace=True)
+
     return df
         
 def CHM_height(shp, CHM_pool):
