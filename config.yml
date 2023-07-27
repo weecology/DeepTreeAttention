@@ -22,9 +22,9 @@ iterations: 2000
 # Minimum CanopyModel height, leave blank to skip CHM filtering
 min_CHM_height: 1
 # Max difference between measured height and CHM height if CHM > height
-max_CHM_diff: 10
+max_CHM_diff: 100
 # Max difference between measured height and CHM height if CHM < height
-CHM_height_limit: 10
+CHM_height_limit: 100
 
 # Megaplot XY Data, these are .shp files saved as the siteID
 megaplot_dir: /orange/idtrees-collab/megaplot/
