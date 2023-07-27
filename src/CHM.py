@@ -116,6 +116,10 @@ def filter_CHM(shp, CHM_pool, min_CHM_height=1, max_CHM_diff=4, CHM_height_limit
     
     #extract CHM height
     shp = CHM_height(shp, CHM_pool)
-    shp = height_rules(df=shp, min_CHM_height=1, max_CHM_diff=4, CHM_height_limit=8)
+    shp = height_rules(
+        df=shp,
+        min_CHM_height=min_CHM_height,
+        max_CHM_diff=max_CHM_diff,
+        CHM_height_limit=CHM_height_limit)
 
     return shp
