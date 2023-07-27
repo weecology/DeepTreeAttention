@@ -50,7 +50,7 @@ class TreeModel(LightningModule):
         if torch.cuda.is_available():
             self.loss_weight = torch.tensor(loss_weight, device="cuda", dtype=torch.float)
         else:
-            self.loss_weight = torch.ones((classes))    
+            self.loss_weight = torch.tensor(loss_weight, dtype=torch.float)
         
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset

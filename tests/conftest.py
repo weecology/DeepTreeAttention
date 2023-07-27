@@ -52,7 +52,7 @@ def plot_data(ROOT, sample_crowns):
     return plot_data
 
 @pytest.fixture(scope="session")
-def config(ROOT):
+def config(ROOT, tmpdir):
     print("Creating global config")
     #Turn of CHM filtering for the moment
     config = utils.read_config(config_path="{}/config.yml".format(ROOT))
@@ -61,12 +61,9 @@ def config(ROOT):
     config["replace_crops"] = True
     config["min_CHM_height"] = None
     config["iterations"] = 1
-    config["rgb_sensor_pool"] = "{}/tests/data/HARV/**/*.tif".format(ROOT)
-    config["HSI_sensor_pool"] = config["rgb_sensor_pool"]
     config["HSI_tif_dir"] = "{}/tests/data/hsi/".format(ROOT)
     config["min_train_samples"] = 1
     config["min_test_samples"] = 1
-    config["data_dir"] = "{}/tests/data/".format(ROOT)
     config["bands"] = 3
     config["classes"] = 3
     config["top_k"] = 1
@@ -88,15 +85,20 @@ def config(ROOT):
     config["fast_dev_run"] = True
     config["snapshot_dir"] = None
     config["taxonomic_csv"] = "{}/data/raw/families.csv".format(ROOT)
-    config["crop_dir"] = "{}/tests/data/".format(ROOT)
+    config["crop_dir"] = tmpdir
 
     return config
 
 #Data module
 @pytest.fixture(scope="session")
-def dm(config, ROOT):
+def dm(config,tmpdir, ROOT):
     csv_file = "{}/tests/data/sample_neon.csv".format(ROOT)
-    data_module = data.TreeData(config=config, csv_file=csv_file, data_dir="{}/tests/data/".format(ROOT),site="HARV", create_train_test=True) 
+    data_module = data.TreeData(
+        config=config,
+        csv_file=csv_file,
+        data_dir=tmpdir,
+        site="HARV",
+        create_train_test=True) 
     
     return data_module
 
