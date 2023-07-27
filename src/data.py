@@ -370,12 +370,13 @@ class TreeData(LightningDataModule):
                     df.set_crs(inplace=True, crs=epsgs[0], allow_override=True)
                 df.to_file("{}/unfiltered_points_{}.shp".format(self.data_dir, site))
                 self.unfiltered_points = df
+                self.canopy_points = self.unfiltered_points
 
-                #Filter points based on LiDAR height for NEON data
-                self.canopy_points = CHM.filter_CHM(df, CHM_pool=self.CHM_pool,
-                                    min_CHM_height=self.config["min_CHM_height"], 
-                                    max_CHM_diff=self.config["max_CHM_diff"], 
-                                    CHM_height_limit=self.config["CHM_height_limit"])  
+                # #Filter points based on LiDAR height for NEON data
+                # self.canopy_points = CHM.filter_CHM(df, CHM_pool=self.CHM_pool,
+                #                     min_CHM_height=self.config["min_CHM_height"], 
+                #                     max_CHM_diff=self.config["max_CHM_diff"], 
+                #                     CHM_height_limit=self.config["CHM_height_limit"])  
                 
                 self.canopy_points.to_file("{}/canopy_points.shp".format(self.data_dir))
 
@@ -461,7 +462,7 @@ class TreeData(LightningDataModule):
                 
             if self.comet_logger:
                 self.comet_logger.experiment.log_parameter("Species after crop generation",len(self.annotations.taxonID.unique()))
-                num_individuals = self.annotations.groupby("individual").apply(lambda x: x.head(1)).shape[0]
+                num_individuals = self.annotations.drop_duplicates("individual").shape[0]
                 self.comet_logger.experiment.log_parameter("Individuals after crop generation",num_individuals)                
                 self.comet_logger.experiment.log_parameter("Samples after crop generation",self.annotations.shape[0])
     
@@ -525,7 +526,7 @@ class TreeData(LightningDataModule):
             self.novel = self.annotations[~self.annotations.individual.isin(individuals)]
             
             # Counts by discarded species
-            keep = self.novel.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts() > (self.config["min_test_samples"])
+            keep = self.novel.groupby("individual").drop_duplicates("individual").taxonID.value_counts() > (self.config["min_test_samples"])
             species_to_keep = keep[keep].index
             self.novel = self.novel[self.novel.taxonID.isin(species_to_keep)]
             
@@ -561,7 +562,7 @@ class TreeData(LightningDataModule):
             crowns = self.crowns[self.crowns.plotID==plotID]
             rgb_sensor_path = neon_paths.find_sensor_path(bounds=crowns.total_bounds, lookup_pool=self.rgb_pool)
             view_plot(crowns=crowns, image_path=rgb_sensor_path, unfiltered_points=unfiltered_points, CHM_points=CHM_points, savedir=self.data_dir)
-            if self.comet_logger.experiment:
+            if self.comet_logger:
                 self.comet_logger.experiment.log_image("{}/{}.png".format(self.data_dir,plotID))
 
     def create_datasets(self, train, test):
