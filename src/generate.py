@@ -247,7 +247,14 @@ def points_to_crowns(
         deepforest_model.use_release(check_release=False)
         for plot in plot_names:
             try:
-                result = run(plot=plot, df=df, savedir=savedir, raw_box_savedir=raw_box_savedir, rgb_pool=rgb_pool, deepforest_model=deepforest_model)
+                result = run(
+                    plot=plot,
+                    df=df,
+                    savedir=savedir,
+                    raw_box_savedir=raw_box_savedir,
+                    rgb_pool=rgb_pool,
+                    deepforest_model=deepforest_model)
+                
                 results.append(result)
             except Exception as e:
                 print("{} failed with {}".format(plot, e))
