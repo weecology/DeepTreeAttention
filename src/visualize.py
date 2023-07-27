@@ -8,7 +8,7 @@ from geopandas import GeoSeries
 
 def view_plot(crowns, unfiltered_points, CHM_points, image_path, savedir):
     """Visualize the bounding box crowns and filtered points for each plotID"""
-    fig, ax = plt.subplots(figsize=(5, 5))
+    fig, ax = plt.subplots(figsize=(10, 10))
     ax.axis('equal')
     left, bottom, right, top = crowns.total_bounds
     src = rasterio.open(image_path)
@@ -21,7 +21,7 @@ def view_plot(crowns, unfiltered_points, CHM_points, image_path, savedir):
     ax = crowns.plot(ax=ax, facecolor="none", edgecolor="red")
     
     #Plot field coordinate
-    ax = unfiltered_points.plot(ax=ax, color="red",markersize=100)
+    ax = unfiltered_points.plot(ax=ax, color="red",markersize=80)
     ax = CHM_points.plot(ax=ax, color="black")
     plt.title(crowns.plotID.unique()[0])
     plt.savefig("{}/{}.png".format(savedir, crowns.plotID.unique()[0]))
