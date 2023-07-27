@@ -68,34 +68,13 @@ def test_run(tmpdir, sample_crowns, rgb_pool):
     
     assert len(glob.glob("{}/*.shp".format(tmpdir))) > 0    
 
-def test_generate_crops_dask(tmpdir, ROOT, rgb_path, sample_crowns):
-    client = distributed.Client()
-    gdf = gpd.read_file(sample_crowns)
-    gdf.geometry = gdf.geometry.buffer(1)
-    gdf["RGB_tile"] = rgb_path
-    gdf["box_id"] = gdf.index
-    
-    img_pool = glob.glob("{}/tests/data/*.tif".format(ROOT))
-    
-    annotations = generate.generate_crops(
-        gdf=gdf,
-        client=client,
-        img_pool=img_pool,
-        convert_h5=False,
-        rgb_pool=img_pool,
-        h5_pool=None,        
-        savedir=tmpdir)
-    
-    assert len(annotations.tile_year.unique()) == 2 
-    all_years = annotations.groupby("individual").apply(lambda x: x.individual.value_counts()).reset_index(drop=True) == 2
-    assert all(all_years)     
-    
-    #make sure the correct resolution, should be a large image
-    image_path = os.path.join(tmpdir, annotations.image_path.iloc[0])
-    assert rasterio.open(image_path).read().shape[1] > 0
-    
-    
-def test_generate_crops(tmpdir, ROOT, rgb_path, rgb_pool, sample_crowns):
+@pytest.mark.parametrize("use_client",[True,False])
+def test_generate_crops(tmpdir, ROOT, rgb_path, rgb_pool, sample_crowns, use_client):
+    if use_client:
+        client = distributed.Client()
+    else:
+        client=None
+
     gdf = gpd.read_file(sample_crowns)
     gdf.geometry = gdf.geometry.buffer(1)
     gdf["RGB_tile"] = rgb_path
@@ -108,6 +87,7 @@ def test_generate_crops(tmpdir, ROOT, rgb_path, rgb_pool, sample_crowns):
         img_pool=rgb_pool,
         h5_pool=None,
         suffix="HSI",
+        client=client,
         savedir=tmpdir)
     
     assert annotations.tile_year.unique() == "2019" 

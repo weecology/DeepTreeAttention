@@ -24,6 +24,11 @@ def view_plot(crowns, unfiltered_points, CHM_points, image_path, savedir):
     ax = unfiltered_points.plot(ax=ax, color="red",markersize=80)
     ax = CHM_points.plot(ax=ax, color="black")
     plt.title(crowns.plotID.unique()[0])
+
+    for x, y, label in zip(CHM_points.geometry.x, CHM_points.geometry.y, CHM_points.individual):
+        ax.annotate(label, xy=(x, y), xytext=(3, 3), textcoords="offset points")
+
+
     plt.savefig("{}/{}.png".format(savedir, crowns.plotID.unique()[0]))
 
 def crown_plot(img_path, geom, point, expand=3):

@@ -197,7 +197,7 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
             if x in species_to_sample:
                 test_plots.append(plotID)
                 # Update species list                
-                counts = shp[shp.plotID.isin(test_plots)].groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts()                
+                counts = shp[shp.plotID.isin(test_plots)].drop_duplicates("individual").taxonID.value_counts()                
                 species_completed = counts[counts > min_test_samples].index.tolist()
                 species_to_sample = [x for x in shp.taxonID.unique() if not x in species_completed]
                 
@@ -206,10 +206,10 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     
     # Remove fixed boxes from test
     test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]   
-    test_counts = test.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts()
+    test_counts = test.drop_duplicates("individual").taxonID.value_counts()
     test = test[test.taxonID.isin(test_counts[test_counts>min_test_samples].index)]
-    train_counts = train.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts()
-    train = train[train.taxonID.isin(train_counts[train_counts>min_train_samples].index)]
+    train_counts = train.drop_duplicates("individual").taxonID.value_counts()
+    train = train[train.taxonID.isin(train_counts[train_counts > min_train_samples].index)]
         
     train = train[train.taxonID.isin(test.taxonID)]    
     test = test[test.taxonID.isin(train.taxonID)]
@@ -226,7 +226,7 @@ def train_test_split(shp, config, client = None):
         None: train.shp and test.shp are written as side effect
         """    
     min_sampled = config["min_train_samples"] + config["min_test_samples"]
-    keep = shp.groupby("individual").apply(lambda x: x.head(1)).taxonID.value_counts() > (min_sampled)
+    keep = shp.drop_duplicates("individual").taxonID.value_counts() > (min_sampled)
     species_to_keep = keep[keep].index
     shp = shp[shp.taxonID.isin(species_to_keep)]
     if shp.empty:
