@@ -526,7 +526,7 @@ class TreeData(LightningDataModule):
             self.novel = self.annotations[~self.annotations.individual.isin(individuals)]
             
             # Counts by discarded species
-            keep = self.novel.groupby("individual").drop_duplicates("individual").taxonID.value_counts() > (self.config["min_test_samples"])
+            keep = self.novel.drop_duplicates("individual").taxonID.value_counts() > (self.config["min_test_samples"])
             species_to_keep = keep[keep].index
             self.novel = self.novel[self.novel.taxonID.isin(species_to_keep)]
             
