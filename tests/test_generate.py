@@ -100,9 +100,7 @@ def test_generate_crops(tmpdir, ROOT, rgb_path, rgb_pool, sample_crowns):
     gdf.geometry = gdf.geometry.buffer(1)
     gdf["RGB_tile"] = rgb_path
     gdf["box_id"] = gdf.index
-    
-    img_pool = glob.glob("{}/tests/data/*.tif".format(ROOT))
-    
+        
     annotations = generate.generate_crops(
         gdf=gdf,
         rgb_pool=rgb_pool,
