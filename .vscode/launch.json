@@ -9,9 +9,10 @@
             "program": "${file}",
             "justMyCode": "true",
             "env": {
-                "PYTHONPATH":"${PYTHONPATH}:/home/b.weinstein/DeepTreeAttention/"
+                "PYTHONPATH":"${PYTHONPATH}:/home/b.weinstein/DeepTreeAttention/",
+                "PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT": "5"
             },
-            "args": ["species_release","commit","OSBS"]
+            "args": ["species_release","commit","LENO"]
         }
     ]
 }

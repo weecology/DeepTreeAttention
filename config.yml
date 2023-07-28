@@ -20,17 +20,20 @@ max_samples_per_class: 5000
 iterations: 2000
 
 # Minimum CanopyModel height, leave blank to skip CHM filtering
-min_CHM_height: 1.5
+min_CHM_height: 3
 # Max difference between measured height and CHM height if CHM > height
-max_CHM_diff: 8
+max_CHM_diff: 11
 # Max difference between measured height and CHM height if CHM < height
 CHM_height_limit: 10 
+
+# Dead Model filtering
+dead_model: "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 
 # Megaplot XY Data, these are .shp files saved as the siteID
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Checkout data artifact from comet
-use_data_commit: 74a56e178b2e4bb5a4b93845c27f581b
+use_data_commit:
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 

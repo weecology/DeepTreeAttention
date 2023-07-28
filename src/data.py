@@ -11,6 +11,8 @@ from src import generate, CHM, augmentation, megaplot, neon_paths, sampler
 from src.models import dead
 from src.utils import *
 from src.visualize import view_plot
+from src.predict import predict_dead
+
 from shapely.geometry import Point
 import torch
 from torch.utils.data import Dataset
@@ -134,10 +136,8 @@ def filter_data(path, config):
     # Remove multibole
     field = field[~(field.individual.str.contains('[A-Z]$',regex=True))]
 
-    # List of hand cleaned errors
-    known_errors = ["NEON.PLA.D03.OSBS.03422","NEON.PLA.D03.OSBS.03422","NEON.PLA.D03.OSBS.03382", "NEON.PLA.D17.TEAK.01883"]
-    field = field[~(field.individual.isin(known_errors))]
-    field = field[~(field.plotID == "SOAP_054")]
+    # List of hand cleaned error, plots are entirely DEAD since collection
+    field = field[~(field.plotID.isin(["SOAP_054","SOAP_059","SOAP_058","SOAP_047","SERC_061","OSBS_005"]))]
     
     #Create shapefile
     field["geometry"] = [Point(x,y) for x,y in zip(field["itcEasting"], field["itcNorthing"])]
@@ -284,16 +284,6 @@ def train_test_split(shp, config, client = None):
     train["point_id"] = train.index.values
     
     return train, test
-
-def filter_dead_annotations(crowns, config):
-    """Given a set of annotations, predict whether RGB is dead
-    Args:
-        annotations: must contain xmin, xmax, ymin, ymax and image path fields"""
-    ds = dead.utm_dataset(crowns, config=config)
-    dead_model = dead.AliveDead.load_from_checkpoint(config["dead_model"], config=config)    
-    label, score = dead.predict_dead_dataloader(dead_model=dead_model, dataset=ds, config=config)
-    
-    return label, score
     
 class TreeData(LightningDataModule):
     """
@@ -392,9 +382,6 @@ class TreeData(LightningDataModule):
                     raw_box_savedir="{}/boxes/".format(self.data_dir),
                     client=None
                 )
-                
-                # Loop through all plots and write them to file
-                self.view_tree_plots()
 
                 if self.config["megaplot_dir"]:
                     #Add IFAS back in, use polygons instead of deepforest boxes if exists                    
@@ -408,6 +395,21 @@ class TreeData(LightningDataModule):
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(self.crowns.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after crown prediction", self.crowns.shape[0])
                 
+                # Filter dead with very high tolerance
+                label, score = predict_dead(self.crowns, dead_model_path=config["dead_model"],config=self.config)
+                crowns["dead_score"] = score
+                crowns["dead_label"] = label
+
+                dead_crowns = crowns[~(crowns.dead_score > 0.95) & (crowns.dead_label==1)]
+                if self.comet_logger:
+                    with comet_logger.experiment.context_manager("dead"):
+                        self.view_tree_plots(crowns)
+        
+                crowns = crowns[~(crowns.dead_score > 0.95) & (crowns.dead_label==1)]
+
+                # Loop through all plots and write them to file
+                self.view_tree_plots(crowns)
+
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after dead filtering",len(self.crowns.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after dead filtering",self.crowns.shape[0])
@@ -554,12 +556,12 @@ class TreeData(LightningDataModule):
         
         return self.train, self.test
     
-    def view_tree_plots(self):
-        plotIDs = self.crowns.plotID.unique()
+    def view_tree_plots(self, crowns):
+        plotIDs = crowns.plotID.unique()
         for plotID in plotIDs:
             unfiltered_points = self.unfiltered_points[self.unfiltered_points.plotID==plotID]
             CHM_points = self.canopy_points[self.canopy_points.plotID==plotID]
-            crowns = self.crowns[self.crowns.plotID==plotID]
+            crowns = crowns[crowns.plotID==plotID]
             rgb_sensor_path = neon_paths.find_sensor_path(bounds=crowns.total_bounds, lookup_pool=self.rgb_pool)
             view_plot(crowns=crowns, image_path=rgb_sensor_path, unfiltered_points=unfiltered_points, CHM_points=CHM_points, savedir=self.data_dir)
             if self.comet_logger:
