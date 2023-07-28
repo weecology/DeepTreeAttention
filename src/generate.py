@@ -261,9 +261,6 @@ def points_to_crowns(
                 raise
     results = pd.concat(results)
     
-    #In case any contrib data has the same CHM and height and sitting in the same deepforest box.Should be rare.
-    results = results.groupby(["plotID","box_id"]).apply(lambda x: x.head(1)).reset_index(drop=True)
-    
     return results
 
 def write_crop(row, savedir, img_path, rasterio_src=None, as_numpy=False, suffix=None):
@@ -397,6 +394,6 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
     annotations["HSI_tile"] = HSI_tile
     annotations["tile_year"] = annotations.image_path.apply(lambda x: os.path.splitext(os.path.basename(x))[0].split("_")[-2])
     annotations = annotations.loc[:,annotations.columns.isin(
-        ["individual","geo_index","tile_year","CHM_height","plotID","height","geometry","taxonID","RGB_tile","HSI_tile","filename","siteID","image_path","score","box_id"])]
+        ["individual","geo_index","tile_year","CHM_height","plotID","height","geometry","taxonID","RGB_tile","HSI_tile","filename","siteID","image_path","score","box_id","hand_annotated_box","fixed_box"])]
 
     return annotations
