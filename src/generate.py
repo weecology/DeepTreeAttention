@@ -70,7 +70,7 @@ def choose_box(group, plot_data):
         closest_stem = group.centroid.distance(stem_location).sort_values().index[0]
         return group.loc[[closest_stem]]
 
-def create_boxes(plot_data, size=1):
+def create_boxes(plot_data, size=1.5):
     """If there are no deepforest boxes, fall back on selecting a fixed area around stem point"""
     fixed_boxes = plot_data.buffer(size).envelope
     
@@ -137,7 +137,7 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
         merged_boxes = gpd.GeoDataFrame(concat_boxes)
 
     # Add fixed boxes if needed later for training.
-    fixed_boxes = plot_data.buffer(1).envelope
+    fixed_boxes = plot_data.buffer(1.5).envelope
     fixed_df = pd.DataFrame({"fixed_box":fixed_boxes.geometry.to_wkt(), "individual":plot_data.individual})
     predicted_boxes = merged_boxes.merge(fixed_df, how="left")
 

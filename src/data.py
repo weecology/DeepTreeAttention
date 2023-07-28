@@ -360,7 +360,10 @@ class TreeData(LightningDataModule):
                     df.set_crs(inplace=True, crs=epsgs[0], allow_override=True)
                 df.to_file("{}/unfiltered_points_{}.shp".format(self.data_dir, site))
                 self.unfiltered_points = df
-                self.canopy_points = self.unfiltered_points
+
+                # Remove 'bad points' hand reviewed.
+                bad_points = pd.read_csv("{}/data/raw/bad_points.csv".format(self.ROOT))
+                df = df[~df.individual.isin(bad_points.individual)]
 
                 # Filter points based on LiDAR height for NEON data
                 self.canopy_points = CHM.filter_CHM(df, CHM_pool=self.CHM_pool,
@@ -396,33 +399,23 @@ class TreeData(LightningDataModule):
                     self.comet_logger.experiment.log_parameter("Samples after crown prediction", self.crowns.shape[0])
                 
                 # Filter dead with very high tolerance
-                label, score = predict_dead(self.crowns, dead_model_path=config["dead_model"],config=self.config)
-                crowns["dead_score"] = score
-                crowns["dead_label"] = label
+                # label, score = predict_dead(self.crowns, dead_model_path=config["dead_model"],config=self.config)
+                # self.crowns["dead_score"] = score
+                # crowns["dead_label"] = label
 
-                dead_crowns = crowns[~(crowns.dead_score > 0.95) & (crowns.dead_label==1)]
-                if self.comet_logger:
-                    with comet_logger.experiment.context_manager("dead"):
-                        self.view_tree_plots(crowns)
+                # dead_crowns = crowns[~(crowns.dead_score > 0.95) & (crowns.dead_label==1)]
+                # if self.comet_logger:
+                #    with comet_logger.experiment.context_manager("dead"):
+                #        self.view_tree_plots(crowns)
         
-                crowns = crowns[~(crowns.dead_score > 0.95) & (crowns.dead_label==1)]
+                # crowns = crowns[~(crowns.dead_score > 0.95) & (crowns.dead_label==1)]
 
                 # Loop through all plots and write them to file
-                self.view_tree_plots(crowns)
+                self.view_tree_plots()
 
-                if self.comet_logger:
-                    self.comet_logger.experiment.log_parameter("Species after dead filtering",len(self.crowns.taxonID.unique()))
-                    self.comet_logger.experiment.log_parameter("Samples after dead filtering",self.crowns.shape[0])
-                    try:
-                        for index, row in self.predicted_dead.iterrows():
-                            left, bottom, right, top = row["geometry"].bounds                
-                            img_path = neon_paths.find_sensor_path(lookup_pool=self.rgb_pool, bounds=row["geometry"].bounds)
-                            src = rasterio.open(img_path)
-                            img = src.read(window=rasterio.windows.from_bounds(left-4, bottom-4, right+4, top+4, transform=src.transform))                      
-                            img = np.rollaxis(img, 0, 3)
-                            self.comet_logger.experiment.log_image(image_data=img, name="Dead: {} ({:.2f}) {}".format(row["dead_label"],row["dead_score"],row["individual"]))                        
-                    except:
-                        print("No dead trees predicted")
+                # if self.comet_logger:
+                #    self.comet_logger.experiment.log_parameter("Species after dead filtering",len(self.crowns.taxonID.unique()))
+                #    self.comet_logger.experiment.log_parameter("Samples after dead filtering",self.crowns.shape[0])
             
             self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir, site))
             if self.config["replace_crops"]:   
@@ -546,22 +539,22 @@ class TreeData(LightningDataModule):
         self.train = self.train.reset_index(drop=True)
         
         # Replace any hand annotated boxes in train geometry, if they exist
-        #try:
-        #    self.train.loc[self.train.box_id.astype(str).str.contains("fixed"),"geometry"] = self.train.loc[self.train.box_id.astype(str).str.contains("fixed"),"hand_annotated_box"]
-        #except KeyError:
-        #    pass
+        try:
+            self.train.loc[self.train.box_id.astype(str).str.contains("fixed"),"geometry"] = self.train.loc[self.train.box_id.astype(str).str.contains("fixed"),"hand_annotated_box"]
+        except KeyError:
+            pass
         
         self.train.to_csv("{}/train_{}.csv".format(self.data_dir, ID), index=False)            
         self.test.to_csv("{}/test_{}.csv".format(self.data_dir, ID), index=False)            
         
         return self.train, self.test
     
-    def view_tree_plots(self, crowns):
-        plotIDs = crowns.plotID.unique()
+    def view_tree_plots(self):
+        plotIDs = self.crowns.plotID.unique()
         for plotID in plotIDs:
             unfiltered_points = self.unfiltered_points[self.unfiltered_points.plotID==plotID]
             CHM_points = self.canopy_points[self.canopy_points.plotID==plotID]
-            crowns = crowns[crowns.plotID==plotID]
+            crowns = self.crowns[self.crowns.plotID==plotID]
             rgb_sensor_path = neon_paths.find_sensor_path(bounds=crowns.total_bounds, lookup_pool=self.rgb_pool)
             view_plot(crowns=crowns, image_path=rgb_sensor_path, unfiltered_points=unfiltered_points, CHM_points=CHM_points, savedir=self.data_dir)
             if self.comet_logger:

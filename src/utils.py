@@ -130,7 +130,15 @@ def skip_none_collate(batch):
         return None
     
     return default_collate(batch)    
+
+def skip_none_dead_collate(batch):
+    batch = [x for x in batch if x is not None]
     
+    if len(batch) == 0:
+        return None
+    
+    return default_collate(batch)  
+
 def predictions_to_df(predictions):
     """format a dataframe"""
     individuals = np.concatenate([x[0] for x in predictions])

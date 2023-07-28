@@ -13,6 +13,8 @@ from torchvision import models, transforms
 from torchvision.datasets import ImageFolder
 import torchmetrics
 
+from src.utils import skip_none_dead_collate
+
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])
 
@@ -70,6 +72,7 @@ class AliveDead(pl.LightningModule):
             ds,
             batch_size=self.config["dead"]["batch_size"],
             shuffle=False,
+            collate_fn=skip_none_dead_collate,
             num_workers=self.config["dead"]["num_workers"]
         )   
         
@@ -173,6 +176,9 @@ class utm_dataset(Dataset):
         geom = self.crowns.iloc[index].geometry
         left, bottom, right, top = geom.bounds
         box = self.RGB_src.read(window=rasterio.windows.from_bounds(left-1, bottom-1, right+1, top+1, transform=self.RGB_src.transform))             
+        
+        if box.size == 0:
+            return None
         
         # Channels last
         box = np.rollaxis(box,0,3)
