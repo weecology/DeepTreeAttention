@@ -60,7 +60,7 @@ pretrain_epochs: 200
 
 ### Training Parameters
 gpus: 1
-batch_size: 24
+batch_size: 96
 bands: 349
 head_class_minimum_ratio: 0.4
 seperate_oak_model: False
