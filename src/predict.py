@@ -231,7 +231,7 @@ def predict_dead(crowns, dead_model_path, config):
         
     ds = dead.utm_dataset(crowns=crowns, config=config)
     dead_dataloader = dead_model.predict_dataloader(ds)
-    trainer = Trainer(enable_checkpointing=False)
+    trainer = Trainer(enable_checkpointing=False, devices=config["gpus"])
     outputs = trainer.predict(dead_model, dead_dataloader)
     print("len of predict is {}".format(len(outputs)))
     

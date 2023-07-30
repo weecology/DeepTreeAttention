@@ -9,6 +9,9 @@ import traceback
 
 def non_zero_99_quantile(x):
     """Get height quantile of all cells that are no zero"""
+    if (x==0).all():
+        return 0
+    
     mdata = np.ma.masked_where(x < 0.5, x)
     mdata = np.ma.filled(mdata, np.nan)
     percentile = np.nanpercentile(mdata, 99)
@@ -28,10 +31,11 @@ def postprocess_CHM(df, lookup_pool):
             return df
     else:
         try:
-            #Get all years of CHM data
+            # Get all years of CHM data
             CHM_paths = neon_paths.find_sensor_path(lookup_pool=lookup_pool, bounds=df.total_bounds, all_years=True)
             survey_year = int(df.eventID.apply(lambda x: x.split("_")[-1]).max())
-            #Check the difference in date
+            
+            # Check the difference in date
             CHM_years = [int(x.split("/")[-5].split("_")[0]) for x in CHM_paths]
             CHM_path = CHM_paths[np.argmin([abs(survey_year - x) for x in CHM_years])]     
         except ValueError as e:
@@ -40,7 +44,7 @@ def postprocess_CHM(df, lookup_pool):
             return df
  
     #buffer slightly, CHM model can be patchy
-    geom = df.geometry
+    geom = df.geometry.buffer(1)
     draped_boxes = rasterstats.zonal_stats(geom,
                                            CHM_path,
                                            add_stats={'q99': non_zero_99_quantile})
