@@ -14,8 +14,6 @@ git_commit = sys.argv[2]
 site = sys.argv[3]
 config = data.read_config("config.yml")
 
-#Sanitize string representation
-
 if config["use_data_commit"] is None:
     comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple") 
     comet_logger.experiment.add_tag("data_generation")

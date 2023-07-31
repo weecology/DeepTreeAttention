@@ -17,7 +17,7 @@ max_samples_per_class: 5000
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
 # Set to 1 for debugging, no files will be written
-iterations: 5000
+iterations: 2
 
 # Minimum CanopyModel height, leave blank to skip CHM filtering
 min_CHM_height: 3
@@ -33,7 +33,7 @@ dead_model: "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Checkout data artifact from comet
-use_data_commit: ca74100c7e1d44f5a6c5a9fa44bd1d24
+use_data_commit: 49ce30b2c0e24f33983398eb522e3d4d
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 
@@ -44,12 +44,12 @@ replace_crops: True
 # Recreate a train test split
 train_test_commit: 
 # Use existing plotIDs for train/test split
-existing_test_csv: /blue/ewhite/b.weinstein/DeepTreeAttention/49ce30b2c0e24f33983398eb522e3d4d/test_c50dc5e98a330d8267b808b2787986a85834b13d_OSBS.csv
+existing_test_csv: 
 ### Data loader Config
 # Resized pixel size of the crowns. Square crops around each pixel of size x
 image_size: 30
-preload_images: True
-preload_image_dict: True
+preload_images: False
+preload_image_dict: False
 workers: 0
 taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
@@ -73,7 +73,7 @@ lr_broadleaf: 0.00001
 lr_oak: 0.00005
 lr_flat: 0.001
 
-fast_dev_run: False
+fast_dev_run: True
 accelerator: auto
 epochs: 200
 snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/

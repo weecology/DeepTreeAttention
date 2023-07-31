@@ -4,6 +4,7 @@ import os
 import gc
 import numpy as np
 from pandas.util import hash_pandas_object
+import pandas as pd
 import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import CometLogger
@@ -50,17 +51,16 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
         config=config,
         client=client,
         create_train_test=create_train_test,
-        experiment_id="{}_{}".format(git_commit, site),
+        experiment_id="{}_{}".format(site,comet_logger.experiment.key),
         site=site,
         comet_logger=comet_logger)
     
-    #assign the new train test commit if created
-    if config["train_test_commit"] is None:
-        config["train_test_commit"] = git_commit
-    
     if config["create_pretrain_model"]:
         config["existing_test_csv"] = "{}/test_{}_{}.csv".format(data_module.data_dir, config["train_test_commit"], site)
-        config["pretrain_state_dict"] = pretrain_model(comet_logger, config, git_commit, filter_species_site=site)
+        config["pretrain_state_dict"] = pretrain_model(
+            comet_logger=comet_logger,
+            config=config,
+            filter_species_site=site)
         torch.cuda.empty_cache()
         gc.collect()
     
@@ -99,7 +99,7 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
     
     return comet_logger
 
-def pretrain_model(comet_logger, config, git_commit, client=None, filter_species_site=None):
+def pretrain_model(comet_logger, config, client=None, filter_species_site=None):
     """Pretain a model with samples from other sites
     Args:
         comet_logger: a cometML logger
@@ -111,7 +111,7 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
         create_train_test = True
     else:
         create_train_test = False
-    
+
     with comet_logger.experiment.context_manager("pretrain"):
         pretrain_module = data.TreeData(
             csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),
@@ -119,7 +119,7 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
             config=config,
             client=client,
             create_train_test=create_train_test,
-            experiment_id="{}_{}_pretrain".format(git_commit, filter_species_site),            
+            experiment_id="{}_{}_pretrain".format(filter_species_site, comet_logger.experiment.key),            
             site="{}_pretrain".format(filter_species_site),
             filter_species_site=filter_species_site,
             comet_logger=comet_logger)
@@ -132,7 +132,6 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
                 lw = 0
             loss_weight.append(lw)
         loss_weight = np.array(loss_weight/np.max(loss_weight))
-        #loss_weight = torch.ones((len(pretrain_module.species_label_dict)))    
 
         comet_logger.experiment.log_parameter("loss_weight", loss_weight)
         
@@ -151,8 +150,13 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
             num_sanity_val_steps=0,
             check_val_every_n_epoch=pretrain_module.config["validation_interval"],
             enable_checkpointing=False,
+            devices=pretrain_module.config["gpus"],
             logger=comet_logger)
         
+        # Assert no overlap in train/test from pretrain
+        supervised_test = pd.read_csv(config["existing_test_csv"])
+        assert pretrain_model.train[pretrain_model.train.individual.isin(supervised_test.individual)].empty
+
         trainer.fit(m, datamodule=pretrain_module)
         
         path = "{}/{}_state_dict.pt".format(config["snapshot_dir"], comet_logger.experiment.id)
@@ -195,6 +199,7 @@ def train_model(data_module, comet_logger, m, name):
             check_val_every_n_epoch=data_module.config["validation_interval"],
             callbacks=[lr_monitor],
             enable_checkpointing=False,
+            devices=data_module.config["gpus"],
             logger=comet_logger)
         
         m.current_level = key
@@ -213,7 +218,6 @@ def train_model(data_module, comet_logger, m, name):
     comet_logger.experiment.log_table("nested_predictions.csv", results)
     
     ensemble_df = m.ensemble(results)
-    print("shape of ensemble is {}".format(results.shape))
 
     ensemble_df = m.evaluation_scores(
         ensemble_df,
