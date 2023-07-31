@@ -156,7 +156,7 @@ def pretrain_model(comet_logger, config, client=None, filter_species_site=None):
         
         # Assert no overlap in train/test from pretrain
         supervised_test = pd.read_csv(config["existing_test_csv"])
-        assert pretrain_model.train[pretrain_model.train.individual.isin(supervised_test.individual)].empty
+        assert pretrain_module.train[pretrain_module.train.individual.isin(supervised_test.individual)].empty
 
         trainer.fit(m, datamodule=pretrain_module)
         
