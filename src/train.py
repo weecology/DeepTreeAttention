@@ -52,7 +52,7 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
         config=config,
         client=client,
         create_train_test=create_train_test,
-        experiment_id="{}_{}".format(site,comet_logger.experiment.id),
+        experiment_id="{}_{}".format(comet_logger.experiment.id, site),
         site=site,
         comet_logger=comet_logger)
     
@@ -120,7 +120,7 @@ def pretrain_model(comet_logger, config, client=None, filter_species_site=None):
             config=config,
             client=client,
             create_train_test=create_train_test,
-            experiment_id="{}_{}_pretrain".format(filter_species_site, comet_logger.experiment.id),            
+            experiment_id="{}_{}_pretrain".format(comet_logger.experiment.id, filter_species_site),            
             site="{}_pretrain".format(filter_species_site),
             filter_species_site=filter_species_site,
             comet_logger=comet_logger)
