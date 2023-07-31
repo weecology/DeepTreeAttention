@@ -124,7 +124,7 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
             filter_species_site=filter_species_site,
             comet_logger=comet_logger)
         
-        #loss_weight = []
+        loss_weight = []
         for x in pretrain_module.species_label_dict:
             try:
                 lw = 1/pretrain_module.train[pretrain_module.train.taxonID==x].shape[0]
