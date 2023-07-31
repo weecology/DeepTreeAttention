@@ -125,14 +125,14 @@ def pretrain_model(comet_logger, config, git_commit, client=None, filter_species
             comet_logger=comet_logger)
         
         #loss_weight = []
-        #for x in pretrain_module.species_label_dict:
-        #    try:
-        #        lw = 1/pretrain_module.train[pretrain_module.train.taxonID==x].shape[0]
-        #    except:
-        #        lw = 0
-        #    loss_weight.append(lw)
-        #loss_weight = np.array(loss_weight/np.max(loss_weight))
-        loss_weight = torch.ones((len(pretrain_module.species_label_dict)))    
+        for x in pretrain_module.species_label_dict:
+            try:
+                lw = 1/pretrain_module.train[pretrain_module.train.taxonID==x].shape[0]
+            except:
+                lw = 0
+            loss_weight.append(lw)
+        loss_weight = np.array(loss_weight/np.max(loss_weight))
+        #loss_weight = torch.ones((len(pretrain_module.species_label_dict)))    
 
         comet_logger.experiment.log_parameter("loss_weight", loss_weight)
         
