@@ -41,6 +41,7 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
     
     #If train test split does not exist create one
     if not os.path.exists("{}/train_{}_{}.csv".format(config["crop_dir"], config["train_test_commit"], site)):
+        print("Create new train test split")
         create_train_test = True
     else:
         create_train_test = False
