@@ -52,12 +52,12 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
         config=config,
         client=client,
         create_train_test=create_train_test,
-        experiment_id="{}_{}".format(site,comet_logger.experiment.key),
+        experiment_id="{}_{}".format(site,comet_logger.experiment.id),
         site=site,
         comet_logger=comet_logger)
     
     if config["create_pretrain_model"]:
-        config["existing_test_csv"] = "{}/test_{}_{}.csv".format(data_module.data_dir, config["train_test_commit"], site)
+        config["existing_test_csv"] = "{}/test_{}_{}.csv".format(data_module.data_dir, comet_logger.experiment.id, site)
         config["pretrain_state_dict"] = pretrain_model(
             comet_logger=comet_logger,
             config=config,
@@ -120,7 +120,7 @@ def pretrain_model(comet_logger, config, client=None, filter_species_site=None):
             config=config,
             client=client,
             create_train_test=create_train_test,
-            experiment_id="{}_{}_pretrain".format(filter_species_site, comet_logger.experiment.key),            
+            experiment_id="{}_{}_pretrain".format(filter_species_site, comet_logger.experiment.id),            
             site="{}_pretrain".format(filter_species_site),
             filter_species_site=filter_species_site,
             comet_logger=comet_logger)
