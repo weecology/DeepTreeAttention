@@ -17,7 +17,7 @@ max_samples_per_class: 5000
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
 # Set to 1 for debugging, no files will be written
-iterations: 5000
+iterations: 2000
 
 # Minimum CanopyModel height, leave blank to skip CHM filtering
 min_CHM_height: 3
@@ -33,7 +33,7 @@ dead_model: "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Checkout data artifact from comet
-use_data_commit: ca74100c7e1d44f5a6c5a9fa44bd1d24
+use_data_commit:
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 
@@ -60,7 +60,7 @@ pretrain_epochs: 200
 
 ### Training Parameters
 gpus: 1
-batch_size: 12
+batch_size: 24
 bands: 349
 head_class_minimum_ratio: 0.4
 seperate_oak_model: False
