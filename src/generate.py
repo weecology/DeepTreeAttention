@@ -105,6 +105,9 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     # Look for hand annotations of those crowns.
     plotID = plot_data.plotID.unique()[0]
     ROOT = os.path.dirname(os.path.dirname(patches.__file__))
+    site_params = pd.read_csv("{}/data/raw/site_specific_crowns.csv".format(ROOT))
+    siteID=plot_data.plotID.unique()[0]
+    box_size = site_params.loc[site_params.siteID==siteID,"fixed_box_size"]
 
     predicted_boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
 
@@ -132,12 +135,12 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     missing_ids = plot_data[~plot_data.individual.isin(merged_boxes.individual)]
     
     if not missing_ids.empty:
-        created_boxes= create_boxes(missing_ids)
+        created_boxes= create_boxes(missing_ids, size=box_size)
         concat_boxes = pd.concat([merged_boxes,created_boxes])
         merged_boxes = gpd.GeoDataFrame(concat_boxes)
 
     # Add fixed boxes if needed later for training.
-    fixed_boxes = plot_data.buffer(1.5).envelope
+    fixed_boxes = plot_data.buffer(box_size).envelope
     fixed_df = pd.DataFrame({"fixed_box":fixed_boxes.geometry.to_wkt(), "individual":plot_data.individual})
     predicted_boxes = merged_boxes.merge(fixed_df, how="left")
 

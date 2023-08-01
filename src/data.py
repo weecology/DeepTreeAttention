@@ -523,7 +523,8 @@ class TreeData(LightningDataModule):
         
         # Replace any hand annotated boxes in train geometry, if they exist
         try:
-            self.train.loc[self.train.box_id.astype(str).str.contains("fixed"),"geometry"] = self.train.loc[self.train.box_id.astype(str).str.contains("fixed"),"hand_annotated_box"]
+            available_hand_annotations = self.train.hand_annotated_box.notnull()
+            self.train.loc[available_hand_annotations,"geometry"] = self.train.loc[available_hand_annotations,"hand_annotated_box"]
         except KeyError:
             pass
         
