@@ -398,18 +398,6 @@ class TreeData(LightningDataModule):
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(self.crowns.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples after crown prediction", self.crowns.shape[0])
                 
-                # Filter dead with very high tolerance
-                # label, score = predict_dead(self.crowns, dead_model_path=config["dead_model"],config=self.config)
-                # self.crowns["dead_score"] = score
-                # crowns["dead_label"] = label
-
-                # dead_crowns = crowns[~(crowns.dead_score > 0.95) & (crowns.dead_label==1)]
-                # if self.comet_logger:
-                #    with comet_logger.experiment.context_manager("dead"):
-                #        self.view_tree_plots(crowns)
-        
-                # crowns = crowns[~(crowns.dead_score > 0.95) & (crowns.dead_label==1)]
-
                 # Loop through all plots and write them to file
                 self.view_tree_plots()
 
@@ -464,7 +452,7 @@ class TreeData(LightningDataModule):
             if create_train_test:
                 self.train, self.test = self.create_train_test_split(self.experiment_id)  
             else:
-                print("Loading a train-test split from {}/{}".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))
+                print("Loading a train-test split from experiment {}/{}".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))
                 self.train = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
                 self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))               
         else:
@@ -482,9 +470,7 @@ class TreeData(LightningDataModule):
             self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
                             
             # mimic schema due to abbreviation when .shp is saved
-            self.crowns["individual"] = self.crowns["individual"]
             self.canopy_points = gpd.read_file("{}/canopy_points.shp".format(self.data_dir))
-            self.canopy_points["individual"] = self.canopy_points["individual"]
         
         self.create_datasets(self.train, self.test)
         print("There are {} records for {} species for {} sites in filtered train".format(
@@ -499,12 +485,9 @@ class TreeData(LightningDataModule):
             len(self.test.siteID.unique()))
         )    
     def create_train_test_split(self, ID):      
-        if self.site:
-            if "pretrain" not in self.site:
-                # Get species present at site, as well as those species from other sites
-                self.other_sites = self.annotations[~(self.annotations.siteID == self.site)].reset_index(drop=True)                
-                self.annotations = self.annotations[self.annotations.siteID == self.site].reset_index(drop=True)
-                self.other_sites = self.other_sites[self.other_sites.taxonID.isin(self.annotations.taxonID.unique())]
+        if not "pretrain" in self.site:
+            # Get species present at site, as well as those species from other sites
+            self.annotations = self.annotations[self.annotations.siteID == self.site].reset_index(drop=True)
                 
         if self.config["existing_test_csv"]:
             print("Reading in existing test_csv: {}".format(self.config["existing_test_csv"]))

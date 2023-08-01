@@ -62,21 +62,24 @@ def index_to_example(index, individuals,RGB_tiles, test_crowns, test_points, com
         image_name: name of file
         sample_id: comet id
     """
-    tmpdir = tempfile.gettempdir()
-    individual = individuals[index]
-    point = test_points[test_points.individual == individual].geometry.iloc[0]
-    geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
-    img_path =  RGB_tiles[index]
-    crown_plot(img_path, geom, point)
-    image_name = "{}/{}_confusion.png".format(tmpdir,individual)
-    plt.title("{}".format(individual))
-    
-    plt.savefig(image_name)
-    results = comet_experiment.log_image(image_name, name = "{}".format(individual))
-    plt.close("all")
-    
-    # Return sample, assetId (index is added automatically)
-    return {"sample": image_name, "assetId": results["imageId"]}
+    try:
+        tmpdir = tempfile.gettempdir()
+        individual = individuals[index]
+        point = test_points[test_points.individual == individual].geometry.iloc[0]
+        geom = test_crowns[test_crowns.individual == individual].geometry.iloc[0]
+        img_path =  RGB_tiles[index]
+        crown_plot(img_path, geom, point)
+        image_name = "{}/{}_confusion.png".format(tmpdir,individual)
+        plt.title("{}".format(individual))
+        
+        plt.savefig(image_name)
+        results = comet_experiment.log_image(image_name, name = "{}".format(individual))
+        plt.close("all")
+        # Return sample, assetId (index is added automatically)
+        return {"sample": image_name, "assetId": results["imageId"]}
+    except:
+        return {"sample": None, "assetId": None}
+        
 
 def confusion_matrix(comet_experiment, yhats, y, labels, individuals,RGB_tiles, test_points, test_crowns, name):
     #Confusion matrix
