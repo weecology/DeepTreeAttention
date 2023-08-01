@@ -14,11 +14,10 @@
 
 module load git
 
-cp ~/DeepTreeAttention/ $TMPDIR
 
 source activate DeepTreeAttention
 
-cd $TMPDIR/DeepTreeAttention/
+cd ~/DeepTreeAttention/
 
 git checkout $1
 
