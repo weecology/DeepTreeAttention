@@ -8,11 +8,29 @@ from pytorch_lightning.loggers import CometLogger
 import traceback
 import copy
 import json
+import argparse
+import subprocess
 
-git_branch = sys.argv[1]
-git_commit = sys.argv[2] 
-site = sys.argv[3]
+parser = argparse.ArgumentParser()
+parser.add_argument("git_branch")
+parser.add_argument("git_commit")
+parser.add_argument("site")
+parser.add_argument("-m", "--mydict", action="store",
+                    required=False, type=dict,
+                    default={})
+
+
+args = parser.parse_args()
+hot_config = json.loads(args.mydict)
+site = args.site
+
+git_branch = subprocess.Popen('symbolic-ref HEAD 2>/dev/null || echo "(unnamed branch)")|cut -d/ -f3-)')
+git_commit = subprocess.Popen("git log --pretty=format:'%H' -n 1")
+
 config = data.read_config("config.yml")
+
+for key, value in hot_config.items():
+    config[key] = value
 
 if config["use_data_commit"] is None:
     comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple") 
@@ -26,7 +44,7 @@ if config["use_data_commit"] is None:
     data_module = data.TreeData(
         csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),
         data_dir=crop_dir,
-        experiment_id=git_commit,
+        experiment_id=comet_logger.experiment.id,
         config=config,
         client=client,
         create_train_test=True,
@@ -43,7 +61,12 @@ try:
     if "OSBS" in site:
         config["seperate_oak_model"] = True
         
-    train.main(site=site, config=config, git_branch=git_branch, git_commit=git_commit, client=client)
+    train.main(
+        site=site,
+        config=config,
+        git_branch=git_branch,
+        git_commit=git_commit,
+        client=client)
     torch.cuda.empty_cache() 
     gc.collect()            
 except:

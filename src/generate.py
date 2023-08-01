@@ -115,7 +115,6 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
         max_area = 1000
         
     predicted_boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
-    predicted_boxes = predicted_boxes[predicted_boxes.geometry.area < max_area]
     if predicted_boxes is None:
         raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
     
@@ -172,7 +171,8 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
             cleaned_points.append(group)
      
     merged_boxes = gpd.GeoDataFrame(pd.concat(cleaned_points),crs=merged_boxes.crs)
-    
+    merged_boxes = merged_boxes[merged_boxes.geometry.area < max_area]
+
     #Add tile information
     predicted_boxes["RGB_tile"] = rgb_sensor_path
     merged_boxes["RGB_tile"] = rgb_sensor_path
