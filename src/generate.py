@@ -106,11 +106,12 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     plotID = plot_data.plotID.unique()[0]
     ROOT = os.path.dirname(os.path.dirname(patches.__file__))
     site_params = pd.read_csv("{}/data/raw/site_specific_crowns.csv".format(ROOT))
-    siteID=plot_data.plotID.unique()[0]
-    box_size = site_params.loc[site_params.siteID==siteID,"fixed_box_size"]
+    siteID = plot_data.siteID.unique()[0]
+    box_size = site_params.loc[site_params.siteID==siteID,"fixed_box_size"].values[0]
+    max_area = site_params.loc[site_params.siteID==siteID,"max_area"].values[0]
 
     predicted_boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
-
+    predicted_boxes = predicted_boxes[predicted_boxes.geometry.area < max_area]
     if predicted_boxes is None:
         raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
     
@@ -181,9 +182,10 @@ def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, dee
         from deepforest import main
         deepforest_model = main.deepforest()
         deepforest_model.use_release(check_release=False)
-
-    #Filter data and process
-    plot_data = df[df.plotID == plot]
+        deepforest_model.model.nms_thresh = 0.3
+    
+    # Filter data and process
+    plot_data = df[df.plotID == plot].copy()
     try:
         predicted_trees, raw_boxes = process_plot(plot_data, rgb_pool, deepforest_model)
     except ValueError as e:
@@ -248,6 +250,7 @@ def points_to_crowns(
         #IMPORTS at runtime due to dask pickling
         deepforest_model = main.deepforest()  
         deepforest_model.use_release(check_release=False)
+        deepforest_model.model.nms_thresh = 0.3
         for plot in plot_names:
             try:
                 result = run(

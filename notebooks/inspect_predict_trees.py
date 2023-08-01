@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 
 m = main.deepforest()
 m.use_release()
-m.model.nms_thresh = 0.4
+m.model.nms_thresh = 0.1
 
 src=rio.open("/orange/idtrees-collab/NeonTreeEvaluation/evaluation/RGB/MLBS_020_2018.tif")
 img = src.read()

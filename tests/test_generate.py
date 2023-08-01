@@ -57,6 +57,8 @@ def test_process_plot(rgb_pool, sample_crowns):
     
 def test_run(tmpdir, sample_crowns, rgb_pool):
     df = gpd.read_file(sample_crowns)
+    df["geometry"] = df.centroid
+    df = df.drop(columns="box_id")
     plot = df.plotID.unique()[0]
     generate.run(
         plot=plot,
