@@ -107,9 +107,13 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     ROOT = os.path.dirname(os.path.dirname(patches.__file__))
     site_params = pd.read_csv("{}/data/raw/site_specific_crowns.csv".format(ROOT))
     siteID = plot_data.siteID.unique()[0]
-    box_size = site_params.loc[site_params.siteID==siteID,"fixed_box_size"].values[0]
-    max_area = site_params.loc[site_params.siteID==siteID,"max_area"].values[0]
-
+    try:
+        box_size = site_params.loc[site_params.siteID==siteID,"fixed_box_size"].values[0]
+        max_area = site_params.loc[site_params.siteID==siteID,"max_area"].values[0]
+    except:
+        box_size = 1
+        max_area = 1000
+        
     predicted_boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
     predicted_boxes = predicted_boxes[predicted_boxes.geometry.area < max_area]
     if predicted_boxes is None:
