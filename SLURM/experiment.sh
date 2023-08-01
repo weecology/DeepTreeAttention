@@ -12,13 +12,15 @@
 #SBATCH --partition=gpu
 #SBATCH --gpus=1
 
-module load git gcc
+module load git
 
-git checkout $1
+cp ~/DeepTreeAttention/ $TMPDIR
 
 source activate DeepTreeAttention
 
-cd ~/DeepTreeAttention/
+cd $TMPDIR/DeepTreeAttention/
+
+git checkout $1
 
 #get branch and commit name
-python train.py -git_branch $1 -site $2
+python train.py -branch $1 -site $2

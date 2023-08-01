@@ -12,7 +12,7 @@ import argparse
 import subprocess
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-git_branch")
+parser.add_argument("-branch")
 parser.add_argument("-site")
 parser.add_argument("-m",
                     required=False, type=json.loads,
@@ -22,7 +22,7 @@ args = parser.parse_args()
 site = args.site
 
 git_commit = subprocess.call("git log --pretty=format:'%H' -n 1", shell=True)
-git_branch = args.git_branch
+git_branch = args.branch
 
 config = data.read_config("config.yml")
 
