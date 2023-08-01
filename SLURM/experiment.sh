@@ -21,4 +21,4 @@ source activate DeepTreeAttention
 cd ~/DeepTreeAttention/
 
 #get branch and commit name
-python train.py --site $2
+python train.py $1 --site $2

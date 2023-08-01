@@ -13,15 +13,12 @@ import subprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument("git_branch")
-parser.add_argument("git_commit")
 parser.add_argument("site")
-parser.add_argument("-m", "--mydict", action="store",
-                    required=False, type=dict,
+parser.add_argument("-m",
+                    required=False, type=json.loads,
                     default={})
 
-
 args = parser.parse_args()
-hot_config = json.loads(args.mydict)
 site = args.site
 
 git_branch = subprocess.Popen('symbolic-ref HEAD 2>/dev/null || echo "(unnamed branch)")|cut -d/ -f3-)')
@@ -29,7 +26,7 @@ git_commit = subprocess.Popen("git log --pretty=format:'%H' -n 1")
 
 config = data.read_config("config.yml")
 
-for key, value in hot_config.items():
+for key, value in args.mydict.items():
     config[key] = value
 
 if config["use_data_commit"] is None:
