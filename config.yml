@@ -45,6 +45,7 @@ replace_crops: True
 train_test_commit:
 # Use existing plotIDs for train/test split
 existing_test_csv: 
+
 ### Data loader Config
 # Resized pixel size of the crowns. Square crops around each pixel of size x
 image_size: 30

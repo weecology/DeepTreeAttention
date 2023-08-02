@@ -79,21 +79,37 @@ def preprocess_image(image, channel_is_first=False):
     
     return normalized
 
-def resize_or_pad(image, image_size, pad=False):
-    """Resize an image to a square size, or pad with zeros to a square size. This is useful for creating batches with varying size data
-    Args:
-        image: a numpy array
-        image_size: pixel width or height
-        pad: Pad with zeros instead of resizing
+def resize_or_pad_image(image: torch.Tensor, image_size: int, pad: bool = False) -> torch.Tensor:
     """
-    
-    if image_size is not -1:
-        image = transforms.functional.resize(image, size=(image_size,image_size), interpolation=transforms.InterpolationMode.NEAREST)
+    Resize an image to a square size or pad it with zeros to a square size using torchvision transforms.
+
+    Args:
+        image: A tensor representing the image.
+        image_size: Pixel width or height.
+        pad: Set to True to pad the image instead of resizing. (default: False)
+
+    Returns:
+        The resized or padded image tensor.
+
+    """
+    transform = []
+
+    if pad:
+        # Get the current image size
+        height, width = image.shape[1], image.shape[2]
+        # Calculate padding size
+        pad_top = (image_size - height) // 2
+        pad_bottom = image_size - height - pad_top
+        pad_left = (image_size - width) // 2
+        pad_right = image_size - width - pad_left
+        # Append pad transform
+        transform.append(transforms.Pad(padding=(pad_left, pad_top, pad_right, pad_bottom)))
+
     else:
-        pad_height =  image.shape[1]
-        pad_width = image.shape[2]
-        image = transforms.functional.pad(image, padding=[pad_width, pad_height])
-    return image
+        # Append resize transform
+        transform.append(transforms.Resize((image_size, image_size)))
+
+    return transform
 
 def load_image(img_path=None, image_size=30, pad=True):
     """Load and preprocess an image for training/prediction"""
@@ -112,9 +128,6 @@ def load_image(img_path=None, image_size=30, pad=True):
 
     image = preprocess_image(image, channel_is_first=True)
     
-    #resize image
-    image = resize_or_pad(image, image_size, pad=pad)
-
     return image
 
 def my_collate(batch):

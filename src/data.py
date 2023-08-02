@@ -33,19 +33,19 @@ class TreeDataset(Dataset):
             self.annotations = df
         self.train = train
         self.config = config         
-        self.image_size = config["image_size"]
 
         # Create augmentor
-        self.transformer = augmentation.train_augmentation(image_size=self.image_size)
+        self.transformer = augmentation.augment(
+            train=self.train,
+            image_size=self.config["image_size"])
                         
         # Pin data to memory if desired
         if self.config["preload_images"]:
             self.image_dict = {}
             for index, row in self.annotations.iterrows():
                 image_path = os.path.join(self.config["crop_dir"],row["image_path"])
-                self.image_dict[index] = load_image(image_path, image_size=self.image_size)
+                self.image_dict[index] = load_image(image_path)
         
-
     def __len__(self):
         # 0th based index
         return self.annotations.shape[0]
@@ -59,14 +59,13 @@ class TreeDataset(Dataset):
         else:
             image_basename = self.annotations.image_path.iloc[index]  
             image_path = os.path.join(self.config["crop_dir"],image_basename)                
-            image = load_image(image_path, image_size=self.image_size)
+            image = load_image(image_path)
             inputs["HSI"] = image
+        inputs["HSI"] = self.transformer(inputs["HSI"])
 
         if self.train:
             label = self.annotations.label.iloc[index]
             label = torch.tensor(label, dtype=torch.long)
-            inputs["HSI"] = self.transformer(inputs["HSI"])
-
             return individual, inputs, label
         else:
             return individual, inputs
@@ -167,7 +166,6 @@ def filter_data(path, config):
     shp.loc[shp.epsg=="3265N","epsg"] = "32605"
 
     return shp
-
 
 def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     """Sample and split a pandas dataframe based on plotID
