@@ -281,7 +281,7 @@ def write_crop(row, savedir, img_path, rasterio_src=None, as_numpy=False, suffix
     if suffix == "RGB":
         tile_year = img_path.split("/")[-5].split("_")[0]    
     else:
-        tile_year = os.path.splitext(os.path.basename(img_path))[0].split("_")[0]
+        tile_year = os.path.splitext(os.path.basename(img_path))[0].split("_")[-1]
         
     if suffix:
         basename = "{}_{}_{}".format(row["individual"], tile_year, suffix)
