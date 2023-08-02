@@ -536,13 +536,6 @@ class TreeData(LightningDataModule):
         self.test = self.test.reset_index(drop=True)
         self.train = self.train.reset_index(drop=True)
         
-        # Replace any hand annotated boxes in train geometry, if they exist
-        try:
-            available_hand_annotations = self.train.hand_box.notnull()
-            self.train.loc[available_hand_annotations,"geometry"] = self.train.loc[available_hand_annotations,"hand_box"]
-        except KeyError:
-            pass
-        
         self.train.to_csv("{}/train_{}.csv".format(self.data_dir, ID), index=False)            
         self.test.to_csv("{}/test_{}.csv".format(self.data_dir, ID), index=False)            
         
