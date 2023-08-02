@@ -66,7 +66,7 @@ species_model_paths = {
     "RMNP": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/8ba51c797bfc4a75b6be02b9f6af292c_RMNP.pt",    
     "SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b60c6a57d88a427eb6dc926e6f78437f_SJER.pt",
     "WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/686204cb0d5343b0b20613a6cf25f69b_WREF.pt",
-    "SERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/95f74a748e2f48d5bed0635228fed41a_SERC.pt",
+    "SERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0291ea2f59584a29b6752a452075e341_SERC.pt",
     "GRSM":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/127191a057e64a7fb7267cc889e56c25_GRSM.pt",
     "DEJU":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e3178ac37434aeb90ac207c18a9caf7_DEJU.pt",
     "BONA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/2975c34a7ca540df9c54d261ef95551e_BONA.pt",
