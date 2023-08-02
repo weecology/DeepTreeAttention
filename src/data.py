@@ -441,8 +441,8 @@ class TreeData(LightningDataModule):
                 self.annotations.to_csv("{}/annotations.csv".format(self.data_dir))
                 
                 # Write hand annotated crops, if available.
-                hand_annotations = self.crowns[self.crowns.hand_annotated_box.notnull()].copy()
-                hand_annotations["geometry"] = hand_annotations.hand_annotated_box
+                hand_annotations = self.crowns[self.crowns.hand_box.notnull()].copy()
+                hand_annotations["geometry"] = hand_annotations.hand_box
                 self.hand_annotations = generate.generate_crops(
                     hand_annotations,
                     savedir=self.data_dir,
@@ -538,8 +538,8 @@ class TreeData(LightningDataModule):
         
         # Replace any hand annotated boxes in train geometry, if they exist
         try:
-            available_hand_annotations = self.train.hand_annotated_box.notnull()
-            self.train.loc[available_hand_annotations,"geometry"] = self.train.loc[available_hand_annotations,"hand_annotated_box"]
+            available_hand_annotations = self.train.hand_box.notnull()
+            self.train.loc[available_hand_annotations,"geometry"] = self.train.loc[available_hand_annotations,"hand_box"]
         except KeyError:
             pass
         

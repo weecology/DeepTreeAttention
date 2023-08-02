@@ -12,7 +12,7 @@
                 "PYTHONPATH":"${PYTHONPATH}:/home/b.weinstein/DeepTreeAttention/",
                 "PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT": "5"
             },
-            "args": ["species_release","-git_branch commit","-site OSBS"]
+            "args": ["-branch commit","-site BART"]
         }
     ]
 }

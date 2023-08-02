@@ -127,8 +127,8 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
         hand_annotated = hand_annotated[["geometry"]]
         hand_annotated = gpd.sjoin(hand_annotated, plot_data)
         hand_annotated = hand_annotated[["geometry","individual"]]
-        hand_annotated["hand_annotated_box"] = hand_annotated.geometry.to_wkt()
-        hand_annotated = hand_annotated[["hand_annotated_box","individual"]]
+        hand_annotated["hand_box"] = hand_annotated.geometry.to_wkt()
+        hand_annotated = hand_annotated[["hand_box","individual"]]
         plot_data = plot_data.merge(hand_annotated, how="left", on="individual")
 
     # Merge results with field data, buffer on edge 
@@ -404,6 +404,6 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
     annotations["HSI_tile"] = HSI_tile
     annotations["tile_year"] = annotations.image_path.apply(lambda x: os.path.splitext(os.path.basename(x))[0].split("_")[-2])
     annotations = annotations.loc[:,annotations.columns.isin(
-        ["individual","geo_index","tile_year","CHM_height","plotID","height","geometry","taxonID","RGB_tile","HSI_tile","filename","siteID","image_path","score","box_id","hand_annotated_box","fixed_box"])]
+        ["individual","geo_index","tile_year","CHM_height","plotID","height","geometry","taxonID","RGB_tile","HSI_tile","filename","siteID","image_path","score","box_id","hand_box","fixed_box"])]
 
     return annotations
