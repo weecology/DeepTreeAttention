@@ -151,6 +151,7 @@ def pretrain_model(comet_logger, config, client=None, filter_species_site=None):
             num_sanity_val_steps=0,
             check_val_every_n_epoch=pretrain_module.config["validation_interval"],
             enable_checkpointing=False,
+            enable_progress_bar=False,
             devices=pretrain_module.config["gpus"],
             logger=comet_logger)
         
@@ -199,6 +200,7 @@ def train_model(data_module, comet_logger, m, name):
             num_sanity_val_steps=0,
             check_val_every_n_epoch=data_module.config["validation_interval"],
             callbacks=[lr_monitor],
+            enable_progress_bar=False,
             enable_checkpointing=False,
             devices=data_module.config["gpus"],
             logger=comet_logger)
