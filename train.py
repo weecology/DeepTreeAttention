@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-branch")
 parser.add_argument("-site")
 parser.add_argument("-m",
-                    required=False, type=json.loads,
+                    required=False,
                     default={})
 
 args = parser.parse_args()
@@ -25,8 +25,10 @@ git_commit = subprocess.call("git log --pretty=format:'%H' -n 1", shell=True)
 git_branch = args.branch
 
 config = data.read_config("config.yml")
+print("mydict is {}".format(args.m))
 
-for key, value in args.m.items():
+hot_config_fix = json.loads(args.m)
+for key, value in hot_config_fix.items():
     config[key] = value
 
 if config["use_data_commit"] is None:
