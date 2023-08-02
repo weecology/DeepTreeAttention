@@ -57,7 +57,11 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
         comet_logger=comet_logger)
     
     if config["create_pretrain_model"]:
-        config["existing_test_csv"] = "{}/test_{}_{}.csv".format(data_module.data_dir, config["train_test_commit"], site)
+        if config["train_test_commit"]:
+            config["existing_test_csv"] = "{}/test_{}_{}.csv".format(data_module.data_dir, config["train_test_commit"], site)
+        else:
+            config["existing_test_csv"] = "{}/test_{}_{}.csv".format(data_module.data_dir, comet_logger.experiment.id, site)
+
         config["pretrain_state_dict"] = pretrain_model(
             comet_logger=comet_logger,
             config=config,
