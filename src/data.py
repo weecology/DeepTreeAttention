@@ -36,8 +36,9 @@ class TreeDataset(Dataset):
 
         # Create augmentor
         self.transformer = augmentation.augment(
-            train=self.train,
-            image_size=self.config["image_size"])
+            train = self.train,
+            pad_or_resize=config["pad_or_resize"],
+            image_size = self.config["image_size"])
                         
         # Pin data to memory if desired
         if self.config["preload_images"]:
@@ -560,6 +561,14 @@ class TreeData(LightningDataModule):
             config=self.config,
         )
         
+        # Log a few examples
+        for x in range(10):
+            individual, inputs, label = self.train_ds[x]
+            for image in inputs["HSI"]:
+                three_band_HSI = image[:,:,[55,117,170]]
+                if self.comet_logger:
+                    self.comet_logger.experiment.log_image(individual,three_band_HSI)
+
         self.val_ds = TreeDataset(
             df=test,
             config=self.config,

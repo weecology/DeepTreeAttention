@@ -1,18 +1,21 @@
 #Training HSI Augmentations 
 from torchvision import transforms
-from src.utils import resize_or_pad_image
+from src.utils import ZeroPad
 
-def train_augmentation(train, image_size):
+def augment(train, image_size, pad_or_resize="pad"):
     """Torchvision transforms
     Args:
         image: a torch vision tensor with C, H, W order
+        pad_or_resize: a str of "pad" or "resize"
     Returns:
         transformed_image: an augmentated image
     """
-    
     transform_list = []
 
-    transform_list.append(resize_or_pad_image(image_size=image_size))
+    # if pad_or_resize == "pad":
+    #    transform_list.append(ZeroPad(image_size=image_size))
+    # elif pad_or_resize =="resize":
+    #    transform_list.append(transforms.Resize(size=image_size))
     if train:
         transform_list.append(transforms.RandomHorizontalFlip(p=1))
         transform_list.append(transforms.RandomVerticalFlip(p=1))

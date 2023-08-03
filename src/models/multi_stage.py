@@ -41,7 +41,7 @@ class TreeDataset(Dataset):
             self.labels = self.annotations.set_index("individual").label.to_dict()
         
         # Create augmentor
-        self.transformer = augmentation.augment(image_size=self.image_size)
+        self.transformer = augmentation.augment(image_size=self.image_size, pad_or_resize=config["pad_or_resize"])
                      
         # Pin data to memory if desired 
         if self.config["preload_images"]:

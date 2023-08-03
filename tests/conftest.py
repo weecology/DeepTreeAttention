@@ -88,8 +88,8 @@ def config(ROOT, tmpdir_factory):
     config["crop_dir"] = tmpdir_factory.mktemp('data')
     config["data_dir"] = tmpdir_factory.mktemp('output')
     config["rgb_sensor_pool"] = "{}/tests/data/HARV/2019/FullSite/D01/2019_HARV_6/L3/Camera/Mosaic/*.tif".format(ROOT)
-    config["HSI_sensor_pool"] = "{}/tests/data/HARV/2019/FullSite/D01/2019_HARV_6/L3/Camera/Mosaic/*.tif".format(ROOT)
-
+    config["HSI_sensor_pool"] = "{}/tests/data/hsi/".format(ROOT)
+    
     return config
 
 #Data module

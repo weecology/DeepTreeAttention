@@ -4,6 +4,7 @@ import json
 import os
 import numpy as np
 from torchvision import transforms
+import torch.nn.functional as F
 from sklearn import preprocessing
 import torch
 import yaml
@@ -48,7 +49,7 @@ def create_glob_lists(config):
     h5_pool = [x for x in h5_pool if not "point_cloud" in x]
     h5_pool = [x for x in h5_pool if not "products" in x]
     
-    hsi_pool = glob("{}/**/*.tif".format(config["HSI_tif_dir"]),recursive=True)
+    hsi_pool = glob("{}/*.tif".format(config["HSI_tif_dir"]),recursive=True)
     try:
         CHM_pool = glob(config["CHM_pool"], recursive=True)
     except:
@@ -79,37 +80,24 @@ def preprocess_image(image, channel_is_first=False):
     
     return normalized
 
-def resize_or_pad_image(image: torch.Tensor, image_size: int, pad: bool = False) -> torch.Tensor:
-    """
-    Resize an image to a square size or pad it with zeros to a square size using torchvision transforms.
+class ZeroPad(object):
+    def __call__(self, sample):
+        img = sample
 
-    Args:
-        image: A tensor representing the image.
-        image_size: Pixel width or height.
-        pad: Set to True to pad the image instead of resizing. (default: False)
+        # Get the original image size
+        img_height, img_width = img.size
 
-    Returns:
-        The resized or padded image tensor.
+        # Find the maximum dimension
+        max_dim = max(img_height, img_width)
 
-    """
-    transform = []
+        # Calculate the padding amounts on both sides
+        pad_height = max_dim - img_height
+        pad_width = max_dim - img_width
 
-    if pad:
-        # Get the current image size
-        height, width = image.shape[1], image.shape[2]
-        # Calculate padding size
-        pad_top = (image_size - height) // 2
-        pad_bottom = image_size - height - pad_top
-        pad_left = (image_size - width) // 2
-        pad_right = image_size - width - pad_left
-        # Append pad transform
-        transform.append(transforms.Pad(padding=(pad_left, pad_top, pad_right, pad_bottom)))
+        # Apply zero padding using torch.nn.functional.pad
+        img = F.pad(img, (0, pad_width, 0, pad_height), value=0)
 
-    else:
-        # Append resize transform
-        transform.append(transforms.Resize((image_size, image_size)))
-
-    return transform
+        return img
 
 def load_image(img_path=None, image_size=30, pad=True):
     """Load and preprocess an image for training/prediction"""
