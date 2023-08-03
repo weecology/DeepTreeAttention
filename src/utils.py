@@ -81,18 +81,18 @@ def preprocess_image(image, channel_is_first=False):
     return normalized
 
 class ZeroPad(object):
+    def __init__(self, target_size):
+        self.target_size = target_size
+
     def __call__(self, sample):
         img = sample
 
         # Get the original image size
         img_height, img_width = img.size
 
-        # Find the maximum dimension
-        max_dim = max(img_height, img_width)
-
         # Calculate the padding amounts on both sides
-        pad_height = max_dim - img_height
-        pad_width = max_dim - img_width
+        pad_height = target_size - img_height
+        pad_width = target_size - img_width
 
         # Apply zero padding using torch.nn.functional.pad
         img = F.pad(img, (0, pad_width, 0, pad_height), value=0)

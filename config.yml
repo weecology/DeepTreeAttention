@@ -17,7 +17,7 @@ max_samples_per_class: 5000
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
 # Set to 1 for debugging, no files will be written
-iterations: 2000
+iterations: 3000
 
 # Minimum CanopyModel height, leave blank to skip CHM filtering
 min_CHM_height: 3
@@ -42,10 +42,9 @@ replace_bounding_boxes: True
 # Regenerate bounding box sensor crops
 replace_crops: True
 # Recreate a train test split
-train_test_commit: 20ce0ca489444e84997e82b4b293e86c
+train_test_commit: 
 # Use existing plotIDs for train/test split
 existing_test_csv: 
-
 ### Data loader Config
 # Resized pixel size of the crowns. Square crops around each pixel of size x
 image_size: 30
@@ -58,33 +57,33 @@ taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 ### Pre-Training Parameters
 create_pretrain_model: True
 pretrain_state_dict:
-pretrain_epochs: 120
+pretrain_epochs: 200
 
 ### Training Parameters
 gpus: 1
-batch_size: 48
+batch_size: 12
 bands: 349
 head_class_minimum_ratio: 0.4
 seperate_oak_model: False
 
 # Learning rates
-lr: 0.001
-lr_dominant_class: 0.00001
-lr_conifer: 0.00001
-lr_broadleaf: 0.0001
-lr_oak: 0.0001
+lr: 0.0001
+lr_dominant_class: 0.000005
+lr_conifer: 0.000005
+lr_broadleaf: 0.00001
+lr_oak: 0.00005
 lr_flat: 0.001
 
 fast_dev_run: False
 accelerator: auto
-epochs: 120
+epochs: 200
 snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
 
 ### Evaluation config
 #Top k class recall score
 top_k: 2
 # Epoch frequency of validation
-validation_interval: 10
+validation_interval: 1
 
 # Predict config
 predict_batch_size: 1028

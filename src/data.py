@@ -466,10 +466,10 @@ class TreeData(LightningDataModule):
                 self.train = pd.read_csv("{}/train_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
                 self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
             
-            # self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
+            self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
                             
             # mimic schema due to abbreviation when .shp is saved
-            # self.canopy_points = gpd.read_file("{}/canopy_points.shp".format(self.data_dir))
+            self.canopy_points = gpd.read_file("{}/canopy_points.shp".format(self.data_dir))
         
         self.create_datasets(self.train, self.test)
         print("There are {} records for {} species for {} sites in filtered train".format(
