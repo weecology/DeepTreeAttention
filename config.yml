@@ -17,7 +17,7 @@ max_samples_per_class: 5000
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
 # Set to 1 for debugging, no files will be written
-iterations: 2000
+iterations: 3000
 
 # Minimum CanopyModel height, leave blank to skip CHM filtering
 min_CHM_height: 3
