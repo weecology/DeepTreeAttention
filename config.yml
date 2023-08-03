@@ -42,7 +42,7 @@ replace_bounding_boxes: True
 # Regenerate bounding box sensor crops
 replace_crops: True
 # Recreate a train test split
-train_test_commit: a92d83499e95430f8751872966deadde
+train_test_commit: 2ca2c13c1d2b44948323d11c750c9d82
 # Use existing plotIDs for train/test split
 existing_test_csv: 
 ### Data loader Config

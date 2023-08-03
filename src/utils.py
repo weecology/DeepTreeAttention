@@ -88,11 +88,11 @@ class ZeroPad(object):
         img = sample
 
         # Get the original image size
-        img_height, img_width = img.size
+        img_channels, img_height, img_width = img.size()
 
         # Calculate the padding amounts on both sides
-        pad_height = target_size - img_height
-        pad_width = target_size - img_width
+        pad_height = self.target_size - img_height
+        pad_width = self.target_size - img_width
 
         # Apply zero padding using torch.nn.functional.pad
         img = F.pad(img, (0, pad_width, 0, pad_height), value=0)
