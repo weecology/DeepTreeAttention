@@ -12,10 +12,10 @@ def augment(train, image_size, pad_or_resize="pad"):
     """
     transform_list = []
 
-    # if pad_or_resize == "pad":
-    #    transform_list.append(ZeroPad(image_size=image_size))
-    # elif pad_or_resize =="resize":
-    #    transform_list.append(transforms.Resize(size=image_size))
+    if pad_or_resize == "pad":
+        transform_list.append(ZeroPad(image_size=image_size))
+    elif pad_or_resize =="resize":
+        transform_list.append(transforms.Resize(size=(image_size,image_size), interpolation=transforms.InterpolationMode.NEAREST))
     if train:
         transform_list.append(transforms.RandomHorizontalFlip(p=1))
         transform_list.append(transforms.RandomVerticalFlip(p=1))

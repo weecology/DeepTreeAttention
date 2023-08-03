@@ -62,11 +62,11 @@ config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_cr
 savedir = config["crop_dir"] 
 
 species_model_paths = {
-    "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/af7649fb145642ce988a29c23fa16ab1_NIWO.pt",
+    "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/000b1ecf0ca6484893e177e3b5d42c7e_NIWO.pt",
     "RMNP": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/8ba51c797bfc4a75b6be02b9f6af292c_RMNP.pt",    
-    "SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b60c6a57d88a427eb6dc926e6f78437f_SJER.pt",
+    "SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ecfdd5bf772a40cab89e89fa1549f13b_SJER.pt",
     "WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/686204cb0d5343b0b20613a6cf25f69b_WREF.pt",
-    "SERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0291ea2f59584a29b6752a452075e341_SERC.pt",
+    "SERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/20ce0ca489444e84997e82b4b293e86c_SERC.pt",
     "GRSM":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/127191a057e64a7fb7267cc889e56c25_GRSM.pt",
     "DEJU":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e3178ac37434aeb90ac207c18a9caf7_DEJU.pt",
     "BONA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/2975c34a7ca540df9c54d261ef95551e_BONA.pt",
@@ -84,7 +84,7 @@ species_model_paths = {
     "YELL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/e1760a6a288747beb83f055155e49109_YELL.pt",                       
     "MLBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b5efc0037529431092db587727fb4fe9_MLBS.pt",
     "BLAN":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ce50bb593a484a28b346e7efe357e0fa_BLAN.pt",
-    "UKFS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/8975b622391a4e95b1600f15f995ca21_UKFS.pt",
+    "UKFS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/6c1b2943939d44faa753a6804e5735b0_UKFS.pt",
     "BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/01bfce34aacd455bb1a4b4d80deb16d2_BART.pt",
     "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/973a01b0c1a349ebaf4fc8454ffc624d_HARV.pt"}
 

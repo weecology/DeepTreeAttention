@@ -10,7 +10,7 @@ from pytorch_lightning import LightningDataModule
 from src import generate, CHM, augmentation, megaplot, neon_paths, sampler
 from src.models import dead
 from src.utils import *
-from src.visualize import view_plot
+from src.visualize import view_plot, view_samples
 from src.predict import predict_dead
 
 from shapely.geometry import Point
@@ -439,21 +439,6 @@ class TreeData(LightningDataModule):
                 self.annotations = self.annotations.merge(rgb_annotations[["individual","tile_year","RGB_image_path"]], on=["individual","tile_year"])
                 self.annotations.to_csv("{}/annotations.csv".format(self.data_dir))
                 
-                # Write hand annotated crops, if available.
-                hand_annotations = self.crowns[self.crowns.hand_box.notnull()].copy()
-                hand_annotations["geometry"] = hand_annotations.hand_box
-                self.hand_annotations = generate.generate_crops(
-                    hand_annotations,
-                    savedir=self.data_dir,
-                    img_pool=self.hsi_pool,
-                    h5_pool=self.h5_pool,
-                    convert_h5=self.config["convert_h5"],   
-                    rgb_pool=self.rgb_pool,
-                    HSI_tif_dir=self.config["HSI_tif_dir"],
-                    client=self.client,
-                    as_numpy=True,
-                    suffix="hand_annotation"
-                )
             else:
                 self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir))
                 
@@ -481,10 +466,10 @@ class TreeData(LightningDataModule):
                 self.train = pd.read_csv("{}/train_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
                 self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
             
-            self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
+            # self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
                             
             # mimic schema due to abbreviation when .shp is saved
-            self.canopy_points = gpd.read_file("{}/canopy_points.shp".format(self.data_dir))
+            # self.canopy_points = gpd.read_file("{}/canopy_points.shp".format(self.data_dir))
         
         self.create_datasets(self.train, self.test)
         print("There are {} records for {} species for {} sites in filtered train".format(
@@ -561,13 +546,8 @@ class TreeData(LightningDataModule):
             config=self.config,
         )
         
-        # Log a few examples
-        for x in range(10):
-            individual, inputs, label = self.train_ds[x]
-            for image in inputs["HSI"]:
-                three_band_HSI = image[:,:,[55,117,170]]
-                if self.comet_logger:
-                    self.comet_logger.experiment.log_image(individual,three_band_HSI)
+        # Log a few train examples
+        view_samples(ds=self.train_ds, samples = 10, comet_logger=self.comet_logger)
 
         self.val_ds = TreeDataset(
             df=test,

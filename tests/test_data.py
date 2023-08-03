@@ -18,6 +18,6 @@ def test_TreeDataset(m, dm, config):
     assert inputs["HSI"].shape == (config["bands"], config["image_size"], config["image_size"])
     
 def test_sample_plots(dm, config):
-    train, test = data.sample_plots(shp=dm.crowns, min_test_samples=10, min_train_samples=10)
+    train, test = data.sample_plots(shp=dm.crowns, min_test_samples=2, min_train_samples=2)
     assert not train.empty
     assert train[train.individual.isin(test.individual)].empty

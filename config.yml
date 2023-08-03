@@ -42,14 +42,14 @@ replace_bounding_boxes: True
 # Regenerate bounding box sensor crops
 replace_crops: True
 # Recreate a train test split
-train_test_commit: ab00b5dd3f9748b6bc019ce61565120b
+train_test_commit: 785d03a3b2a74f0c9f1d2d3f0d9a7473
 # Use existing plotIDs for train/test split
 existing_test_csv: 
 
 ### Data loader Config
 # Resized pixel size of the crowns. Square crops around each pixel of size x
 image_size: 30
-pad_or_resize: "resize"
+pad_or_resize: 'resize'
 preload_images: True
 preload_image_dict: True
 workers: 0
