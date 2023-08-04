@@ -547,8 +547,12 @@ class TreeData(LightningDataModule):
             config=self.config,
         )
         
-        # Log a few train examples
-        view_samples(ds=self.train_ds, samples = 10, comet_logger=self.comet_logger)
+        # Log a few train examples, check if dataset is long enough
+        if len(self.train_ds) < 20:
+            samples = len(self.train_ds) -1
+        else:
+            samples = 20
+        view_samples(ds=self.train_ds, samples = samples, comet_logger=self.comet_logger)
 
         self.val_ds = TreeDataset(
             df=test,

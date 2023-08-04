@@ -84,7 +84,7 @@ def index_to_example(index, individuals,RGB_tiles, test_crowns, test_points, com
 def view_samples(ds, samples, comet_logger=None):
     """Visualize a few samples as images and spectra"""
     tmpdir = tempfile.gettempdir()
-    for x in range(10):
+    for x in range(samples):
         individual, inputs, label = ds[x]
         three_band_HSI = inputs["HSI"][[55,90,115], :,:]
         for x in inputs["HSI"].reshape(inputs["HSI"].shape[0], np.prod(inputs["HSI"].shape[1:])).T:
