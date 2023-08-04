@@ -87,8 +87,8 @@ class ZeroPad(object):
     def __call__(self, sample):
         img = sample
 
-        # Get the original image size
-        img_channels, img_height, img_width = img.size()
+        # Get the original image size, allow for batch dim, just take last two positions
+        img_height, img_width = img.size()[-2:]
 
         # Calculate the padding amounts on all sides
         pad_height = self.target_size - img_height
