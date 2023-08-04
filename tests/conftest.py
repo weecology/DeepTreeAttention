@@ -64,7 +64,7 @@ def config(ROOT, tmpdir_factory):
     config["HSI_tif_dir"] = "{}/tests/data/hsi/".format(ROOT)
     config["min_train_samples"] = 1
     config["min_test_samples"] = 1
-    config["bands"] = 3
+    config["bands"] = 349
     config["classes"] = 3
     config["top_k"] = 1
     config["head_class_minimum_ratio"] = 0.25
