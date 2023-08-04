@@ -48,7 +48,7 @@ class TreeDataset(Dataset):
         
     def __len__(self):
         # 0th based index
-        return self.annotations.shape[0]-1
+        return self.annotations.shape[0]
 
     def __getitem__(self, index):
         inputs = {}
@@ -390,7 +390,9 @@ class TreeData(LightningDataModule):
                         self.crowns = gpd.GeoDataFrame(pd.concat([self.crowns, IFAS]))
                     except:
                         pass
-                    
+
+                self.crowns = self.crowns.loc[:,self.crowns.columns.isin(["individual","geo_index","tile_year","CHM_height","plotID","height","geometry","taxonID","RGB_tile","HSI_tile","filename","siteID","image_path","score","box_id","hand_box","fixed_box"])]
+
                 self.crowns.to_file("{}/crowns.shp".format(self.data_dir))                
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(self.crowns.taxonID.unique()))
