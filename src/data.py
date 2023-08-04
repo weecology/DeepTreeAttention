@@ -48,7 +48,7 @@ class TreeDataset(Dataset):
         
     def __len__(self):
         # 0th based index
-        return self.annotations.shape[0]
+        return self.annotations.shape[0]-1
 
     def __getitem__(self, index):
         inputs = {}

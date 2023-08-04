@@ -1,0 +1,6 @@
+branch,siteID,mydict
+fix_padding,SERC,'{"image_size":"5"}'
+fix_padding,SERC,'{"image_size":"10"}'
+fix_padding,SERC,'{"image_size":"20"}'
+fix_padding,SERC,'{"image_size":"50"}'
+fix_padding,SERC,'{"image_size":"100"}'
