@@ -15,7 +15,7 @@ def test_TreeDataset(m, dm, config):
     #Train loader
     ds = data.TreeDataset(df=dm.train, config=dm.config)
     individuals, inputs, label = ds[0]    
-    assert inputs["HSI"].shape == (config["bands"], config["image_size"], config["image_size"])
+    assert inputs["HSI"].shape == (3, config["image_size"], config["image_size"])
     
 def test_sample_plots(dm, config):
     train, test = data.sample_plots(shp=dm.crowns, min_test_samples=10, min_train_samples=10)

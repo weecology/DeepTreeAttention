@@ -440,21 +440,6 @@ class TreeData(LightningDataModule):
                 self.annotations = self.annotations.merge(rgb_annotations[["individual","tile_year","RGB_image_path"]], on=["individual","tile_year"])
                 self.annotations.to_csv("{}/annotations.csv".format(self.data_dir))
                 
-                # Write hand annotated crops, if available.
-                hand_annotations = self.crowns[self.crowns.hand_box.notnull()].copy()
-                hand_annotations["geometry"] = hand_annotations.hand_box
-                self.hand_annotations = generate.generate_crops(
-                    hand_annotations,
-                    savedir=self.data_dir,
-                    img_pool=self.hsi_pool,
-                    h5_pool=self.h5_pool,
-                    convert_h5=self.config["convert_h5"],   
-                    rgb_pool=self.rgb_pool,
-                    HSI_tif_dir=self.config["HSI_tif_dir"],
-                    client=self.client,
-                    as_numpy=True,
-                    suffix="hand_annotation"
-                )
             else:
                 self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir))
                 
