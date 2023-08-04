@@ -48,7 +48,7 @@ existing_test_csv:
 ### Data loader Config
 # Resized pixel size of the crowns. Square crops around each pixel of size x
 image_size: 10
-pad_or_resize: 'resize'
+pad_or_resize: 'pad'
 preload_images: True
 preload_image_dict: True
 workers: 0
