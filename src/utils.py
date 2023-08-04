@@ -90,16 +90,22 @@ class ZeroPad(object):
         # Get the original image size
         img_channels, img_height, img_width = img.size()
 
-        # Calculate the padding amounts on both sides
+        # Calculate the padding amounts on all sides
         pad_height = self.target_size - img_height
         pad_width = self.target_size - img_width
 
+        left = int(pad_width/2)
+        right = self.target_size - img_height - left
+
+        top = int(pad_height/2)
+        bottom = self.target_size - img_height - top
+
         # Apply zero padding using torch.nn.functional.pad
-        img = F.pad(img, (0, pad_width, 0, pad_height), value=0)
+        img = F.pad(img, (left, right, top, bottom), value=0)
 
         return img
 
-def load_image(img_path=None, image_size=30, pad=True):
+def load_image(img_path=None):
     """Load and preprocess an image for training/prediction"""
     if os.path.splitext(img_path)[-1] == ".npy":
         try:
