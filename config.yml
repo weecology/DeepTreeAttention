@@ -60,7 +60,7 @@ pretrain_state_dict:
 pretrain_epochs: 200
 
 ### Training Parameters
-gpus: 2
+gpus: 1
 batch_size: 12
 bands: 349
 head_class_minimum_ratio: 0.4
