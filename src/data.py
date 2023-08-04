@@ -11,7 +11,6 @@ from src import generate, CHM, augmentation, megaplot, neon_paths, sampler
 from src.models import dead
 from src.utils import *
 from src.visualize import view_plot
-from src.predict import predict_dead
 
 from shapely.geometry import Point
 import torch
