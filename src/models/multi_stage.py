@@ -87,7 +87,7 @@ class TreeDataset(Dataset):
 
                 images[str(year)] = image
                 
-        images = {key: self.transformer(value, self.train) for key, value in images.items()}
+        images = {key: self.transformer(value) for key, value in images.items()}
         inputs["HSI"] = images
 
         if self.train:
