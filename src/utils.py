@@ -175,7 +175,7 @@ def preload_image_dict(df, config):
                 images[str(year)] = image = torch.zeros(config["bands"], config["image_size"],  config["image_size"])  
                 continue
             image_path = os.path.join(config["crop_dir"], year_annotations)
-            image = load_image(image_path, image_size=config["image_size"])                        
+            image = load_image(image_path)                        
             images[str(year)] = image
         image_dict[individual] = images 
     
