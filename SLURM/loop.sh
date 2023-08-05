@@ -16,9 +16,9 @@ module load git
 
 source activate DeepTreeAttention
 
-cp -r ~/DeepTreeAttention/ $TMPDIR
+#cp -r ~/DeepTreeAttention/ $TMPDIR
 
-cd $TMPDIR/DeepTreeAttention
+#cd $TMPDIR/DeepTreeAttention
 
 git checkout $1
 
