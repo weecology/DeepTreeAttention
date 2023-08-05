@@ -95,7 +95,7 @@ class ZeroPad(object):
         pad_width = self.target_size - img_width
 
         left = int(pad_width/2)
-        right = self.target_size - img_height - left
+        right = self.target_size - img_width - left
 
         top = int(pad_height/2)
         bottom = self.target_size - img_height - top
