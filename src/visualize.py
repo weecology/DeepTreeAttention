@@ -1,6 +1,7 @@
 import glob
 import rasterio
 import tempfile
+import numpy as np
 import matplotlib.pyplot as plt
 
 from rasterio.plot import show
@@ -80,6 +81,22 @@ def index_to_example(index, individuals,RGB_tiles, test_crowns, test_points, com
     except:
         return {"sample": None, "assetId": None}
         
+def view_samples(ds, samples, comet_logger=None):
+    """Visualize a few samples as images and spectra"""
+    tmpdir = tempfile.gettempdir()
+    for x in range(samples):
+        individual, inputs, label = ds[x]
+        three_band_HSI = inputs["HSI"][[55,90,115], :,:]
+        for x in inputs["HSI"].reshape(inputs["HSI"].shape[0], np.prod(inputs["HSI"].shape[1:])).T:
+                plt.plot(x)
+        if comet_logger:
+                comet_logger.experiment.log_image(
+                image_data=three_band_HSI.numpy(),
+                    name=individual,
+                    image_channels="first"
+                    )
+                plt.savefig("{}/{}_spectra.png".format(tmpdir, individual))
+                comet_logger.experiment.log_image("{}/{}_spectra.png".format(tmpdir, individual))
 
 def confusion_matrix(comet_experiment, yhats, y, labels, individuals,RGB_tiles, test_points, test_crowns, name):
     #Confusion matrix

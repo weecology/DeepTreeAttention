@@ -41,7 +41,7 @@ class TreeDataset(Dataset):
             self.labels = self.annotations.set_index("individual").label.to_dict()
         
         # Create augmentor
-        self.transformer = augmentation.train_augmentation(image_size=self.image_size)
+        self.transformer = augmentation.augment(image_size=self.image_size, train=train, pad_or_resize=config["pad_or_resize"])
                      
         # Pin data to memory if desired 
         if self.config["preload_images"]:
@@ -57,7 +57,7 @@ class TreeDataset(Dataset):
                             images[str(year)] = image = torch.zeros(self.config["bands"], self.image_size, self.image_size)  
                             continue
                         image_path = os.path.join(self.config["crop_dir"], year_annotations)
-                        image = utils.load_image(image_path, image_size=self.image_size)                        
+                        image = utils.load_image(image_path)                        
                         images[str(year)] = image
                     self.image_dict[individual] = images
             
@@ -70,7 +70,6 @@ class TreeDataset(Dataset):
         individual = self.individuals[index]      
         if self.config["preload_images"]:
             images = self.image_dict[individual]
-            images = {key: self.transformer(value) for key, value in images.items()}
         else:
             images = { }
             ind_annotations = self.image_paths[individual]
@@ -82,15 +81,15 @@ class TreeDataset(Dataset):
                     continue
                 image_path = os.path.join(self.config["crop_dir"], year_annotations)
                 try:
-                    image = utils.load_image(image_path, image_size=self.image_size)
+                    image = utils.load_image(image_path)
                 except ValueError:
                     return None
-                if self.train:
-                    image = self.transformer(image)   
+
                 images[str(year)] = image
                 
+        images = {key: self.transformer(value) for key, value in images.items()}
         inputs["HSI"] = images
-        
+
         if self.train:
             label = self.labels[individual]
             label = torch.tensor(label, dtype=torch.long)

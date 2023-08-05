@@ -71,7 +71,7 @@ def test_run(tmpdir, sample_crowns, rgb_pool):
     assert len(glob.glob("{}/*.shp".format(tmpdir))) > 0    
 
 @pytest.mark.parametrize("use_client",[True,False])
-def test_generate_crops(tmpdir, ROOT, rgb_path, rgb_pool, sample_crowns, use_client):
+def test_generate_crops(tmpdir, ROOT, config, rgb_path, rgb_pool, sample_crowns, use_client):
     if use_client:
         client = distributed.Client()
     else:
@@ -81,15 +81,16 @@ def test_generate_crops(tmpdir, ROOT, rgb_path, rgb_pool, sample_crowns, use_cli
     gdf.geometry = gdf.geometry.buffer(1)
     gdf["RGB_tile"] = rgb_path
     gdf["box_id"] = gdf.index
-        
+    img_pool = glob.glob("{}*.tif".format(config["HSI_tif_dir"]))
+
     annotations = generate.generate_crops(
         gdf=gdf,
         rgb_pool=rgb_pool,
         convert_h5=False,
-        img_pool=rgb_pool,
+        img_pool=img_pool,
         h5_pool=None,
         suffix="HSI",
         client=client,
         savedir=tmpdir)
     
-    assert annotations.tile_year.unique() == "2019" 
+    assert annotations.tile_year.unique() == "2018" 

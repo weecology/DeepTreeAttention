@@ -10,7 +10,7 @@ from pytorch_lightning import LightningDataModule
 from src import generate, CHM, augmentation, megaplot, neon_paths, sampler
 from src.models import dead
 from src.utils import *
-from src.visualize import view_plot
+from src.visualize import view_plot, view_samples
 
 from shapely.geometry import Point
 import torch
@@ -32,19 +32,20 @@ class TreeDataset(Dataset):
             self.annotations = df
         self.train = train
         self.config = config         
-        self.image_size = config["image_size"]
 
         # Create augmentor
-        self.transformer = augmentation.train_augmentation(image_size=self.image_size)
+        self.transformer = augmentation.augment(
+            train = self.train,
+            pad_or_resize=config["pad_or_resize"],
+            image_size = self.config["image_size"])
                         
         # Pin data to memory if desired
         if self.config["preload_images"]:
             self.image_dict = {}
             for index, row in self.annotations.iterrows():
                 image_path = os.path.join(self.config["crop_dir"],row["image_path"])
-                self.image_dict[index] = load_image(image_path, image_size=self.image_size)
+                self.image_dict[index] = load_image(image_path)
         
-
     def __len__(self):
         # 0th based index
         return self.annotations.shape[0]
@@ -58,14 +59,13 @@ class TreeDataset(Dataset):
         else:
             image_basename = self.annotations.image_path.iloc[index]  
             image_path = os.path.join(self.config["crop_dir"],image_basename)                
-            image = load_image(image_path, image_size=self.image_size)
+            image = load_image(image_path)
             inputs["HSI"] = image
+        inputs["HSI"] = self.transformer(inputs["HSI"])
 
         if self.train:
             label = self.annotations.label.iloc[index]
             label = torch.tensor(label, dtype=torch.long)
-            inputs["HSI"] = self.transformer(inputs["HSI"])
-
             return individual, inputs, label
         else:
             return individual, inputs
@@ -166,7 +166,6 @@ def filter_data(path, config):
     shp.loc[shp.epsg=="3265N","epsg"] = "32605"
 
     return shp
-
 
 def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     """Sample and split a pandas dataframe based on plotID
@@ -391,7 +390,9 @@ class TreeData(LightningDataModule):
                         self.crowns = gpd.GeoDataFrame(pd.concat([self.crowns, IFAS]))
                     except:
                         pass
-                    
+
+                self.crowns = self.crowns.loc[:,self.crowns.columns.isin(["individual","geo_index","tile_year","CHM_height","plotID","height","geometry","taxonID","RGB_tile","HSI_tile","filename","siteID","image_path","score","box_id","hand_box","fixed_box"])]
+
                 self.crowns.to_file("{}/crowns.shp".format(self.data_dir))                
                 if self.comet_logger:
                     self.comet_logger.experiment.log_parameter("Species after crown prediction", len(self.crowns.taxonID.unique()))
@@ -546,6 +547,13 @@ class TreeData(LightningDataModule):
             config=self.config,
         )
         
+        # Log a few train examples, check if dataset is long enough
+        if len(self.train_ds) < 20:
+            samples = len(self.train_ds) -1
+        else:
+            samples = 20
+        view_samples(ds=self.train_ds, samples = samples, comet_logger=self.comet_logger)
+
         self.val_ds = TreeDataset(
             df=test,
             config=self.config,

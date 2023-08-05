@@ -4,6 +4,7 @@ import json
 import os
 import numpy as np
 from torchvision import transforms
+import torch.nn.functional as F
 from sklearn import preprocessing
 import torch
 import yaml
@@ -79,23 +80,32 @@ def preprocess_image(image, channel_is_first=False):
     
     return normalized
 
-def resize_or_pad(image, image_size, pad=False):
-    """Resize an image to a square size, or pad with zeros to a square size. This is useful for creating batches with varying size data
-    Args:
-        image: a numpy array
-        image_size: pixel width or height
-        pad: Pad with zeros instead of resizing
-    """
-    
-    if image_size is not -1:
-        image = transforms.functional.resize(image, size=(image_size,image_size), interpolation=transforms.InterpolationMode.NEAREST)
-    else:
-        pad_height =  image.shape[1]
-        pad_width = image.shape[2]
-        image = transforms.functional.pad(image, padding=[pad_width, pad_height])
-    return image
+class ZeroPad(object):
+    def __init__(self, target_size):
+        self.target_size = target_size
 
-def load_image(img_path=None, image_size=30, pad=True):
+    def __call__(self, sample):
+        img = sample
+
+        # Get the original image size, allow for batch dim, just take last two positions
+        img_height, img_width = img.size()[-2:]
+
+        # Calculate the padding amounts on all sides
+        pad_height = self.target_size - img_height
+        pad_width = self.target_size - img_width
+
+        left = int(pad_width/2)
+        right = self.target_size - img_width - left
+
+        top = int(pad_height/2)
+        bottom = self.target_size - img_height - top
+
+        # Apply zero padding using torch.nn.functional.pad
+        img = F.pad(img, (left, right, top, bottom), value=0)
+
+        return img
+
+def load_image(img_path=None):
     """Load and preprocess an image for training/prediction"""
     if os.path.splitext(img_path)[-1] == ".npy":
         try:
@@ -112,9 +122,6 @@ def load_image(img_path=None, image_size=30, pad=True):
 
     image = preprocess_image(image, channel_is_first=True)
     
-    #resize image
-    image = resize_or_pad(image, image_size, pad=pad)
-
     return image
 
 def my_collate(batch):
@@ -168,7 +175,7 @@ def preload_image_dict(df, config):
                 images[str(year)] = image = torch.zeros(config["bands"], config["image_size"],  config["image_size"])  
                 continue
             image_path = os.path.join(config["crop_dir"], year_annotations)
-            image = load_image(image_path, image_size=config["image_size"])                        
+            image = load_image(image_path)                        
             images[str(year)] = image
         image_dict[individual] = images 
     

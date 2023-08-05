@@ -35,7 +35,7 @@ def rgb_pool(ROOT):
 
 @pytest.fixture(scope="session")
 def rgb_path(ROOT):
-    rgb_path = "{}/tests/data/HARV/2019/FullSite/D01/2019_HARV_6/L3/Camera/Mosaic/2019_D01_HARV_DP3_726000_4699000_image.tif".format(ROOT)
+    rgb_path = "{}/tests/data/HARV/2019/FullSite/D01/2019_HARV_6/L3/Camera/Mosaic/2019_HARV_6_725000_4700000_image.tif".format(ROOT)
     
     return rgb_path
 
@@ -88,8 +88,8 @@ def config(ROOT, tmpdir_factory):
     config["crop_dir"] = tmpdir_factory.mktemp('data')
     config["data_dir"] = tmpdir_factory.mktemp('output')
     config["rgb_sensor_pool"] = "{}/tests/data/HARV/2019/FullSite/D01/2019_HARV_6/L3/Camera/Mosaic/*.tif".format(ROOT)
-    config["HSI_sensor_pool"] = "{}/tests/data/HARV/2019/FullSite/D01/2019_HARV_6/L3/Camera/Mosaic/*.tif".format(ROOT)
-
+    config["HSI_sensor_pool"] = "{}/tests/data/hsi/".format(ROOT)
+    
     return config
 
 #Data module
