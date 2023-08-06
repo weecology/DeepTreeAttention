@@ -1,11 +1,2 @@
 branch,siteID,mydict
-fix_padding,SERC,'{"image_size":"5","pad_or_resize":"pad"}'
-fix_padding,SERC,'{"image_size":"20","pad_or_resize":"pad"}'
-fix_padding,SERC,'{"image_size":"30","pad_or_resize":"pad"}'
-fix_padding,SERC,'{"image_size":"5","pad_or_resize":"resize"}'
-fix_padding,SERC,'{"image_size":"10","pad_or_resize":"resize"}'
-fix_padding,SERC,'{"image_size":"20","pad_or_resize":"resize"}'
-fix_padding,SERC,'{"image_size":"30","pad_or_resize":"resize"}'
-fix_padding,SERC,'{"image_size":"40","pad_or_resize":"resize"}'
-
-
+species_release,RMNP,'{"train_test_commit":""}'
