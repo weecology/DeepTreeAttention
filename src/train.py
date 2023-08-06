@@ -47,7 +47,7 @@ def main(config, site=None, git_branch=None, git_commit=None, client=None):
         create_train_test = False
         
     data_module = data.TreeData(
-        csv_file="{}/data/raw/neon_vst_data_2022.csv".format(ROOT),
+        csv_file="{}/data/raw/neon_vst_data_2023.csv".format(ROOT),
         data_dir=config["crop_dir"],
         config=config,
         client=client,
