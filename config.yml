@@ -42,7 +42,7 @@ replace_bounding_boxes: True
 # Regenerate bounding box sensor crops
 replace_crops: True
 # Recreate a train test split
-train_test_commit:
+train_test_commit: 29db78ee317244d191c50030bbf6c37b
 # Use existing plotIDs for train/test split
 existing_test_csv: 
 ### Data loader Config
@@ -76,7 +76,7 @@ lr_flat: 0.001
 
 fast_dev_run: False
 accelerator: auto
-epochs: 50
+epochs: 200
 snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
 
 ### Evaluation config
