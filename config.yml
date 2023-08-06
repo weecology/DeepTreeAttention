@@ -11,7 +11,7 @@ HSI_tif_dir: /orange/ewhite/b.weinstein/DeepTreeAttention/Hyperspectral_tifs/yea
 min_stem_diameter: 10
 
 # Minimum number of test samples per class to be included
-min_train_samples: 5
+min_train_samples: 2
 min_test_samples: 8
 max_samples_per_class: 5000
 
@@ -42,13 +42,13 @@ replace_bounding_boxes: True
 # Regenerate bounding box sensor crops
 replace_crops: True
 # Recreate a train test split
-train_test_commit: e32129bc746d442583484d215e73f499
+train_test_commit:
 # Use existing plotIDs for train/test split
 existing_test_csv: 
 ### Data loader Config
 # Resized pixel size of the crowns. Square crops around each pixel of size x
 image_size: 20
-pad_or_resize: pad
+pad_or_resize: resize
 preload_images: True
 preload_image_dict: True
 workers: 0
@@ -76,7 +76,7 @@ lr_flat: 0.001
 
 fast_dev_run: False
 accelerator: auto
-epochs: 200
+epochs: 50
 snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
 
 ### Evaluation config
