@@ -42,9 +42,9 @@ replace_bounding_boxes: True
 # Regenerate bounding box sensor crops
 replace_crops: True
 # Recreate a train test split
-train_test_commit: 29db78ee317244d191c50030bbf6c37b
+train_test_commit:
 # Use existing plotIDs for train/test split
-existing_test_csv: 
+existing_test_csv: /blue/ewhite/b.weinstein/DeepTreeAttention/test_1045e7447f4c95321dad4254c11c579184cdb6e0_['OSBS'].csv 
 ### Data loader Config
 # Resized pixel size of the crowns. Square crops around each pixel of size x
 image_size: 20
@@ -61,9 +61,9 @@ pretrain_epochs: 200
 
 ### Training Parameters
 gpus: 1
-batch_size: 24
+batch_size: 96
 bands: 349
-head_class_minimum_ratio: 0.4
+head_class_minimum_ratio: 0.25
 seperate_oak_model: False
 
 # Learning rates
