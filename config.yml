@@ -13,7 +13,7 @@ min_stem_diameter: 10
 # Minimum number of test samples per class to be included
 min_train_samples: 5
 min_test_samples: 8
-max_samples_per_class: 500
+max_samples_per_class: 1000
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
 # Set to 1 for debugging, no files will be written
@@ -33,7 +33,7 @@ dead_model: "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Checkout data artifact from comet
-use_data_commit: cbc73549b74041c19d9202173443db0a
+use_data_commit: 10e72d7608c24676970fab3086bfc2a9
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 
@@ -44,7 +44,7 @@ replace_crops: True
 # Recreate a train test split
 train_test_commit:
 # Use existing plotIDs for train/test split
-existing_test_csv: /blue/ewhite/b.weinstein/DeepTreeAttention/f3fa3774bb5d47599b56a53545652929/test_2dbdb111b0435f24dd6689e696e3d8a5d57357fd_['OSBS'].csv
+existing_test_csv:
 ### Data loader Config
 # Resized pixel size of the crowns. Square crops around each pixel of size x
 image_size: 20

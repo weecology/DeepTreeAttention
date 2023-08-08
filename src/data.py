@@ -488,7 +488,7 @@ class TreeData(LightningDataModule):
         if not "pretrain" in self.site:
             # Get species present at site, as well as those species from other sites
             self.annotations = self.annotations[self.annotations.siteID == self.site].reset_index(drop=True)
-                
+
         if self.config["existing_test_csv"]:
             print("Reading in existing test_csv: {}".format(self.config["existing_test_csv"]))
             existing_test = pd.read_csv(self.config["existing_test_csv"])
