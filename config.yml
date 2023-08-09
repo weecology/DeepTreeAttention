@@ -33,7 +33,7 @@ dead_model: "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Checkout data artifact from comet
-use_data_commit: 10e72d7608c24676970fab3086bfc2a9
+use_data_commit: e3420b82485843f0aa436921ac5f1173
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 
