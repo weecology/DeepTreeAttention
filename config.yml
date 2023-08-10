@@ -13,7 +13,7 @@ min_stem_diameter: 10
 # Minimum number of test samples per class to be included
 min_train_samples: 5
 min_test_samples: 8
-max_samples_per_class: 1000
+max_samples_per_class: 100000
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
 # Set to 1 for debugging, no files will be written
@@ -42,7 +42,7 @@ replace_bounding_boxes: True
 # Regenerate bounding box sensor crops
 replace_crops: True
 # Recreate a train test split
-train_test_commit:
+train_test_commit: 29361a03a0c34ce2ad27fca461d0738a
 # Use existing plotIDs for train/test split
 existing_test_csv:
 ### Data loader Config

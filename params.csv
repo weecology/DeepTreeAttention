@@ -1,6 +1,6 @@
 branch,siteID,mydict
-species_release,UNDE,'{"train_test_commit":"f7cc543510fb2d6fd89f8078b41feae3e906c0be","batch_size":12}'
-species_release,UNDE,'{"train_test_commit":"f7cc543510fb2d6fd89f8078b41feae3e906c0be","batch_size":24}'
-species_release,UNDE,'{"train_test_commit":"f7cc543510fb2d6fd89f8078b41feae3e906c0be","batch_size":48}'
-species_release,UNDE,'{"train_test_commit":"f7cc543510fb2d6fd89f8078b41feae3e906c0be","batch_size":96}'
-species_release,UNDE,'{"train_test_commit":"f7cc543510fb2d6fd89f8078b41feae3e906c0be","batch_size":2}'
+species_release,UNDE,'{"train_test_commit":"5a68131be3f243d59f5ef0b584c4cd0c","batch_size":12}'
+species_release,UNDE,'{"train_test_commit":"5a68131be3f243d59f5ef0b584c4cd0c","batch_size":24}'
+species_release,UNDE,'{"train_test_commit":"5a68131be3f243d59f5ef0b584c4cd0c","batch_size":48}'
+species_release,UNDE,'{"train_test_commit":"5a68131be3f243d59f5ef0b584c4cd0c","batch_size":96}'
+species_release,UNDE,'{"train_test_commit":"5a68131be3f243d59f5ef0b584c4cd0c","batch_size":2}'
