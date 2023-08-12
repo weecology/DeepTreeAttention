@@ -167,10 +167,10 @@ class MultiStage(LightningModule):
             self.broadleaf_species = [x for x in broadleaf_species if not x in self.common_species]
             
             #remove anything not current in taxonomy and warn
-            missing_ids = self.train_df.loc[~self.train_df.taxonID.isin(self.taxonomy.taxonID)].taxonID.unique()
-            warnings.warn("The following ids are not in the taxonomy: {}!".format(missing_ids))
-            self.train_df = self.train_df[~self.train_df.taxonID.isin(missing_ids)]
-            self.test_df= self.test_df[~self.test_df.taxonID.isin(missing_ids)]
+            # missing_ids = self.train_df.loc[~self.train_df.taxonID.isin(self.taxonomy.taxonID)].taxonID.unique()
+            # warnings.warn("The following ids are not in the taxonomy: {}!".format(missing_ids))
+            # self.train_df = self.train_df[~self.train_df.taxonID.isin(missing_ids)]
+            # self.test_df= self.test_df[~self.test_df.taxonID.isin(missing_ids)]
                     
             if self.config["preload_image_dict"]:
                 self.train_image_dict = utils.preload_image_dict(self.train_df, self.config)
@@ -211,6 +211,9 @@ class MultiStage(LightningModule):
     def dominant_class_model(self, df, image_dict=None):
         """A level 0 model splits out the dominant class and compares to all other samples"""
         level_label_dict = {value:key for key, value in enumerate(self.common_species)}
+        if len(level_label_dict) < 5:
+            raise ValueError("No dominant species or broadleaf or conifer split")
+
         if len(self.conifer_species) == 1:
             level_label_dict[self.conifer_species[0]] = len(level_label_dict)    
         elif len(self.conifer_species) > 1:
