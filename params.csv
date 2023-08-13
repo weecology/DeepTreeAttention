@@ -1,6 +1,5 @@
 branch,siteID,mydict
-species_release,HARV,'{"batch_size":24}'
-species_release,HARV,'{"image_size":30, "batch_size":24}'
-species_release,HARV,'{"batch_size":12}'
-species_release,HARV,'{"batch_size":96}'
-
+species_release,BART,'{"image_size":"30","batch_size":"24"}'
+species_release,BART,'{"image_size":"20","batch_size":"24"}'
+species_release,BART,'{"image_size":"20","batch_size":"12"}'
+species_release,BART,'{"image_size":"30","batch_size":"12"}'
