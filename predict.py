@@ -85,7 +85,7 @@ species_model_paths = {
     "MLBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b5efc0037529431092db587727fb4fe9_MLBS.pt",
     "BLAN":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/533e410797c945618c72b2a54176ed61_BLAN.pt",
     "UKFS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/084b83c44d714f23b9d96e0a212f11f1_UKFS.pt",
-    "BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/88b61343749842cb8b1ac0d681f298ba_BART.pt",
+    "BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/58ac69d485d645ad8b4a872ff7ea7588_BART.pt",
     "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/973a01b0c1a349ebaf4fc8454ffc624d_HARV.pt"}
 
 def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h5_pool, CHM_pool):
