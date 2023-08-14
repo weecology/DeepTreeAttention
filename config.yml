@@ -49,8 +49,8 @@ existing_test_csv:
 # Resized pixel size of the crowns. Square crops around each pixel of size x
 image_size: 30
 pad_or_resize: resize
-preload_images: False
-preload_image_dict: False
+preload_images: True
+preload_image_dict: True
 workers: 0
 taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
@@ -72,9 +72,9 @@ lr_dominant_class: 0.000005
 lr_conifer: 0.000005
 lr_broadleaf: 0.00001
 lr_oak: 0.00005
-lr_flat: 0.001
+lr_flat: 0.0005
 
-fast_dev_run: True
+fast_dev_run: False
 accelerator: auto
 epochs: 200
 snapshot_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/
