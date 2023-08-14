@@ -37,7 +37,7 @@ def test_load(config, dm, m, tmpdir, preload_images):
     m2 = multi_stage.MultiStage.load_from_checkpoint("{}/test_model.pt".format(tmpdir), config=config)
 
 def test_fit_no_conifer(config, dm):   
-    one_conifer = dm.test[dm.test.taxonID.isin(["QULA2","QUEGE2","QUNI","MAGNO","LIST2","ACRU","NYSY","CAGL8","QUAL3"])]
+    one_conifer = dm.test[dm.test.taxonID.isin(["ACRU","BELE","PIST","QUAL","QURU"])]
     m  = multi_stage.MultiStage(train_df=one_conifer, test_df=one_conifer, config=config)
     m.setup("fit")
     trainer = Trainer(fast_dev_run=False, max_epochs=1, enable_checkpointing=False)
@@ -50,7 +50,7 @@ def test_fit_no_conifer(config, dm):
         metrics = trainer.validate(m)
         
 def test_fit_one_conifer(config, dm):   
-    one_conifer = dm.test[dm.test.taxonID.isin(["QULA2","QUEGE2","QUNI","MAGNO","LIST2","ACRU","NYSY","CAGL8","QUAL3","PIPA2"])]
+    one_conifer = dm.test[dm.test.taxonID.isin(["ACRU","BELE","PIST","QUAL","QURU","TSCA"])]
     m  = multi_stage.MultiStage(train_df=one_conifer, test_df=one_conifer, config=config)
     
     trainer = Trainer(fast_dev_run=False, max_epochs=1, enable_checkpointing=False)
@@ -65,14 +65,14 @@ def test_fit_one_conifer(config, dm):
         metrics = trainer.validate(m)
 
 def test_two_species(config, dm):   
-    two_species = dm.test[dm.test.taxonID.isin(["MAGNO","LIST2"])]
+    two_species = dm.test[dm.test.taxonID.isin(["ACRU","BELE"])]
     m  = multi_stage.MultiStage(train_df=two_species, test_df=two_species, config=config)
-    
     trainer = Trainer(fast_dev_run=False, max_epochs=1, enable_checkpointing=False)
     
     #Model can be trained and validated
     m.setup("fit")
-    
+    assert "flat" in m.level_names
+
     for key in m.level_names:
         m.current_level = key
         m.configure_optimizers()
@@ -82,6 +82,8 @@ def test_two_species(config, dm):
 def test_fit(config, m):
     trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=1)
     
+    assert "Broadleaf" in m.level_names
+
     #Model can be trained and validated
     for key in m.level_names:
         m.current_level = key
