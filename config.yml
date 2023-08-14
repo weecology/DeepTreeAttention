@@ -65,6 +65,7 @@ batch_size: 48
 bands: 349
 head_class_minimum_ratio: 0.4
 seperate_oak_model: False
+max_flat_species: 7
 
 # Learning rates
 lr: 0.0001

@@ -11,6 +11,7 @@ from pytorch_lightning.loggers import CometLogger
 from pytorch_lightning import Trainer
 import sys
 import random
+import copy
 
 from src import predict
 from src import data
@@ -170,7 +171,12 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         crop_futures.append(crop_future)
     
     # load model
-    m = multi_stage.MultiStage.load_from_checkpoint(model_path, config=config)
+    # Hot fix for several small sites that were better in hierarchical models
+    site_config = copy.deepcopy(config)
+    if any(x in model_path for x in ["SJER","WREF","YELL"]):
+        config["max_flat_species"] = 0
+
+    m = multi_stage.MultiStage.load_from_checkpoint(model_path, config=site_config)
     trainer = Trainer()
     for finished_crop in as_completed(crop_futures):
         try:
@@ -196,18 +202,18 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
                 m=m,
                 savedir=prediction_dir,
                 site=site,
-                config=config)
+                config=site_config)
         except:
             traceback.print_exc()
             continue
             
     return crop_futures
             
-rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config)
+rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(site_config)
 futures = create_landscape_map(
     site,
     species_model_paths[site],
-    config,
+    site_config,
     client, 
     rgb_pool=rgb_pool,
     h5_pool=h5_pool,
