@@ -211,7 +211,7 @@ class MultiStage(LightningModule):
     def dominant_class_model(self, df, image_dict=None):
         """A level 0 model splits out the dominant class and compares to all other samples"""
         level_label_dict = {value:key for key, value in enumerate(self.common_species)}
-        if len(df.taxonID.unique()) < 5:
+        if len(df.taxonID.unique()) < 7:
             raise ValueError("There are only {} species, choosing flat model".format(len(df.taxonID.unique())))
 
         if len(self.conifer_species) == 1:
