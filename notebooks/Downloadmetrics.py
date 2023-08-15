@@ -1,33 +1,35 @@
 #Download hyperparameters and metrics 
 from comet_ml import API
 import os
+import io
 import pandas as pd
+import traceback
 
 species_model_paths = {
-    "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/def58fe6c0fa4b8991e5e80f63a20acd_NIWO.pt",
-    "RMNP": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/bd761ac1c0d74268a59e87aa85b9fa9c_RMNP.pt",    
-    "SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/702f6a7cf1b24307b8a23e25148f7559_SJER.pt",
-    "WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/a5453bab67b14eb8b01da57f79590409_WREF.pt",
-    "SERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/95f74a748e2f48d5bed0635228fed41a_SERC.pt",
-    "GRSM":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/127191a057e64a7fb7267cc889e56c25_GRSM.pt",
-    "DEJU":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/0e3178ac37434aeb90ac207c18a9caf7_DEJU.pt",
-    "BONA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/2975c34a7ca540df9c54d261ef95551e_BONA.pt",
-    "TREE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/f191ef1bb2d54d459eb4f12d73756822_TREE.pt",
-    "STEI":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/951f766a48aa4a0baa943d9f6d26f3e0_STEI.pt",
-    "UNDE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/185caf9f910c4fd3a7f5e470b6828090_UNDE.pt",
-    "DELA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/1d22265240bc4e52b77df78ce557e40f_DELA.pt",
-    "LENO":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/537b80fd46e64c77a1c367dcbef713e3_LENO.pt",
-    "OSBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9fca032e2322479b82506e700de065f5_OSBS.pt",
+    "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/000b1ecf0ca6484893e177e3b5d42c7e_NIWO.pt",
+    "RMNP": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9d71632542494af494c83fb4487747ce_RMNP.pt",    
+    "SJER":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ecfdd5bf772a40cab89e89fa1549f13b_SJER.pt",
+    "WREF":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/686204cb0d5343b0b20613a6cf25f69b_WREF.pt",
+    "SERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/20ce0ca489444e84997e82b4b293e86c_SERC.pt",
+    "GRSM":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/50da72a1cb6042338d96244d968a365b_GRSM.pt",
+    "DEJU":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/aba32c72d6bd4747abfa0d5cfbba230d_DEJU.pt",
+    "BONA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/152a61614a4a48cf84b27f5880692230_BONA.pt",
+    "TREE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/990e6f1101b2423f86d4cd16f373deab_TREE.pt",
+    "STEI":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/35220561e5834d03b1d098c84a00a171_STEI.pt",
+    "UNDE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/a6dc9a627a7446acbc40c5b7913a45e9_UNDE.pt",
+    "DELA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5d3578860bfd4fd79072de872452ea79_DELA.pt",
+    "LENO":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b7d77034801c49dcab5b922b5704cb9e_LENO.pt",
+    "OSBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/00fef05fa70243f1834ee437406150f7_OSBS.pt",
     "JERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/86d51ae4b7a34308bc99c19f8eeadf41_JERC.pt",
-    "TALL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/c52006e0461b4363956335203e42f786_TALL.pt",
-    "CLBJ":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/83c1d8fd4c69479185ed3224abb6e8f9_CLBJ.pt",
-    "TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b9b6882705d24fe6abf12282936ababb_TEAK.pt",
-    "SOAP":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/97695ef8ec6a481fb3515d29d2cf33bb_SOAP.pt",
-    "YELL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/e1760a6a288747beb83f055155e49109_YELL.pt",                       
-    "MLBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/59f4175b26fc48f8b6f16d0598d49411_MLBS.pt",
-    "BLAN":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ce50bb593a484a28b346e7efe357e0fa_BLAN.pt",
-    "UKFS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/1d9305235bf44f319def7915a4b7b21f_UKFS.pt",
-    "BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/01bfce34aacd455bb1a4b4d80deb16d2_BART.pt",
+    "TALL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/be884a1ac14d4379b52d25903acc7498_TALL.pt",
+    "CLBJ":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/c1e0192b0f43455aadbad593cba0b356_CLBJ.pt",
+    "TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ca17bf7c36fe42e6bd83a358243c012b_TEAK.pt",
+    "SOAP":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/c56b937a94f84e9da774370f4e46a110_SOAP.pt",
+    "YELL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/f2c069f59b164795af482333a5e7fffb_YELL.pt",                       
+    "MLBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b5efc0037529431092db587727fb4fe9_MLBS.pt",
+    "BLAN":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/533e410797c945618c72b2a54176ed61_BLAN.pt",
+    "UKFS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/084b83c44d714f23b9d96e0a212f11f1_UKFS.pt",
+    "BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/58ac69d485d645ad8b4a872ff7ea7588_BART.pt",
     "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/973a01b0c1a349ebaf4fc8454ffc624d_HARV.pt"}
 
 rows = []
@@ -42,9 +44,18 @@ for site in species_model_paths:
         num_classes = experiment.get_parameters_summary("num_species")["valueCurrent"]
         train_samples = experiment.get_parameters_summary("train_samples")["valueCurrent"]
         test_samples = experiment.get_parameters_summary("test_samples")["valueCurrent"]
+        metrics = pd.DataFrame(experiment.get_metrics_summary())
+        metrics.to_csv("/home/b.weinstein/DeepTreeAttention/results/{}_metrics.csv".format(site))
+        train_asset = experiment.get_asset_list()
+        asset_train_id = [x for x in train_asset if "train.csv" == x["fileName"]][0]["assetId"]
+        train_csv = experiment.get_asset(asset_train_id).decode()
+        train_df = pd.read_csv(io.StringIO(train_csv))
+        train_df.to_csv("/home/b.weinstein/DeepTreeAttention/results/{}_train.csv".format(site))
+
         output_row = pd.DataFrame({"site":[site],"Micro-accuracy":[overall_micro],"Macro-accuracy":[overall_macro],"Species":[num_classes],"Train Samples":[train_samples],"Test":[test_samples]})
         rows.append(output_row)
     except:
+        traceback.print_exc()
         print(site)
         continue
     

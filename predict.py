@@ -88,7 +88,7 @@ species_model_paths = {
     "BLAN":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/533e410797c945618c72b2a54176ed61_BLAN.pt",
     "UKFS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/084b83c44d714f23b9d96e0a212f11f1_UKFS.pt",
     "BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/58ac69d485d645ad8b4a872ff7ea7588_BART.pt",
-    "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/973a01b0c1a349ebaf4fc8454ffc624d_HARV.pt"}
+    "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9130a6b5ce544e1280283bf60cab63b0_HARV.pt"}
 
 def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h5_pool, CHM_pool):
     #Prepare directories
@@ -174,7 +174,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     # Hot fix for several small sites that were better in hierarchical models
     site_config = copy.deepcopy(config)
     if any(x in model_path for x in ["SJER","WREF","YELL"]):
-        config["max_flat_species"] = 0
+        site_config["max_flat_species"] = 0
 
     m = multi_stage.MultiStage.load_from_checkpoint(model_path, config=site_config)
     trainer = Trainer()
@@ -209,11 +209,11 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             
     return crop_futures
             
-rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(site_config)
+rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config)
 futures = create_landscape_map(
     site,
     species_model_paths[site],
-    site_config,
+    config,
     client, 
     rgb_pool=rgb_pool,
     h5_pool=h5_pool,
