@@ -12,7 +12,7 @@ species_model_paths = {
     "GRSM":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/50da72a1cb6042338d96244d968a365b_GRSM.pt",
     "DEJU":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/aba32c72d6bd4747abfa0d5cfbba230d_DEJU.pt",
     "BONA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/152a61614a4a48cf84b27f5880692230_BONA.pt",
-    "TREE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/990e6f1101b2423f86d4cd16f373deab_TREE.pt",
+    "TREE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/3201f8a710a24d7b891351fddfa0bf32_TREE.pt",
     "STEI":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/35220561e5834d03b1d098c84a00a171_STEI.pt",
     "UNDE":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/a6dc9a627a7446acbc40c5b7913a45e9_UNDE.pt",
     "DELA":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/5d3578860bfd4fd79072de872452ea79_DELA.pt",
@@ -30,8 +30,9 @@ species_model_paths = {
     "BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/58ac69d485d645ad8b4a872ff7ea7588_BART.pt",
     "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9130a6b5ce544e1280283bf60cab63b0_HARV.pt"}
 
-for model in species_model_paths:
-    prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
+for site in species_model_paths:
+    model = species_model_paths[site]
+    prediction_dir = os.path.join("",
                                       os.path.splitext(os.path.basename(model))[0])  
     files = glob.glob("{}/*.shp".format(prediction_dir))
     total_counts = pd.Series()
@@ -39,6 +40,6 @@ for model in species_model_paths:
         ser = gpd.read_file(f)[["ensembleTa"]].value_counts().reset_index()      
         total_counts = total_counts.add(ser, fill_value=0)
     
-    total_counts.to_csv("{}/abundance.csv".format(prediction_dir))
+    total_counts.to_csv("/home/b.weinstein/DeepTreeAttention/results/{}_abundance.csv".format(site))
     
         
