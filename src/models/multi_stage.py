@@ -452,6 +452,9 @@ class MultiStage(LightningModule):
         individual, inputs = batch
         images = inputs["HSI"]  
         
+        if all([x.sum() == 0 for x in images]):
+            return None
+
         y_hats = []
         for level in self.models:   
             y_hat = self.models[level].forward(images)

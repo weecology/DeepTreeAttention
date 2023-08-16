@@ -1,4 +1,3 @@
-
 import geopandas as gpd
 import traceback
 from src.start_cluster import start
@@ -54,7 +53,7 @@ comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["
 comet_logger.experiment.log_parameters(config)
 
 #client = Client()
-client = start(cpus=1, mem_size="10GB")
+client = start(cpus=3, mem_size="10GB")
 
 #Get site arg
 site=str(sys.argv[1])
@@ -124,14 +123,6 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         
     if len(tiles) == 0:
         raise ValueError("There are no RGB tiles left to run for any year since 2019 for {}".format(site))
-    
-    #tif_futures = client.map(
-        #convert,
-        #tiles,
-        #hyperspectral_pool=h5_pool,
-        #savedir=config["HSI_tif_dir"]
-    #)
-    #wait(tif_futures)
     
     species_futures = []
     crop_futures = []
