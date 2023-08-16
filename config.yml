@@ -33,7 +33,7 @@ dead_model: "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Checkout data artifact from comet
-use_data_commit: fba8ff88ef834016a335e8ce07f38131
+use_data_commit: 120dcc7af7b0440cbb5e83730b088399
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 
@@ -42,12 +42,12 @@ replace_bounding_boxes: True
 # Regenerate bounding box sensor crops
 replace_crops: True
 # Recreate a train test split
-train_test_commit: b0767e515e254f7098359b8d6d5b8352
+train_test_commit:
 # Use existing plotIDs for train/test split
 existing_test_csv:
 ### Data loader Config
 # Resized pixel size of the crowns. Square crops around each pixel of size x
-image_size: 30
+image_size: 20
 pad_or_resize: resize
 preload_images: True
 preload_image_dict: True

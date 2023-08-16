@@ -31,15 +31,21 @@ species_model_paths = {
     "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9130a6b5ce544e1280283bf60cab63b0_HARV.pt"}
 
 for site in species_model_paths:
+    print(site)
     model = species_model_paths[site]
-    prediction_dir = os.path.join("",
+    prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/".format(site),
                                       os.path.splitext(os.path.basename(model))[0])  
     files = glob.glob("{}/*.shp".format(prediction_dir))
-    total_counts = pd.Series()
+    if len(files) == 0:
+        continue
+    total_counts = []
     for f in files:
-        ser = gpd.read_file(f)[["ensembleTa"]].value_counts().reset_index()      
-        total_counts = total_counts.add(ser, fill_value=0)
-    
+        try:
+            ser = gpd.read_file(f)[["sci_name"]].value_counts().reset_index()  
+        except:
+            continue    
+        total_counts.append(ser)
+    total_counts = pd.concat(total_counts).groupby("sci_name").sum()
     total_counts.to_csv("/home/b.weinstein/DeepTreeAttention/results/{}_abundance.csv".format(site))
     
         
