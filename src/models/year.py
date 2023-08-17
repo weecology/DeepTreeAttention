@@ -25,6 +25,7 @@ class learned_ensemble(nn.Module):
             try:
                 score = self.year_models[year](image)
             except KeyError:
+                print("key {} is not in model dict {}".format(year, self.year_models.keys()))
                 continue
             year_scores.append(score)
 
