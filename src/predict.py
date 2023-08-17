@@ -95,7 +95,8 @@ def generate_prediction_crops(crown_path, config, rgb_pool, h5_pool, img_pool, c
         rgb_pool=rgb_pool,
         HSI_tif_dir=os.environ["TMPDIR"],
         client=client,
-        as_numpy=as_numpy
+        as_numpy=as_numpy,
+        suffix="HSI"
     )
     
     if crown_annotations.empty:

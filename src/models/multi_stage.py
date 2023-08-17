@@ -451,13 +451,12 @@ class MultiStage(LightningModule):
         
         individual, inputs = batch
         images = inputs["HSI"]  
-        
-        if all([x.sum() == 0 for x in images]):
-            return None
 
         y_hats = []
         for level in self.models:   
-            y_hat = self.models[level].forward(images)
+            y_hat = self.models[level].forward(images)  
+            if y_hat is None:
+                raise ValueError("images of length {} with keys {} failed on predict step {}".format(len(images), images.keys(), images))          
             y_hat = F.softmax(y_hat, dim=1)
             y_hats.append(y_hat)
         
