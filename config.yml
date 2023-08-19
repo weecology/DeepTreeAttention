@@ -20,11 +20,11 @@ max_samples_per_class: 100000
 iterations: 4000
 
 # Minimum CanopyModel height, leave blank to skip CHM filtering
-min_CHM_height: 3
+min_CHM_height: 2
 # Max difference between measured height and CHM height if CHM > height
 max_CHM_diff: 6
 # Max difference between measured height and CHM height if CHM < height
-CHM_height_limit: 10 
+CHM_height_limit: 8 
 
 # Dead Model filtering
 dead_model: "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
@@ -33,7 +33,7 @@ dead_model: "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4
 megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Checkout data artifact from comet
-use_data_commit: 120dcc7af7b0440cbb5e83730b088399
+use_data_commit: ef9ee30fa09c4d7288c93f3de570a212
 data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
 convert_h5: True
 
@@ -61,7 +61,7 @@ pretrain_epochs: 200
 
 ### Training Parameters
 gpus: 1
-batch_size: 48
+batch_size: 24
 bands: 349
 head_class_minimum_ratio: 0.4
 seperate_oak_model: False

@@ -101,7 +101,7 @@ def lookup_and_convert(rgb_pool, h5_pool, savedir, bounds = None, geo_index=None
         return tif_path
 
 def year_from_tile(path):
-    return path.split("/")[6]
+    return path.split("/")[-8]
 
 def site_from_path(path):
     basename = os.path.splitext(os.path.basename(path))[0]

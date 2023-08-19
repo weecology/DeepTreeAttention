@@ -28,7 +28,7 @@ species_model_paths = {
     "BART":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/58ac69d485d645ad8b4a872ff7ea7588_BART.pt",
     "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9130a6b5ce544e1280283bf60cab63b0_HARV.pt"}
 
-for site in species_model_paths:
+for site in ["TEAK","SOAP"]:
     # Download model
     p = subprocess.Popen(
         "scp hpg:{} /Users/benweinstein/Dropbox/Weecology/Species/SpeciesMaps/snapshots/".format(species_model_paths[site]), shell=True)
