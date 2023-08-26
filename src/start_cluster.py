@@ -89,7 +89,7 @@ def start(cpus=0, gpus=0, mem_size="10GB", cpus_per_gpu=10, gpu_memory="40GB"):
                                nanny=False,
                                scheduler_options={"dashboard_address": ":8787"},
                                local_directory="/orange/idtrees-collab/tmp/",
-                               death_timeout=300)
+                               death_timeout=100)
         print(cluster.job_script())
         cluster.scale(gpus)
 
