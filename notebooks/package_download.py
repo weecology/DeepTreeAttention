@@ -10,7 +10,6 @@ from distributed import wait
 import pandas as pd
 
 # cleanup shapefiles
-
 def clean_up(path):
     a = gpd.read_file(path)
     try:
@@ -27,15 +26,10 @@ def clean_up(path):
                               "individual":"indiv_id"})
     except:
         pass
-
     a.to_file(path)
-
     # Reproject for earth engine
-
     b = a.to_crs("EPSG:4326")
-
     return b
-
 
 client = start_cluster.start(cpus=80)
 
@@ -57,7 +51,7 @@ species_model_paths = {
     "JERC":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/86d51ae4b7a34308bc99c19f8eeadf41_JERC.pt",
     "TALL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/be884a1ac14d4379b52d25903acc7498_TALL.pt",
     "CLBJ":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/c1e0192b0f43455aadbad593cba0b356_CLBJ.pt",
-    "TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/ca17bf7c36fe42e6bd83a358243c012b_TEAK.pt",
+    "TEAK":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/1077f3429ed84a28aa9b63b1c950a1f2_TEAK.pt",
     "SOAP":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/c56b937a94f84e9da774370f4e46a110_SOAP.pt",
     "YELL":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/f2c069f59b164795af482333a5e7fffb_YELL.pt",                       
     "MLBS":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b5efc0037529431092db587727fb4fe9_MLBS.pt",
@@ -67,7 +61,7 @@ species_model_paths = {
     "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9130a6b5ce544e1280283bf60cab63b0_HARV.pt"}
 
 # Clean up the files for each site
-for site in species_model_paths:
+for site in ["TEAK"]:
     print(site)
     basename = os.path.splitext(os.path.basename(species_model_paths[site]))[0]
     predictions = glob.glob(
@@ -76,7 +70,6 @@ for site in species_model_paths:
         continue
     futures = client.map(clean_up, predictions)
     wait(futures)
-
     site_csv = []
     for future in futures:
         result = future.result()
@@ -84,17 +77,14 @@ for site in species_model_paths:
     site_csv = pd.concat(site_csv)
     site_csv.to_csv(
         "/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}/{}.csv".format(site, basename, site), index=False)
-
     zipfilename = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}/{}.zip".format(
         site, basename, site)
-
     with zipfile.ZipFile(zipfilename, "w") as zipObj:
         print("creating zip")
         for folderName, subfolders, filenames in os.walk("/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}".format(site, basename)):
             for filename in filenames:
                 # create complete filepath of file in directory
                 filePath = os.path.join(folderName, filename)
-
                 # Don't include itself
                 if ".zip" in filePath:
                     continue

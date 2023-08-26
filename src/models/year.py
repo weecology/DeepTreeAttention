@@ -19,8 +19,10 @@ class learned_ensemble(nn.Module):
     def forward(self, images):
         year_scores = []
         for year, image in images.items():
-            # Skip padding tensors
+            # Skip padding or no_data tensors
             if image.sum() == 0:
+                continue
+            elif (image == -9999).any():
                 continue
             try:
                 score = self.year_models[year](image)
