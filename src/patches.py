@@ -12,6 +12,8 @@ def crop(bounds, sensor_path=None, savedir = None, basename = None, rasterio_src
     img = src.read(window=rasterio.windows.from_bounds(left, bottom, right, top, transform=src.transform)) 
     if img.size == 0:
         raise ValueError("Bounds {} does not create a valid crop for source {}".format(bounds, src.transform))    
+    if (img==-9999).any():
+        raise ValueError("Crown has no data value of -9999")
     if savedir:
         if as_numpy:
             filename = "{}/{}.npy".format(savedir, basename)            

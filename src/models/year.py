@@ -22,8 +22,6 @@ class learned_ensemble(nn.Module):
             # Skip padding or no_data tensors
             if image.sum() == 0:
                 continue
-            elif (image == -9999).any():
-                continue
             try:
                 score = self.year_models[year](image)
             except KeyError:
