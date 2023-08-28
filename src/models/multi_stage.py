@@ -77,7 +77,7 @@ class TreeDataset(Dataset):
                 try:
                     year_annotations = ind_annotations[year]
                 except KeyError:
-                    images[str(year)] = image = torch.zeros(self.config["bands"], self.image_size, self.image_size)  
+                    images[str(year)] = torch.zeros(self.config["bands"], self.image_size, self.image_size)  
                     continue
                 image_path = os.path.join(self.config["crop_dir"], year_annotations)
                 try:

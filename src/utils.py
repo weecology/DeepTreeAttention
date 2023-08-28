@@ -105,8 +105,11 @@ class ZeroPad(object):
 
         return img
 
-def load_image(img_path=None):
-    """Load and preprocess an image for training/prediction"""
+def load_image(img_path=None, allow_NA=False):
+    """Load and preprocess an image for training/prediction
+    Args:
+        img_path (str): path to .npy or .tif on disk
+        allow_NA (bool): If False, return ValueError when encountering -9999"""
     if os.path.splitext(img_path)[-1] == ".npy":
         try:
             image = np.load(img_path)
@@ -120,6 +123,10 @@ def load_image(img_path=None):
     else:
         raise ValueError("image path must be .npy or .tif, found {}".format(img_path))
 
+    if not allow_NA:
+        if (image == -9999).any():
+            raise ValueError("Input image had NA value of -9999")
+         
     image = preprocess_image(image, channel_is_first=True)
     
     return image
