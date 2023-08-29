@@ -35,7 +35,7 @@ client = start_cluster.start(cpus=100, mem_size="5GB")
 def read_file(f):
     return gpd.read_file(f)[["sci_name"]].value_counts().reset_index() 
 
-for site in species_model_paths:
+for site in ["SOAP","YELL","MLBS","BLAN","UKFS","BART","HARV"]:
     print(site)
     model = species_model_paths[site]
     prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/".format(site),

@@ -33,6 +33,7 @@ def clean_up(path):
 
 client = start_cluster.start(cpus=80)
 
+
 species_model_paths = {
     "NIWO": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/000b1ecf0ca6484893e177e3b5d42c7e_NIWO.pt",
     "RMNP": "/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/b6ceb35a3c9c4cc98241ba00ff12ff87_RMNP.pt",    
@@ -61,7 +62,7 @@ species_model_paths = {
     "HARV":"/blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/9130a6b5ce544e1280283bf60cab63b0_HARV.pt"}
 
 # Clean up the files for each site
-for site in ["TEAK"]:
+for site in species_model_paths:
     print(site)
     basename = os.path.splitext(os.path.basename(species_model_paths[site]))[0]
     predictions = glob.glob(
