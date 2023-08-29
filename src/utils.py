@@ -125,7 +125,7 @@ def load_image(img_path=None, allow_NA=False):
 
     if not allow_NA:
         if (image == -9999).any():
-            raise ValueError("Input image had NA value of -9999")
+            raise ValueError("Input image path {} had NA value of -9999".format(img_path))
          
     image = preprocess_image(image, channel_is_first=True)
     

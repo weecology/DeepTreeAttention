@@ -39,12 +39,15 @@ class TreeDataset(Dataset):
             pad_or_resize=config["pad_or_resize"],
             image_size = self.config["image_size"])
                         
-        # Pin data to memory if desired
+        # Pin data to memory if desired, pad with zero if none. 
         if self.config["preload_images"]:
             self.image_dict = {}
             for index, row in self.annotations.iterrows():
                 image_path = os.path.join(self.config["crop_dir"],row["image_path"])
-                self.image_dict[index] = load_image(image_path)
+                try:
+                    self.image_dict[index] = load_image(image_path)
+                except ValueError:
+                    self.image_dict[index] = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])
         
     def __len__(self):
         # 0th based index

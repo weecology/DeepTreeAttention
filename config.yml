@@ -44,7 +44,7 @@ replace_crops: True
 # Recreate a train test split
 train_test_commit:
 # Use existing plotIDs for train/test split
-existing_test_csv: /blue/ewhite/b.weinstein/DeepTreeAttention/fba8ff88ef834016a335e8ce07f38131/test_890f479f57fb4c7db24a67f8326a0413_TEAK.csv
+existing_test_csv: /blue/ewhite/b.weinstein/DeepTreeAttention/fba8ff88ef834016a335e8ce07f38131/test_0417315e466546e7bd1e3c2435ebf10e_OSBS.csv
 ### Data loader Config
 # Resized pixel size of the crowns. Square crops around each pixel of size x
 image_size: 20

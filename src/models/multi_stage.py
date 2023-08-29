@@ -83,7 +83,7 @@ class TreeDataset(Dataset):
                 try:
                     image = utils.load_image(image_path)
                 except ValueError:
-                    return None
+                    images = torch.zeros(self.config["bands"], self.image_size, self.image_size)
 
                 images[str(year)] = image
                 
