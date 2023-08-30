@@ -32,10 +32,10 @@ def clean_up(path):
     b = a.to_crs("EPSG:4326")
     return b
 
-client = start_cluster.start(cpus=80)
+client = start_cluster.start(cpus=40)
 
 # Clean up the files for each site
-for site in species_model_paths:
+for site in ["TEAK"]:
     print(site)
     basename = os.path.splitext(os.path.basename(species_model_paths[site]))[0]
     predictions = glob.glob(

@@ -17,7 +17,7 @@ if __name__== "__main__":
     files_to_upload.append(crop_zip)
     for site in species_model_paths:
         model_path = species_model_paths[site]
-        basename = os.path.basename(model_path)
+        basename = os.path.splitext(os.path.basename(model_path))[0]
         zip_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}/{}.zip".format(site, basename, site)
         files_to_upload.append(zip_path)
         csv_path = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}/{}.csv".format(site, basename, site)

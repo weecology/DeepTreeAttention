@@ -4,5 +4,5 @@ SITES="OSBS JERC MLBS BLAN UKFS SCBI BART HARV SERC GRSM NIWO RMNP WREF SJER BON
 for SITE in $SITES; do
 echo "${SITE}"
 sbatch SLURM/predict.sh ${SITE}
-sleep 1 # pause to be kind to the scheduler
+sleep 30 # pause to be kind to the scheduler
 done
