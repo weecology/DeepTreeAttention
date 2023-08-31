@@ -83,7 +83,7 @@ class TreeDataset(Dataset):
                 try:
                     image = utils.load_image(image_path)
                 except ValueError:
-                    images = torch.zeros(self.config["bands"], self.image_size, self.image_size)
+                    image = torch.zeros(self.config["bands"], self.image_size, self.image_size)
 
                 images[str(year)] = image
                 
@@ -456,7 +456,7 @@ class MultiStage(LightningModule):
         for level in self.models:   
             y_hat = self.models[level].forward(images)  
             if y_hat is None:
-                raise ValueError("images of length {} with keys {} failed on predict step {}".format(len(images), images.keys(), images))          
+                raise ValueError("images of length {} with keys {} failed on predict step".format(len(images), images.keys()))          
             y_hat = F.softmax(y_hat, dim=1)
             y_hats.append(y_hat)
         

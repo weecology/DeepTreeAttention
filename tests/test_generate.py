@@ -93,4 +93,4 @@ def test_generate_crops(tmpdir, ROOT, config, rgb_path, rgb_pool, sample_crowns,
         client=client,
         savedir=tmpdir)
     
-    assert annotations.tile_year.unique() == "2018" 
+    assert annotations.tile_year.unique() == "2019" 

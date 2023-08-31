@@ -49,8 +49,8 @@ existing_test_csv: /blue/ewhite/b.weinstein/DeepTreeAttention/fba8ff88ef834016a3
 # Resized pixel size of the crowns. Square crops around each pixel of size x
 image_size: 20
 pad_or_resize: resize
-preload_images: True
-preload_image_dict: True
+preload_images: False
+preload_image_dict: False
 workers: 0
 taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
@@ -63,7 +63,7 @@ pretrain_epochs: 200
 gpus: 1
 batch_size: 24
 bands: 349
-head_class_minimum_ratio: 0.4
+head_class_minimum_ratio: 0.2
 seperate_oak_model: False
 max_flat_species: 4
 

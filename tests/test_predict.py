@@ -22,8 +22,7 @@ def species_model_path(m, tmpdir):
     
     return "{}/model.pl".format(tmpdir)
     
-def test_predict_tile(species_model_path, config, ROOT, tmpdir):
-    rgb_path = "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop_2019.tif".format(ROOT)
+def test_predict_tile(species_model_path, config, ROOT, tmpdir, rgb_path):
     config["HSI_sensor_pool"] = "{}/tests/data/hsi/*.tif".format(ROOT)
     config["CHM_pool"] = None
     os.makedirs("{}/prediction".format(tmpdir), exist_ok=True)
@@ -33,21 +32,18 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     os.makedirs("{}/crops/shp/".format(tmpdir), exist_ok=True)
     
     rgb_pool, hsi_pool, h5_pool, CHM_pool = utils.create_glob_lists(config)
-    dead_model = dead.AliveDead(config)
-    trainer = Trainer(fast_dev_run=True)    
-    trainer.fit(dead_model)
-    dead_model_path = "{}/dead_model.pl".format(tmpdir)
-    trainer.save_checkpoint(dead_model_path)
-    
+
     crown_path = predict.find_crowns(
         rgb_path,
         config,
-        dead_model_path=dead_model_path,
         savedir="{}/crowns/".format(tmpdir)
     )
     crowns = gpd.read_file(crown_path)    
     assert len(crowns.individual.unique()) == crowns.shape[0]
-            
+    
+    #Set tif dir as tmpdir
+    os.environ["TMPDIR"] = tmpdir
+     
     crown_annotations_path = predict.generate_prediction_crops(
         crown_path=crown_path,
         config=config,
@@ -67,12 +63,13 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     assert len(crown_annotations[crown_annotations.individual == crown_annotations.iloc[0].individual].bounds.minx.unique()) == 1
     
     m = multi_stage.MultiStage.load_from_checkpoint(species_model_path, config=config)
+    trainer = Trainer(fast_dev_run=True)
     trees = predict.predict_tile(
         crown_annotations=crown_annotations_path,
         m=m,
         site="pytest",
         trainer=trainer,
-        filter_dead=True,
+        filter_dead=False,
         savedir=tmpdir,
         config=config)
     

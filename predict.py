@@ -50,12 +50,14 @@ def convert(rgb_path, hyperspectral_pool, savedir):
 #Params
 config = data.read_config("config.yml")
 config["preload_images"] = False
+config["preload_image_dict"] = False
+
 comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
 
 comet_logger.experiment.log_parameters(config)
 
 #client = Client()
-client = start(cpus=30, mem_size="6GB")
+client = start(cpus=50, mem_size="5GB")
 
 #Get site arg
 site=str(sys.argv[1])

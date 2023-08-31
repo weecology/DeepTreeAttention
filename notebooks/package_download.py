@@ -7,7 +7,7 @@ import zipfile
 import geopandas as gpd
 from src import start_cluster
 from src.model_list import species_model_paths
-from distributed import wait
+from distributed import wait, Client
 import pandas as pd
 
 # cleanup shapefiles
@@ -32,10 +32,11 @@ def clean_up(path):
     b = a.to_crs("EPSG:4326")
     return b
 
-client = start_cluster.start(cpus=40)
+client = start_cluster.start(cpus=100,mem_size="5GB")
+#client = Client()
 
 # Clean up the files for each site
-for site in ["TEAK"]:
+for site in species_model_paths:
     print(site)
     basename = os.path.splitext(os.path.basename(species_model_paths[site]))[0]
     predictions = glob.glob(

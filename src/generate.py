@@ -273,11 +273,12 @@ def points_to_crowns(
     
     return results
 
-def write_crop(row, savedir, img_path, rasterio_src=None, as_numpy=False, suffix=None):
+def write_crop(row, savedir, img_path, rasterio_src=None, as_numpy=False, suffix=None, overwrite=False):
     """Wrapper to write a crop based on size and savedir
     Args:
         as_numpy: save as .npz files preprocessed, instead of .tif, useful for prediction
     """
+    
     if suffix == "RGB":
         tile_year = img_path.split("/")[-5].split("_")[0]    
     else:
@@ -288,6 +289,17 @@ def write_crop(row, savedir, img_path, rasterio_src=None, as_numpy=False, suffix
     else:
         basename = "{}_{}".format(row["individual"], tile_year)
         
+    if overwrite == False:
+        if as_numpy:
+            ext = ".npy"
+        else:
+            ext = ".tif"
+        filename = "{}/{}{}".format(savedir, basename, ext)
+        if os.path.exists(filename):
+            image_path = os.path.basename(filename)
+            
+            return image_path
+    
     filename = patches.crop(
         bounds=row["geometry"].bounds,
         sensor_path=img_path,
