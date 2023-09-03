@@ -63,7 +63,7 @@ pretrain_epochs: 200
 gpus: 1
 batch_size: 24
 bands: 349
-head_class_minimum_ratio: 0.2
+head_class_minimum_ratio: 0.4
 seperate_oak_model: False
 max_flat_species: 4
 

@@ -42,7 +42,7 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir, rgb_path):
     assert len(crowns.individual.unique()) == crowns.shape[0]
     
     #Set tif dir as tmpdir
-    os.environ["TMPDIR"] = tmpdir
+    os.environ["TMPDIR"] = tmpdir.name
      
     crown_annotations_path = predict.generate_prediction_crops(
         crown_path=crown_path,
