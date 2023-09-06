@@ -329,7 +329,10 @@ class TreeData(LightningDataModule):
                 df = filter_data(self.csv_file, config=self.config)
                 if site:
                     if not site == "pretrain":
-                        df = df[df.siteID ==site]
+                        if site in ["STEI","TREE"]:
+                            df = df[df.siteIDsite.isin(["STEI","TREE"])]
+                        else:
+                            df = df[df.siteID ==site]
                 # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
                     try:
