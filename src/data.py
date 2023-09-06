@@ -62,7 +62,10 @@ class TreeDataset(Dataset):
         else:
             image_basename = self.annotations.image_path.iloc[index]  
             image_path = os.path.join(self.config["crop_dir"],image_basename)                
-            image = load_image(image_path)
+            try:
+                image = load_image(image_path)
+            except:
+                image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])
             inputs["HSI"] = image
         inputs["HSI"] = self.transformer(inputs["HSI"])
 
@@ -330,7 +333,7 @@ class TreeData(LightningDataModule):
                 if site:
                     if not site == "pretrain":
                         if site in ["STEI","TREE"]:
-                            df = df[df.siteIDsite.isin(["STEI","TREE"])]
+                            df = df[df.siteID.isin(["STEI","TREE"])]
                         else:
                             df = df[df.siteID ==site]
                 # Load any megaplot data

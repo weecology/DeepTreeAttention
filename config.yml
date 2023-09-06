@@ -49,8 +49,8 @@ existing_test_csv:
 # Resized pixel size of the crowns. Square crops around each pixel of size x
 image_size: 20
 pad_or_resize: resize
-preload_images: False
-preload_image_dict: False
+preload_images: True
+preload_image_dict: True
 workers: 0
 taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
