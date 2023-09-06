@@ -5,11 +5,11 @@ import pandas as pd
 from src import start_cluster
 from src.model_list import species_model_paths
 
-client = start_cluster.start(cpus=100, mem_size="5GB")
+client = start_cluster.start(cpus=120, mem_size="5GB")
 def read_file(f):
     return gpd.read_file(f)[["sci_name"]].value_counts().reset_index() 
 
-for site in ["SOAP","YELL","MLBS","BLAN","UKFS","BART","HARV"]:
+for site in species_model_paths:
     print(site)
     model = species_model_paths[site]
     prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/".format(site),
