@@ -2,7 +2,7 @@ import subprocess
 import os
 from src.model_list import species_model_paths
 
-for site in ["STEI"]:
+for site in ["STEI","TREE"]:
     # Download model
     p = subprocess.Popen(
         "scp hpg:{} /Users/benweinstein/Dropbox/Weecology/Species/SpeciesMaps/snapshots/".format(species_model_paths[site]), shell=True)
