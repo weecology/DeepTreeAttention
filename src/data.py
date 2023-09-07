@@ -358,7 +358,11 @@ class TreeData(LightningDataModule):
                     self.comet_logger.experiment.log_parameter("Samples before CHM filter", df.shape[0])
                 
                 if filter_species_site:
-                    species_to_keep = df[df.siteID.isin(filter_species_site)].taxonID.unique()
+                    if filter_species_site in ["TREE","STEI"]:
+                        species_to_keep = df[df.siteID.isin(["TREE","STEI"])].taxonID.unique()
+                    else:
+                        species_to_keep = df[df.siteID.isin(filter_species_site)].taxonID.unique()
+                    
                     df = df[df.taxonID.isin(species_to_keep)]
                 
                 # To write a shapefile, you need a CRS, if there is a single non null CRS, use it, if not assign a dummy one
@@ -496,7 +500,10 @@ class TreeData(LightningDataModule):
     def create_train_test_split(self, ID):      
         if not "pretrain" in self.site:
             # Get species present at site, as well as those species from other sites
-            self.annotations = self.annotations[self.annotations.siteID == self.site].reset_index(drop=True)
+            if self.site in ["TREE","STEI"]:
+                self.annotations = self.annotations[self.annotations.siteID.isin(["TREE","STEI"])].reset_index(drop=True)
+            else:
+                self.annotations = self.annotations[self.annotations.siteID == self.site].reset_index(drop=True)
 
         if self.config["existing_test_csv"]:
             print("Reading in existing test_csv: {}".format(self.config["existing_test_csv"]))
