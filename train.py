@@ -35,7 +35,7 @@ if args.m:
 if config["use_data_commit"] is None:
     comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple") 
     comet_logger.experiment.add_tag("data_generation")
-    client = start_cluster.start(cpus=5, mem_size="10GB")    
+    client = start_cluster.start(cpus=150, mem_size="8GB")    
     ROOT = os.path.dirname(os.path.dirname(data.__file__))    
     crop_dir = os.path.join(config["data_dir"], comet_logger.experiment.get_key())
     os.mkdir(crop_dir) 
@@ -48,7 +48,7 @@ if config["use_data_commit"] is None:
         config=config,
         client=client,
         create_train_test=True,
-        site="pretrain",
+        site=site,
         comet_logger=comet_logger)
     config["use_data_commit"] = comet_logger.experiment.id 
 elif config["train_test_commit"] is None:

@@ -114,7 +114,11 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
         box_size = 1
         max_area = 1000
         
-    predicted_boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
+    try:
+        predicted_boxes = predict_trees(deepforest_model=deepforest_model, rgb_path=rgb_sensor_path, bounds=plot_data.total_bounds)
+    except:
+        raise ValueError("Plot {} failed at trees prediction. Skipping.".format(plot_data.plotID.unique()[0]))
+
     if predicted_boxes is None:
         raise ValueError("No trees predicted in plot: {}, skipping.".format(plot_data.plotID.unique()[0]))
     
