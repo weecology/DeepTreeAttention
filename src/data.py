@@ -450,7 +450,11 @@ class TreeData(LightningDataModule):
                 )
                 rgb_annotations["RGB_image_path"] = rgb_annotations["image_path"]
                 rgb_annotations.to_csv("{}/RGB_annotations.csv".format(self.data_dir))
-                self.annotations = self.annotations.merge(rgb_annotations[["individual","tile_year","RGB_image_path"]], on=["individual","tile_year"])
+                self.annotations = self.annotations.merge(
+                    rgb_annotations[["individual","tile_year","RGB_image_path"]],
+                      on=["individual","tile_year"],
+                      how="left"
+                      )
                 self.annotations.to_csv("{}/annotations.csv".format(self.data_dir))
                 
             else:

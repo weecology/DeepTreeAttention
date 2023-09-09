@@ -137,10 +137,10 @@ def my_collate(batch):
     return default_collate(batch)
 
 def skip_none_collate(batch):
-    batch = [x for x in batch if x is not None]
-    batch = [x for x in batch if not all(image.sum() == 0 for year,image in x[1]["HSI"].items())]
+    modified_batch = [x for x in batch if x is not None]
+    no_zero_batch = [x for x in modified_batch if not all(image.sum() == 0 for year,image in x[1]["HSI"].items())]
     
-    if len(batch) == 0:
+    if len(no_zero_batch) == 0:
         return None
     
     return default_collate(batch)    

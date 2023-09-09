@@ -389,7 +389,7 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
                 HSI_tile.append(HSI_indexes[index])
             except:
                 continue
-                #print("Future failed with {}".format(traceback.print_exc()))
+                print("Future failed with {}".format(traceback.print_exc()))
     else:
         #If no client is passed, loop through each tile and open then once in memory
         for geo_index in gdf.geo_index.unique():
