@@ -132,16 +132,18 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         except:
             traceback.print_exc()
 
-        crop_future = predict.generate_prediction_crops(
+        crop_future = client.submit(
+            predict.generate_prediction_crops,
             crown_path,
             config,
             crop_dir=crop_dir,
             as_numpy=True,
-            client=client,
+            client=None,
             img_pool=hsi_pool,
             h5_pool=h5_pool,
             rgb_pool=rgb_pool,
-            overwrite=False)
+            overwrite=False
+        )
         crop_futures.append(crop_future)
     
     # load model
