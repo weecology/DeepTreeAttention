@@ -18,6 +18,7 @@ from src.CHM import postprocess_CHM
 from src.generate import generate_crops
 from src.models.multi_stage import TreeDataset, MultiStage
 from src.data import __file__
+import traceback
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 

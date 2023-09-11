@@ -7,12 +7,12 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "justMyCode": "true",
+            "justMyCode": "True",
             "env": {
                 "PYTHONPATH":"${PYTHONPATH}:/home/b.weinstein/DeepTreeAttention/",
                 "PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT": "5"
             },
-            "args": ["BART"]
+            "args": ["TREE"]
         }
     ]
 }

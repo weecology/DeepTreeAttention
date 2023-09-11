@@ -57,7 +57,7 @@ comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["
 comet_logger.experiment.log_parameters(config)
 
 #client = Client()
-client = start(cpus=6, mem_size="5GB")
+client = start(cpus=150, mem_size="5GB")
 
 #Get site arg
 site=str(sys.argv[1])
@@ -132,18 +132,16 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         except:
             traceback.print_exc()
 
-        crop_future = client.submit(
-            predict.generate_prediction_crops,
+        crop_future = predict.generate_prediction_crops(
             crown_path,
             config,
             crop_dir=crop_dir,
             as_numpy=True,
-            client=None,
+            client=client,
             img_pool=hsi_pool,
             h5_pool=h5_pool,
             rgb_pool=rgb_pool,
-            overwrite=False
-        )
+            overwrite=False)
         crop_futures.append(crop_future)
     
     # load model
@@ -190,7 +188,7 @@ futures = create_landscape_map(
     site,
     species_model_paths[site],
     config,
-    client, 
+    client=client, 
     rgb_pool=rgb_pool,
     h5_pool=h5_pool,
     hsi_pool=hsi_pool,

@@ -6,6 +6,7 @@ import h5py
 import numpy as np
 from src import Hyperspectral
 import rasterio as rio
+import pandas as pd
 
 def bounds_to_geoindex(bounds):
     """Convert an extent into NEONs naming schema
@@ -44,9 +45,14 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None, geo_index=None, a
     if len(match) == 0:
         raise ValueError("No matches for geoindex {} in sensor pool".format(geo_index))                    
         
-    #Get most recent year
+    #Get most recent year or all years
     if all_years:
-        return match
+        # No duplicate years
+        years = [year_from_tile(x) for x in match]
+        year_df = pd.DataFrame({"year":years,"tiles":match})
+        all_year_match = year_df.groupby("year").apply(lambda x: x.head(1)).tiles.values
+
+        return all_year_match
     else:        
         match.sort()
         match = match[::-1]
