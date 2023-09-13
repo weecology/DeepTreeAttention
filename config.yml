@@ -54,26 +54,11 @@ preload_image_dict: True
 workers: 0
 taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
-### Pre-Training Parameters
-create_pretrain_model: True
-pretrain_state_dict:
-pretrain_epochs: 200
-
 ### Training Parameters
 gpus: 1
 batch_size: 24
 bands: 349
-head_class_minimum_ratio: 0.4
-seperate_oak_model: False
-max_flat_species: 8
-
-# Learning rates
 lr: 0.0001
-lr_dominant_class: 0.000005
-lr_conifer: 0.000005
-lr_broadleaf: 0.00001
-lr_oak: 0.00005
-lr_flat: 0.0005
 
 fast_dev_run: False
 accelerator: auto

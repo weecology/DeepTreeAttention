@@ -22,3 +22,13 @@ def augment(train, image_size, pad_or_resize="pad"):
     
     return transforms.Compose(transform_list)
     
+def simulate_bands(image, breaks):
+    """"For a given image, smooth and reduce to a set of band combindations. Pad remainder with zeros
+    Args:
+        image: a numpy array
+        breaks: a list of breaks to slice and divide image
+
+    """
+
+    return image
+    

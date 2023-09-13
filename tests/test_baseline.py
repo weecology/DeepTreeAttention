@@ -1,7 +1,7 @@
 #test baseline
-#Test multi_stage
 from pytorch_lightning import Trainer
 from src.models import baseline, Hang2020
+import torch
 import pytest
 
 @pytest.fixture()
@@ -12,7 +12,7 @@ def m(dm, config):
         model=model, 
         config=config,
         classes=dm.num_classes, 
-        loss_weight=None,
+        loss_weight=torch.ones(dm.num_classes),
         label_dict=dm.species_label_dict)
     
     return m
@@ -20,12 +20,3 @@ def m(dm, config):
 def test_fit(dm, m):
     trainer = Trainer(fast_dev_run=False, max_epochs=1, limit_train_batches=1, enable_checkpointing=False, num_sanity_val_steps=0)    
     trainer.fit(m, datamodule=dm)
-    
-def test_evaluate_crowns(dm, m, experiment):
-    results = m.evaluate_crowns(
-        dm.val_dataloader(),
-        dm.test.siteID,
-        experiment=experiment,
-    )
-    
-    assert results.shape[0] == dm.test.shape[0]

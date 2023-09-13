@@ -1,26 +1,19 @@
 # Train
-import sys
 from src import train, data, start_cluster
 import torch
-import gc
 import os
 from pytorch_lightning.loggers import CometLogger
-import traceback
-import copy
 import json
 import argparse
 import subprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-branch")
-parser.add_argument("-site")
 parser.add_argument("-m",
                     required=False,
                     default=None)
 
 args = parser.parse_args()
-site = args.site
-
 git_commit = subprocess.check_output("git log --pretty=format:'%H' -n 1", shell=True).decode()
 git_branch = args.branch
 
@@ -56,18 +49,9 @@ elif config["train_test_commit"] is None:
 else:
     client = None
     
-try:
-    #Specific site instructions
-    if "OSBS" in site:
-        config["seperate_oak_model"] = True
-        
-    train.main(
-        site=site,
-        config=config,
-        git_branch=git_branch,
-        git_commit=git_commit,
-        client=client)
-    torch.cuda.empty_cache() 
-    gc.collect()            
-except:
-    print("{} failed with {}".format(site, traceback.print_exc()))
+train.main(
+    config=config,
+    git_branch=git_branch,
+    git_commit=git_commit,
+    client=client)
+

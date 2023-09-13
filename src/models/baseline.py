@@ -30,10 +30,10 @@ class TreeModel(LightningModule):
         for x in label_dict:
             self.index_to_label[label_dict[x]] = x 
         
-        #Create model 
+        # Create model 
         self.model = model
         
-        #Metrics
+        # Metrics
         micro_recall = torchmetrics.Accuracy(average="micro", num_classes=classes, task="multiclass")
         macro_recall = torchmetrics.Accuracy(average="macro", num_classes=classes,  task="multiclass")
         top_k_recall = torchmetrics.Accuracy(average="micro",top_k=self.config["top_k"],   num_classes=classes, task="multiclass")
@@ -76,7 +76,17 @@ class TreeModel(LightningModule):
         self.log("val_loss", loss, on_epoch=True)
         
         return loss
-            
+
+    def predict_step(self, batch, batch_idx):
+        """Train on a loaded dataset
+        """
+        #allow for empty data if data augmentation is generated
+        individual, inputs = batch
+        images = inputs["HSI"]        
+        y_hat = self.model.forward(images)
+                
+        return y_hat 
+           
     def configure_optimizers(self):
         optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
@@ -85,160 +95,4 @@ class TreeModel(LightningModule):
                                                          patience=8)
                                                                  
         return {'optimizer':optimizer, "lr_scheduler": {'scheduler': scheduler,"monitor":'val_loss',"frequency":self.config["validation_interval"],"interval":"epoch"}}
-    
-
-    def predict(self,inputs):
-        """Given a input dictionary, construct args for prediction"""
-        if "cuda" == self.device.type:
-            images = inputs["HSI"]
-            images = [x.cuda() for x in images]
-            pred = self.model(images)
-            pred = pred.cpu()
-        else:
-            images = inputs["HSI"]
-            pred = self.model(images)
-        
-        return pred
-    
-    def _predict_dataloader_(self, data_loader, return_features=False, experiment=None, train=True):
-        """Given a file with paths to image crops, create crown predictions 
-        The format of image_path inform the crown membership, the files should be named crownid_counter.png where crownid is a
-        unique identifier for each crown and counter is 0..n pixel crops that belong to that crown.
-        
-        Args: 
-            csv_file: path to csv file
-            data_loader: data.TreeData loader
-            plot_n_individuals: if experiment, how many plots to create
-            return_features (False): If true, return a samples x classes matrix of softmax features
-        Returns:
-            results: if return_features == False, pandas dataframe with columns crown and species label
-            features: if return_features == True, samples x classes matrix of softmax features
-        """
-        self.model.eval()
-        predictions = []
-        labels = []
-        individuals = []
-        for batch in data_loader:
-            if train:
-                individual, inputs, targets = batch
-            else:
-                individual, inputs = batch
-            with torch.no_grad():
-                pred = self.predict(inputs)
-                pred = F.softmax(pred, dim=1)
-            predictions.append(pred)
-            individuals.append(individual)
-            if train:
-                labels.append(targets)                
-
-        individuals = np.concatenate(individuals)        
-        predictions = np.concatenate(predictions) 
-        
-        if train:
-            labels = np.concatenate(labels)
-        
-        predictions_top1 = np.argmax(predictions, 1)    
-        predictions_top2 = pd.DataFrame(predictions).apply(lambda x: np.argsort(x.values)[-2], axis=1)
-        top1_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[0], axis=1)
-        top2_score = pd.DataFrame(predictions).apply(lambda x: x.sort_values(ascending=False).values[1], axis=1)
-        
-        #Construct a df of predictions
-        df = pd.DataFrame({
-            "pred_label_top1":predictions_top1,
-            "pred_label_top2":predictions_top2,
-            "top1_score":top1_score,
-            "top2_score":top2_score,
-            "individual":individuals
-        })
-        
-        df["pred_taxa_top1"] = df["pred_label_top1"].apply(lambda x: self.index_to_label[x]) 
-        df["pred_taxa_top2"] = df["pred_label_top2"].apply(lambda x: self.index_to_label[x])        
-        
-        if train:
-            df["label"] = labels
-            df["true_taxa"] = df["label"].apply(lambda x: self.index_to_label[x])            
-    
-        if return_features:            
-            return df, predictions        
-        
-        return df
-    
-    def evaluate_crowns(self, data_loader, siteIDs, experiment=None):
-        """Crown level measure of accuracy
-        Args:
-            data_loader: TreeData dataset
-            test_df: dataframe with individual, siteID field
-            experiment: optional comet experiment
-        Returns:
-            df: results dataframe
-            metric_dict: metric -> value
-        """
-        results = self._predict_dataloader_(
-            data_loader=data_loader,
-            experiment=None
-        )
-        
-        results["siteID"] = siteIDs
-        
-        # Log results by species
-        taxon_accuracy = torchmetrics.functional.accuracy(
-            preds=torch.tensor(results.pred_label_top1.values),
-            target=torch.tensor(results.label.values), 
-            average="none", 
-            num_classes=self.classes
-        )
-        taxon_precision = torchmetrics.functional.precision(
-            preds=torch.tensor(results.pred_label_top1.values),
-            target=torch.tensor(results.label.values),
-            average="none",
-            num_classes=self.classes
-        )
-        species_table = pd.DataFrame(
-            {"taxonID":self.label_to_index.keys(),
-             "accuracy":taxon_accuracy,
-             "precision":taxon_precision
-             })
-        
-        if experiment:
-            experiment.log_metrics(species_table.set_index("taxonID").accuracy.to_dict(),prefix="accuracy")
-            experiment.log_metrics(species_table.set_index("taxonID").precision.to_dict(),prefix="precision")
-             
-        #Log result by site
-        if experiment:
-            site_data_frame =[]
-            for name, group in results.groupby("siteID"):                
-                site_micro = torchmetrics.functional.accuracy(
-                    preds=torch.tensor(group.pred_label_top1.values),
-                    target=torch.tensor(group.label.values),
-                    average="micro")
-                
-                site_macro = torchmetrics.functional.accuracy(
-                    preds=torch.tensor(group.pred_label_top1.values),
-                    target=torch.tensor(group.label.values),
-                    average="macro",
-                    num_classes=self.classes)
-                
-                experiment.log_metric("{}_macro".format(name), site_macro)
-                experiment.log_metric("{}_micro".format(name), site_micro) 
-                row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro.numpy()], "Macro Recall": [site_macro.numpy()]})
-                site_data_frame.append(row)
-            site_data_frame = pd.concat(site_data_frame)
-            experiment.log_table("site_results.csv", site_data_frame)
-        
-        #Overall score
-        overall_micro = torchmetrics.functional.accuracy(
-            preds=torch.tensor(results.pred_label_top1.values),
-            target=torch.tensor(results.label.values),
-            average="micro")
-        
-        overall_macro = torchmetrics.functional.accuracy(
-            preds=torch.tensor(results.pred_label_top1.values),
-            target=torch.tensor(results.label.values),
-            average="macro",
-            num_classes=self.classes)
-        
-        experiment.log_metric("overall_macro", overall_macro)
-        experiment.log_metric("overall_micro", overall_micro) 
-        
-        return results
             

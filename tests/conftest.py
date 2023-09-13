@@ -19,7 +19,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 def pytest_sessionstart():
     # prepare something ahead of all tests
     m = deepforest()
-    m.use_release()    
+    m.use_release(check_release=False)    
 
 @pytest.fixture(scope="session")
 def ROOT():
