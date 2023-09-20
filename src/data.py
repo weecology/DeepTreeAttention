@@ -399,7 +399,7 @@ class TreeData(LightningDataModule):
             self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir)) 
                 
             if create_train_test:
-                print("Using data commit {} creating a new train-test split for site {}".format(self.config["use_data_commit"]))
+                print("Using data commit {} creating a new train-test split".format(self.config["use_data_commit"]))
                 self.create_train_test_split(ID=self.experiment_id)
             else:
                 print("Loading a train-test split from {}/{}".format(self.data_dir, "{}".format(self.config["train_test_commit"])))
