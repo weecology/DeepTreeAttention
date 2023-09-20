@@ -82,7 +82,7 @@ def config(ROOT, tmpdir_factory):
     config["workers"] = 0
     config["dead"]["num_workers"] = 0
     config["dead"]["batch_size"] = 2
-    config["fast_dev_run"] = True
+    config["fast_dev_run"] = False
     config["snapshot_dir"] = None
     config["taxonomic_csv"] = "{}/data/raw/families.csv".format(ROOT)
     config["crop_dir"] = tmpdir_factory.mktemp('data')

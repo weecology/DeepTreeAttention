@@ -127,7 +127,7 @@ def train_model(data_module, comet_logger, m):
     comet_logger.experiment.log_table("nested_predictions.csv", results)
     
     ensemble_df = m.evaluation_scores(
-        ensemble_df,
+        results,
         experiment=comet_logger.experiment
     )
     
