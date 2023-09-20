@@ -21,4 +21,4 @@ cd ~/DeepTreeAttention/
 git checkout $1
 
 #get branch and commit name
-python train.py -branch $1 -site $2
+python train.py -branch $1
