@@ -83,6 +83,6 @@ def test_load_from_backbone(tmpdir):
     torch.save(ten_classes.spectral_network.state_dict(), "{}/state_dict.pt".format(tmpdir))
     
     twenty_classes = Hang2020.load_from_backbone(state_dict="{}/state_dict.pt".format(tmpdir), classes=20, bands=3)
-    output = twenty_classes(image)[-1]
+    output = twenty_classes(image)
     assert output.shape == (20,20)  
     

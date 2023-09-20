@@ -1,4 +1,5 @@
 #Lightning Data Module
+from pytorch_lightning.utilities.types import TRAIN_DATALOADERS
 from . import __file__
 import numpy as np
 from pytorch_lightning import LightningModule
@@ -51,7 +52,7 @@ class TreeModel(LightningModule):
             self.loss_weight = torch.tensor(loss_weight, device="cuda", dtype=torch.float)
         else:
             self.loss_weight = torch.tensor(loss_weight, dtype=torch.float)
-        
+            
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
         """
@@ -85,7 +86,7 @@ class TreeModel(LightningModule):
         images = inputs["HSI"]        
         y_hat = self.model.forward(images)
                 
-        return y_hat 
+        return individual, y_hat 
            
     def configure_optimizers(self):
         optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
@@ -95,4 +96,100 @@ class TreeModel(LightningModule):
                                                          patience=8)
                                                                  
         return {'optimizer':optimizer, "lr_scheduler": {'scheduler': scheduler,"monitor":'val_loss',"frequency":self.config["validation_interval"],"interval":"epoch"}}
+    
+    def gather_predictions(self, predict_df):
+        """Post-process the predict method to create metrics"""
+        individuals = []
+        yhats = []
+        
+        individuals = [batch[0] for batch in predict_df]
+        predictions = np.concatenate([batch[1] for batch in predict_df])
+        yhats = np.argmax(predictions, axis=1)
+        scores = np.max(predictions, axis=1)
+
+        results = pd.DataFrame({"individual":individuals,"yhat":yhats,"score":scores})
+        
+        return results
+    
+    def evaluation_scores(self, results, experiment):   
+        results = results.groupby("individual").apply(lambda x: x.head(1))
+        
+        #Ensemble accuracy
+        ensemble_accuracy = torchmetrics.functional.accuracy(
+            preds=torch.tensor(results.ens_label.values),
+            target=torch.tensor(results.label.values),
+            average="micro",
+            task="multiclass",
+            num_classes=len(self.species_label_dict)
+        )
             
+        ensemble_macro_accuracy = torchmetrics.functional.accuracy(
+            preds=torch.tensor(results.ens_label.values),
+            target=torch.tensor(results.label.values),
+            average="macro",
+            task="multiclass",
+            num_classes=len(self.species_label_dict)
+        )
+        
+        ensemble_precision = torchmetrics.functional.precision(
+            preds=torch.tensor(results.ens_label.values),
+            target=torch.tensor(results.label.values),
+            num_classes=len(self.species_label_dict),
+            task="multiclass"
+        )
+                        
+        if experiment:
+            experiment.log_metric("overall_macro", ensemble_macro_accuracy)
+            experiment.log_metric("overall_micro", ensemble_accuracy) 
+            experiment.log_metric("overal_precision", ensemble_precision) 
+        
+        #Species Accuracy
+        taxon_accuracy = torchmetrics.functional.accuracy(
+            preds=torch.tensor(results.ens_label.values),
+            target=torch.tensor(results.label.values),
+            average="none",
+            num_classes=len(self.species_label_dict),
+            task="multiclass"
+        )
+            
+        taxon_precision = torchmetrics.functional.precision(
+            preds=torch.tensor(results.ens_label.values),
+            target=torch.tensor(results.label.values),
+            average="none",
+            num_classes=len(self.species_label_dict),
+            task="multiclass"
+        )        
+        
+        taxon_labels = list(self.species_label_dict)
+        taxon_labels.sort()
+        species_table = pd.DataFrame(
+            {"taxonID":taxon_labels,
+             "accuracy":taxon_accuracy,
+             "precision":taxon_precision
+             })
+        
+        if experiment:
+            experiment.log_metrics(species_table.set_index("taxonID").accuracy.to_dict(),prefix="accuracy")
+            experiment.log_metrics(species_table.set_index("taxonID").precision.to_dict(),prefix="precision")
+                
+        # Log result by site
+        if experiment:
+            site_data_frame =[]
+            for name, group in results.groupby("siteID"):            
+                site_micro = np.sum(group.ens_label.values == group.label.values)/len(group.ens_label.values)
+                site_macro = torchmetrics.functional.accuracy(
+                    preds=torch.tensor(group.ens_label.values),
+                    target=torch.tensor(group.label.values),
+                    average="macro",
+                    task="multiclass",
+                    num_classes=len(self.species_label_dict))
+                                
+                experiment.log_metric("{}_macro".format(name), site_macro)
+                experiment.log_metric("{}_micro".format(name), site_micro) 
+                
+                row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro], "Macro Recall": [site_macro]})
+                site_data_frame.append(row)
+            site_data_frame = pd.concat(site_data_frame)
+            experiment.log_table("site_results.csv", site_data_frame)        
+        
+        return results

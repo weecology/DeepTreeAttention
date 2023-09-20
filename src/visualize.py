@@ -29,7 +29,6 @@ def view_plot(crowns, unfiltered_points, CHM_points, image_path, savedir):
     for x, y, label in zip(CHM_points.geometry.x, CHM_points.geometry.y, CHM_points.individual):
         ax.annotate(label, xy=(x, y), xytext=(3, 3), textcoords="offset points")
 
-
     plt.savefig("{}/{}.png".format(savedir, crowns.plotID.unique()[0]))
 
 def crown_plot(img_path, geom, point, expand=3):
@@ -86,17 +85,20 @@ def view_samples(ds, samples, comet_logger=None):
     tmpdir = tempfile.gettempdir()
     for x in range(samples):
         individual, inputs, label = ds[x]
-        three_band_HSI = inputs["HSI"][[55,90,115], :,:]
-        for x in inputs["HSI"].reshape(inputs["HSI"].shape[0], np.prod(inputs["HSI"].shape[1:])).T:
-                plt.plot(x)
-        if comet_logger:
-                comet_logger.experiment.log_image(
-                image_data=three_band_HSI.numpy(),
-                    name=individual,
-                    image_channels="first"
-                    )
-                plt.savefig("{}/{}_spectra.png".format(tmpdir, individual))
-                comet_logger.experiment.log_image("{}/{}_spectra.png".format(tmpdir, individual))
+        images = inputs["HSI"]
+        for year in images:
+            three_band_HSI = images[year][[55,90,115], :,:]
+            
+            for x in  images[year].reshape(images[year].shape[0], np.prod(images[year].shape[1:])).T:
+                    plt.plot(x)
+            if comet_logger:
+                    comet_logger.experiment.log_image(
+                    image_data=three_band_HSI.numpy(),
+                        name=individual,
+                        image_channels="first"
+                        )
+                    plt.savefig("{}/{}_spectra.png".format(tmpdir, individual))
+                    comet_logger.experiment.log_image("{}/{}_spectra.png".format(tmpdir, individual))
 
 def confusion_matrix(comet_experiment, yhats, y, labels, individuals,RGB_tiles, test_points, test_crowns, name):
     #Confusion matrix

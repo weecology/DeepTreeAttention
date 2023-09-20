@@ -3,6 +3,11 @@ from torch.nn import Module
 from torch.nn import functional as F
 from torch import nn
 import torch
+import os
+import pandas as pd
+from torch.utils.data import Dataset
+from src import augmentation
+from src.utils import load_image
 
 def global_spectral_pool(x):
     """Helper function to keep the same dimensions after pooling to avoid resizing each time"""
@@ -56,8 +61,9 @@ class vanilla_CNN(Module):
         self.conv1 = conv_module(in_channels=bands, filters=32)
         self.conv2 = conv_module(in_channels=32, filters=64, maxpool_kernel=(2,2))
         self.conv3 = conv_module(in_channels=64, filters=128, maxpool_kernel=(2,2)) 
+        
         # The size of the fully connected layer Assumes a certain band convo, TODO make this flexible by band number.
-        self.fc1 = nn.Linear(in_features=512,out_features=classes)
+        self.fc1 = nn.Linear(in_features=3200,out_features=classes)
     
     def forward(self, x):
         """Take an input image and run the conv blocks, flatten the output and return  features"""
@@ -381,4 +387,61 @@ def load_from_backbone(state_dict, classes, bands):
     
     return model
     
-    
+
+# Dataset class
+class TreeDataset(Dataset):
+    """A csv file with a path to image crop and label
+    Args:
+       csv_file: path to csv file with image_path and label
+       df: pandas dataframe
+    """
+    def __init__(self, csv_file=None, df=None, config=None, train=True):
+        if df is None:
+            self.annotations = pd.read_csv(csv_file)
+        else:
+            self.annotations = df
+        self.train = train
+        self.config = config         
+
+        # Create augmentor
+        self.transformer = augmentation.augment(
+            train = self.train,
+            pad_or_resize=config["pad_or_resize"],
+            image_size = self.config["image_size"])
+                        
+        # Pin data to memory if desired, pad with zero if none. 
+        if self.config["preload_images"]:
+            self.image_dict = {}
+            for index, row in self.annotations.iterrows():
+                image_path = os.path.join(self.config["crop_dir"],row["image_path"])
+                try:
+                    self.image_dict[index] = load_image(image_path)
+                except ValueError:
+                    self.image_dict[index] = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])
+        
+    def __len__(self):
+        # 0th based index
+        return self.annotations.shape[0]
+
+    def __getitem__(self, index):
+        inputs = {}
+        image_path = self.annotations.image_path.iloc[index]      
+        individual = os.path.basename(os.path.splitext(image_path)[0])
+        if self.config["preload_images"]:
+            inputs["HSI"] = self.image_dict[index]
+        else:
+            image_basename = self.annotations.image_path.iloc[index]  
+            image_path = os.path.join(self.config["crop_dir"],image_basename)                
+            try:
+                image = load_image(image_path)
+            except:
+                image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])
+            inputs["HSI"] = image
+        inputs["HSI"] = self.transformer(inputs["HSI"])
+
+        if self.train:
+            label = self.annotations.label.iloc[index]
+            label = torch.tensor(label, dtype=torch.long)
+            return individual, inputs, label
+        else:
+            return individual, inputs

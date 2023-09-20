@@ -171,7 +171,7 @@ site_lists<-all_points %>% group_by(taxonID,siteID) %>%
   group_by(sci_name, siteID) %>% summarize(n=n()) %>% as.data.frame() %>% select(-geometry) %>% group_by(siteID) %>% arrange(siteID,desc(n))
 
 #label which are in the models.
-site_lists<-sitexspp %>% mutate(Included_in_Model=present,siteID=site) %>% select(-present, -site) %>% merge(site_lists, by=c("scientific","siteID"))  %>% arrange(siteID,desc(n))
+site_lists<-sitexspp %>% mutate(Included_in_Model=present,siteID=site) %>% select(-present, -site) %>% merge(site_lists, by=c("sci_name","siteID"))  %>% arrange(siteID,desc(n))
 
 write.csv(site_lists,"/Users/benweinstein/Dropbox/Weecology/Species/SpeciesMaps/site_lists.csv")
 

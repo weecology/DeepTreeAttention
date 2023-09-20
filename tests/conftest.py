@@ -76,8 +76,8 @@ def config(ROOT, tmpdir_factory):
     config["dead"]["epochs"] = 1
     config["pretrain_state_dict"] = None
     config["preload_images"] = False
-    config["batch_size"] = 1
-    config["gpus"] = 0
+    config["batch_size"] = 2
+    config["gpus"] = 1
     config["existing_test_csv"] = None
     config["workers"] = 0
     config["dead"]["num_workers"] = 0
@@ -100,7 +100,6 @@ def dm(config, ROOT):
         config=config,
         csv_file=csv_file,
         data_dir=config["crop_dir"],
-        site="HARV",
         create_train_test=True) 
     
     return data_module

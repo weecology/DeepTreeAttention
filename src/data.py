@@ -11,70 +11,12 @@ from src import generate, CHM, augmentation, megaplot, neon_paths, sampler
 from src.models import dead
 from src.utils import *
 from src.visualize import view_plot, view_samples
+from src.models.year import TreeDataset
 
 from shapely.geometry import Point
 import torch
-from torch.utils.data import Dataset
 import rasterio
 import tarfile
-
-# Dataset class
-class TreeDataset(Dataset):
-    """A csv file with a path to image crop and label
-    Args:
-       csv_file: path to csv file with image_path and label
-       df: pandas dataframe
-    """
-    def __init__(self, csv_file=None, df=None, config=None, train=True):
-        if df is None:
-            self.annotations = pd.read_csv(csv_file)
-        else:
-            self.annotations = df
-        self.train = train
-        self.config = config         
-
-        # Create augmentor
-        self.transformer = augmentation.augment(
-            train = self.train,
-            pad_or_resize=config["pad_or_resize"],
-            image_size = self.config["image_size"])
-                        
-        # Pin data to memory if desired, pad with zero if none. 
-        if self.config["preload_images"]:
-            self.image_dict = {}
-            for index, row in self.annotations.iterrows():
-                image_path = os.path.join(self.config["crop_dir"],row["image_path"])
-                try:
-                    self.image_dict[index] = load_image(image_path)
-                except ValueError:
-                    self.image_dict[index] = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])
-        
-    def __len__(self):
-        # 0th based index
-        return self.annotations.shape[0]
-
-    def __getitem__(self, index):
-        inputs = {}
-        image_path = self.annotations.image_path.iloc[index]      
-        individual = os.path.basename(os.path.splitext(image_path)[0])
-        if self.config["preload_images"]:
-            inputs["HSI"] = self.image_dict[index]
-        else:
-            image_basename = self.annotations.image_path.iloc[index]  
-            image_path = os.path.join(self.config["crop_dir"],image_basename)                
-            try:
-                image = load_image(image_path)
-            except:
-                image = torch.zeros(self.config["bands"], self.config["image_size"], self.config["image_size"])
-            inputs["HSI"] = image
-        inputs["HSI"] = self.transformer(inputs["HSI"])
-
-        if self.train:
-            label = self.annotations.label.iloc[index]
-            label = torch.tensor(label, dtype=torch.long)
-            return individual, inputs, label
-        else:
-            return individual, inputs
         
 def filter_data(path, config):
     """Transform raw NEON data into clean shapefile   
@@ -295,13 +237,12 @@ class TreeData(LightningDataModule):
     The module checkpoints the different phases of setup, if one stage failed it will restart from that stage. 
     Use regenerate=True to override this behavior in setup()
     """
-    def __init__(self, csv_file, config, experiment_id=None, comet_logger=None, client = None, data_dir=None, site=None, create_train_test=False, filter_species_site=None):
+    def __init__(self, csv_file, config, experiment_id=None, comet_logger=None, client = None, data_dir=None, create_train_test=False):
         """
         Args:
             config: optional config file to override
             data_dir: override data location, defaults to ROOT   
             regenerate: Whether to recreate raw data
-            site: only use data from a siteID
             experiment_id: string to use to label train-test split
             comet_logger: pytorch comet_logger for comet_ml experiment
         """
@@ -309,7 +250,6 @@ class TreeData(LightningDataModule):
         self.ROOT = os.path.dirname(os.path.dirname(__file__))
         self.csv_file = csv_file
         self.comet_logger = comet_logger
-        self.site = site
         self.experiment_id = experiment_id
         self.create_train_test = create_train_test
         
@@ -330,16 +270,10 @@ class TreeData(LightningDataModule):
             if self.config["replace_bounding_boxes"]: 
                 # Convert raw neon data to x,y tree locatins
                 df = filter_data(self.csv_file, config=self.config)
-                if site:
-                    if not site == "pretrain":
-                        if site in ["STEI","TREE"]:
-                            df = df[df.siteID.isin(["STEI","TREE"])]
-                        else:
-                            df = df[df.siteID ==site]
                 # Load any megaplot data
                 if not self.config["megaplot_dir"] is None:
                     try:
-                        megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config, client=self.client, site=site)
+                        megaplot_data = megaplot.load(directory=self.config["megaplot_dir"], config=self.config, client=self.client)
                         megaplot_data.loc[megaplot_data.taxonID=="MAGR4","taxonID"] = "MAGNO"  
                         # Hold IFAS records seperarely to model on polygons
                         IFAS = megaplot_data[megaplot_data.filename.str.contains("IFAS")]
@@ -357,19 +291,11 @@ class TreeData(LightningDataModule):
                     self.comet_logger.experiment.log_parameter("Species before CHM filter", len(df.taxonID.unique()))
                     self.comet_logger.experiment.log_parameter("Samples before CHM filter", df.shape[0])
                 
-                if filter_species_site:
-                    if filter_species_site in ["TREE","STEI"]:
-                        species_to_keep = df[df.siteID.isin(["TREE","STEI"])].taxonID.unique()
-                    else:
-                        species_to_keep = df[df.siteID.isin(filter_species_site)].taxonID.unique()
-                    
-                    df = df[df.taxonID.isin(species_to_keep)]
-                
                 # To write a shapefile, you need a CRS, if there is a single non null CRS, use it, if not assign a dummy one
                 if df.crs is None:
                     epsgs = df["epsg"].unique()                    
                     df.set_crs(inplace=True, crs=epsgs[0], allow_override=True)
-                df.to_file("{}/unfiltered_points_{}.shp".format(self.data_dir, site))
+                df.to_file("{}/unfiltered_points.shp".format(self.data_dir))
                 self.unfiltered_points = df
 
                 # Remove 'bad points' hand reviewed.
@@ -418,7 +344,7 @@ class TreeData(LightningDataModule):
                 #    self.comet_logger.experiment.log_parameter("Species after dead filtering",len(self.crowns.taxonID.unique()))
                 #    self.comet_logger.experiment.log_parameter("Samples after dead filtering",self.crowns.shape[0])
             
-            self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir, site))
+            self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
             if self.config["replace_crops"]:   
                 #HSI crops
                 self.annotations = generate.generate_crops(
@@ -465,20 +391,20 @@ class TreeData(LightningDataModule):
             if create_train_test:
                 self.train, self.test = self.create_train_test_split(self.experiment_id)  
             else:
-                print("Loading a train-test split from experiment {}/{}".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))
-                self.train = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
-                self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))               
+                print("Loading a train-test split from experiment {}/{}".format(self.data_dir, "{}".format(self.config["train_test_commit"])))
+                self.train = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}".format(self.config["train_test_commit"])))            
+                self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}".format(self.config["train_test_commit"])))               
         else:
             print("Loading previous data commit {}".format(self.config["use_data_commit"]))
             self.annotations = pd.read_csv("{}/annotations.csv".format(self.data_dir)) 
                 
             if create_train_test:
-                print("Using data commit {} creating a new train-test split for site {}".format(self.config["use_data_commit"],self.site))
+                print("Using data commit {} creating a new train-test split for site {}".format(self.config["use_data_commit"]))
                 self.create_train_test_split(ID=self.experiment_id)
             else:
-                print("Loading a train-test split from {}/{}".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))
-                self.train = pd.read_csv("{}/train_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
-                self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}_{}".format(self.config["train_test_commit"], site)))            
+                print("Loading a train-test split from {}/{}".format(self.data_dir, "{}".format(self.config["train_test_commit"])))
+                self.train = pd.read_csv("{}/train_{}.csv".format(self.data_dir, "{}".format(self.config["train_test_commit"])))            
+                self.test = pd.read_csv("{}/test_{}.csv".format(self.data_dir, "{}".format(self.config["train_test_commit"])))            
             
             self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
                             
@@ -497,14 +423,7 @@ class TreeData(LightningDataModule):
             len(self.test.label.unique()),
             len(self.test.siteID.unique()))
         )    
-    def create_train_test_split(self, ID):      
-        if not "pretrain" in self.site:
-            # Get species present at site, as well as those species from other sites
-            if self.site in ["TREE","STEI"]:
-                self.annotations = self.annotations[self.annotations.siteID.isin(["TREE","STEI"])].reset_index(drop=True)
-            else:
-                self.annotations = self.annotations[self.annotations.siteID == self.site].reset_index(drop=True)
-
+    def create_train_test_split(self, ID):
         if self.config["existing_test_csv"]:
             print("Reading in existing test_csv: {}".format(self.config["existing_test_csv"]))
             existing_test = pd.read_csv(self.config["existing_test_csv"])
@@ -515,17 +434,16 @@ class TreeData(LightningDataModule):
             self.train, self.test = train_test_split(self.annotations, config=self.config, client=self.client) 
 
         # Capture discarded species
-        if not "pretrain" in self.site:
-            individuals = np.concatenate([self.train.individual.unique(), self.test.individual.unique()])
-            self.novel = self.annotations[~self.annotations.individual.isin(individuals)]
-            
-            # Counts by discarded species
-            keep = self.novel.drop_duplicates("individual").taxonID.value_counts() > (self.config["min_test_samples"])
-            species_to_keep = keep[keep].index
-            self.novel = self.novel[self.novel.taxonID.isin(species_to_keep)]
-            
-            #Recover any individual from target site
-            self.novel.to_csv("{}/novel_species_{}.csv".format(self.data_dir, self.site))  
+        individuals = np.concatenate([self.train.individual.unique(), self.test.individual.unique()])
+        self.novel = self.annotations[~self.annotations.individual.isin(individuals)]
+        
+        # Counts by discarded species
+        keep = self.novel.drop_duplicates("individual").taxonID.value_counts() > (self.config["min_test_samples"])
+        species_to_keep = keep[keep].index
+        self.novel = self.novel[self.novel.taxonID.isin(species_to_keep)]
+        
+        #Recover any individual from target site
+        self.novel.to_csv("{}/novel_species.csv".format(self.data_dir))  
             
         self.create_label_dict(self.train, self.test)
 
@@ -612,3 +530,12 @@ class TreeData(LightningDataModule):
         
         return data_loader
         
+    def predict_dataloader(self, ds):
+        data_loader = torch.utils.data.DataLoader(
+            ds,
+            batch_size=self.config["batch_size"],
+            shuffle=False,
+            num_workers=self.config["workers"],
+        )
+        
+        return data_loader
