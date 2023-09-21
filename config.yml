@@ -55,6 +55,7 @@ workers: 0
 taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
 ### Training Parameters
+pretrain_state_dict:
 gpus: 1
 batch_size: 24
 bands: 349
