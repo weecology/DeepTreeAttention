@@ -17,7 +17,7 @@ max_samples_per_class: 100000
 
 # Iterations to search for the best train-test split that mantains the largest number of species. 
 # Set to 1 for debugging, no files will be written
-iterations: 4000
+iterations: 1
 
 # Minimum CanopyModel height, leave blank to skip CHM filtering
 min_CHM_height: 2
@@ -49,8 +49,8 @@ existing_test_csv:
 # Resized pixel size of the crowns. Square crops around each pixel of size x
 image_size: 20
 pad_or_resize: resize
-preload_images: True
-preload_image_dict: True
+preload_images: False
+preload_image_dict: False
 workers: 0
 taxonomic_csv: /home/b.weinstein/DeepTreeAttention/data/raw/families.csv
 
