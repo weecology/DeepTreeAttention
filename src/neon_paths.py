@@ -25,7 +25,7 @@ def bounds_to_geoindex(bounds):
 
     return geoindex
 
-def find_sensor_path(lookup_pool, shapefile=None, bounds=None, geo_index=None, all_years=False):
+def find_sensor_path(lookup_pool, shapefile=None, bounds=None, geo_index=None, all_years=False, filter_year=None):
     """Find a hyperspec path based on the shapefile using NEONs schema
     Args:
         bounds: Optional: list of top, left, bottom, right bounds, usually from geopandas.total_bounds. Instead of providing a shapefile
@@ -50,7 +50,14 @@ def find_sensor_path(lookup_pool, shapefile=None, bounds=None, geo_index=None, a
         # No duplicate years
         years = [year_from_tile(x) for x in match]
         year_df = pd.DataFrame({"year":years,"tiles":match})
+        
+        # limit by a year
+        if filter_year is not None:
+            year_df = year_df[year_df.year==filter_year]
+
         all_year_match = year_df.groupby("year").apply(lambda x: x.head(1)).tiles.values
+
+        # 2019 only
 
         return all_year_match
     else:        

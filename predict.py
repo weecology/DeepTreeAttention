@@ -37,7 +37,7 @@ def convert(rgb_path, hyperspectral_pool, savedir):
     h5_list = [x for x in hyperspectral_pool if geo_index in x]
     tif_paths = []
     for path in h5_list:
-        year = path.split("/")[6]
+        year = path.split("/")[7]
         tif_basename = os.path.splitext(os.path.basename(rgb_path))[0] + "_hyperspectral_{}.tif".format(year)
         tif_path = "{}/{}".format(savedir, tif_basename)
         if not os.path.exists(tif_path):
@@ -57,7 +57,7 @@ comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["
 comet_logger.experiment.log_parameters(config)
 
 #client = Client()
-client = start(cpus=150, mem_size="5GB")
+client = start(cpus=3, mem_size="5GB")
 
 #Get site arg
 site=str(sys.argv[1])
@@ -71,7 +71,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     # Crop Predicted Crowns
     model_name = os.path.splitext(os.path.basename(model_path))[0]
     try:
-        prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}".format(site, model_name))
+        prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/2021/predictions/{}/{}".format(site, model_name))
         os.makedirs(prediction_dir, exist_ok=True)        
     except:
         pass
@@ -84,19 +84,10 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         pass
 
     ### Step 1 Find RGB Tiles and convert HSI, prioritize 2022
-    for year in [2022, 2021, 2020, 2019]:
+    for year in [2021]:
         tiles = find_rgb_files(site=site, rgb_pool=rgb_pool, year=year)
         if len(tiles) > 0:
             break
-    
-    # remove existing files
-    #tarfiles = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/tar/*.tar*".format(site))
-    #tiles_to_run = []
-    #for tile in tiles:
-        #image_name = os.path.splitext(os.path.basename(tile))[0]
-        #needs_to_be_run = np.sum([image_name in x for x in tarfiles]) == 0
-        #if needs_to_be_run:
-            #tiles_to_run.append(tile)
         
     if len(tiles) == 0:
         raise ValueError("There are no RGB tiles left to run for any year since 2019 for {}".format(site))
@@ -105,8 +96,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     #    convert,
     #    tiles,
     #    hyperspectral_pool=h5_pool,
-    #    savedir=config["HSI_tif_dir"]
-    #)
+    #   savedir=config["HSI_tif_dir"])
     #wait(tif_futures)
     
     species_futures = []
@@ -117,7 +107,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     # Predict crowns
     for x in tiles:
         basename = os.path.splitext(os.path.basename(x))[0]
-        crop_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/{}".format(site, basename)
+        crop_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2021/site_crops/{}/{}".format(site, basename)
         try:
             os.mkdir(crop_dir)
         except:
@@ -127,7 +117,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
                 rgb_path=x,
                 config=config,
                 dead_model_path=dead_model_path,
-                savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns",
+                savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2021/crowns",
                 overwrite=False)
         except:
             traceback.print_exc()
@@ -185,7 +175,8 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             
     return crop_futures
             
-rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config)
+rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config, year="2021")
+
 futures = create_landscape_map(
     site,
     species_model_paths[site],
