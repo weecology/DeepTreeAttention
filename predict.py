@@ -57,7 +57,7 @@ comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["
 comet_logger.experiment.log_parameters(config)
 
 #client = Client()
-client = start(cpus=3, mem_size="5GB")
+client = start(cpus=10, mem_size="5GB")
 
 #Get site arg
 site=str(sys.argv[1])
@@ -84,11 +84,12 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         pass
 
     ### Step 1 Find RGB Tiles and convert HSI, prioritize 2022
-    for year in [2021]:
+    for year in [2019]:
         tiles = find_rgb_files(site=site, rgb_pool=rgb_pool, year=year)
         if len(tiles) > 0:
             break
-        
+    
+    tiles = tiles[:10]
     if len(tiles) == 0:
         raise ValueError("There are no RGB tiles left to run for any year since 2019 for {}".format(site))
     
