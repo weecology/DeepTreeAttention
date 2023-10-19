@@ -107,7 +107,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     # Predict crowns
     for x in tiles:
         basename = os.path.splitext(os.path.basename(x))[0]
-        crop_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2021/site_crops/{}/{}".format(site, basename)
+        crop_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2019/site_crops/{}/{}".format(site, basename)
         try:
             os.mkdir(crop_dir)
         except:
@@ -117,7 +117,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
                 rgb_path=x,
                 config=config,
                 dead_model_path=dead_model_path,
-                savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2021/crowns",
+                savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2019/crowns",
                 overwrite=False)
         except:
             traceback.print_exc()
@@ -175,7 +175,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             
     return crop_futures
             
-rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config, year="2021")
+rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config, year="2019")
 
 futures = create_landscape_map(
     site,
