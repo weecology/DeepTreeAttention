@@ -63,7 +63,7 @@ client = start(cpus=20, mem_size="5GB")
 site=str(sys.argv[1])
 comet_logger.experiment.add_tag("prediction_{}".format(site))
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
-config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops"
+config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2019/site_crops"
 savedir = config["crop_dir"] 
 
 def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h5_pool, CHM_pool):
