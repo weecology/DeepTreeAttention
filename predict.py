@@ -57,7 +57,7 @@ comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["
 comet_logger.experiment.log_parameters(config)
 
 #client = Client()
-client = start(cpus=10, mem_size="5GB")
+client = start(cpus=20, mem_size="5GB")
 
 #Get site arg
 site=str(sys.argv[1])
@@ -77,9 +77,9 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
         pass
     
     try:
-        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}".format(site))
-        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/tar".format(site))
-        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/site_crops/{}/shp".format(site))
+        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2019/site_crops/{}".format(site))
+        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2019/site_crops/{}/tar".format(site))
+        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2019/site_crops/{}/shp".format(site))
     except:
         pass
 
