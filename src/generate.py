@@ -372,7 +372,7 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
             try:
                 img_path = tile_to_path[row["geo_index"]]
             except:
-                continue
+                raise
             
             for x in img_path:
                 future = client.submit(write_crop, row=row,img_path=x, savedir=savedir, as_numpy=as_numpy, suffix=suffix)

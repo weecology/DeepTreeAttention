@@ -61,9 +61,10 @@ client = start(cpus=20, mem_size="5GB")
 
 #Get site arg
 site=str(sys.argv[1])
+year=str(sys.argv[2])
 comet_logger.experiment.add_tag("prediction_{}".format(site))
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
-config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2019/site_crops"
+config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/{}/site_crops".format(year)
 savedir = config["crop_dir"] 
 
 def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h5_pool, CHM_pool):
@@ -71,20 +72,20 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     # Crop Predicted Crowns
     model_name = os.path.splitext(os.path.basename(model_path))[0]
     try:
-        prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2019/predictions/{}/{}".format(site, model_name))
+        prediction_dir = os.path.join("/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/{}/predictions/{}/{}".format(year, site, model_name))
         os.makedirs(prediction_dir, exist_ok=True)        
     except:
         pass
-    
+
     try:
-        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2019/site_crops/{}".format(site))
-        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2019/site_crops/{}/tar".format(site))
-        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2019/site_crops/{}/shp".format(site))
+        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/{}/site_crops/{}".format(year, site))
+        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/{}/site_crops/{}/tar".format(year, site))
+        os.mkdir("/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/{}/site_crops/{}/shp".format(year, site))
     except:
         pass
 
     ### Step 1 Find RGB Tiles and convert HSI, prioritize 2022
-    for year in [2019]:
+    for year in [int(year)]:
         tiles = find_rgb_files(site=site, rgb_pool=rgb_pool, year=year)
         if len(tiles) > 0:
             break
@@ -101,13 +102,13 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     
     species_futures = []
     crop_futures = []
-    
+    crown_annotations_paths = []
     # Randomize tiles
-    random.shuffle(tiles)
+    #random.shuffle(tiles)
     # Predict crowns
     for x in tiles:
         basename = os.path.splitext(os.path.basename(x))[0]
-        crop_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2019/site_crops/{}/{}".format(site, basename)
+        crop_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/{}/site_crops/{}/{}".format(year, site, basename)
         try:
             os.mkdir(crop_dir)
         except:
@@ -117,39 +118,39 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
                 rgb_path=x,
                 config=config,
                 dead_model_path=dead_model_path,
-                savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/2019/crowns",
+                savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/{}/crowns".format(year),
                 overwrite=False)
         except:
             traceback.print_exc()
+            continue
 
-        crop_future = client.submit(
-            predict.generate_prediction_crops,
+        crown_annotations_path = predict.generate_prediction_crops(
             crown_path,
             config,
             crop_dir=crop_dir,
             as_numpy=True,
-            client=None,
+            client=client,
             img_pool=hsi_pool,
             h5_pool=h5_pool,
             rgb_pool=rgb_pool,
             overwrite=False
         )
-        crop_futures.append(crop_future)
+        crown_annotations_paths.append(crown_annotations_path)
     
     # load model
     # Hot fix for several small sites that were better in hierarchical models
     site_config = copy.deepcopy(config)
-    if any(x in model_path for x in ["SJER","WREF","YELL"]):
+    if any(x in model_path for x in ["SJER","WREF","YELL","BONA"]):
         site_config["max_flat_species"] = 0
 
     m = multi_stage.MultiStage.load_from_checkpoint(model_path, config=site_config)
     trainer = Trainer(devices=config["gpus"])
-    for finished_crop in as_completed(crop_futures):
-        try:
-            crown_annotations_path = finished_crop.result()
-        except:
-            traceback.print_exc()
-            continue
+    for finished_crop in crown_annotations_paths:
+        #try:
+        #    crown_annotations_path = finished_crop.result()
+        #except:
+        #    traceback.print_exc()
+        #    continue
         if crown_annotations_path is None:
             continue
         print(crown_annotations_path)
@@ -174,8 +175,10 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             continue
             
     return crop_futures
-            
-rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config, year="2019")
+
+config["HSI_tif_dir"] = "/orange/ewhite/b.weinstein/DeepTreeAttention/Hyperspectral_tifs/2021/".format(year)
+os.makedirs(config["HSI_tif_dir"],exist_ok=True)
+rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config, year=year)
 
 futures = create_landscape_map(
     site,

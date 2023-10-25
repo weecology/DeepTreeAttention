@@ -65,7 +65,7 @@ batch_size: 24
 bands: 349
 head_class_minimum_ratio: 0.4
 seperate_oak_model: False
-max_flat_species: 8
+max_flat_species: 10
 
 # Learning rates
 lr: 0.0001
@@ -104,5 +104,5 @@ dead:
     epochs: 40
     lr: 0.0001
     savedir: /orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/
-    batch_size: 128
+    batch_size: 24
     num_workers: 0
