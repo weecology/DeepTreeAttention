@@ -416,6 +416,9 @@ def generate_crops(gdf, img_pool, savedir, rgb_pool, h5_pool, client=None, conve
                     
     annotations = gdf.loc[indexes]
     print("shape of annotations is {}".format(annotations.shape))
+    if annotations.shape[0] == 0:
+        raise ValueError("No annotations left for {}".format(geo_index))
+
     annotations["image_path"] = filenames    
     annotations["HSI_tile"] = HSI_tile
     annotations["tile_year"] = annotations.image_path.apply(lambda x: os.path.splitext(os.path.basename(x))[0].split("_")[-2])

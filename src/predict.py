@@ -231,12 +231,13 @@ def predict_dead(crowns, dead_model_path, config):
     
     # The batch norm statistics are not helpful in generalization, turn off.
     dead_model.train()
-        
-    ds = dead.utm_dataset(crowns=crowns, config=config)
+    image_path = crowns.RGB_tile.iloc[0]
+    RGB_src = rasterio.open(image_path)
+    numpy_array = RGB_src.read()
+    ds = dead.utm_dataset(crowns=crowns, numpy_array=numpy_array, config=config)
     dead_dataloader = dead_model.predict_dataloader(ds)
     trainer = Trainer(enable_checkpointing=False, devices=config["gpus"])
     outputs = trainer.predict(dead_model, dead_dataloader)
-    print("len of predict is {}".format(len(outputs)))
     
     stacked_outputs = np.vstack(np.concatenate(outputs))
     label = np.argmax(stacked_outputs,1)

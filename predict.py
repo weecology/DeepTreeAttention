@@ -53,21 +53,19 @@ config["preload_images"] = False
 config["preload_image_dict"] = False
 
 comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
-
 comet_logger.experiment.log_parameters(config)
 
-#client = Client()
-client = start(cpus=20, mem_size="5GB")
+client = start(cpus=40, mem_size="5GB")
 
 #Get site arg
 site=str(sys.argv[1])
 year=str(sys.argv[2])
-comet_logger.experiment.add_tag("prediction_{}".format(site))
+comet_logger.experiment.add_tag("prediction_{}_{}".format(year, site))
 dead_model_path = "/orange/idtrees-collab/DeepTreeAttention/Dead/snapshots/c4945ae57f4145948531a0059ebd023c.pl"
 config["crop_dir"] = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/{}/site_crops".format(year)
 savedir = config["crop_dir"] 
 
-def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h5_pool, CHM_pool):
+def create_landscape_map(site, year, model_path, config, client, rgb_pool, hsi_pool, h5_pool, CHM_pool):
     #Prepare directories
     # Crop Predicted Crowns
     model_name = os.path.splitext(os.path.basename(model_path))[0]
@@ -97,16 +95,15 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
     #    convert,
     #    tiles,
     #    hyperspectral_pool=h5_pool,
-    #   savedir=config["HSI_tif_dir"])
-    #wait(tif_futures)
+    #    savedir=config["HSI_tif_dir"])
+    # wait(tif_futures)
     
     species_futures = []
     crop_futures = []
-    crown_annotations_paths = []
     # Randomize tiles
-    #random.shuffle(tiles)
+    random.shuffle(tiles)
     # Predict crowns
-    for x in tiles:
+    for x in tiles[:2]:
         basename = os.path.splitext(os.path.basename(x))[0]
         crop_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/{}/site_crops/{}/{}".format(year, site, basename)
         try:
@@ -124,18 +121,19 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             traceback.print_exc()
             continue
 
-        crown_annotations_path = predict.generate_prediction_crops(
+        crop_future = client.submit(
+            predict.generate_prediction_crops,
             crown_path,
             config,
             crop_dir=crop_dir,
             as_numpy=True,
-            client=client,
+            client=None,
             img_pool=hsi_pool,
             h5_pool=h5_pool,
             rgb_pool=rgb_pool,
             overwrite=False
         )
-        crown_annotations_paths.append(crown_annotations_path)
+        crop_futures.append(crop_future)
     
     # load model
     # Hot fix for several small sites that were better in hierarchical models
@@ -145,13 +143,11 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
 
     m = multi_stage.MultiStage.load_from_checkpoint(model_path, config=site_config)
     trainer = Trainer(devices=config["gpus"])
-    for finished_crop in crown_annotations_paths:
-        #try:
-        #    crown_annotations_path = finished_crop.result()
-        #except:
-        #    traceback.print_exc()
-        #    continue
-        if crown_annotations_path is None:
+    for finished_crop in as_completed(crop_futures):
+        try:
+            crown_annotations_path = finished_crop.result()
+        except:
+            traceback.print_exc()
             continue
         print(crown_annotations_path)
 
@@ -176,12 +172,13 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
             
     return crop_futures
 
-config["HSI_tif_dir"] = "/orange/ewhite/b.weinstein/DeepTreeAttention/Hyperspectral_tifs/2021/".format(year)
+config["HSI_tif_dir"] = "/orange/ewhite/b.weinstein/DeepTreeAttention/Hyperspectral_tifs/{}/".format(year)
 os.makedirs(config["HSI_tif_dir"],exist_ok=True)
 rgb_pool, h5_pool, hsi_pool, CHM_pool = create_glob_lists(config, year=year)
 
 futures = create_landscape_map(
     site,
+    year,
     species_model_paths[site],
     config,
     client=client, 

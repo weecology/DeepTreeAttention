@@ -82,7 +82,7 @@ class AliveDead(pl.LightningModule):
         val_loader = torch.utils.data.DataLoader(
             self.val_ds,
             batch_size=self.config["dead"]["batch_size"],
-            shuffle=True,
+            shuffle=False,
             num_workers=self.config["dead"]["num_workers"]
         )   
         
@@ -157,14 +157,14 @@ class utm_dataset(Dataset):
     """A csv file with a path to image crop and label
     Args:
        crowns: geodataframe of crown locations from a single rasterio src
-       preload: there is only 1 RGB tile, load it just once on init
     """
-    def __init__(self, crowns, config=None, preload=True):
+    def __init__(self, crowns, numpy_array=None, config=None):
         self.config = config 
         self.crowns = crowns
         self.image_size = config["image_size"]
         self.transform = get_transform(augment=False)
-        image_path = self.crowns.RGB_tile.iloc[0]        
+        self.numpy_array = numpy_array
+        image_path = self.crowns.RGB_tile.iloc[0]     
         self.RGB_src = rasterio.open(image_path)
  
     def __len__(self):
@@ -175,8 +175,21 @@ class utm_dataset(Dataset):
         #Load crown and crop RGB
         geom = self.crowns.iloc[index].geometry
         left, bottom, right, top = geom.bounds
-        box = self.RGB_src.read(window=rasterio.windows.from_bounds(left-1, bottom-1, right+1, top+1, transform=self.RGB_src.transform))             
-        
+        if self.numpy_array is None:
+            box = self.RGB_src.read(window=rasterio.windows.from_bounds(left-1, bottom-1, right+1, top+1, transform=self.RGB_src.transform))             
+        else:
+            top_row, left_col = self.RGB_src.index(left-1, top+1)
+            bottom_row, right_col = self.RGB_src.index(right+1,bottom-1)
+            # Check for edges
+            if top_row < 0:
+                top_row = 0
+            if left_col < 0:
+                left_col = 0
+            if bottom_row > self.numpy_array.shape[1]:
+                bottom_row = self.numpy_array.shape[1]
+            if right_col > self.numpy_array.shape[2]:
+                right_col = self.numpy_array.shape[2]
+            box = self.numpy_array[:,top_row:bottom_row, left_col:right_col]
         if box.size == 0:
             return None
         
