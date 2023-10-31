@@ -55,7 +55,7 @@ config["preload_image_dict"] = False
 comet_logger = CometLogger(project_name="DeepTreeAttention2", workspace=config["comet_workspace"], auto_output_logging="simple")    
 comet_logger.experiment.log_parameters(config)
 
-client = start(cpus=40, mem_size="5GB")
+client = start(cpus=20, mem_size="5GB")
 
 #Get site arg
 site=str(sys.argv[1])
@@ -103,7 +103,7 @@ def create_landscape_map(site, year, model_path, config, client, rgb_pool, hsi_p
     # Randomize tiles
     random.shuffle(tiles)
     # Predict crowns
-    for x in tiles[:2]:
+    for x in tiles:
         basename = os.path.splitext(os.path.basename(x))[0]
         crop_dir = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/{}/site_crops/{}/{}".format(year, site, basename)
         try:

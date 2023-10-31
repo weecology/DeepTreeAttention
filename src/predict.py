@@ -118,6 +118,11 @@ def generate_prediction_crops(crown_path, config, rgb_pool, h5_pool, img_pool, c
             tfile.add(filename, arcname=path)
             os.remove(filename)
     
+    # Delete if local tile
+    HSI_tile = crown_annotations.HSI_tile
+    if "local" in HSI_tile:
+        os.remove(HSI_tile)
+
     return output_name
 
 def predict_tile(crown_annotations, m, config, savedir, site, trainer, filter_dead=False):
@@ -174,6 +179,7 @@ def predict_tile(crown_annotations, m, config, savedir, site, trainer, filter_de
     
     #remove files
     shutil.rmtree(config["crop_dir"])
+
     
     return trees
 
