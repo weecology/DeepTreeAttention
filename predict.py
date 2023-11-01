@@ -114,6 +114,7 @@ def create_landscape_map(site, year, model_path, config, client, rgb_pool, hsi_p
             crown_path = predict.find_crowns(
                 rgb_path=x,
                 config=config,
+                CHM_pool=CHM_pool,
                 dead_model_path=dead_model_path,
                 savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/year/{}/crowns".format(year),
                 overwrite=False)
