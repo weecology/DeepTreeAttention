@@ -128,6 +128,7 @@ def create_landscape_map(site, model_path, config, client, rgb_pool, hsi_pool, h
                 config=config,
                 dead_model_path=dead_model_path,
                 savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/crowns",
+                CHM_pool=CHM_pool,
                 overwrite=False)
         except:
             traceback.print_exc()

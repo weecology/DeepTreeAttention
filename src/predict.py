@@ -106,7 +106,7 @@ def generate_prediction_crops(crown_path, config, rgb_pool, h5_pool, img_pool, c
     
     #Write file alongside       
     crown_annotations = gpd.GeoDataFrame(crown_annotations, geometry="geometry")    
-    crown_annotations = crown_annotations.merge(crowns[["individual","dead_label","dead_score", "score"]])
+    crown_annotations = crown_annotations.merge(crowns[["individual","dead_label","dead_score", "score","CHM_height"]])
     
     crown_annotations.to_file(output_name)  
     
@@ -166,8 +166,8 @@ def predict_tile(crown_annotations, m, config, savedir, site, trainer, filter_de
     trees["crown_score"] = trees["score"]
     trees = trees.drop(columns=["pred_taxa_top1","label","score","taxonID"])
     trees = trees.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
-    trees = gpd.GeoDataFrame(trees, geometry="geometry")    
-    
+    trees = gpd.GeoDataFrame(trees, geometry="geometry")
+
     #Save .shp
     output_name = os.path.splitext(os.path.basename(crown_annotations))[0]
     trees.to_file(os.path.join(savedir, "{}.shp".format(output_name)))
