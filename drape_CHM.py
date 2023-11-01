@@ -55,7 +55,7 @@ def drape(shp, config, CHM_pool):
     return dst
 
 futures = []
-for f in files:
+for f in all_files:
     future = client.submit(drape, f, CHM_pool=CHM_pool, config=config)
     futures.append(future)
 
