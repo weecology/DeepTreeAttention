@@ -32,36 +32,38 @@ def clean_up(path):
     b = a.to_crs("EPSG:4326")
     return b
 
-client = start_cluster.start(cpus=120,mem_size="5GB")
+#client = start_cluster.start(cpus=50,mem_size="5GB")
 #client = Client()
 
 # Clean up the files for each site
-for site in ["TREE"]:
+for site in species_model_paths: 
     print(site)
+    zipfilename = "/blue/ewhite/b.weinstein/DeepTreeAttention/Zenodo/{}.zip".format(
+        site)
+    if os.path.exists(zipfilename):
+        continue
     basename = os.path.splitext(os.path.basename(species_model_paths[site]))[0]
     predictions = glob.glob(
-        "/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}/*.shp".format(site, basename), recursive=True)
+        "/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}/draped/*.shp".format(site, basename), recursive=True)
     if len(predictions) == 0:
         continue
-    futures = client.map(clean_up, predictions)
-    wait(futures)
-    site_csv = []
-    for future in futures:
-        result = future.result()
-        site_csv.append(pd.DataFrame(result))
-    site_csv = pd.concat(site_csv)
+    #futures = client.map(clean_up, predictions)
+    #wait(futures)
+    #site_csv = []
+    #for future in futures:
+    #    result = future.result()
+    #    site_csv.append(pd.DataFrame(result))
+    site_shps = []
+    for x in predictions:
+        gdf = gpd.read_file(x)
+        site_shps.append(gdf)
+        
+    site_csv = pd.concat(site_shps)
     site_csv.to_csv(
-        "/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}/{}.csv".format(site, basename, site), index=False)
-    zipfilename = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}/{}.zip".format(
-        site, basename, site)
-    with zipfile.ZipFile(zipfilename, "w") as zipObj:
-        print("creating zip")
-        for folderName, subfolders, filenames in os.walk("/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}".format(site, basename)):
-            for filename in filenames:
-                # create complete filepath of file in directory
-                filePath = os.path.join(folderName, filename)
-                # Don't include itself
-                if ".zip" in filePath:
-                    continue
-                # Add file to zip
-                zipObj.write(filePath, arcname=filename)
+        "/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}/draped/{}.csv".format(site, basename, site), index=False)
+    zipfilename = "/blue/ewhite/b.weinstein/DeepTreeAttention/Zenodo/{}.zip".format(
+        site)
+    
+    file_locations = "/blue/ewhite/b.weinstein/DeepTreeAttention/results/predictions/{}/{}/draped/*".format(site, basename)
+    print(file_locations)
+    subprocess.call("zip -9 -j -r {} {}".format(zipfilename, file_locations), shell=True)

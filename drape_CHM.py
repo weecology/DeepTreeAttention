@@ -27,10 +27,18 @@ for site in species_model_paths:
 all_files = [item for sublist in all_files for item in sublist]
 print("Found {} files".format(len(all_files)))
 
-client = start(cpus=120,mem_size="4GB")
+client = start(cpus=10,mem_size="20GB")
 
 def drape(shp, config, CHM_pool):
     """Take in a predictions shapefile and extract CHM height"""
+
+    dirname = os.path.dirname(shp)
+    basename = os.path.basename(shp)
+    dst = os.path.join(dirname,"draped")
+    
+    if os.path.exists(dst):
+        return dst
+
     df = gpd.read_file(shp)
 
     #buffer slightly, CHM model can be patchy
@@ -46,9 +54,7 @@ def drape(shp, config, CHM_pool):
     df["height"] = [x["q99"] for x in draped_boxes]
     filtered_trees = df[df["height"]>3]
 
-    dirname = os.path.dirname(shp)
-    basename = os.path.basename(shp)
-    dst = os.path.join(dirname,"draped")
+
     os.makedirs(dst, exist_ok=True)
     filtered_trees.to_file(os.path.join(dst, basename))
 
