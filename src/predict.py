@@ -2,6 +2,7 @@
 from deepforest import main
 from deepforest.utilities import annotations_to_shapefile
 import glob
+import inspect
 import os
 import geopandas as gpd
 import rasterio
@@ -27,7 +28,7 @@ def RGB_transform(augment):
     return transforms.Compose(data_transforms)
     
 def find_crowns(rgb_path, config, dead_model_path=None):
-    crowns = predict_crowns(rgb_path)
+    crowns = predict_crowns(rgb_path, config=config)
     if crowns is None:
         return None
     crowns["tile"] = rgb_path
@@ -50,6 +51,12 @@ def find_crowns(rgb_path, config, dead_model_path=None):
         dead_label, dead_score = predict_dead(crowns=filtered_crowns, dead_model_path=dead_model_path, config=config)
         filtered_crowns["dead_label"] = dead_label
         filtered_crowns["dead_score"] = dead_score
+    elif "cropmodel_label" in filtered_crowns.columns:
+        filtered_crowns["dead_label"] = filtered_crowns["cropmodel_label"]
+        filtered_crowns["dead_score"] = filtered_crowns.get("cropmodel_score")
+    else:
+        filtered_crowns["dead_label"] = None
+        filtered_crowns["dead_score"] = None
     
     return filtered_crowns
 
@@ -109,14 +116,37 @@ def predict_tile(crown_annotations,m, trainer, config, savedir, filter_dead=Fals
     
     return trees
 
-def predict_crowns(PATH):
+def _load_dead_cropmodel(config):
+    model_name = config.get("deepforest_dead_cropmodel_name")
+    if not model_name:
+        return None
+
+    cropmodel = main.deepforest()
+    cropmodel.load_model(model_name=model_name)
+    return cropmodel.model if hasattr(cropmodel, "model") else cropmodel
+
+
+def predict_crowns(PATH, config=None):
     """Predict a set of tree crowns from RGB data"""
     m = main.deepforest()
     if torch.cuda.is_available():
         print("CUDA detected")
         m.config["gpus"] = 1
-    m.use_release(check_release=False)
-    boxes = m.predict_tile(PATH)
+    m.load_model(model_name="weecology/deepforest-tree")
+
+    cropmodel = None
+    if config is not None:
+        cropmodel = _load_dead_cropmodel(config)
+
+    predict_signature = inspect.signature(m.predict_tile)
+    if cropmodel is None:
+        boxes = m.predict_tile(PATH)
+    elif "cropmodel" in predict_signature.parameters:
+        boxes = m.predict_tile(PATH, cropmodel=cropmodel)
+    elif "crop_model" in predict_signature.parameters:
+        boxes = m.predict_tile(PATH, crop_model=cropmodel)
+    else:
+        boxes = m.predict_tile(PATH)
     if boxes is None:
         return None
     r = rasterio.open(PATH)
