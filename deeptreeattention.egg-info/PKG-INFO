@@ -1,3 +1,38 @@
+Metadata-Version: 2.4
+Name: deeptreeattention
+Version: 0.1.0
+Summary: Tree species prediction for National Ecological Observatory Network data.
+Author: Ben Weinstein
+License: MIT
+Requires-Python: <3.13,>=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: comet_ml
+Requires-Dist: dask
+Requires-Dist: dask_jobqueue
+Requires-Dist: deepforest
+Requires-Dist: descartes
+Requires-Dist: distributed
+Requires-Dist: geopandas
+Requires-Dist: h5py
+Requires-Dist: matplotlib
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: pytorch_lightning
+Requires-Dist: PyYAML
+Requires-Dist: rasterio
+Requires-Dist: rasterstats
+Requires-Dist: scikit-image
+Requires-Dist: scikit-learn
+Requires-Dist: Shapely
+Requires-Dist: torch
+Requires-Dist: torchmetrics
+Requires-Dist: torchvision
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: ruff; extra == "dev"
+Dynamic: license-file
+
 DeepTreeAttention
 ==============================
 

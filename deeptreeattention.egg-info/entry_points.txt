@@ -1,0 +1,2 @@
+[console_scripts]
+deeptree-infer-osbs = src.pipelines.osbs_inference:main

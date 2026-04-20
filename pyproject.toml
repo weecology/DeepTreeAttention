@@ -38,7 +38,8 @@ dependencies = [
 dev = ["pytest", "ruff"]
 
 [project.scripts]
-deeptree-osbs-smoke = "src.osbs_smoke:main"
+deeptree-infer-osbs = "src.pipelines.osbs_inference:main"
 
 [tool.setuptools.packages.find]
-include = ["src*"]
+where = ["."]
+include = ["src", "src.*"]

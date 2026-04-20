@@ -86,6 +86,20 @@ deepforest_dead_cropmodel_name: weecology/cropmodel-deadtrees
 #Comet dashboard
 comet_workspace: bw4sz
 
+# OSBS RGB inference (all tiles for ``year`` under rgb_sensor_pool that intersect AOI)
+# Run: python -m src.pipelines.osbs_inference --config config.yml
+inference_osbs:
+  site: OSBS
+  year: 2025
+  species_checkpoint: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/121d61eefcd848dc97cc52bc82012c3b_OSBS.pt
+  aoi_path: data/raw/OSBSBoundary/OSBS_boundary.shp
+  results_root: /blue/ewhite/b.weinstein/DeepTreeAttention/results/osbs_inference/
+  # Optional: cap tiles for debugging (omit or null for all AOI-intersecting tiles)
+  tile_limit: null
+  # Optional legacy Lightning alive/dead checkpoint (otherwise DeepForest cropmodel from deepforest_dead_cropmodel_name is used when present)
+  dead_model_path: null
+  filter_dead: true
+
 ## Alive Dead Model Training
 dead:
     train_dir: data/raw/dead_train/

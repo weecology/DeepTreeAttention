@@ -1,6 +1,5 @@
 #Predict
 from deepforest import main
-from deepforest.utilities import annotations_to_shapefile
 import glob
 import inspect
 import os
@@ -150,9 +149,15 @@ def predict_crowns(PATH, config=None):
     if boxes is None:
         return None
     r = rasterio.open(PATH)
-    transform = r.transform     
     crs = r.crs
-    gdf = annotations_to_shapefile(boxes, transform=transform, crs=crs)
+    if isinstance(boxes, gpd.GeoDataFrame):
+        gdf = boxes.copy()
+        if gdf.crs is None and crs is not None:
+            gdf.set_crs(crs, inplace=True)
+    else:
+        from deepforest.utilities import annotations_to_shapefile
+
+        gdf = annotations_to_shapefile(boxes, transform=r.transform, crs=crs)
     
     #Dummy variables for schema
     basename = os.path.splitext(os.path.basename(PATH))[0]
