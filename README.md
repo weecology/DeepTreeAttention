@@ -7,6 +7,17 @@ Tree Species Prediction for the National Ecological Observatory Network (NEON)
 
 Implementation of Hang et al. 2020 [Hyperspectral Image Classification with Attention Aided CNNs](https://arxiv.org/abs/2005.11977) for tree species prediction.
 
+## Quickstart (uv)
+
+This project now uses `pyproject.toml` and [`uv`](https://docs.astral.sh/uv/) as the primary Python dependency workflow.
+
+```bash
+uv sync --extra dev
+uv run pytest -v
+```
+
+For local development, run commands with `uv run ...` so they use the locked environment.
+
 # Model Architecture
 
 ![](www/model.png)
@@ -138,9 +149,9 @@ class MetadataModel(main.TreeModel):
 
 ```
 
-## Getting Started (UF - collaboration)
+## Legacy Conda Environment (UF - collaboration)
 
-This section is meant solely for members of the idtrees group who have access to the data.
+This section is kept for collaborators who still rely on the historical conda environment and shared HPC paths.
 
 1) Fork this repo and install the conda environment.
 

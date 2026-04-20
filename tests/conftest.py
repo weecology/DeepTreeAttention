@@ -21,7 +21,8 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 def pytest_sessionstart():
     # prepare something ahead of all tests
     m = deepforest()
-    m.use_release()    
+    # DeepForest 2.x API: pull the canonical prebuilt tree detector from HF.
+    m.load_model(model_name="weecology/deepforest-tree")
 
 @pytest.fixture(scope="session")
 def ROOT():

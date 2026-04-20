@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deeptreeattention"
+version = "0.1.0"
+description = "Tree species prediction for National Ecological Observatory Network data."
+readme = "README.md"
+requires-python = ">=3.9,<3.13"
+license = { text = "MIT" }
+authors = [{ name = "Ben Weinstein" }]
+dependencies = [
+  "comet_ml",
+  "dask",
+  "dask_jobqueue",
+  "deepforest",
+  "descartes",
+  "distributed",
+  "geopandas",
+  "h5py",
+  "matplotlib",
+  "numpy",
+  "pandas",
+  "pytorch_lightning",
+  "PyYAML",
+  "rasterio",
+  "rasterstats",
+  "scikit-image",
+  "scikit-learn",
+  "Shapely",
+  "torch",
+  "torchmetrics",
+  "torchvision",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+deeptree-osbs-smoke = "src.osbs_smoke:main"
+
+[tool.setuptools.packages.find]
+include = ["src*"]
