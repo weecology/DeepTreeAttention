@@ -236,14 +236,22 @@ class MultiStage(LightningModule):
 
         return train_datasets, test_datasets
     
+    def _loader_kwargs(self):
+        nw = int(self.config.get("workers") or 0)
+        kw = {"num_workers": nw}
+        if nw > 0:
+            kw["persistent_workers"] = True
+        return kw
+
     def train_dataloader(self):
         data_loaders = []
+        kw = self._loader_kwargs()
         for ds in self.train_datasets:
             data_loader = torch.utils.data.DataLoader(
                 ds,
                 batch_size=self.config["batch_size"],
                 shuffle=True,
-                num_workers=self.config["workers"],
+                **kw,
             )
             data_loaders.append(data_loader)
         
@@ -252,12 +260,13 @@ class MultiStage(LightningModule):
     def val_dataloader(self):
         ## Validation loaders are a list https://github.com/PyTorchLightning/pytorch-lightning/issues/10809
         data_loaders = []
+        kw = self._loader_kwargs()
         for ds in self.test_datasets:
             data_loader = torch.utils.data.DataLoader(
                 ds,
                 batch_size=self.config["batch_size"],
                 shuffle=False,
-                num_workers=self.config["workers"],
+                **kw,
             )
             data_loaders.append(data_loader)
         
@@ -268,7 +277,7 @@ class MultiStage(LightningModule):
             ds,
             batch_size=self.config["predict_batch_size"],
             shuffle=False,
-            num_workers=self.config["workers"]
+            **self._loader_kwargs(),
         )
 
         return data_loader

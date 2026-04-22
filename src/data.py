@@ -258,7 +258,16 @@ class TreeDataset(Dataset):
         
         # Pin data to memory if desired
         if self.config["preload_images"]:
-            for individual in self.individuals:
+            n_ind = len(self.individuals)
+            n_years = len(self.years)
+            if n_ind > 200:
+                print(
+                    "[TreeDataset train={}] Preloading {} individuals × {} years from {} …".format(
+                        self.train, n_ind, n_years, self.config["crop_dir"]
+                    ),
+                    flush=True,
+                )
+            for i, individual in enumerate(self.individuals):
                 images = []
                 ind_annotations = self.image_paths[individual]
                 for year in self.years:
@@ -272,6 +281,10 @@ class TreeDataset(Dataset):
                         image = self.transformer(image)   
                     images.append(image)
                 self.image_dict[individual] = images
+                if n_ind > 200 and (i + 1) % max(1, n_ind // 10) == 0:
+                    print("  … preloaded {}/{} individuals".format(i + 1, n_ind), flush=True)
+            if n_ind > 200:
+                print("[TreeDataset train={}] Preload finished ({} individuals).".format(self.train, n_ind), flush=True)
             
     def __len__(self):
         # 0th based index

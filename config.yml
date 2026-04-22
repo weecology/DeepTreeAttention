@@ -76,7 +76,7 @@ evergreen_ceiling: 70
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
-preload_images: True
+preload_images: False
 workers: 20
 sampling_ceiling: 200
 #Network Parameters
@@ -114,7 +114,7 @@ plot_n_individuals: 0
 #Predict
 predict_batch_size: 64
 dead_threshold: 0.95
-prediction_crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
+prediction_crop_dir: results/prediction_crops/
 # Optional DeepForest CropModel for alive/dead labels at crown-detection time
 deepforest_dead_cropmodel_name: weecology/cropmodel-deadtrees
 

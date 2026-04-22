@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 
 import comet_ml
 import geopandas as gpd
@@ -65,6 +66,18 @@ def main_train() -> None:
         os.makedirs(crop_dir, exist_ok=True)
         config["crop_dir"] = crop_dir
 
+    # macOS + fork/spawn: DataLoader workers>0 often stalls indefinitely before the first step.
+    if sys.platform == "darwin":
+        w = int(config.get("workers") or 0)
+        if w > 0:
+            print(
+                "[train] macOS: forcing DataLoader workers=0 (was {}). "
+                "num_workers>0 commonly hangs here; set workers: 0 in config.yml to silence."
+                .format(w),
+                flush=True,
+            )
+            config["workers"] = 0
+
     client = None
 
     comet_logger.experiment.log_parameter("git branch", args.git_branch)
@@ -103,7 +116,13 @@ def main_train() -> None:
     train = train[~train.individual.str.contains("graves")].reset_index(drop=True)
     test = test[~test.individual.str.contains("graves")].reset_index(drop=True)
 
+    print(
+        "[train] Building MultiStage (5 levels). If preload_images is True, this loads "
+        "every crop into RAM for each level and can take many minutes with no GPU use yet.",
+        flush=True,
+    )
     m = multi_stage.MultiStage(train, test, config=data_module.config, crowns=crowns)
+    print("[train] MultiStage ready; starting Trainer.fit …", flush=True)
 
     for index, train_df in enumerate(
         [
