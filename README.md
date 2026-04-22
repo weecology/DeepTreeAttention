@@ -106,13 +106,16 @@ Environment variables (highest priority first for the display name): `**DEEPTREE
 
 `train.py` reads `config.yml` (+ `config.local.yml` if present), logs to Comet when `**use_comet: true**` and `**COMET_API_KEY**` / `**COMET_KEY**` are set, and writes checkpoints under `**checkpoint_dir**`. `raw_vst_csv` defaults to `data/raw/neon_vst_data_2022.csv` but can be overridden in YAML.
 
-**SLURM (queued GPU training)** — set `**REPO_ROOT`**, `**EXPERIMENT_NAME**` (forwarded as `**DEEPTREE_EXPERIMENT_NAME**`), optionally `**DEEPTREE_OVERRIDES**` and `**DEEPTREE_CONFIG**`, then:
+**SLURM (queued GPU training)** — from the repo checkout, set **`EXPERIMENT_NAME`** (forwarded as **`DEEPTREE_EXPERIMENT_NAME`**), optionally **`DEEPTREE_OVERRIDES`** and **`DEEPTREE_CONFIG`**, then:
 
 ```bash
-sbatch SLURM/train_experiment.sh
+cd /path/to/DeepTreeAttention
+EXPERIMENT_NAME=osbs-baseline sbatch SLURM/train_experiment.sh
 ```
 
-Edit `#SBATCH` lines in `SLURM/train_experiment.sh` for your partition/account. The job runs from a **shared checkout** so you can `**git pull`** or edit `**experiments/*.yml**` between submissions; each job still logs the **resolved config** and **git SHA** to Comet for apples-to-apples comparison.
+**`REPO_ROOT`** defaults to **`SLURM_SUBMIT_DIR`** (your shell’s current directory when you run `sbatch`), so you normally **do not** export it if you `cd` into the project first. Set **`REPO_ROOT=/path/to/DeepTreeAttention`** only when you submit from another directory.
+
+Edit `#SBATCH` lines in `SLURM/train_experiment.sh` for your partition/account. The job runs from a **shared checkout** so you can **`git pull`** or edit **`experiments/*.yml`** between submissions; each job still logs the **resolved config** and **git SHA** to Comet for apples-to-apples comparison.
 
 ---
 

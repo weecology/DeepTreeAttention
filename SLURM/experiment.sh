@@ -1,6 +1,6 @@
 #!/bin/bash
 # Same runner as train_experiment.sh with alternate #SBATCH defaults (mail, log paths).
-# Set REPO_ROOT and optionally EXPERIMENT_NAME, DEEPTREE_OVERRIDES, DEEPTREE_CONFIG before sbatch.
+# Submit from the repo (cd .../DeepTreeAttention) or set REPO_ROOT. Optional: EXPERIMENT_NAME, DEEPTREE_OVERRIDES, DEEPTREE_CONFIG.
 #SBATCH --job-name=DeepTreeAttention
 #SBATCH --mail-type=END
 #SBATCH --mail-user=benweinstein2010@gmail.com
@@ -19,7 +19,15 @@ set -euo pipefail
 ulimit -c 0
 module load git gcc
 
-: "${REPO_ROOT:?Set REPO_ROOT to the DeepTreeAttention checkout on this cluster}"
+REPO_ROOT="${REPO_ROOT:-${SLURM_SUBMIT_DIR:-}}"
+if [[ -z "${REPO_ROOT}" ]]; then
+  echo "[experiment] Set REPO_ROOT or cd into DeepTreeAttention before sbatch." >&2
+  exit 1
+fi
+if [[ ! -f "${REPO_ROOT}/train.py" ]]; then
+  echo "[experiment] REPO_ROOT=${REPO_ROOT} is not the repo root (no train.py)." >&2
+  exit 1
+fi
 cd "${REPO_ROOT}"
 
 mkdir -p logs
