@@ -82,6 +82,7 @@ def config(ROOT):
     config["preload_images"] = False
     config["batch_size"] = 2
     config["gpus"] = 0
+    config["accelerator"] = "cpu"
     config["existing_test_csv"] = None
     config["workers"] = 0
     config["dead"]["num_workers"] = 0
@@ -99,14 +100,20 @@ def dm(config, ROOT):
 
 @pytest.fixture(scope="session")
 def experiment():
-    if not "GITHUB_ACTIONS" in os.environ:
-        from pytorch_lightning.loggers import CometLogger        
-        COMET_KEY = os.getenv("COMET_KEY")
-        comet_logger = CometLogger(api_key=COMET_KEY,
-                                   project_name="DeepTreeAttention", workspace="bw4sz",auto_output_logging = "simple")
-        return comet_logger.experiment
-    else:
+    if "GITHUB_ACTIONS" in os.environ:
         return None
+    from pytorch_lightning.loggers import CometLogger
+
+    comet_key = os.getenv("COMET_API_KEY") or os.getenv("COMET_KEY")
+    if not comet_key:
+        return None
+    comet_logger = CometLogger(
+        api_key=comet_key,
+        project="DeepTreeAttention",
+        workspace="bw4sz",
+        auto_output_logging="simple",
+    )
+    return comet_logger.experiment
 
 #Training module
 @pytest.fixture(scope="session")

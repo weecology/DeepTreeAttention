@@ -25,8 +25,10 @@ def test_predict_tile(species_model_path, config, ROOT, tmpdir):
     rgb_path = "{}/tests/data/2019_D01_HARV_DP3_726000_4699000_image_crop_2019.tif".format(ROOT)
     config["HSI_sensor_pool"] = "{}/tests/data/hsi/*.tif".format(ROOT)
     config["CHM_pool"] = None
-    config["prediction_crop_dir"] = tmpdir    
-    
+    config["prediction_crop_dir"] = tmpdir
+    # Skip HuggingFace cropmodel path in DeepForest 2.x (BoundingBoxDataset/collate_fn API churn).
+    config["deepforest_dead_cropmodel_name"] = None
+
     dead_model = dead.AliveDead(config)
     trainer = Trainer(fast_dev_run=True)    
     trainer.fit(dead_model)

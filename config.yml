@@ -1,4 +1,32 @@
-#Config
+# Config — paths below default to UF HiPerGator shared storage. For a portable checkout,
+# copy to ``config.local.yml`` (untracked) or override globs to point under ``data/external/neon_aop/``.
+
+# Vegetation structure (stem) table used by ``train.py`` when building a new dataset
+raw_vst_csv: data/raw/neon_vst_data_2022.csv
+
+# When ``use_data_commit`` points at a bundle with split CSVs like ``train_<hash>_[\"OSBS\"].csv``, set these
+# (relative to the commit directory unless absolute). Default null uses ``train.csv`` / ``test.csv``.
+processed_train_csv: null
+processed_test_csv: null
+
+# Optional layout for reproducible local mirrors (see README and ``data/raw/README.md``)
+data_layout:
+  sensor_download_root: data/external/neon_aop
+  # After running the filter stage, point downloads here:
+  canopy_points_shp: null
+
+# NEON AOP API downloads (``neonutilities.by_tile_aop``). Requires ``NEON_API_TOKEN`` for large pulls.
+neon_download:
+  site: OSBS
+  years: [2021, 2022]
+  buffer_m: 50
+  check_size: false
+  token_env: NEON_API_TOKEN
+  save_root: data/external/neon_aop
+  products:
+    rgb: DP3.30010.001
+    hsi: DP3.30006.001
+    chm: DP3.30015.001
 
 ### Data Generation
 #glob path to sensor data, recursive wildcards allowed
@@ -29,10 +57,10 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Checkout data artifact from comet
-use_data_commit: 67ec871c49cf472c8e1ae70b185addb1
+use_data_commit: 4c02ae98bd774aa494fadb3508ae84ba
 
 #Make new dataset
-data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
+data_dir: data/processed
 convert_h5: True
 #Overwrite existing crops
 replace: True
@@ -70,6 +98,13 @@ accelerator: auto
 epochs: 70
 min_loss_weight: 10
 
+# Optional Lightning caps (null = full run). See config.smoke.example.yml for workflow smoke tests.
+limit_train_batches: null
+limit_val_batches: null
+limit_predict_batches: null
+checkpoint_dir: results/checkpoints
+use_comet: true
+
 #Evaluation config
 #Top k class recall score
 top_k: 4
@@ -96,6 +131,8 @@ inference_osbs:
   results_root: /blue/ewhite/b.weinstein/DeepTreeAttention/results/osbs_inference/
   # Optional: cap tiles for debugging (omit or null for all AOI-intersecting tiles)
   tile_limit: null
+  # Optional: cap species-model predict batches per tile (Lightning Trainer)
+  predict_limit_batches: null
   # Optional legacy Lightning alive/dead checkpoint (otherwise DeepForest cropmodel from deepforest_dead_cropmodel_name is used when present)
   dead_model_path: null
   filter_dead: true

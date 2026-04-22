@@ -1,9 +1,10 @@
 #Predict
-from deepforest import main
+from deepforest import main, utilities as df_utilities
 import glob
 import inspect
 import os
 import geopandas as gpd
+import pandas as pd
 import rasterio
 import numpy as np
 from torchvision import transforms
@@ -14,6 +15,8 @@ from src.models import dead
 from src.CHM import postprocess_CHM
 from src.generate import generate_crops
 from src.data import TreeDataset
+from src.utils import trainer_accelerator_devices
+
 
 def RGB_transform(augment):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -122,7 +125,8 @@ def _load_dead_cropmodel(config):
 
     cropmodel = main.deepforest()
     cropmodel.load_model(model_name=model_name)
-    return cropmodel.model if hasattr(cropmodel, "model") else cropmodel
+    # DeepForest ``predict_tile`` expects a Lightning-style object with ``predict_dataloader``.
+    return cropmodel
 
 
 def predict_crowns(PATH, config=None):
@@ -148,16 +152,22 @@ def predict_crowns(PATH, config=None):
         boxes = m.predict_tile(PATH)
     if boxes is None:
         return None
-    r = rasterio.open(PATH)
-    crs = r.crs
+    with rasterio.open(PATH) as r:
+        crs = r.crs
     if isinstance(boxes, gpd.GeoDataFrame):
         gdf = boxes.copy()
-        if gdf.crs is None and crs is not None:
+        root_dir = getattr(gdf, "root_dir", None) or os.path.dirname(PATH)
+        # DeepForest 2.x predict_tile returns image-space boxes; assign raster CRS only after projecting.
+        if "image_path" in gdf.columns and root_dir:
+            gdf = df_utilities.image_to_geo_coordinates(gdf, root_dir=root_dir)
+        elif gdf.crs is None and crs is not None:
             gdf.set_crs(crs, inplace=True)
+    elif isinstance(boxes, pd.DataFrame):
+        gdf = df_utilities.__pandas_to_geodataframe__(boxes)
+        root_dir = getattr(gdf, "root_dir", None) or os.path.dirname(PATH)
+        gdf = df_utilities.image_to_geo_coordinates(gdf, root_dir=root_dir)
     else:
-        from deepforest.utilities import annotations_to_shapefile
-
-        gdf = annotations_to_shapefile(boxes, transform=r.transform, crs=crs)
+        raise TypeError("Unexpected prediction type: {}".format(type(boxes)))
     
     #Dummy variables for schema
     basename = os.path.splitext(os.path.basename(PATH))[0]
@@ -192,7 +202,12 @@ def predict_dead(crowns, dead_model_path, config):
         
     ds = dead.utm_dataset(crowns=crowns, config=config)
     dead_dataloader = dead_model.predict_dataloader(ds)
-    trainer = Trainer(gpus=config["gpus"], enable_checkpointing=False)
+    acc, dev = trainer_accelerator_devices(config)
+    trainer = Trainer(
+        accelerator=acc,
+        devices=dev,
+        enable_checkpointing=False,
+    )
     outputs = trainer.predict(dead_model, dead_dataloader)
     print("len of predict is {}".format(len(outputs)))
     

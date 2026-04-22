@@ -44,8 +44,9 @@ def format(site, gdf, config):
     else:
         gdf = buffer_plots(gdf)
     
-    #Make sure any points sitting on the line are assigned only to one grid. Rare edge case
-    gdf = gdf.groupby("individual").apply(lambda x: x.head(1)).reset_index(drop=True)
+    # Make sure any points sitting on the line are assigned only to one grid. Rare edge case
+    # (groupby-apply-reset_index drops the grouping column; use drop_duplicates instead.)
+    gdf = gdf.drop_duplicates(subset=["individual"], keep="first")
     
     if "height" in gdf.columns: 
         #Height filter 

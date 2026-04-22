@@ -1,11 +1,11 @@
 #Plot abundance distribution
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from glob import glob
 import os
 import pandas as pd
 import geopandas as gpd
-from src import start_cluster
 
-client = start_cluster.start(cpus=100,mem_size="5GB")
+_IO_WORKERS = min(32, (os.cpu_count() or 4) * 4)
 
 #Same data
 
@@ -40,7 +40,6 @@ def read_shp(path):
     
     return intersects
 
-futures = []
 for species_model_path in species_model_paths:
     print(species_model_path)
     basename = os.path.splitext(os.path.basename(species_model_path))[0]
@@ -49,9 +48,9 @@ for species_model_path in species_model_paths:
     print(files)
     if len(files) == 0:
         continue
-    counts = []
-    futures = client.map(read_shp,files)
-    shps = [x.result() for x in futures]
+    with ThreadPoolExecutor(max_workers=_IO_WORKERS) as ex:
+        futures = [ex.submit(read_shp, f) for f in files]
+        shps = [f.result() for f in as_completed(futures)]
     combined_shps = pd.concat(shps)
     gpd_boundary = gpd.GeoDataFrame(combined_shps, geometry="geometry")
     gpd_boundary = gpd_boundary.reset_index(drop=True)

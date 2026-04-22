@@ -35,11 +35,17 @@ class AliveDead(pl.LightningModule):
         num_ftrs = self.model.fc.in_features
         self.model.fc = torch.nn.Linear(num_ftrs, 2)        
         
-        # Metrics
-        self.accuracy = torchmetrics.Accuracy(average='none', num_classes=2)      
-        self.total_accuracy = torchmetrics.Accuracy()        
-        self.precision_metric = torchmetrics.Precision()
-        self.metrics = torchmetrics.MetricCollection({"Class Accuracy":self.accuracy, "Accuracy":self.total_accuracy, "Precision":self.precision_metric})
+        # Metrics (torchmetrics >= 0.11 requires ``task``)
+        self.accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=2, average="none")
+        self.total_accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=2)
+        self.precision_metric = torchmetrics.Precision(task="multiclass", num_classes=2)
+        self.metrics = torchmetrics.MetricCollection(
+            {
+                "Class Accuracy": self.accuracy,
+                "Accuracy": self.total_accuracy,
+                "Precision": self.precision_metric,
+            }
+        )
         
         # Data
         self.config = config
@@ -48,12 +54,12 @@ class AliveDead(pl.LightningModule):
         val_dir = os.path.join(self.ROOT,config["dead"]["test_dir"])
         self.train_ds = ImageFolder(root=train_dir, transform=get_transform(augment=True))
         self.val_ds = ImageFolder(root=val_dir, transform=get_transform(augment=False))
-        
-    def forward(self, x):
-        output = self.model(x)
-        output = F.sigmoid(output)
 
-        return output
+    def on_validation_epoch_start(self):
+        self.metrics.reset()
+
+    def forward(self, x):
+        return self.model(x)
     
     def train_dataloader(self):
         train_loader = torch.utils.data.DataLoader(
@@ -111,25 +117,19 @@ class AliveDead(pl.LightningModule):
         
         return loss
     
-    def validation_epoch_end(self, outputs):
-        val_metrics = self.metrics.compute()
-        self.log("Alive Accuracy",val_metrics["Class Accuracy"][0])
-        self.log("Dead Accuracy",val_metrics["Class Accuracy"][1])  
-        self.log("Accuracy",val_metrics["Accuracy"])
-        self.log("Accuracy",val_metrics["Precision"])
-    
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.config["dead"]["lr"])
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                                                    mode='min',
-                                                                    factor=0.5,
-                                                                    patience=10,
-                                                                    verbose=True,
-                                                                    threshold=0.0001,
-                                                                    threshold_mode='rel',
-                                                                    cooldown=0,
-                                                                    min_lr=0,
-                                                                    eps=1e-08)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            mode="min",
+            factor=0.5,
+            patience=10,
+            threshold=0.0001,
+            threshold_mode="rel",
+            cooldown=0,
+            min_lr=0,
+            eps=1e-08,
+        )
         
         #Monitor rate is val data is used
         return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
@@ -174,8 +174,10 @@ class utm_dataset(Dataset):
         box = RGB_src.read(window=rasterio.windows.from_bounds(left-1, bottom-1, right+1, top+1, transform=RGB_src.transform))             
         
         # Channels last
-        box = np.rollaxis(box,0,3)
-        
+        box = np.rollaxis(box, 0, 3)
+        if box.ndim != 3 or box.shape[0] < 1 or box.shape[1] < 1:
+            box = np.zeros((10, 10, 3), dtype=np.float32)
+
         # Preprocess
         image = self.transform(box)
             

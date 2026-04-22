@@ -93,6 +93,7 @@ def run_osbs_inference(*, config_path: str) -> None:
     aoi_path = _resolve_path(str(inf["aoi_path"]), anchor_dir)
     results_root = _resolve_path(str(inf["results_root"]), anchor_dir)
     tile_limit = inf.get("tile_limit")
+    predict_limit_batches = inf.get("predict_limit_batches")
     dead_model_path = inf.get("dead_model_path") or None
     filter_dead = bool(inf.get("filter_dead", True))
 
@@ -125,11 +126,16 @@ def run_osbs_inference(*, config_path: str) -> None:
     print("[osbs_inference] loading MultiStage once from checkpoint …")
     config["pretrained_state_dict"] = None
     model = multi_stage.MultiStage.load_from_checkpoint(species_ckpt, config=config)
-    trainer = Trainer(
-        gpus=config["gpus"],
-        logger=False,
-        enable_checkpointing=False,
-    )
+    acc, dev = utils.trainer_accelerator_devices(config)
+    tr_kw: dict = {
+        "accelerator": acc,
+        "devices": dev,
+        "logger": False,
+        "enable_checkpointing": False,
+    }
+    if predict_limit_batches is not None:
+        tr_kw["limit_predict_batches"] = int(predict_limit_batches)
+    trainer = Trainer(**tr_kw)
 
     run_log: list[dict[str, Any]] = []
     for index, rgb_path in enumerate(tiles, start=1):

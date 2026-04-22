@@ -20,8 +20,8 @@ class base_model(Module):
         #Load from state dict of previous run
         self.model = learned_ensemble(classes=classes, years=years, config=config)
         
-        micro_recall = torchmetrics.Accuracy(average="micro")
-        macro_recall = torchmetrics.Accuracy(average="macro", num_classes=classes)
+        micro_recall = torchmetrics.Accuracy(task="multiclass", num_classes=classes, average="micro")
+        macro_recall = torchmetrics.Accuracy(task="multiclass", num_classes=classes, average="macro")
         self.metrics = torchmetrics.MetricCollection(
             {"Micro Accuracy":micro_recall,
              "Macro Accuracy":macro_recall,
@@ -33,6 +33,10 @@ class base_model(Module):
         return score 
     
 class MultiStage(LightningModule):
+    """Hierarchical ensemble; uses manual optimization (PyTorch Lightning 2+)."""
+
+    automatic_optimization = False
+
     def __init__(self, train_df, test_df, crowns, config, train_mode=True):
         super().__init__()
         # Generate each model
@@ -56,7 +60,8 @@ class MultiStage(LightningModule):
         
         if train_mode:
             self.train_datasets, self.test_datasets = self.create_datasets()
-            self.levels = len(self.train_datasets)       
+            self.levels = len(self.train_datasets)
+            self._val_epoch_outputs = []
         
             self.classes = len(self.train_df.label.unique())
             for index, ds in enumerate([self.level_0_train, self.level_1_train, self.level_2_train, self.level_3_train, self.level_4_train]): 
@@ -92,7 +97,12 @@ class MultiStage(LightningModule):
         self.level_0_train = self.train_df.copy()
         PIPA2 = self.level_0_train[self.level_0_train.taxonID=="PIPA2"]
         nonPIPA2 = self.level_0_train[~(self.level_0_train.taxonID=="PIPA2")]
-        nonPIPA2ids = nonPIPA2.groupby("individual").apply(lambda x: x.head(1)).groupby("taxonID").apply(lambda x: x.head(self.config["other_sampling_ceiling"])).individual
+        nonPIPA2ids = (
+            nonPIPA2.groupby("individual", as_index=False)
+            .head(1)
+            .groupby("taxonID", as_index=False)
+            .head(self.config["other_sampling_ceiling"])
+        )["individual"]
         nonPIPA2 = nonPIPA2[nonPIPA2.individual.isin(nonPIPA2ids)]
         self.level_0_train = pd.concat([PIPA2, nonPIPA2])
         self.level_0_train.loc[~(self.level_0_train.taxonID == "PIPA2"),"taxonID"] = "OTHER"
@@ -118,12 +128,14 @@ class MultiStage(LightningModule):
         self.level_1_train.loc[self.level_1_train.taxonID.isin(["PICL","PIEL","PITA"]),"taxonID"] = "CONIFER" 
         
         #subsample broadleaf, labels have not been converted, relate to original taxonID
-        conifer_ids = self.level_1_train[self.level_1_train.taxonID=="CONIFER"].individual        
-        broadleaf_ids = self.level_1_train[self.level_1_train.taxonID=="BROADLEAF"].groupby("label").apply(
-            lambda x: x.sample(frac=1).groupby(
-                "individual").apply(lambda x: x.head(1)).head(
-            math.ceil(len(conifer_ids)/11)
-            )).individual
+        conifer_ids = self.level_1_train[self.level_1_train.taxonID == "CONIFER"]["individual"].to_numpy()
+        broadleaf_parts = []
+        cap = math.ceil(len(conifer_ids) / 11)
+        for _, g in self.level_1_train[self.level_1_train.taxonID == "BROADLEAF"].groupby("label"):
+            g = g.sample(frac=1)
+            g = g.groupby("individual", as_index=False).head(1)
+            broadleaf_parts.append(g.head(cap))
+        broadleaf_ids = pd.concat(broadleaf_parts, ignore_index=True)["individual"].to_numpy()
         ids_to_keep = np.concatenate([broadleaf_ids, conifer_ids])
         self.level_1_train = self.level_1_train[self.level_1_train.individual.isin(ids_to_keep)].reset_index(drop=True)
         self.level_1_train["label"] = [self.level_label_dicts[1][x] for x in self.level_1_train.taxonID]
@@ -150,10 +162,12 @@ class MultiStage(LightningModule):
         self.level_2_train = self.level_2_train[~self.level_2_train.taxonID.isin(["PICL","PIEL","PITA","PIPA2"])].reset_index(drop=True)
         self.level_2_train.loc[self.level_2_train.taxonID.str.contains("QU"),"taxonID"] = "OAK"
         
-        non_oakid = self.level_2_train[~(self.level_2_train.taxonID=="OAK")].individual        
-        oak_ids = self.level_2_train[self.level_2_train.taxonID=="OAK"].groupby("label").apply(lambda x: x.sample(frac=1).head(
-            int(len(non_oakid)/5))
-            ).individual
+        non_oakid = self.level_2_train[~(self.level_2_train.taxonID == "OAK")]["individual"].to_numpy()
+        oak_parts = []
+        oak_cap = int(len(non_oakid) / 5)
+        for _, g in self.level_2_train[self.level_2_train.taxonID == "OAK"].groupby("label"):
+            oak_parts.append(g.sample(frac=1).head(oak_cap))
+        oak_ids = pd.concat(oak_parts, ignore_index=True)["individual"].to_numpy()
         ids_to_keep = np.concatenate([oak_ids, non_oakid])
         self.level_2_train = self.level_2_train[self.level_2_train.individual.isin(ids_to_keep)].reset_index(drop=True)
         self.level_2_train["label"] = [self.level_label_dicts[2][x] for x in self.level_2_train.taxonID]
@@ -177,7 +191,9 @@ class MultiStage(LightningModule):
                     
         self.level_3_train = self.train_df.copy()
         self.level_3_train = self.level_3_train[self.level_3_train.taxonID.isin(["PICL","PIEL","PITA"])].reset_index(drop=True) 
-        self.level_3_train =  self.level_3_train.groupby("taxonID").apply(lambda x: x.head(self.config["evergreen_ceiling"])).reset_index(drop=True)
+        self.level_3_train = self.level_3_train.groupby(
+            "taxonID", group_keys=False
+        ).head(self.config["evergreen_ceiling"])
         self.level_3_train["label"] = [self.level_label_dicts[3][x] for x in self.level_3_train.taxonID]
         self.level_3_train_ds = TreeDataset(df=self.level_3_train, config=self.config)
         train_datasets.append(self.level_3_train_ds)
@@ -199,10 +215,12 @@ class MultiStage(LightningModule):
         self.level_4_train = self.train_df.copy()
         self.level_4_train = self.level_4_train[self.level_4_train.taxonID.str.contains("QU")].reset_index(drop=True)
         self.level_4_train["label"] = [self.level_label_dicts[4][x] for x in self.level_4_train.taxonID]
-        ids_to_keep = self.level_4_train.groupby("taxonID").apply(
-            lambda x: x.sample(frac=1).groupby("individual").apply(
-            lambda x: x.head(1)).head(
-            self.config["oaks_sampling_ceiling"])).individual
+        oak_parts = []
+        for _, g in self.level_4_train.groupby("taxonID"):
+            g = g.sample(frac=1)
+            g = g.groupby("individual", as_index=False).head(1)
+            oak_parts.append(g.head(self.config["oaks_sampling_ceiling"]))
+        ids_to_keep = pd.concat(oak_parts, ignore_index=True)["individual"].to_numpy()
         self.level_4_train = self.level_4_train[self.level_4_train.individual.isin(ids_to_keep)].reset_index(drop=True)
         
         self.level_4_train_ds = TreeDataset(df=self.level_4_train, config=self.config)
@@ -260,32 +278,42 @@ class MultiStage(LightningModule):
         optimizers = []
         for x, ds in enumerate(self.train_datasets):
             optimizer = torch.optim.Adam(self.models[x].parameters(), lr=self.config["lr_{}".format(x)])
-            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                                             mode='min',
-                                                             factor=0.75,
-                                                             patience=8,
-                                                             verbose=True,
-                                                             threshold=0.0001,
-                                                             threshold_mode='rel',
-                                                             cooldown=0,
-                                                             eps=1e-08)
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer,
+                mode="min",
+                factor=0.75,
+                patience=8,
+                threshold=0.0001,
+                threshold_mode="rel",
+                cooldown=0,
+                eps=1e-08,
+            )
             
             optimizers.append({'optimizer':optimizer, 'lr_scheduler': {"scheduler":scheduler, "monitor":'val_loss/dataloader_idx_{}'.format(x)}})
 
-        return optimizers     
-        
-    def training_step(self, batch, batch_idx, optimizer_idx):
-        """Calculate train_df loss
-        """
-        #get loss weight
-        loss_weights = self.__getattr__('loss_weight_'+str(optimizer_idx))
-        individual, inputs, y = batch[optimizer_idx]
-        images = inputs["HSI"]  
-        y_hat = self.models[optimizer_idx].forward(images)
-        loss = F.cross_entropy(y_hat, y, weight=loss_weights)    
-        self.log("train_loss_{}".format(optimizer_idx),loss, on_epoch=True, on_step=False)
+        return optimizers
 
-        return loss        
+    def on_validation_epoch_start(self):
+        self._val_epoch_outputs = []
+
+    def training_step(self, batch, batch_idx):
+        """One combined batch (tuple/list) per step; optimize each level separately."""
+        optimizers = self.optimizers()
+        if not isinstance(optimizers, (list, tuple)):
+            optimizers = [optimizers]
+        total_loss = None
+        for optimizer_idx, opt in enumerate(optimizers):
+            opt.zero_grad(set_to_none=True)
+            loss_weights = self.__getattr__("loss_weight_" + str(optimizer_idx))
+            individual, inputs, y = batch[optimizer_idx]
+            images = inputs["HSI"]
+            y_hat = self.models[optimizer_idx].forward(images)
+            loss = F.cross_entropy(y_hat, y, weight=loss_weights)
+            self.manual_backward(loss)
+            opt.step()
+            self.log("train_loss_{}".format(optimizer_idx), loss, on_epoch=True, on_step=False)
+            total_loss = loss if total_loss is None else total_loss + loss
+        return total_loss
     
     def validation_step(self, batch, batch_idx, dataloader_idx):
         """Calculate val loss 
@@ -300,9 +328,10 @@ class MultiStage(LightningModule):
         metric_dict = self.models[dataloader_idx].metrics(y_hat, y)
         self.log_dict(metric_dict, on_epoch=True, on_step=False)
         y_hat = F.softmax(y_hat, dim=1)
-        
-        return {"individual":individual, "yhat":y_hat, "label":y}  
-    
+        self._val_epoch_outputs.append((dataloader_idx, {"yhat": y_hat, "label": y}))
+
+        return loss
+
     def predict_step(self, batch, batch_idx):
         """Calculate predictions
         """
@@ -317,41 +346,54 @@ class MultiStage(LightningModule):
         
         return individual, y_hats
     
-    def on_predict_epoch_end(self, outputs):
-        outputs = self.all_gather(outputs)
+    def on_predict_epoch_end(self, *args, **kwargs):
+        return
         
-    def validation_epoch_end(self, validation_step_outputs): 
-        for level, results in enumerate(validation_step_outputs):
+    def on_validation_epoch_end(self):
+        if not self._val_epoch_outputs:
+            return
+        by_loader = {}
+        for idx, o in self._val_epoch_outputs:
+            by_loader.setdefault(idx, []).append(o)
+        for level, results in by_loader.items():
             yhat = torch.cat([x["yhat"] for x in results]).cpu().numpy()
             labels = torch.cat([x["label"] for x in results]).cpu().numpy()            
             yhat = np.argmax(yhat, 1)
+            n_cls = len(self.species_label_dict)
             epoch_micro = torchmetrics.functional.accuracy(
-                preds=torch.tensor(labels),
-                target=torch.tensor(yhat),
-                average="micro")
-            
+                preds=torch.tensor(yhat),
+                target=torch.tensor(labels),
+                task="multiclass",
+                num_classes=n_cls,
+                average="micro",
+            )
+
             epoch_macro = torchmetrics.functional.accuracy(
-                preds=torch.tensor(labels),
-                target=torch.tensor(yhat),
+                preds=torch.tensor(yhat),
+                target=torch.tensor(labels),
+                task="multiclass",
+                num_classes=n_cls,
                 average="macro",
-                num_classes=len(self.species_label_dict)
             )
             
             self.log("Epoch Micro Accuracy level {}".format(level), epoch_micro)
             self.log("Epoch Macro Accuracy level {}".format(level), epoch_macro)
             
             # Log results by species
+            n_level = len(self.level_label_dicts[level])
             taxon_accuracy = torchmetrics.functional.accuracy(
                 preds=torch.tensor(yhat),
-                target=torch.tensor(labels), 
-                average="none", 
-                num_classes=len(self.level_label_dicts[level])
+                target=torch.tensor(labels),
+                task="multiclass",
+                num_classes=n_level,
+                average="none",
             )
             taxon_precision = torchmetrics.functional.precision(
                 preds=torch.tensor(yhat),
-                target=torch.tensor(labels), 
-                average="none", 
-                num_classes=len(self.level_label_dicts[level])
+                target=torch.tensor(labels),
+                task="multiclass",
+                num_classes=n_level,
+                average="none",
             )
             species_table = pd.DataFrame(
                 {"taxonID":self.level_label_dicts[level].keys(),
@@ -364,7 +406,15 @@ class MultiStage(LightningModule):
     
             for key, value in species_table.set_index("taxonID").precision.to_dict().items():
                 self.log("Epoch_{}_precision".format(key), value)
-    
+
+        self._val_epoch_outputs = []
+
+    @classmethod
+    def load_from_checkpoint(cls, checkpoint_path, **kwargs):
+        # PyTorch 2.6+ defaults to weights-only unpickling; Lightning checkpoints need full load.
+        kwargs.setdefault("weights_only", False)
+        return super(MultiStage, cls).load_from_checkpoint(checkpoint_path, **kwargs)
+
     def gather_predictions(self, predict_df):
         """Post-process the predict method to create metrics"""
         individuals = []
@@ -434,28 +484,41 @@ class MultiStage(LightningModule):
         return results
             
     def evaluation_scores(self, ensemble_df, experiment):   
-        ensemble_df = ensemble_df.groupby("individual").apply(lambda x: x.head(1))
-        
+        ensemble_df = ensemble_df.drop_duplicates(subset=["individual"], keep="first")
+        n_cls = len(self.species_label_dict)
+        ed = ensemble_df.dropna(subset=["ens_label", "label"])
+        ed = ed[
+            (ed["ens_label"] >= 0)
+            & (ed["ens_label"] < n_cls)
+            & (ed["label"] >= 0)
+            & (ed["label"] < n_cls)
+        ]
+        if ed.empty:
+            return ensemble_df
+
+        preds = torch.tensor(ed["ens_label"].values, dtype=torch.long)
+        target = torch.tensor(ed["label"].values, dtype=torch.long)
         taxon_accuracy = torchmetrics.functional.accuracy(
-            preds=torch.tensor(ensemble_df.ens_label.values),
-            target=torch.tensor(ensemble_df.label.values),
+            preds=preds,
+            target=target,
+            task="multiclass",
+            num_classes=n_cls,
             average="none",
-            num_classes=len(self.species_label_dict)
         )
-            
+
         taxon_precision = torchmetrics.functional.precision(
-            preds=torch.tensor(ensemble_df.ens_label.values),
-            target=torch.tensor(ensemble_df.label.values),
+            preds=preds,
+            target=target,
+            task="multiclass",
+            num_classes=n_cls,
             average="none",
-            num_classes=len(self.species_label_dict)
-        )        
-        
-        taxon_labels = list(self.species_label_dict)
-        taxon_labels.sort()
+        )
+
+        taxon_labels = sorted(self.species_label_dict.keys(), key=lambda t: self.species_label_dict[t])
         species_table = pd.DataFrame(
-            {"taxonID":taxon_labels,
-             "accuracy":taxon_accuracy,
-             "precision":taxon_precision
+            {"taxonID": taxon_labels,
+             "accuracy": taxon_accuracy,
+             "precision": taxon_precision,
              })
         
         if experiment:
@@ -465,14 +528,24 @@ class MultiStage(LightningModule):
         # Log result by site
         if experiment:
             site_data_frame =[]
-            for name, group in ensemble_df.groupby("siteID"):            
-                site_micro = np.sum(group.ens_label.values == group.label.values)/len(group.ens_label.values)
+            for name, group in ed.groupby("siteID"):
+                g = group[
+                    (group["ens_label"] >= 0)
+                    & (group["ens_label"] < n_cls)
+                    & (group["label"] >= 0)
+                    & (group["label"] < n_cls)
+                ]
+                if g.empty:
+                    continue
+                site_micro = np.sum(g.ens_label.values == g.label.values) / len(g.ens_label.values)
                 
                 site_macro = torchmetrics.functional.accuracy(
-                    preds=torch.tensor(group.ens_label.values),
-                    target=torch.tensor(group.label.values),
+                    preds=torch.tensor(g["ens_label"].values, dtype=torch.long),
+                    target=torch.tensor(g["label"].values, dtype=torch.long),
+                    task="multiclass",
+                    num_classes=n_cls,
                     average="macro",
-                    num_classes=len(self.species_label_dict))
+                )
                                 
                 experiment.log_metric("{}_macro".format(name), site_macro)
                 experiment.log_metric("{}_micro".format(name), site_micro) 

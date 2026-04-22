@@ -1,236 +1,160 @@
-DeepTreeAttention
-==============================
+# DeepTreeAttention
 
 [![Github Actions](https://github.com/Weecology/DeepTreeAttention/actions/workflows/pytest.yml/badge.svg)](https://github.com/Weecology/DeepTreeAttention/actions/)
 
-Tree Species Prediction for the National Ecological Observatory Network (NEON)
+Tree species classification for **National Ecological Observatory Network (NEON)** imagery, implementing Hang et al. 2020 ([Hyperspectral Image Classification with Attention Aided CNNs](https://arxiv.org/abs/2005.11977)) with a PyTorch Lightning training stack.
 
-Implementation of Hang et al. 2020 [Hyperspectral Image Classification with Attention Aided CNNs](https://arxiv.org/abs/2005.11977) for tree species prediction.
+This README is organized around the lifecycle you described: **raw points → generated tensors → training → evaluation → inference → reporting**. Dask has been removed in favor of **single-node sequential code** plus **plain SLURM job arrays** for embarrassingly parallel stages (per-plot crowns, large I/O batches, and so on).
 
-## Quickstart (uv)
+---
 
-This project now uses `pyproject.toml` and [`uv`](https://docs.astral.sh/uv/) as the primary Python dependency workflow.
+## 0. Environment (uv)
 
 ```bash
 uv sync --extra dev
 uv run pytest -v
 ```
 
-For local development, run commands with `uv run ...` so they use the locked environment.
+Use `uv run …` for every CLI invocation so the locked environment is respected.
 
-## OSBS inference (RGB tiles)
+---
 
-Inference is driven only by **`inference_osbs`** in [`config.yml`](config.yml) (site, year, species checkpoint, AOI shapefile, output root, and optional `tile_limit` for debugging). Paths under `rgb_sensor_pool`, `HSI_sensor_pool`, `CHM_pool`, and `HSI_tif_dir` must point at your NEON data layout on disk.
+## 1. Data layout and the “HPC handoff”
 
-From the repo root on a machine that sees those paths:
+| Stage | Location | What it is |
+|-------|-----------|------------|
+| **Upstream (not in git)** | e.g. `/orange/ewhite/NeonData/...` on HiPerGator | Full NEON mirror; too large to vendor. |
+| **Shareable inputs** | `data/raw/` | VST (or similar) stem tables, AOI shapefiles. See `data/raw/README.md`. |
+| **Intermediary bundle (commit or rsync)** | `data/interim/` | Filtered stem points (`canopy_points.shp`), optional per-plot crown boxes before merge, manifests. |
+| **Heavy rasters** | `data/external/neon_aop/` | RGB / HSI / CHM tiles from **`neonutilities`** downloads or selective `rsync` from the mirror. |
+| **Training tensors** | `data/processed/<run>/` or `config["data_dir"]` | HSI crops, `train.csv` / `test.csv`, `crowns.shp`. |
+
+**Practical handoff from HiPerGator:** export the VST CSV you trust, copy it to `data/raw/`, then either (a) run `deeptree-download-aop` (below) into `data/external/neon_aop/`, or (b) `rsync` only the DP3 products you need into the same tree. Point `rgb_sensor_pool`, `HSI_sensor_pool`, and `CHM_pool` in `config.yml` at that mirror. You no longer need to regenerate crops for every experiment if you set `use_data_commit` to a frozen directory name or reuse `data_dir` with `replace: false` after the first successful build.
+
+---
+
+## 2. Download AOP tiles (`neonutilities`)
+
+The Python **`neonutilities`** package exposes `by_tile_aop`, equivalent to the R `neonUtilities::byTileAOP` helper. This repository wraps it for stem coordinates.
+
+1. Obtain a NEON API token and export it (optional for tiny pulls; recommended otherwise):
+
+   ```bash
+   export NEON_API_TOKEN="your_token"
+   ```
+
+2. After you have `canopy_points.shp` (from the filtering stage in `TreeData`), set `data_layout.canopy_points_shp` in `config.yml` **or** pass `--points`.
+
+3. Run:
+
+   ```bash
+   uv run deeptree-download-aop --config config.yml
+   ```
+
+   Defaults live under `neon_download` in `config.yml` (site, years, DP3 IDs for RGB, hyperspectral, CHM, buffer in meters).
+
+---
+
+## 3. Generate datasets (0 — data generation)
+
+Pipeline code paths:
+
+- `src/data.py` — filter VST, CHM checks, megaplot merge hooks, train/test split.
+- `src/generate.py` — DeepForest crowns, hyperspectral crops, optional H5→TIF conversion via `src/neon_paths.py`.
+
+**Local / single job:** instantiate `data.TreeData` with `use_data_commit: null` and your `config.yml`, as in `train.py`.
+
+**Parallel crowns (SLURM):** each array task runs one plot:
 
 ```bash
-python -m src.pipelines.osbs_inference --config config.yml
+uv run python -m src.pipelines.crown_one_plot \
+  --canopy-points data/interim/canopy_points.shp \
+  --plot OSBS_001 \
+  --rgb-glob "data/external/neon_aop/**/DP3.30010.001/**/Camera/**/*.tif" \
+  --savedir data/interim/boxes \
+  --raw-box-savedir data/interim/raw_boxes
 ```
 
-Same entry via the top-level script:
+After all tasks finish, merge:
 
 ```bash
-python predict.py --config config.yml
+uv run deeptree-merge-crown-boxes \
+  --boxes-dir data/interim/boxes \
+  --out data/interim/crowns.shp
 ```
 
-Or, after `uv sync` / editable install:
+Submit `SLURM/crown_plot_array.sh` (tune `#SBATCH` directives, `plots.txt`, and `REPO_ROOT`).
+
+> **Note:** Passing a Dask `Client` into `points_to_crowns`, `generate_crops`, or `train_test_split` now raises a clear error. Parallelize with SLURM (or your own outer loop), not an in-Python Dask cluster.
+
+---
+
+## 4. Training (1)
 
 ```bash
-deeptree-infer-osbs --config config.yml
+uv run python train.py "$(git branch --show-current)" "$(git rev-parse HEAD)"
 ```
 
-On HiPerGator, submit [`SLURM/osbs_inference.sh`](SLURM/osbs_inference.sh) (set `REPO_ROOT` / `CONFIG_PATH` if needed). Progress is printed to the job log for each tile (detection, AOI clip, crops, species prediction).
+`train.py` reads `config.yml`, logs to Comet when configured, and writes checkpoints to the path in your config. `raw_vst_csv` defaults to `data/raw/neon_vst_data_2022.csv` but can be overridden in YAML.
 
-# Model Architecture
+GPU SLURM example: `SLURM/experiment.sh` (update `conda`/`uv` usage for your module stack).
 
-![](www/model.png)
+---
 
-Project Organization
-------------
+## 5. Evaluation (2)
 
-    ├── LICENSE
-    ├── README.md          <- The top-level README for developers using this project.
-    ├── data
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
-    │
-    ├── environment.yml   <- Conda requirements
-    │
-    ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
-    ├── src                <- Source code for use in this project.
-    │   ├── Models         <- Model Architectures
+Evaluation is integrated in the Lightning `TreeModel` / `MultiStage` path (validation metrics, crown-level scoring). Point `use_data_commit` at a frozen processed directory to re-score without touching generation.
 
---------
+---
 
-# Workflow
-There are three main parts to this project, a 1) data module, a 2) model module, and 3) a trainer module. Usually the data_module is created to hold the train and test split and keep track of data generation reproducibility. Then a model architecture is created and pass to the model module along with the data module. Finally the model module is passed to the trainer.
+## 6. Inference (3)
 
-```
-#1) 
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False, client=client)
+**OSBS RGB tile inference** is configured solely through `inference_osbs` in `config.yml`.
 
-#2)
-model = <create a pytorch NN.module>
-m = main.TreeModel(model=model, bands=data_module.config["bands"], classes=data_module.num_classes,label_dict=data_module.species_label_dict)
-
-#3
-trainer = Trainer()
-trainer.fit(m, datamodule=data_module)
+```bash
+uv run python predict.py --config config.yml
+# or
+uv run deeptree-infer-osbs --config config.yml
 ```
 
-## Pytorch Lightning Data Module (data.TreeData)
+HiPerGator template: `SLURM/osbs_inference.sh`.
 
-This repo contains a pytorch lightning data module for reproducibility. The goal of the project is to make it easy to share with others within our research group, but we welcome contributions from outside the community. While all data is public, it is VERY large (>20TB) and cannot be easily shared. If you want to reproduce this work, you will need to download the majority of NEON's camera, HSI and CHM data and change the paths in the config file. For the 'raw' NEON tree stem data see data/raw/neon_vst_2021.csv. The data module starts from this state, which are x,y locations for each tree. It then performs the following actions as an end-to-end workflow.
+---
 
-1. Filters the data to represent trees over 3m with sufficient number of training samples
-2. Extract the LiDAR derived canopy height and compares it to the field measured height. Trees that are below the canopy are excluded based on the min_CHM_diff parameter in the config.
-3. Splits the training and test x,y data such that field plots are either in training or test.
-4. For each x,y stem location the crown is predicted by the tree detection algorithm (DeepForest - https://deepforest.readthedocs.io/).
-5. Crops of each tree crown are created and divided into pixel windows for pixel-level prediction.
+## 7. Reporting and analysis (4)
 
-This workflow does not need to be run on every experiment. If you are satisifed with the current train/test split and data generation process, set regenerate=False
+- Comet dashboards (when `comet_ml` is configured).
+- Scripts such as `abundance.py`, `create_prediction_shp.py`, and `src/multinomial.py` now use `ThreadPoolExecutor` instead of Dask for light parallelism over shapefiles.
 
-```
-data_module = data.TreeData(csv_file="data/raw/neon_vst_data_2021.csv", regenerate=False)
-data_module.setup()
-```
+---
 
-## Pytorch Lightning Training Module (data.TreeModel)
+## Project map
 
-Training is handled by the TreeModel class which loads a model from the models folder, reads the config file and runs the training. The evaluation metrics and images are computed and put of the comet dashboard
-
-```
-m = main.TreeModel(model=Hang2020.vanilla_CNN, bands=data_module.config["bands"], classes=data_module.num_classes,label_dict=data_module.species_label_dict)
-
-trainer = Trainer(
-    gpus=data_module.config["gpus"],
-    fast_dev_run=data_module.config["fast_dev_run"],
-    max_epochs=data_module.config["epochs"],
-    accelerator=data_module.config["accelerator"],
-    logger=comet_logger)
-   
-trainer.fit(m, datamodule=data_module)
+```text
+├── config.yml              # Central configuration (+ neon_download / data_layout)
+├── data/
+│   ├── raw/README.md       # What belongs in raw inputs + rsync hints
+│   ├── external/           # Downloaded / rsync'd NEON tiles (.gitkeep only)
+│   └── interim/            # Optional canonical intermediate artifacts
+├── SLURM/                  # Job scripts (GPU train, OSBS inference, crown array)
+├── src/
+│   ├── data.py             # Lightning TreeData + filtering
+│   ├── generate.py         # Crowns + crops
+│   ├── neon_download.py    # neonutilities helpers
+│   └── pipelines/          # CLIs (inference, download, crown worker, merge)
+├── train.py                # Full training driver
+├── predict.py              # OSBS inference entry
+└── pyproject.toml          # Dependencies + `deeptree-*` console scripts
 ```
 
-## Alive/Dead Filtering
+---
 
-As part of the prediction pipeline, RGB crops are scored as either 'Alive', meanining they have leaves during presumed leaf-on season, or 'Dead', meaning they do not have leaves.
-To finetune the resent50 model, see src/models/dead.py. The classified data for the Alive/Dead crops can be found in data/raw/dead_train and dead/raw/dead_test.
+## Open questions / follow-up work
 
-### Dev Guide
+1. **Lightning 2.x / torchmetrics API drift** — `TreeModel` still targets the older `Trainer(gpus=…)` style; a dedicated upgrade pass would modernize metrics logging and devices.
+2. **Megaplot + IFAS branches** — logic is dense; consider isolating into a small submodule with explicit tests.
+3. **CHM product ID per NEON revision** — confirm `DP3.30015.001` matches your mirror layout (`CanopyHeightModelGtif`).
+4. **Comet as the sole reproducibility anchor** — `use_data_commit` ties runs to Comet artifact IDs; consider replacing with explicit semantic version tags on `data/processed/<name>/`.
+5. **Dead-tree filtering in `TreeData`** — references `self.predicted_dead` in a logging block; verify that attribute is always defined on your code path before relying on those images in Comet.
 
-In general, major changes or improvements should be made on a new git branch. Only core improvements should be made on the main branch. If a change leads to higher scores, please create a pull request. Any pull requests are expected to have pytest unit tests (see tests/) that cover major use cases.
-
-## Model Architectures
-
-The TreeModel class takes in a create model function
-
-```
-m = main.TreeModel(model=Hang2020.vanilla_CNN)
-```
-
-Any model can be specified provided it follows the following input and output arguments
-
-```
-class myModel(Module):
-    """
-    Model description
-    """
-    def __init__(self, bands, classes):
-        super(myModel, self).__init__()
-        <define model architecture here>
-
-    def forward(self, x):
-        <forward method for computing loss goes here>
-        class_scores = F.softmax(x)
-        
-        return class_scores
-```
-
-### Extending the model
-
-To create a model that takes in new inputs, I strongly recommend sub-classing the existing TreeData and TreeModel classes. For an example, see the MetadataModel in models/metadata.py
-
-```
-#Subclass of the training model
-class MetadataModel(main.TreeModel):
-    """Subclass the core model and update the training loop to take two inputs"""
-    def __init__(self, model, sites,classes, label_dict, config):
-        super(MetadataModel,self).__init__(model=model,classes=classes,label_dict=label_dict, config=config)  
-    
-    def training_step(self, batch, batch_idx):
-        """Train on a loaded dataset
-        """
-        #allow for empty data if data augmentation is generated
-        inputs, y = batch
-        images = inputs["HSI"]
-        metadata = inputs["site"]
-        y_hat = self.model.forward(images, metadata)
-        loss = F.cross_entropy(y_hat, y)    
-        
-        return loss
-
-```
-
-## Legacy Conda Environment (UF - collaboration)
-
-This section is kept for collaborators who still rely on the historical conda environment and shared HPC paths.
-
-1) Fork this repo and install the conda environment.
-
-```
-conda env create -f=environment.yml
-conda activate DeepTreeAttention
-```
-
-2) Update the config.yml
-
-Currently, only members of the ewhite group have permissions to the raw NEON data.
-
-For example:
-
-```
-rgb_sensor_pool: /orange/ewhite/NeonData/*/DP3.30010.001/**/Camera/**/*.tif
-```
-
-This is not a problem, just set 
-
-```
-regenerate: False
-```
-
-and it will bypass these steps and use the existing train/test split (e.g. data/processed/train.csv) 
-
-You will need to set the correct crop directories
-
-```
-crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/crops/
-```
-To wherever the crops are saved. This is currently 
-
-```
-/orange/idtrees-collab/DeepTreeAttention/crops/
-```
-
-I highly recommend making a comet login. Change
-
-```
-#Comet dashboard
-comet_workspace: bw4sz
-```
-to your usename and add a [.comet.config file](https://www.comet.ml/docs/python-sdk/advanced/#non-interactive-setup) to authenticate.
-
-3) Submit a job
-
-Submit a SLURM job
-
-```
-sbatch SLURM/experiment.sh
-```
-
-4) Look at the comet repo for results
-
-The metrics tab has the Micro and Macro Accuracy.
-
-
+Contributions: branch per feature, add/adjust pytest coverage for anything you touch, keep diffs focused.

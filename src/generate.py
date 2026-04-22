@@ -8,11 +8,22 @@ import os
 import pandas as pd
 from src.neon_paths import find_sensor_path, lookup_and_convert, bounds_to_geoindex
 from src import patches
-from distributed import wait   
 from deepforest import main    
 import traceback
 import warnings
 warnings.filterwarnings('ignore')
+
+
+def _default_deepforest_model():
+    """DeepForest 1.x used ``use_release``; 2.x prefers ``load_model`` from Hugging Face."""
+    model = main.deepforest()
+    if hasattr(model, "load_model"):
+        model.load_model(model_name="weecology/deepforest-tree")
+    elif hasattr(model, "use_release"):
+        model.use_release(check_release=False)
+    else:
+        raise AttributeError("deepforest model has neither load_model nor use_release")
+    return model
 
 def predict_trees(deepforest_model, rgb_path, bounds, expand=40):
     """Predict an rgb path at specific utm bounds
@@ -39,7 +50,7 @@ def predict_trees(deepforest_model, rgb_path, bounds, expand=40):
     
     #roll to channels last
     img = np.rollaxis(img, 0,3)
-    boxes = deepforest_model.predict_image(image = img, return_plot=False)
+    boxes = deepforest_model.predict_image(image=img)
     
     if boxes is None:
         return boxes
@@ -115,8 +126,12 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     missing_ids = plot_data[~plot_data.individual.isin(merged_boxes.individual)]
     
     if not missing_ids.empty:
-        created_boxes= create_boxes(missing_ids)
-        merged_boxes = merged_boxes.append(created_boxes)
+        created_boxes = create_boxes(missing_ids)
+        merged_boxes = gpd.GeoDataFrame(
+            pd.concat([merged_boxes, created_boxes], ignore_index=True),
+            geometry="geometry",
+            crs=merged_boxes.crs,
+        )
     
     #If there are multiple boxes per point, take the center box
     grouped = merged_boxes.groupby("individual")
@@ -153,12 +168,10 @@ def process_plot(plot_data, rgb_pool, deepforest_model=None):
     return merged_boxes, boxes 
 
 def run(plot, df, savedir, raw_box_savedir, rgb_pool=None, saved_model=None, deepforest_model=None):
-    """wrapper function for dask, see main.py"""
+    """Process one plot (used by sequential pipeline and optional SLURM array workers)."""
     
     if deepforest_model is None:
-        from deepforest import main
-        deepforest_model = main.deepforest()
-        deepforest_model.use_release(check_release=False)
+        deepforest_model = _default_deepforest_model()
 
     #Filter data and process
     plot_data = df[df.plotID == plot]
@@ -186,53 +199,43 @@ def points_to_crowns(
     savedir,
     raw_box_savedir,
     client=None):
-    """Prepare NEON field data int
+    """Prepare NEON field data into crown boxes (sequential; use SLURM array for parallelism).
     Args:
         field_data: shp file with location and class of each field collected point
         rgb_dir: glob to search RGB images
         savedir: direcory to save predicted bounding boxes
         raw_box_savedir: directory save all bounding boxes in the image
-        client: dask client object to use
+        client: deprecated, ignored (kept for API compatibility)
     Returns:
         None: .shp bounding boxes are written to savedir
     """ 
+    if client is not None:
+        raise ValueError(
+            "Dask client support was removed. Run sequentially or use SLURM array jobs "
+            "(see SLURM/crown_plot_array.sh and src.pipelines.crown_one_plot)."
+        )
     df = gpd.read_file(field_data)
     plot_names = df.plotID.unique()
     
     rgb_pool = glob.glob(rgb_dir, recursive=True)
-    results = []    
-    if client:
-        futures = []
-        for plot in plot_names:
-            future = client.submit(
-                run,
+    results = []
+    deepforest_model = _default_deepforest_model()
+    for plot in plot_names:
+        try:
+            result = run(
                 plot=plot,
                 df=df,
-                rgb_pool=rgb_pool,
                 savedir=savedir,
-                raw_box_savedir=raw_box_savedir
+                raw_box_savedir=raw_box_savedir,
+                rgb_pool=rgb_pool,
+                deepforest_model=deepforest_model,
             )
-            futures.append(future)
-            
-        wait(futures)
-        
-        for x in futures:
-            try:
-                result = x.result()
-                results.append(result)
-            except Exception as e:
-                print(e)
-                continue
-    else:
-        #IMPORTS at runtime due to dask pickling
-        deepforest_model = main.deepforest()  
-        deepforest_model.use_release(check_release=False)
-        for plot in plot_names:
-            try:
-                result = run(plot=plot, df=df, savedir=savedir, raw_box_savedir=raw_box_savedir, rgb_pool=rgb_pool, deepforest_model=deepforest_model)
-                results.append(result)
-            except Exception as e:
-                print("{} failed with {}".format(plot, e))
+            results.append(result)
+        except Exception as e:
+            print("{} failed with {}".format(plot, e))
+    results = [r for r in results if r is not None]
+    if not results:
+        raise ValueError("No plots produced crown predictions; check RGB paths and field data.")
     results = pd.concat(results)
     
     #In case any contrib data has the same CHM and height and sitting in the same deepforest box.Should be rare.
@@ -280,13 +283,18 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
         shapefile: a .shp with geometry objects and an taxonID column
         savedir: path to save image crops
         img_pool: glob to search remote sensing files. This can be either RGB of .tif hyperspectral data, as long as it can be read by rasterio
-        client: optional dask client
+        client: deprecated, ignored (kept for API compatibility; parallelize with SLURM if needed)
         convert_h5: If HSI data is passed, make sure .tif conversion is complete
         rgb_glob: glob to search images to match when converting h5s -> tif.
         HSI_tif_dir: if converting H5 -> tif, where to save .tif files. Only needed if convert_h5 is True
     Returns:
        annotations: pandas dataframe of filenames and individual IDs to link with data
     """
+    if client is not None:
+        raise ValueError(
+            "Dask client support was removed from generate_crops. "
+            "Run sequentially or shard work across SLURM tasks."
+        )
     print("There are {} rows in gdf".format(gdf.shape))
     gdf = gdf.reset_index(drop=True)
     
@@ -319,56 +327,60 @@ def generate_crops(gdf, sensor_glob, savedir, rgb_glob, client=None, convert_h5=
         
         tile_to_path[geo_index] = img_path
     
-    filenames = []  
-    geo_indexes = []
+    filenames = []
     indexes = []
-    if client:
-        futures = []
-        for index, row in gdf.iterrows():
-            try:
-                img_path = tile_to_path[row["geo_index"]]
-            except:
-                continue
-            
-            for x in img_path:
-                future = client.submit(write_crop, row=row,img_path=x, savedir=savedir, replace=replace, as_numpy=as_numpy)
-                futures.append(future)
-                geo_indexes.append(index)                
-            
-        wait(futures)
-        for index, x in enumerate(futures):
-            try:
-                filename = x.result()
-                indexes.append(geo_indexes[index])
-                filenames.append(filename)                
-            except:
-                print("Future failed with {}".format(traceback.print_exc()))
-    else:
-        #If no client is passed, loop through each tile and open then once in memory
-        for geo_index in gdf.geo_index.unique():
-            img_path = tile_to_path[geo_index]
-            
-            #For each year 
-            for x in img_path:
-                rasterio_src = rasterio.open(x)
-                tile_annotations = gdf[gdf.geo_index == geo_index]
-                
-                #Write available crops
-                for index, row in tile_annotations.iterrows():
-                    try:
-                        filename = write_crop(row=row, savedir=savedir, img_path=x, replace=replace, rasterio_src=rasterio_src, as_numpy=as_numpy)   
-                        indexes.append(index)
-                        filenames.append(filename)                                                   
-                    except Exception as e:
-                        print("index {} failed with {}".format(index,e))
-                        continue
+    for geo_index in gdf.geo_index.unique():
+        img_path = tile_to_path[geo_index]
+
+        for x in img_path:
+            rasterio_src = rasterio.open(x)
+            tile_annotations = gdf[gdf.geo_index == geo_index]
+
+            for index, row in tile_annotations.iterrows():
+                try:
+                    filename = write_crop(
+                        row=row,
+                        savedir=savedir,
+                        img_path=x,
+                        replace=replace,
+                        rasterio_src=rasterio_src,
+                        as_numpy=as_numpy,
+                    )
+                    indexes.append(index)
+                    filenames.append(filename)
+                except Exception as e:
+                    print("index {} failed with {}".format(index, e))
+                    continue
                     
     annotations = gdf.loc[indexes]
     print("shape of annotations is {}".format(annotations.shape))
     annotations["image_path"] = filenames       
     annotations["tile_year"] = annotations.image_path.apply(lambda x: os.path.splitext(os.path.basename(x))[0].split("_")[-1] )
     
-    annotations = annotations.loc[:,annotations.columns.isin(["individual","geo_index","tile_year","CHM_height","plotID","height","geometry","taxonID","RGB_tile","filename","siteID","image_path","score","box_id"])]
+    annotations = annotations.loc[
+        :,
+        annotations.columns.isin(
+            [
+                "individual",
+                "geo_index",
+                "tile_year",
+                "CHM_height",
+                "plotID",
+                "height",
+                "geometry",
+                "taxonID",
+                "RGB_tile",
+                "filename",
+                "siteID",
+                "image_path",
+                "score",
+                "box_id",
+            ]
+        ),
+    ]
+    if "plotID" not in annotations.columns and "plotID" in gdf.columns:
+        plot_map = gdf.drop_duplicates(subset=["individual"]).set_index("individual")["plotID"]
+        annotations["plotID"] = annotations["individual"].map(plot_map)
 
     return annotations
         

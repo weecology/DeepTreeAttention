@@ -1,6 +1,5 @@
 #Ligthning data module
 from . import __file__
-from distributed import wait
 import glob
 import geopandas as gpd
 import numpy as np
@@ -18,6 +17,14 @@ from shapely.geometry import Point
 import torch
 from torch.utils.data import Dataset
 import rasterio
+
+def _resolved_split_csv(config, data_dir, key, default_name):
+    """Resolve ``processed_train_csv`` / ``processed_test_csv`` or default ``train.csv`` / ``test.csv``."""
+    rel = config.get(key)
+    if rel:
+        return rel if os.path.isabs(rel) else os.path.join(data_dir, rel)
+    return os.path.join(data_dir, default_name)
+
 
 def filter_data(path, config):
     """Transform raw NEON data into clean shapefile   
@@ -101,7 +108,7 @@ def filter_data(path, config):
     shp = shp[~(shp.siteID.isin(["PUUM","ORNL"]))]
 
     # There are a couple NEON plots within the OSBS megaplot, make sure they are removed
-    shp = shp[~shp.plotID.isin(["OSBS_026","OSBS_029","OSBS_039","OSBS_027","OSBS_036"])]
+    shp = shp[~shp["plotID"].isin(["OSBS_026", "OSBS_029", "OSBS_039", "OSBS_027", "OSBS_036"])]
 
     return shp
 
@@ -111,19 +118,19 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
         shp: pandas dataframe of filtered tree locations
         test_fraction: proportion of plots in test datasets
         min_samples: minimum number of samples per class
-        iteration: a dummy parameter to make dask submission unique
+        iteration: reserved for reproducibility hooks (unused)
     """
     #When splitting train/test, only use 1 sample per year for counts.
-    single_year = shp.groupby("individual").apply(lambda x: x.head(1))
+    single_year = shp.groupby("individual", as_index=False).head(1)
     
-    plotIDs = list(shp.plotID.unique())
-    if len(plotIDs) <=2:
-        test = shp[shp.plotID == shp.plotID.unique()[0]]
-        train = shp[shp.plotID == shp.plotID.unique()[1]]
+    plotIDs = list(shp["plotID"].unique())
+    if len(plotIDs) <= 2:
+        test = shp[shp["plotID"] == shp["plotID"].unique()[0]]
+        train = shp[shp["plotID"] == shp["plotID"].unique()[1]]
 
         return train, test
     else:
-        plotIDs = shp[shp.siteID=="OSBS"].plotID.unique()
+        plotIDs = shp[shp.siteID == "OSBS"]["plotID"].unique()
 
     np.random.shuffle(plotIDs)
     species_to_sample = shp.taxonID.unique()
@@ -135,26 +142,36 @@ def sample_plots(shp, min_train_samples=5, min_test_samples=3, iteration = 1):
     
     test_plots = []
     for plotID in plotIDs:
-        selected_plot = single_year[single_year.plotID == plotID]
+        selected_plot = single_year[single_year["plotID"] == plotID]
         # If any species is missing from min samples, include plot
         if any([x in species_to_sample for x in selected_plot.taxonID.unique()]):
             test_plots.append(plotID)            
-            counts = single_year[single_year.plotID.isin(test_plots)].taxonID.value_counts().to_dict()
+            counts = single_year[single_year["plotID"].isin(test_plots)].taxonID.value_counts().to_dict()
             species_completed = [key for key, value in counts.items() if value > species_floor[key]]
             species_to_sample = [x for x in shp.taxonID.unique() if not x in species_completed]
     
     #Sample from original multi_year data
-    test = shp[shp.plotID.isin(test_plots)]
-    train = shp[~shp.plotID.isin(test.plotID.unique())]
+    test = shp[shp["plotID"].isin(test_plots)]
+    train = shp[~shp["plotID"].isin(test["plotID"].unique())]
 
     ## Remove fixed boxes from test
     test = test.loc[~test["box_id"].astype(str).str.contains("fixed").fillna(False)]    
     
-    testids = test.groupby("individual").apply(lambda x: x.head(1)).groupby("taxonID").filter(lambda x: x.shape[0] >= min_test_samples).individual
-    test = test[test.individual.isin(testids)]
+    testids = (
+        test.groupby("individual", as_index=False)
+        .head(1)
+        .groupby("taxonID")
+        .filter(lambda x: x.shape[0] >= min_test_samples)
+    )["individual"]
+    test = test[test["individual"].isin(testids)]
 
-    trainids = train.groupby("individual").apply(lambda x: x.head(1)).groupby("taxonID").filter(lambda x: x.shape[0] >= min_train_samples).individual
-    train = train[train.individual.isin(trainids)]
+    trainids = (
+        train.groupby("individual", as_index=False)
+        .head(1)
+        .groupby("taxonID")
+        .filter(lambda x: x.shape[0] >= min_train_samples)
+    )["individual"]
+    train = train[train["individual"].isin(trainids)]
     
     train = train[train.taxonID.isin(test.taxonID)]    
     test = test[test.taxonID.isin(train.taxonID)]
@@ -166,10 +183,15 @@ def train_test_split(shp, config, client = None):
     """Create the train test split
     Args:
         shp: a filter pandas dataframe (or geodataframe)  
-        client: optional dask client
+        client: deprecated, ignored (kept for API compatibility)
     Returns:
         None: train.shp and test.shp are written as side effect
         """    
+    if client is not None:
+        raise ValueError(
+            "Dask client support was removed from train_test_split. "
+            "Run iterations sequentially or parallelize at the SLURM job level."
+        )
     min_sampled = config["min_train_samples"] + config["min_test_samples"]
     keep = shp.taxonID.value_counts() > (min_sampled)
     species_to_keep = keep[keep].index
@@ -177,47 +199,21 @@ def train_test_split(shp, config, client = None):
     print("splitting data into train test. Initial data has {} points from {} species with a min of {} samples".format(shp.shape[0],shp.taxonID.nunique(),min_sampled))
     test_species = 0
     ties = []
-    if client:
-        futures = [ ]
-        for x in np.arange(config["iterations"]):
-            future = client.submit(
-                sample_plots,
-                shp=shp,
-                min_train_samples=config["min_train_samples"],
-                iteration=x,
-                min_test_samples=config["min_test_samples"],
-            )
-            futures.append(future)
-
-        wait(futures)
-        for x in futures:
-            train, test = x.result()
-            if test.taxonID.nunique() > test_species:
-                print("Selected test has {} points and {} species".format(test.shape[0], test.taxonID.nunique()))
-                saved_train = train
-                saved_test = test
-                test_species = test.taxonID.nunique()
-                ties = []
-                ties.append([train, test])
-            elif test.taxonID.nunique() == test_species:
-                ties.append([train, test])          
-    else:
-        for x in np.arange(config["iterations"]):
-            train, test = sample_plots(
-                shp=shp,
-                min_train_samples=config["min_train_samples"],
-                min_test_samples=config["min_test_samples"],
-            )
-            if test.taxonID.nunique() > test_species:
-                print("Selected test has {} points and {} species".format(test.shape[0], test.taxonID.nunique()))
-                saved_train = train
-                saved_test = test
-                test_species = test.taxonID.nunique()
-                #reset ties
-                ties = []
-                ties.append([train, test])
-            elif test.taxonID.nunique() == test_species:
-                ties.append([train, test])
+    for x in np.arange(config["iterations"]):
+        train, test = sample_plots(
+            shp=shp,
+            min_train_samples=config["min_train_samples"],
+            min_test_samples=config["min_test_samples"],
+        )
+        if test.taxonID.nunique() > test_species:
+            print("Selected test has {} points and {} species".format(test.shape[0], test.taxonID.nunique()))
+            saved_train = train
+            saved_test = test
+            test_species = test.taxonID.nunique()
+            ties = []
+            ties.append([train, test])
+        elif test.taxonID.nunique() == test_species:
+            ties.append([train, test])
     
     # The size of the datasets
     if len(ties) > 1:
@@ -420,17 +416,30 @@ class TreeData(LightningDataModule):
             else:
                 self.crowns = gpd.read_file("{}/crowns.shp".format(self.data_dir))
     
+            crowns_gdf = self.crowns
+            if "plotID" not in crowns_gdf.columns:
+                plot_cols = [c for c in crowns_gdf.columns if str(c).lower() == "plotid"]
+                if plot_cols:
+                    crowns_gdf = crowns_gdf.rename(columns={plot_cols[0]: "plotID"})
+
             annotations = generate.generate_crops(
-                self.crowns,
+                crowns_gdf,
                 savedir=self.config["crop_dir"],
                 sensor_glob=self.config["HSI_sensor_pool"],
-                convert_h5=self.config["convert_h5"],   
+                convert_h5=self.config["convert_h5"],
                 rgb_glob=self.config["rgb_sensor_pool"],
                 HSI_tif_dir=self.config["HSI_tif_dir"],
                 client=self.client,
-                replace=self.config["replace"]
+                replace=self.config["replace"],
             )
-            
+
+            if "plotID" not in annotations.columns:
+                pts = self.canopy_points
+                plot_col = next((c for c in pts.columns if str(c).lower() == "plotid"), None)
+                if plot_col is not None:
+                    plot_map = pts.drop_duplicates(subset=["individual"]).set_index("individual")[plot_col]
+                    annotations["plotID"] = annotations["individual"].map(plot_map)
+
             annotations.to_csv("{}/annotations.csv".format(self.data_dir))
             
             if self.comet_logger:
@@ -501,9 +510,22 @@ class TreeData(LightningDataModule):
             )
              
         else:
-            print("Loading previous run")            
-            self.train = pd.read_csv("{}/train.csv".format(self.data_dir))
-            self.test = pd.read_csv("{}/test.csv".format(self.data_dir))
+            print("Loading previous run")
+            train_path = _resolved_split_csv(
+                self.config, self.data_dir, "processed_train_csv", "train.csv"
+            )
+            test_path = _resolved_split_csv(
+                self.config, self.data_dir, "processed_test_csv", "test.csv"
+            )
+            for path, label in ((train_path, "train"), (test_path, "test")):
+                if not os.path.isfile(path):
+                    raise FileNotFoundError(
+                        "Missing {} split CSV at {}. Add train.csv/test.csv under the commit "
+                        "folder, or set processed_train_csv / processed_test_csv in config.yml "
+                        "(paths relative to that folder unless absolute).".format(label, path)
+                    )
+            self.train = pd.read_csv(train_path)
+            self.test = pd.read_csv(test_path)
             
             try:
                 self.train["individual"] = self.train["individualID"]

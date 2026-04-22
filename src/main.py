@@ -50,9 +50,14 @@ class TreeModel(LightningModule):
         self.model = model
         
         #Metrics
-        micro_recall = torchmetrics.Accuracy(average="micro")
-        macro_recall = torchmetrics.Accuracy(average="macro", num_classes=classes)
-        top_k_recall = torchmetrics.Accuracy(average="micro",top_k=self.config["top_k"])
+        micro_recall = torchmetrics.Accuracy(task="multiclass", num_classes=classes, average="micro")
+        macro_recall = torchmetrics.Accuracy(task="multiclass", num_classes=classes, average="macro")
+        top_k_recall = torchmetrics.Accuracy(
+            task="multiclass",
+            num_classes=classes,
+            average="micro",
+            top_k=self.config["top_k"],
+        )
 
         self.metrics = torchmetrics.MetricCollection(
             {"Micro Accuracy":micro_recall,
@@ -99,13 +104,18 @@ class TreeModel(LightningModule):
         final_micro = torchmetrics.functional.accuracy(
             preds=torch.tensor(results.pred_label_top1.values),
             target=torch.tensor(results.label.values),
-            average="micro")
-        
+            task="multiclass",
+            num_classes=self.classes,
+            average="micro",
+        )
+
         final_macro = torchmetrics.functional.accuracy(
             preds=torch.tensor(results.pred_label_top1.values),
             target=torch.tensor(results.label.values),
+            task="multiclass",
+            num_classes=self.classes,
             average="macro",
-            num_classes=self.classes)
+        )
         
         self.log("Epoch Micro Accuracy", final_micro)
         self.log("Epoch Macro Accuracy", final_macro)
@@ -113,15 +123,17 @@ class TreeModel(LightningModule):
         # Log results by species
         taxon_accuracy = torchmetrics.functional.accuracy(
             preds=torch.tensor(results.pred_label_top1.values),
-            target=torch.tensor(results.label.values), 
-            average="none", 
-            num_classes=self.classes
+            target=torch.tensor(results.label.values),
+            task="multiclass",
+            num_classes=self.classes,
+            average="none",
         )
         taxon_precision = torchmetrics.functional.precision(
             preds=torch.tensor(results.pred_label_top1.values),
             target=torch.tensor(results.label.values),
+            task="multiclass",
+            num_classes=self.classes,
             average="none",
-            num_classes=self.classes
         )
         species_table = pd.DataFrame(
             {"taxonID":self.label_to_index.keys(),
@@ -135,16 +147,17 @@ class TreeModel(LightningModule):
     def configure_optimizers(self):
         optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
         
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                                         mode='min',
-                                                         factor=0.75,
-                                                         patience=8,
-                                                         verbose=True,
-                                                         threshold=0.0001,
-                                                         threshold_mode='rel',
-                                                         cooldown=0,
-                                                         min_lr=0.0000001,
-                                                         eps=1e-08)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            mode="min",
+            factor=0.75,
+            patience=8,
+            threshold=0.0001,
+            threshold_mode="rel",
+            cooldown=0,
+            min_lr=0.0000001,
+            eps=1e-08,
+        )
                                                                  
         return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
     
@@ -288,15 +301,17 @@ class TreeModel(LightningModule):
         # Log results by species
         taxon_accuracy = torchmetrics.functional.accuracy(
             preds=torch.tensor(results.pred_label_top1.values),
-            target=torch.tensor(results.label.values), 
-            average="none", 
-            num_classes=self.classes
+            target=torch.tensor(results.label.values),
+            task="multiclass",
+            num_classes=self.classes,
+            average="none",
         )
         taxon_precision = torchmetrics.functional.precision(
             preds=torch.tensor(results.pred_label_top1.values),
             target=torch.tensor(results.label.values),
+            task="multiclass",
+            num_classes=self.classes,
             average="none",
-            num_classes=self.classes
         )
         species_table = pd.DataFrame(
             {"taxonID":self.label_to_index.keys(),
@@ -315,13 +330,18 @@ class TreeModel(LightningModule):
                 site_micro = torchmetrics.functional.accuracy(
                     preds=torch.tensor(group.pred_label_top1.values),
                     target=torch.tensor(group.label.values),
-                    average="micro")
-                
+                    task="multiclass",
+                    num_classes=self.classes,
+                    average="micro",
+                )
+
                 site_macro = torchmetrics.functional.accuracy(
                     preds=torch.tensor(group.pred_label_top1.values),
                     target=torch.tensor(group.label.values),
+                    task="multiclass",
+                    num_classes=self.classes,
                     average="macro",
-                    num_classes=self.classes)
+                )
                 
                 experiment.log_metric("{}_macro".format(name), site_macro)
                 experiment.log_metric("{}_micro".format(name), site_micro) 

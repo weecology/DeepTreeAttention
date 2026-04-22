@@ -1,10 +1,21 @@
+config.local.yml
+.smoke_train_overrides.yml
+results/**
+!results/.gitkeep
+
 .DS_Store
 project.wpr
 project.wpu
 *.h5
 __pycache__
-data/raw/
-data/processed/
+# Large or machine-local artifacts (keep README / .gitkeep under data/*)
+data/processed/**
+data/external/**
+!data/external/.gitkeep
+!data/interim/.gitkeep
+data/raw/**/*.csv
+data/raw/**/*.zip
+!data/raw/README.md
 *.tif
 *.png
 *.wpr

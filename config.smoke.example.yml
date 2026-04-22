@@ -1,0 +1,29 @@
+# Copy to ``config.local.yml`` or pass ``--overrides config.smoke.example.yml`` with ``train.py``.
+# If your ``use_data_commit`` folder has split CSVs like ``train_<hash>_[\"OSBS\"].csv`` instead of
+# ``train.csv`` / ``test.csv``, set ``processed_train_csv`` and ``processed_test_csv`` (relative to that folder).
+
+epochs: 1
+workers: 0
+preload_images: false
+batch_size: 32
+
+# Lightning: keep runs tiny (metrics on partial data are not meaningful)
+limit_train_batches: 2
+limit_val_batches: 2
+limit_predict_batches: 4
+
+use_comet: false
+checkpoint_dir: results/checkpoints
+
+# CPU smoke (set gpus: 1 and accelerator: auto for a short GPU check)
+gpus: 0
+accelerator: cpu
+
+# Faster crown detection during OSBS inference smoke (optional)
+deepforest_dead_cropmodel_name: null
+
+inference_osbs:
+  tile_limit: 1
+  predict_limit_batches: 2
+  # After a smoke train, point this at results/checkpoints/<id>.pt
+  # species_checkpoint: results/checkpoints/smoke.pt

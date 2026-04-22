@@ -12,25 +12,60 @@ import warnings
 import pandas as pd
 from torch.utils.data.dataloader import default_collate
 
+
+def deep_merge(base: dict, override: dict | None) -> dict:
+    """Recursively merge ``override`` into a copy of ``base`` (dict values only)."""
+    if not override:
+        return base
+    out = dict(base)
+    for key, val in override.items():
+        if (
+            key in out
+            and isinstance(out[key], dict)
+            and val is not None
+            and isinstance(val, dict)
+        ):
+            out[key] = deep_merge(out[key], val)
+        else:
+            out[key] = val
+    return out
+
+
+def trainer_accelerator_devices(config: dict) -> tuple[str, int]:
+    """Map legacy ``gpus`` config to Lightning 2 ``accelerator`` / ``devices``."""
+    accelerator = config.get("accelerator", "auto")
+    devices = config.get("gpus", 1)
+    if devices in (0, "0"):
+        return "cpu", 1
+    if isinstance(devices, int) and devices < 0:
+        return "cpu", 1
+    return accelerator, devices
+
+
 def read_config(config_path):
-    """Read config yaml file"""
-    #Allow command line to override 
+    """Read YAML config; merge ``config.local.yml`` from the same directory if present."""
+    config_path = os.path.abspath(config_path)
     parser = argparse.ArgumentParser("DeepTreeAttention config")
-    parser.add_argument('-d', '--my-dict', type=json.loads, default=None)
+    parser.add_argument("-d", "--my-dict", type=json.loads, default=None)
     args = parser.parse_known_args()
     try:
-        with open(config_path, 'r') as f:
-            config = yaml.load(f, Loader=yaml.FullLoader)
-
+        with open(config_path, "r") as f:
+            config = yaml.load(f, Loader=yaml.FullLoader) or {}
     except Exception as e:
-        raise FileNotFoundError("There is no config at {}, yields {}".format(
-            config_path, e))
-    
-    #Update anything in argparse to have higher priority
+        raise FileNotFoundError(
+            "There is no config at {}, yields {}".format(config_path, e)
+        ) from e
+
+    local_path = os.path.join(os.path.dirname(config_path), "config.local.yml")
+    if os.path.isfile(local_path):
+        with open(local_path, "r") as f:
+            local_cfg = yaml.load(f, Loader=yaml.FullLoader) or {}
+        config = deep_merge(config, local_cfg)
+
     if args[0].my_dict:
-        for key, value in args[0].my_dict:
+        for key, value in args[0].my_dict.items():
             config[key] = value
-        
+
     return config
 
 def preprocess_image(image, channel_is_first=False):
