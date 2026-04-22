@@ -15,8 +15,9 @@ limit_predict_batches: 4
 use_comet: false
 checkpoint_dir: results/checkpoints
 
-# CPU smoke (set gpus: 1 and accelerator: auto for a short GPU check)
-gpus: 0
+# CPU smoke (set accelerator: auto, devices: 1 for a short GPU check)
+accelerator: cpu
+devices: 1
 accelerator: cpu
 
 # Faster crown detection during OSBS inference smoke (optional)
