@@ -1,2 +1,5 @@
 [console_scripts]
+deeptree-crown-one-plot = src.pipelines.crown_one_plot:main
+deeptree-download-aop = src.pipelines.download_neon_aop:main
 deeptree-infer-osbs = src.pipelines.osbs_inference:main
+deeptree-merge-crown-boxes = src.pipelines.merge_crown_boxes:main

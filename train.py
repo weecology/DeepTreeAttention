@@ -16,14 +16,17 @@ from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.loggers import CometLogger
 
 from src import data, utils
+from src import experiment_tracking
 from src.models import multi_stage
 from src.local_smoke_logger import LocalSmokeLogger
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="DeepTreeAttention training driver")
-    p.add_argument("git_branch", help="Git branch name (logged)")
-    p.add_argument("git_commit", help="Git commit hash (logged)")
+    p = argparse.ArgumentParser(
+        description="DeepTreeAttention training driver",
+        epilog="Experiment identity defaults to DEEPTREE_EXPERIMENT_NAME, COMET_EXPERIMENT_NAME, "
+        "or SLURM_JOB_ID; git metadata is detected automatically.",
+    )
     p.add_argument(
         "--config",
         default="config.yml",
@@ -34,10 +37,26 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional YAML file merged last (e.g. config.smoke.example.yml for capped batches)",
     )
+    p.add_argument(
+        "--experiment-name",
+        "-n",
+        default=None,
+        help="Comet experiment display name (also set DEEPTREE_EXPERIMENT_NAME for SLURM)",
+    )
+    p.add_argument(
+        "--git-branch",
+        default=None,
+        help="Override auto-detected git branch for logging (rare)",
+    )
+    p.add_argument(
+        "--git-sha",
+        default=None,
+        help="Override auto-detected git SHA for logging (rare)",
+    )
     return p
 
 
-def _make_logger(config: dict):
+def _make_logger(config: dict, *, experiment_name: str):
     use_comet = config.get("use_comet", True)
     has_key = bool(os.getenv("COMET_API_KEY") or os.getenv("COMET_KEY"))
     if use_comet and has_key:
@@ -45,19 +64,35 @@ def _make_logger(config: dict):
             project="DeepTreeAttention2",
             workspace=config["comet_workspace"],
             auto_output_logging="simple",
+            name=experiment_name,
         )
     return LocalSmokeLogger()
 
 
 def main_train() -> None:
     args = _build_parser().parse_args()
+
     config_path = os.path.abspath(args.config)
+    repo_root = os.path.dirname(config_path)
+    git_root = (
+        repo_root if repo_root and os.path.isdir(os.path.join(repo_root, ".git")) else os.getcwd()
+    )
+    git_meta = experiment_tracking.git_metadata(git_root)
+    if args.git_branch:
+        git_meta["git_branch"] = args.git_branch
+    if args.git_sha:
+        git_meta["git_sha"] = args.git_sha
+        git_meta["git_short_sha"] = args.git_sha[:7] if len(args.git_sha) > 7 else args.git_sha
+
+    experiment_name = experiment_tracking.comet_display_name(args.experiment_name, git_meta)
+    print("[train] experiment_name={}".format(experiment_name), flush=True)
+
     config = utils.read_config(config_path)
     if args.overrides:
         with open(os.path.abspath(args.overrides), "r") as f:
             config = utils.deep_merge(config, yaml.load(f, Loader=yaml.FullLoader) or {})
 
-    comet_logger = _make_logger(config)
+    comet_logger = _make_logger(config, experiment_name=experiment_name)
 
     if config["use_data_commit"]:
         config["crop_dir"] = os.path.join(config["data_dir"], config["use_data_commit"])
@@ -80,10 +115,35 @@ def main_train() -> None:
 
     client = None
 
-    comet_logger.experiment.log_parameter("git branch", args.git_branch)
-    comet_logger.experiment.add_tag(args.git_branch)
-    comet_logger.experiment.log_parameter("commit hash", args.git_commit)
+    comet_logger.experiment.log_parameter("experiment_name", experiment_name)
+    comet_logger.experiment.log_parameter("git_branch", git_meta["git_branch"])
+    comet_logger.experiment.add_tag(git_meta["git_branch"])
+    comet_logger.experiment.log_parameter("git_sha", git_meta["git_sha"])
+    comet_logger.experiment.log_parameter("git_short_sha", git_meta["git_short_sha"])
+    comet_logger.experiment.log_parameter("git_dirty", bool(git_meta["git_dirty"]))
     comet_logger.experiment.log_parameters(config)
+
+    if isinstance(comet_logger, CometLogger):
+        exp = comet_logger.experiment
+        try:
+            exp.log_asset_data(
+                yaml.safe_dump(config, sort_keys=False, default_flow_style=False),
+                file_name="config.merged.yml",
+            )
+        except Exception as exc:
+            print("[train] warning: could not log config asset to Comet: {}".format(exc), flush=True)
+        if git_meta.get("git_diff_head"):
+            try:
+                exp.log_asset_data(
+                    git_meta["git_diff_head"],
+                    file_name="git_diff_uncommitted.patch",
+                )
+            except Exception as exc:
+                print("[train] warning: could not log git diff asset: {}".format(exc), flush=True)
+        try:
+            exp.log_code(folder=os.path.join(git_root, "src"), name="src")
+        except Exception as exc:
+            print("[train] warning: comet log_code(src) failed: {}".format(exc), flush=True)
 
     vst_csv = config.get("raw_vst_csv") or "data/raw/neon_vst_data_2022.csv"
     data_module = data.TreeData(

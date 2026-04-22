@@ -91,13 +91,31 @@ Submit `SLURM/crown_plot_array.sh` (tune `#SBATCH` directives, `plots.txt`, and 
 
 ## 4. Training (1)
 
+**Experiment identity (Comet + SLURM)** — you no longer pass git branch/sha as required positionals. The trainer auto-detects git (branch, SHA, dirty flag) and uploads a merged **`config.merged.yml`**, optional **`git_diff_uncommitted.patch`**, and a **`src/`** code bundle to Comet when logging is enabled.
+
 ```bash
-uv run python train.py "$(git branch --show-current)" "$(git rev-parse HEAD)"
+# Human-readable Comet experiment name (recommended)
+export DEEPTREE_EXPERIMENT_NAME=osbs-baseline-epoch70
+uv run python train.py --config config.yml --experiment-name "${DEEPTREE_EXPERIMENT_NAME}"
+
+# Or rely on auto naming (UTC timestamp + short SHA, or SLURM_JOB_ID on clusters)
+uv run python train.py --config config.yml
+
+# Optional YAML merged last (keep one file per ablation under e.g. experiments/)
+uv run python train.py --config config.yml --overrides experiments/my_ablation.yml -n osbs-lr-sweep-001
 ```
 
-`train.py` reads `config.yml`, logs to Comet when configured, and writes checkpoints to the path in your config. `raw_vst_csv` defaults to `data/raw/neon_vst_data_2022.csv` but can be overridden in YAML.
+Environment variables (highest priority first for the display name): **`DEEPTREE_EXPERIMENT_NAME`**, **`COMET_EXPERIMENT_NAME`**, then **`--experiment-name`**, then a default from **`SLURM_JOB_ID`** or timestamp.
 
-GPU SLURM example: `SLURM/experiment.sh` (update `conda`/`uv` usage for your module stack).
+`train.py` reads `config.yml` (+ `config.local.yml` if present), logs to Comet when **`use_comet: true`** and **`COMET_API_KEY`** / **`COMET_KEY`** are set, and writes checkpoints under **`checkpoint_dir`**. `raw_vst_csv` defaults to `data/raw/neon_vst_data_2022.csv` but can be overridden in YAML.
+
+**SLURM (queued GPU training)** — set **`REPO_ROOT`**, **`EXPERIMENT_NAME`** (forwarded as **`DEEPTREE_EXPERIMENT_NAME`**), optionally **`DEEPTREE_OVERRIDES`** and **`DEEPTREE_CONFIG`**, then:
+
+```bash
+sbatch SLURM/train_experiment.sh
+```
+
+Edit `#SBATCH` lines in `SLURM/train_experiment.sh` for your partition/account. The job runs from a **shared checkout** so you can **`git pull`** or edit **`experiments/*.yml`** between submissions; each job still logs the **resolved config** and **git SHA** to Comet for apples-to-apples comparison.
 
 ---
 
@@ -136,9 +154,11 @@ HiPerGator template: `SLURM/osbs_inference.sh`.
 │   ├── raw/README.md       # What belongs in raw inputs + rsync hints
 │   ├── external/           # Downloaded / rsync'd NEON tiles (.gitkeep only)
 │   └── interim/            # Optional canonical intermediate artifacts
-├── SLURM/                  # Job scripts (GPU train, OSBS inference, crown array)
+├── experiments/            # Optional YAML fragments for ``--overrides`` (one ablation per file)
+├── SLURM/                  # Job scripts (``train_experiment.sh``, inference, crown array)
 ├── src/
 │   ├── data.py             # Lightning TreeData + filtering
+│   ├── experiment_tracking.py  # Git metadata + default experiment names
 │   ├── generate.py         # Crowns + crops
 │   ├── neon_download.py    # neonutilities helpers
 │   └── pipelines/          # CLIs (inference, download, crown worker, merge)
