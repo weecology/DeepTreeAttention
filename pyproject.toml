@@ -19,6 +19,7 @@ dependencies = [
   "matplotlib",
   "neonutilities",
   "numpy",
+  "packaging>=26.1",
   "pandas",
   "pytorch_lightning",
   "PyYAML",

@@ -1,5 +1,4 @@
 #Download deepforest before tests start
-import comet_ml
 from deepforest.main import deepforest
 import geopandas as gpd
 import os

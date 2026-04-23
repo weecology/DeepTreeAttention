@@ -60,7 +60,7 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 use_data_commit: 4c02ae98bd774aa494fadb3508ae84ba
 
 #Make new dataset
-data_dir: data/processed
+data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention
 convert_h5: True
 #Overwrite existing crops
 replace: True

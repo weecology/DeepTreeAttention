@@ -19,11 +19,14 @@
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=48:00:00
+#SBATCH --time=12:00:00
 #SBATCH --partition=gpu
 #SBATCH --gpus=1
-#SBATCH --output=logs/train_%x_%j.out
-#SBATCH --error=logs/train_%x_%j.err
+#SBATCH --output=/home/b.weinstein/logs/train_%x_%j.out
+#SBATCH --error=/home/b.weinstein/logs/train_%x_%j.err
+#SBATCH --partition=hpg-b200
+#SBATCH --ntasks-per-node=1
+#SBATCH --gpus=1
 
 set -euo pipefail
 
