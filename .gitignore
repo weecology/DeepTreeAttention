@@ -18,5 +18,6 @@ data/raw/**/*.zip
 !data/raw/README.md
 *.tif
 *.png
+!docs/figures/*.png
 *.wpr
 *.wpu
