@@ -31,7 +31,9 @@ class AliveDead(pl.LightningModule):
         super().__init__()
         
         # Model
-        self.model = models.resnet50(pretrained=True)
+        from torchvision.models import ResNet50_Weights
+
+        self.model = models.resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
         num_ftrs = self.model.fc.in_features
         self.model.fc = torch.nn.Linear(num_ftrs, 2)        
         
@@ -95,7 +97,7 @@ class AliveDead(pl.LightningModule):
         x,y = batch
         outputs = self.forward(x)
         loss = F.cross_entropy(outputs,y)
-        self.log("train_loss",loss)
+        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         
         return loss
       
@@ -109,10 +111,10 @@ class AliveDead(pl.LightningModule):
         x,y = batch
         outputs = self(x)
         loss = F.cross_entropy(outputs,y)        
-        self.log("val_loss",loss)      
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
         metric_dict = self.metrics(outputs, y)
-        self.log("Alive Accuracy",metric_dict["Class Accuracy"][0])
-        self.log("Dead Accuracy",metric_dict["Class Accuracy"][1])        
+        self.log("Alive Accuracy", metric_dict["Class Accuracy"][0], on_step=False, on_epoch=True)
+        self.log("Dead Accuracy", metric_dict["Class Accuracy"][1], on_step=False, on_epoch=True)
         #self.log_dict(metric_dict)
         
         return loss
@@ -131,8 +133,10 @@ class AliveDead(pl.LightningModule):
             eps=1e-08,
         )
         
-        #Monitor rate is val data is used
-        return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {"scheduler": scheduler, "monitor": "val_loss"},
+        }
             
     def dataset_confusion(self, loader):
         """Create a confusion matrix from a data loader"""

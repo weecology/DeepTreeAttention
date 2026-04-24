@@ -31,10 +31,20 @@ def deep_merge(base: dict, override: dict | None) -> dict:
     return out
 
 
-def trainer_accelerator_devices(config: dict) -> tuple[str, int]:
-    """Map legacy ``gpus`` config to Lightning 2 ``accelerator`` / ``devices``."""
+def trainer_accelerator_devices(config: dict) -> tuple[str, int | str | list]:
+    """Resolve Lightning 2 ``Trainer(accelerator=…, devices=…)`` from config.
+
+    Precedence: explicit ``devices`` (and ``accelerator``), else legacy ``gpus``
+    count (``0`` means CPU). ``devices`` may be an int, ``"auto"``, or a list of
+    GPU indices as accepted by Lightning.
+    """
     accelerator = config.get("accelerator", "auto")
-    devices = config.get("gpus", 1)
+    if config.get("devices") is not None:
+        devices = config["devices"]
+    elif "gpus" in config:
+        devices = config["gpus"]
+    else:
+        devices = 1
     if devices in (0, "0"):
         return "cpu", 1
     if isinstance(devices, int) and devices < 0:

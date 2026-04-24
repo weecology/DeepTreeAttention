@@ -251,6 +251,10 @@ class TreeDataset(Dataset):
         self.image_paths = self.annotations.groupby("individual").apply(lambda x: x.set_index('tile_year').image_path.to_dict())
         if train:
             self.labels = self.annotations.set_index("individual").label.to_dict()
+        if "site" in self.annotations.columns:
+            self.sites = self.annotations.drop_duplicates(subset=["individual"]).set_index("individual")["site"].to_dict()
+        else:
+            self.sites = None
         
         # Create augmentor
         self.transformer = augmentation.train_augmentation(image_size=self.image_size)
@@ -309,6 +313,9 @@ class TreeDataset(Dataset):
                     image = self.transformer(image)   
                 images.append(image)
             inputs["HSI"] = images
+        if self.sites is not None:
+            site = self.sites.get(individual, 0)
+            inputs["site"] = torch.tensor(site, dtype=torch.long)
         
         if self.train:
             label = self.labels[individual]

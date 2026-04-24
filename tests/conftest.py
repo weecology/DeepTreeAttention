@@ -80,8 +80,8 @@ def config(ROOT):
     config["pretrain_state_dict"] = None
     config["preload_images"] = False
     config["batch_size"] = 2
-    config["gpus"] = 0
     config["accelerator"] = "cpu"
+    config["devices"] = 1
     config["existing_test_csv"] = None
     config["workers"] = 0
     config["dead"]["num_workers"] = 0

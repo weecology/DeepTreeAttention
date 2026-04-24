@@ -66,12 +66,12 @@ class TreeModel(LightningModule):
              })
 
         self.save_hyperparameters(ignore=["loss_weight"])
-        
-        #Weighted loss
-        if torch.cuda.is_available():
-            self.loss_weight = torch.tensor(loss_weight, device="cuda", dtype=torch.float)
+
+        if loss_weight is None:
+            lw = torch.ones(classes, dtype=torch.float32)
         else:
-            self.loss_weight = torch.ones((classes))    
+            lw = torch.tensor(loss_weight, dtype=torch.float32)
+        self.register_buffer("loss_weight", lw, persistent=False)
         
     def training_step(self, batch, batch_idx):
         """Train on a loaded dataset
@@ -80,7 +80,7 @@ class TreeModel(LightningModule):
         individual, inputs, y = batch
         images = inputs["HSI"]
         y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)    
+        loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)
 
         return loss
     
@@ -91,11 +91,10 @@ class TreeModel(LightningModule):
         individual, inputs, y = batch
         images = inputs["HSI"]        
         y_hat = self.model.forward(images)
-        loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)        
+        loss = F.cross_entropy(y_hat, y, weight=self.loss_weight)    
         
-        # Log loss and metrics
-        self.log("val_loss", loss, on_epoch=True)
-        
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+
         return loss
 
     def on_validation_epoch_end(self):
@@ -117,8 +116,8 @@ class TreeModel(LightningModule):
             average="macro",
         )
         
-        self.log("Epoch Micro Accuracy", final_micro)
-        self.log("Epoch Macro Accuracy", final_macro)
+        self.log("Epoch Micro Accuracy", final_micro, on_step=False, on_epoch=True)
+        self.log("Epoch Macro Accuracy", final_macro, on_step=False, on_epoch=True)
         
         # Log results by species
         taxon_accuracy = torchmetrics.functional.accuracy(
@@ -142,11 +141,11 @@ class TreeModel(LightningModule):
              })
         
         for key, value in species_table.set_index("taxonID").accuracy.to_dict().items():
-            self.log("Epoch_{}_accuracy".format(key), value)
-            
+            self.log("Epoch_{}_accuracy".format(key), value, on_step=False, on_epoch=True)
+
     def configure_optimizers(self):
         optimizer = optim.Adam(self.model.parameters(), lr=self.config["lr"])
-        
+
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
             mode="min",
@@ -158,8 +157,11 @@ class TreeModel(LightningModule):
             min_lr=0.0000001,
             eps=1e-08,
         )
-                                                                 
-        return {'optimizer':optimizer, 'lr_scheduler': scheduler,"monitor":'val_loss'}
+
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {"scheduler": scheduler, "monitor": "val_loss"},
+        }
     
 
     def predict(self,inputs):

@@ -132,10 +132,19 @@ def _load_dead_cropmodel(config):
 def predict_crowns(PATH, config=None):
     """Predict a set of tree crowns from RGB data"""
     m = main.deepforest()
+    refresh_trainer = False
     if torch.cuda.is_available():
         print("CUDA detected")
-        m.config["gpus"] = 1
+        m.config.accelerator = "cuda"
+        m.config.devices = 1
+        refresh_trainer = True
+    elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+        m.config.accelerator = "mps"
+        m.config.devices = 1
+        refresh_trainer = True
     m.load_model(model_name="weecology/deepforest-tree")
+    if refresh_trainer:
+        m.create_trainer()
 
     cropmodel = None
     if config is not None:
@@ -191,7 +200,7 @@ def predict_species(crowns, m, trainer, config):
         return None
     results = m.gather_predictions(predictions)
     ensemble_df = m.ensemble(results)
-    ensemble_df = results.merge(crowns, on="individual")
+    ensemble_df = ensemble_df.merge(crowns, on="individual")
             
     return ensemble_df
 
