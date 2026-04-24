@@ -24,7 +24,7 @@
 #SBATCH --gpus=1
 #SBATCH --output=/home/b.weinstein/logs/train_%x_%j.out
 #SBATCH --error=/home/b.weinstein/logs/train_%x_%j.err
-#SBATCH --partition=hpg-b200
+#SBATCH --partition=hpg-turin 
 #SBATCH --ntasks-per-node=1
 #SBATCH --gpus=1
 

@@ -6,6 +6,7 @@ import os
 import sys
 
 import comet_ml
+from dotenv import load_dotenv
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -57,6 +58,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _make_logger(config: dict, *, experiment_name: str):
+    load_dotenv()
     use_comet = config.get("use_comet", True)
     has_key = bool(os.getenv("COMET_API_KEY") or os.getenv("COMET_KEY"))
     if use_comet and has_key:

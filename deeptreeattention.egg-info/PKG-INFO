@@ -8,6 +8,7 @@ Requires-Python: <3.13,>=3.10
 Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: comet_ml
+Requires-Dist: python-dotenv
 Requires-Dist: deepforest>=2.0.0
 Requires-Dist: descartes
 Requires-Dist: geopandas

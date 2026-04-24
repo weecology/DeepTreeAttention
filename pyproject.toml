@@ -12,6 +12,7 @@ license = { text = "MIT" }
 authors = [{ name = "Ben Weinstein" }]
 dependencies = [
   "comet_ml",
+  "python-dotenv",
   "deepforest>=2.0.0",
   "descartes",
   "geopandas",
@@ -45,3 +46,17 @@ deeptree-merge-crown-boxes = "src.pipelines.merge_crown_boxes:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["src", "src.*"]
+
+# PyTorch + CUDA 12.8 — GPU nodes cap at driver 12080 (CUDA 12.8); cu130 fails.
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cu128", marker = "sys_platform != 'darwin'" },
+]
+torchvision = [
+  { index = "pytorch-cu128", marker = "sys_platform != 'darwin'" },
+]

@@ -1,4 +1,5 @@
 comet_ml
+python-dotenv
 deepforest>=2.0.0
 descartes
 geopandas
