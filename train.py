@@ -179,8 +179,8 @@ def main_train() -> None:
     test = test[~test.individual.str.contains("graves")].reset_index(drop=True)
 
     print(
-        "[train] Building MultiStage (5 levels). If preload_images is True, this loads "
-        "every crop into RAM for each level and can take many minutes with no GPU use yet.",
+        "[train] Building unified MultiStage (single checkpoint with hierarchical heads). "
+        "If preload_images is True, loading crops can still take several minutes.",
         flush=True,
     )
     m = multi_stage.MultiStage(train, test, config=data_module.config, crowns=crowns)
