@@ -26,6 +26,7 @@ src/patches.py
 src/predict.py
 src/utils.py
 src/visualize.py
+src/vst_update.py
 src/models/Hang2020.py
 src/models/__init__.py
 src/models/dead.py
@@ -37,6 +38,7 @@ src/pipelines/crown_one_plot.py
 src/pipelines/download_neon_aop.py
 src/pipelines/merge_crown_boxes.py
 src/pipelines/osbs_inference.py
+src/pipelines/update_neon_vst.py
 tests/test_CHM.py
 tests/test_Hang2020.py
 tests/test_augmentation.py

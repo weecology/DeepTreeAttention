@@ -19,6 +19,25 @@ On HiPerGator (or another host) you typically have a full NEON mirror under path
 
 After that, set `sensor_download_root` in `config.yml` (or override the `*_pool` globs) and you can run training without touching the full 20+ TB archive.
 
+## Updating woody vegetation structure (VST)
+
+You can refresh the canonical VST table and compare against the 2022 baseline with:
+
+```bash
+export NEON_API_TOKEN=...   # recommended to avoid API rate limits
+deeptree-update-vst \
+  --baseline-csv data/raw/neon_vst_data_2022.csv \
+  --output-csv data/raw/neon_vst_data_latest.csv \
+  --summary-csv results/vst_additions_by_site_since_2022.csv \
+  --new-ids-csv results/vst_new_individual_ids_not_in_2022.csv
+```
+
+Notes:
+
+- By default, this updater includes provisional releases and requests records from `2022-01` onward.
+- The summary csv reports total rows and unique `individualID` deltas per site.
+- Some sites may fail due transient upstream package issues; failed site codes are printed in the JSON summary.
+
 ## Example rsync (replace user, host, and remote paths)
 
 ```bash
