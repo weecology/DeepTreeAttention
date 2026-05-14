@@ -1,485 +1,553 @@
-#Multiple stage model
-from functools import reduce
-from src.models.year import learned_ensemble
-from src.data import TreeDataset
-from src import utils
-
-from pytorch_lightning import LightningModule
-import pandas as pd
-import math
+# Unified single-model hierarchical classifier.
 import numpy as np
-from torch.nn import Module
-from torch.nn import functional as F
-from torch import nn
-import torchmetrics
+import pandas as pd
+from pytorch_lightning import LightningModule
 import torch
+from torch import nn
+from torch.nn import functional as F
+import torchmetrics
 
-class base_model(Module):
-    def __init__(self, years, classes, config):
+from src.data import TreeDataset
+
+
+CONIFER_TAXA = {"PICL", "PIEL", "PITA"}
+
+
+class SharedHSIEncoder(nn.Module):
+    """Lightweight shared encoder used for all years."""
+
+    def __init__(self, bands: int, embed_dim: int):
         super().__init__()
-        #Load from state dict of previous run
-        self.model = learned_ensemble(classes=classes, years=years, config=config)
-        
-        micro_recall = torchmetrics.Accuracy(average="micro")
-        macro_recall = torchmetrics.Accuracy(average="macro", num_classes=classes)
-        self.metrics = torchmetrics.MetricCollection(
-            {"Micro Accuracy":micro_recall,
-             "Macro Accuracy":macro_recall,
-             })
-        
-    def forward(self,x):
-        score = self.model(x)        
-        
-        return score 
-    
-class MultiStage(LightningModule):
-    def __init__(self, train_df, test_df, crowns, config, train_mode=True):
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(bands, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+        )
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+        )
+        self.conv3 = nn.Sequential(
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+        )
+        self.proj = nn.Linear(128, embed_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = x.mean(dim=(2, 3))
+        return self.proj(x)
+
+
+class UnifiedHierarchicalHead(nn.Module):
+    """Single model with year-aware aggregation + metadata fusion + multi-head outputs."""
+
+    def __init__(
+        self,
+        bands: int,
+        n_years: int,
+        n_sites: int,
+        n_species: int,
+        level_dims: list[int],
+        embed_dim: int = 128,
+        site_embed_dim: int = 16,
+        fusion_hidden_dim: int = 256,
+    ):
         super().__init__()
-        # Generate each model
-        self.years = train_df.tile_year.unique()
-        self.config = config
-        self.models = nn.ModuleList()
-        self.species_label_dict = train_df[["taxonID","label"]].drop_duplicates().set_index("taxonID").to_dict()["label"]
-        self.index_to_label = {v:k for k,v in self.species_label_dict.items()}
-        self.crowns = crowns
-        self.level_label_dicts = []    
-        self.label_to_taxonIDs = []   
-        self.train_df = train_df
-        self.test_df = test_df
-        
-        #hotfix for old naming schema
-        try:
-            self.test_df["individual"] = self.test_df["individualID"]
-            self.train_df["individual"] = self.train_df["individualID"]
-        except:
-            pass
-        
-        if train_mode:
-            self.train_datasets, self.test_datasets = self.create_datasets()
-            self.levels = len(self.train_datasets)       
-        
-            self.classes = len(self.train_df.label.unique())
-            for index, ds in enumerate([self.level_0_train, self.level_1_train, self.level_2_train, self.level_3_train, self.level_4_train]): 
-                labels = ds.label
-                classes = self.num_classes[index]
-                base = base_model(classes=classes, years=len(self.years), config=self.config)
-                self.models.append(base)            
-                loss_weight = []
-                for x in range(classes):
-                    try:
-                        w = 1/np.sum(labels==x)
-                    except:
-                        w = 1 
-                    loss_weight.append(w)
-        
-                loss_weight = np.array(loss_weight/np.max(loss_weight))
-                loss_weight[loss_weight < self.config["min_loss_weight"]] = self.config["min_loss_weight"] 
-                loss_weight = torch.tensor(loss_weight, dtype=torch.float)                        
-                pname = 'loss_weight_{}'.format(index)            
-                self.register_buffer(pname, loss_weight)
-            self.save_hyperparameters()        
-            
-    def create_datasets(self):
-        #Create levels for each year
-        ## Level 0     
-        train_datasets = []
-        test_datasets = []
-        self.num_classes = []
-        self.level_id = []
-        self.level_label_dicts.append({"PIPA2":0,"OTHER":1})
-        self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[0].items()})
-        
-        self.level_0_train = self.train_df.copy()
-        PIPA2 = self.level_0_train[self.level_0_train.taxonID=="PIPA2"]
-        nonPIPA2 = self.level_0_train[~(self.level_0_train.taxonID=="PIPA2")]
-        nonPIPA2ids = nonPIPA2.groupby("individual").apply(lambda x: x.head(1)).groupby("taxonID").apply(lambda x: x.head(self.config["other_sampling_ceiling"])).individual
-        nonPIPA2 = nonPIPA2[nonPIPA2.individual.isin(nonPIPA2ids)]
-        self.level_0_train = pd.concat([PIPA2, nonPIPA2])
-        self.level_0_train.loc[~(self.level_0_train.taxonID == "PIPA2"),"taxonID"] = "OTHER"
-                
-        self.level_0_train["label"] = [self.level_label_dicts[0][x] for x in self.level_0_train.taxonID]
-        self.level_0_train_ds = TreeDataset(df=self.level_0_train, config=self.config)
-        train_datasets.append(self.level_0_train_ds)
-        self.num_classes.append(len(self.level_0_train.taxonID.unique()))
-        
-        self.level_0_test = self.test_df.copy()
-        self.level_0_test.loc[~(self.level_0_test.taxonID == "PIPA2"),"taxonID"] = "OTHER"
-        self.level_0_test["label"]= [self.level_label_dicts[0][x] for x in self.level_0_test.taxonID]            
-        self.level_0_test_ds = TreeDataset(df=self.level_0_test, config=self.config)
-        test_datasets.append(self.level_0_test_ds)
-        self.level_id.append(0)
-        
-        ## Level 1
-        self.level_label_dicts.append({"CONIFER":0,"BROADLEAF":1})
-        self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[1].items()})
-        self.level_1_train = self.train_df.copy()
-        self.level_1_train = self.level_1_train[~(self.level_1_train.taxonID=="PIPA2")]    
-        self.level_1_train.loc[~self.level_1_train.taxonID.isin(["PICL","PIEL","PITA"]),"taxonID"] = "BROADLEAF"   
-        self.level_1_train.loc[self.level_1_train.taxonID.isin(["PICL","PIEL","PITA"]),"taxonID"] = "CONIFER" 
-        
-        #subsample broadleaf, labels have not been converted, relate to original taxonID
-        conifer_ids = self.level_1_train[self.level_1_train.taxonID=="CONIFER"].individual        
-        broadleaf_ids = self.level_1_train[self.level_1_train.taxonID=="BROADLEAF"].groupby("label").apply(
-            lambda x: x.sample(frac=1).groupby(
-                "individual").apply(lambda x: x.head(1)).head(
-            math.ceil(len(conifer_ids)/11)
-            )).individual
-        ids_to_keep = np.concatenate([broadleaf_ids, conifer_ids])
-        self.level_1_train = self.level_1_train[self.level_1_train.individual.isin(ids_to_keep)].reset_index(drop=True)
-        self.level_1_train["label"] = [self.level_label_dicts[1][x] for x in self.level_1_train.taxonID]
-        self.level_1_train_ds = TreeDataset(df=self.level_1_train, config=self.config)
-        train_datasets.append(self.level_1_train_ds)
-        self.num_classes.append(len(self.level_1_train.taxonID.unique()))
-        
-        self.level_1_test = self.test_df.copy()
-        self.level_1_test = self.level_1_test[~(self.level_1_test.taxonID=="PIPA2")].reset_index(drop=True)    
-        self.level_1_test.loc[~self.level_1_test.taxonID.isin(["PICL","PIEL","PITA"]),"taxonID"] = "BROADLEAF"   
-        self.level_1_test.loc[self.level_1_test.taxonID.isin(["PICL","PIEL","PITA"]),"taxonID"] = "CONIFER"            
-        self.level_1_test["label"] = [self.level_label_dicts[1][x] for x in self.level_1_test.taxonID]
-        self.level_1_test_ds = TreeDataset(df=self.level_1_test, config=self.config)
-        test_datasets.append(self.level_1_test_ds)
-        self.level_id.append(1)
-        
-        ## Level 2
-        broadleaf = [x for x in list(self.species_label_dict.keys()) if (not x in ["PICL","PIEL","PITA","PIPA2"]) & (not "QU" in x)]     
-        broadleaf = {v:k for k, v in enumerate(broadleaf)}
-        broadleaf["OAK"] = len(broadleaf)
-        self.level_label_dicts.append(broadleaf)
-        self.label_to_taxonIDs.append({v: k  for k, v in broadleaf.items()})
-        self.level_2_train = self.train_df.copy()
-        self.level_2_train = self.level_2_train[~self.level_2_train.taxonID.isin(["PICL","PIEL","PITA","PIPA2"])].reset_index(drop=True)
-        self.level_2_train.loc[self.level_2_train.taxonID.str.contains("QU"),"taxonID"] = "OAK"
-        
-        non_oakid = self.level_2_train[~(self.level_2_train.taxonID=="OAK")].individual        
-        oak_ids = self.level_2_train[self.level_2_train.taxonID=="OAK"].groupby("label").apply(lambda x: x.sample(frac=1).head(
-            int(len(non_oakid)/5))
-            ).individual
-        ids_to_keep = np.concatenate([oak_ids, non_oakid])
-        self.level_2_train = self.level_2_train[self.level_2_train.individual.isin(ids_to_keep)].reset_index(drop=True)
-        self.level_2_train["label"] = [self.level_label_dicts[2][x] for x in self.level_2_train.taxonID]
-        self.level_2_train_ds = TreeDataset(df=self.level_2_train, config=self.config)
-        train_datasets.append(self.level_2_train_ds)
-        self.num_classes.append(len(self.level_2_train.taxonID.unique()))
-        
-        self.level_2_test = self.test_df.copy()
-        self.level_2_test = self.level_2_test[~self.level_2_test.taxonID.isin(["PICL","PIEL","PITA","PIPA2"])].reset_index(drop=True) 
-        self.level_2_test.loc[self.level_2_test.taxonID.str.contains("QU"),"taxonID"] = "OAK"
-        self.level_2_test["label"] = [self.level_label_dicts[2][x] for x in self.level_2_test.taxonID]
-        self.level_2_test_ds = TreeDataset(df=self.level_2_test, config=self.config)
-        test_datasets.append(self.level_2_test_ds)
-        self.level_id.append(2)
-        
-        ## Level 3
-        evergreen = [x for x in list(self.species_label_dict.keys()) if x in ["PICL","PIEL","PITA"]]         
-        evergreen = {v:k for k, v in enumerate(evergreen)}
-        self.level_label_dicts.append(evergreen)  
-        self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[3].items()})
-                    
-        self.level_3_train = self.train_df.copy()
-        self.level_3_train = self.level_3_train[self.level_3_train.taxonID.isin(["PICL","PIEL","PITA"])].reset_index(drop=True) 
-        self.level_3_train =  self.level_3_train.groupby("taxonID").apply(lambda x: x.head(self.config["evergreen_ceiling"])).reset_index(drop=True)
-        self.level_3_train["label"] = [self.level_label_dicts[3][x] for x in self.level_3_train.taxonID]
-        self.level_3_train_ds = TreeDataset(df=self.level_3_train, config=self.config)
-        train_datasets.append(self.level_3_train_ds)
-        self.num_classes.append(len(self.level_3_train.taxonID.unique()))
-        
-        self.level_3_test = self.test_df.copy()
-        self.level_3_test = self.level_3_test[self.level_3_test.taxonID.isin(["PICL","PIEL","PITA"])].reset_index(drop=True) 
-        self.level_3_test["label"] = [self.level_label_dicts[3][x] for x in self.level_3_test.taxonID]
-        self.level_3_test_ds = TreeDataset(df=self.level_3_test, config=self.config)
-        test_datasets.append(self.level_3_test_ds)
-        self.level_id.append(3)
-        
-        ## Level 4
-        oak = [x for x in list(self.species_label_dict.keys()) if "QU" in x]
-        self.level_label_dicts.append({v:k for k, v in enumerate(oak)})
-        self.label_to_taxonIDs.append({v: k  for k, v in self.level_label_dicts[4].items()})
-        
-        #Balance the train in OAKs
-        self.level_4_train = self.train_df.copy()
-        self.level_4_train = self.level_4_train[self.level_4_train.taxonID.str.contains("QU")].reset_index(drop=True)
-        self.level_4_train["label"] = [self.level_label_dicts[4][x] for x in self.level_4_train.taxonID]
-        ids_to_keep = self.level_4_train.groupby("taxonID").apply(
-            lambda x: x.sample(frac=1).groupby("individual").apply(
-            lambda x: x.head(1)).head(
-            self.config["oaks_sampling_ceiling"])).individual
-        self.level_4_train = self.level_4_train[self.level_4_train.individual.isin(ids_to_keep)].reset_index(drop=True)
-        
-        self.level_4_train_ds = TreeDataset(df=self.level_4_train, config=self.config)
-        train_datasets.append(self.level_4_train_ds)
-        self.num_classes.append(len(self.level_4_train.taxonID.unique()))
+        self.n_years = max(1, n_years)
+        self.unknown_site_index = n_sites
+        self.encoder = SharedHSIEncoder(bands=bands, embed_dim=embed_dim)
+        self.year_embedding = nn.Embedding(self.n_years, embed_dim)
+        self.time_attention = nn.Linear(embed_dim, 1)
+        self.site_embedding = nn.Embedding(n_sites + 1, site_embed_dim)
+        self.fusion = nn.Sequential(
+            nn.Linear(embed_dim + site_embed_dim, fusion_hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.2),
+        )
 
-        self.level_4_test = self.test_df.copy()
-        self.level_4_test = self.level_4_test[self.level_4_test.taxonID.str.contains("QU")].reset_index(drop=True)
-        self.level_4_test["label"] = [self.level_label_dicts[4][x] for x in self.level_4_test.taxonID]
-        self.level_4_test_ds = TreeDataset(df=self.level_4_test, config=self.config)
-        test_datasets.append(self.level_4_test_ds)
-        self.level_id.append(4)
+        self.species_head = nn.Linear(fusion_hidden_dim, n_species)
+        self.level_heads = nn.ModuleList(
+            [nn.Linear(fusion_hidden_dim, d) if d > 0 else nn.Identity() for d in level_dims]
+        )
+        self.level_dims = level_dims
 
-        return train_datasets, test_datasets
-    
-    def train_dataloader(self):
-        data_loaders = []
-        for ds in self.train_datasets:
-            data_loader = torch.utils.data.DataLoader(
-                ds,
-                batch_size=self.config["batch_size"],
-                shuffle=True,
-                num_workers=self.config["workers"],
+    def forward(self, images: list[torch.Tensor], site_idx: torch.Tensor | None = None) -> dict[str, torch.Tensor]:
+        year_feats = []
+        masks = []
+        for year_idx, x in enumerate(images):
+            feat = self.encoder(x)
+            year_tensor = torch.full(
+                (feat.shape[0],),
+                min(year_idx, self.n_years - 1),
+                device=feat.device,
+                dtype=torch.long,
             )
-            data_loaders.append(data_loader)
-        
-        return data_loaders        
+            feat = feat + self.year_embedding(year_tensor)
+            mask = (x.abs().sum(dim=(1, 2, 3)) > 0).float()
+            year_feats.append(feat)
+            masks.append(mask)
+
+        feat_stack = torch.stack(year_feats, dim=1)
+        mask_stack = torch.stack(masks, dim=1)
+        attn_logits = self.time_attention(feat_stack).squeeze(-1)
+        attn_logits = attn_logits.masked_fill(mask_stack <= 0, -1e9)
+        attn = torch.softmax(attn_logits, dim=1) * mask_stack
+        attn = attn / attn.sum(dim=1, keepdim=True).clamp_min(1e-6)
+        pooled = (attn.unsqueeze(-1) * feat_stack).sum(dim=1)
+
+        if site_idx is None:
+            site_idx = torch.full(
+                (pooled.shape[0],),
+                self.unknown_site_index,
+                device=pooled.device,
+                dtype=torch.long,
+            )
+        else:
+            site_idx = site_idx.to(pooled.device).long().clamp(0, self.unknown_site_index)
+        site_feat = self.site_embedding(site_idx)
+
+        fused = self.fusion(torch.cat([pooled, site_feat], dim=1))
+        outputs = {"species": self.species_head(fused)}
+        for level_idx, head in enumerate(self.level_heads):
+            key = f"level_{level_idx}"
+            if self.level_dims[level_idx] <= 0:
+                outputs[key] = torch.empty((fused.shape[0], 0), device=fused.device)
+            else:
+                outputs[key] = head(fused)
+        return outputs
+
+
+class MultiStage(LightningModule):
+    """
+    Unified hierarchical model in one checkpoint.
+    Keeps the old MultiStage API used by training/inference code paths.
+    """
+
+    def __init__(
+        self,
+        train_df=None,
+        test_df=None,
+        crowns=None,
+        config=None,
+        train_mode=True,
+        years=None,
+        classes=None,
+        species_label_dict=None,
+        level_label_dicts=None,
+        n_sites=0,
+    ):
+        super().__init__()
+        self.config = config or {}
+        self.crowns = crowns
+        self.train_df = train_df.copy() if train_df is not None else pd.DataFrame()
+        self.test_df = test_df.copy() if test_df is not None else pd.DataFrame()
+
+        if not self.train_df.empty and "individual" not in self.train_df.columns and "individualID" in self.train_df.columns:
+            self.train_df["individual"] = self.train_df["individualID"]
+        if not self.test_df.empty and "individual" not in self.test_df.columns and "individualID" in self.test_df.columns:
+            self.test_df["individual"] = self.test_df["individualID"]
+
+        if not self.train_df.empty:
+            self.years = sorted(self.train_df.tile_year.unique())
+            self.classes = int(self.train_df.label.nunique())
+            self.species_label_dict = (
+                self.train_df[["taxonID", "label"]].drop_duplicates().set_index("taxonID")["label"].to_dict()
+            )
+            self.level_label_dicts = self._build_level_maps()
+            if "site" in self.train_df.columns:
+                n_sites = int(self.train_df["site"].max()) + 1
+        else:
+            self.years = years or []
+            self.classes = int(classes or 0)
+            self.species_label_dict = species_label_dict or {}
+            self.level_label_dicts = level_label_dicts or [{"PIPA2": 0, "OTHER": 1}, {"CONIFER": 0, "BROADLEAF": 1}, {}, {}, {}]
+        self.index_to_label = {v: k for k, v in self.species_label_dict.items()}
+        self.label_to_taxonIDs = [{v: k for k, v in d.items()} for d in self.level_label_dicts]
+        level_dims = [len(x) for x in self.level_label_dicts]
+
+        self.model = UnifiedHierarchicalHead(
+            bands=int(self.config["bands"]),
+            n_years=max(1, len(self.years)),
+            n_sites=n_sites,
+            n_species=self.classes,
+            level_dims=level_dims,
+            embed_dim=int(self.config.get("hier_embed_dim", 128)),
+            site_embed_dim=int(self.config.get("hier_site_embed_dim", 16)),
+            fusion_hidden_dim=int(self.config.get("hier_fusion_dim", 256)),
+        )
+
+        self._val_epoch_outputs = []
+        self.train_dataset = None
+        self.test_dataset = None
+        self._make_training_views()
+
+        if not self.train_df.empty:
+            self.train_dataset = TreeDataset(df=self.train_df, config=self.config, train=True)
+            self.test_dataset = TreeDataset(df=self.test_df, config=self.config, train=True)
+            counts = self.train_df["label"].value_counts().sort_index()
+            counts = counts.reindex(range(self.classes), fill_value=1).astype(float)
+            inv = 1.0 / counts.to_numpy()
+            inv = inv / np.max(inv)
+            min_w = float(self.config.get("min_loss_weight", 0.05))
+            inv = np.clip(inv, min_w, None)
+            prior = counts.to_numpy() / counts.to_numpy().sum()
+        else:
+            inv = np.ones(max(1, self.classes), dtype=float)
+            prior = np.ones(max(1, self.classes), dtype=float) / max(1, self.classes)
+        self.register_buffer("species_loss_weight", torch.tensor(inv, dtype=torch.float32))
+        self.register_buffer("species_log_prior", torch.tensor(np.log(prior + 1e-12), dtype=torch.float32))
+
+        micro = torchmetrics.Accuracy(task="multiclass", num_classes=self.classes, average="micro")
+        macro = torchmetrics.Accuracy(task="multiclass", num_classes=self.classes, average="macro")
+        self.metrics = torchmetrics.MetricCollection({"Micro Accuracy": micro, "Macro Accuracy": macro})
+        self.save_hyperparameters(ignore=["train_df", "test_df", "crowns"])
+
+    def _build_level_maps(self) -> list[dict[str, int]]:
+        taxa = sorted(self.species_label_dict.keys())
+        level0 = {"PIPA2": 0, "OTHER": 1}
+        level1 = {"CONIFER": 0, "BROADLEAF": 1}
+
+        broadleaf = [t for t in taxa if t not in CONIFER_TAXA and t != "PIPA2" and not t.startswith("QU")]
+        level2 = {t: i for i, t in enumerate(broadleaf)}
+        level2["OAK"] = len(level2)
+
+        conifer = [t for t in taxa if t in CONIFER_TAXA]
+        level3 = {t: i for i, t in enumerate(conifer)}
+
+        oak = [t for t in taxa if t.startswith("QU")]
+        level4 = {t: i for i, t in enumerate(oak)}
+        return [level0, level1, level2, level3, level4]
+
+    def _make_training_views(self):
+        if self.train_df.empty or self.test_df.empty:
+            self.level_0_train = pd.DataFrame()
+            self.level_1_train = pd.DataFrame()
+            self.level_2_train = pd.DataFrame()
+            self.level_3_train = pd.DataFrame()
+            self.level_4_train = pd.DataFrame()
+            self.level_0_test = pd.DataFrame()
+            self.level_1_test = pd.DataFrame()
+            self.level_2_test = pd.DataFrame()
+            self.level_3_test = pd.DataFrame()
+            self.level_4_test = pd.DataFrame()
+            return
+
+        self.level_0_train = self.train_df.copy()
+        self.level_0_train["taxonID"] = self.level_0_train["taxonID"].where(
+            self.level_0_train["taxonID"] == "PIPA2", "OTHER"
+        )
+        self.level_0_test = self.test_df.copy()
+        self.level_0_test["taxonID"] = self.level_0_test["taxonID"].where(
+            self.level_0_test["taxonID"] == "PIPA2", "OTHER"
+        )
+
+        self.level_1_train = self.train_df.copy()
+        self.level_1_train["taxonID"] = np.where(
+            self.level_1_train["taxonID"].isin(CONIFER_TAXA), "CONIFER", "BROADLEAF"
+        )
+        self.level_1_test = self.test_df.copy()
+        self.level_1_test["taxonID"] = np.where(
+            self.level_1_test["taxonID"].isin(CONIFER_TAXA), "CONIFER", "BROADLEAF"
+        )
+
+        self.level_2_train = self.train_df.copy()
+        self.level_2_train = self.level_2_train[
+            ~self.level_2_train["taxonID"].isin(CONIFER_TAXA.union({"PIPA2"}))
+        ].copy()
+        self.level_2_train.loc[self.level_2_train["taxonID"].str.startswith("QU"), "taxonID"] = "OAK"
+        self.level_2_test = self.test_df.copy()
+        self.level_2_test = self.level_2_test[
+            ~self.level_2_test["taxonID"].isin(CONIFER_TAXA.union({"PIPA2"}))
+        ].copy()
+        self.level_2_test.loc[self.level_2_test["taxonID"].str.startswith("QU"), "taxonID"] = "OAK"
+
+        self.level_3_train = self.train_df[self.train_df["taxonID"].isin(CONIFER_TAXA)].copy()
+        self.level_3_test = self.test_df[self.test_df["taxonID"].isin(CONIFER_TAXA)].copy()
+        self.level_4_train = self.train_df[self.train_df["taxonID"].str.startswith("QU")].copy()
+        self.level_4_test = self.test_df[self.test_df["taxonID"].str.startswith("QU")].copy()
+
+    def _loader_kwargs(self):
+        workers = int(self.config.get("workers") or 0)
+        kw = {"num_workers": workers}
+        if workers > 0:
+            kw["persistent_workers"] = True
+        return kw
+
+    def train_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.train_dataset,
+            batch_size=self.config["batch_size"],
+            shuffle=True,
+            **self._loader_kwargs(),
+        )
 
     def val_dataloader(self):
-        ## Validation loaders are a list https://github.com/PyTorchLightning/pytorch-lightning/issues/10809
-        data_loaders = []
-        for ds in self.test_datasets:
-            data_loader = torch.utils.data.DataLoader(
-                ds,
-                batch_size=self.config["batch_size"],
-                shuffle=False,
-                num_workers=self.config["workers"],
-            )
-            data_loaders.append(data_loader)
-        
-        return data_loaders 
-    
+        return torch.utils.data.DataLoader(
+            self.test_dataset,
+            batch_size=self.config["batch_size"],
+            shuffle=False,
+            **self._loader_kwargs(),
+        )
+
     def predict_dataloader(self, ds):
-        data_loader = torch.utils.data.DataLoader(
+        return torch.utils.data.DataLoader(
             ds,
             batch_size=self.config["predict_batch_size"],
             shuffle=False,
-            num_workers=self.config["workers"]
+            **self._loader_kwargs(),
         )
 
-        return data_loader
-        
-    def configure_optimizers(self):
-        """Create a optimizer for each level"""
-        optimizers = []
-        for x, ds in enumerate(self.train_datasets):
-            optimizer = torch.optim.Adam(self.models[x].parameters(), lr=self.config["lr_{}".format(x)])
-            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                                             mode='min',
-                                                             factor=0.75,
-                                                             patience=8,
-                                                             verbose=True,
-                                                             threshold=0.0001,
-                                                             threshold_mode='rel',
-                                                             cooldown=0,
-                                                             eps=1e-08)
-            
-            optimizers.append({'optimizer':optimizer, 'lr_scheduler': {"scheduler":scheduler, "monitor":'val_loss/dataloader_idx_{}'.format(x)}})
+    def _hierarchy_targets(self, labels: torch.Tensor) -> dict[str, torch.Tensor]:
+        taxa = [self.index_to_label[int(x)] for x in labels.detach().cpu().tolist()]
+        device = labels.device
+        out = {}
 
-        return optimizers     
-        
-    def training_step(self, batch, batch_idx, optimizer_idx):
-        """Calculate train_df loss
-        """
-        #get loss weight
-        loss_weights = self.__getattr__('loss_weight_'+str(optimizer_idx))
-        individual, inputs, y = batch[optimizer_idx]
-        images = inputs["HSI"]  
-        y_hat = self.models[optimizer_idx].forward(images)
-        loss = F.cross_entropy(y_hat, y, weight=loss_weights)    
-        self.log("train_loss_{}".format(optimizer_idx),loss, on_epoch=True, on_step=False)
+        level0 = [self.level_label_dicts[0]["PIPA2"] if t == "PIPA2" else self.level_label_dicts[0]["OTHER"] for t in taxa]
+        out["level_0"] = torch.tensor(level0, dtype=torch.long, device=device)
 
-        return loss        
-    
-    def validation_step(self, batch, batch_idx, dataloader_idx):
-        """Calculate val loss 
-        """
-        loss_weight = self.__getattr__('loss_weight_'+str(dataloader_idx))        
-        individual, inputs, y = batch
-        images = inputs["HSI"]  
-        y_hat = self.models[dataloader_idx].forward(images)
-        loss = F.cross_entropy(y_hat, y, weight=loss_weight)   
-        
-        self.log("val_loss",loss)
-        metric_dict = self.models[dataloader_idx].metrics(y_hat, y)
-        self.log_dict(metric_dict, on_epoch=True, on_step=False)
-        y_hat = F.softmax(y_hat, dim=1)
-        
-        return {"individual":individual, "yhat":y_hat, "label":y}  
-    
-    def predict_step(self, batch, batch_idx):
-        """Calculate predictions
-        """
-        individual, inputs = batch
-        images = inputs["HSI"]  
-        
-        y_hats = []
-        for model in self.models:   
-            y_hat = model.forward(images)
-            y_hat = F.softmax(y_hat, dim=1)
-            y_hats.append(y_hat)
-        
-        return individual, y_hats
-    
-    def on_predict_epoch_end(self, outputs):
-        outputs = self.all_gather(outputs)
-        
-    def validation_epoch_end(self, validation_step_outputs): 
-        for level, results in enumerate(validation_step_outputs):
-            yhat = torch.cat([x["yhat"] for x in results]).cpu().numpy()
-            labels = torch.cat([x["label"] for x in results]).cpu().numpy()            
-            yhat = np.argmax(yhat, 1)
-            epoch_micro = torchmetrics.functional.accuracy(
-                preds=torch.tensor(labels),
-                target=torch.tensor(yhat),
-                average="micro")
-            
-            epoch_macro = torchmetrics.functional.accuracy(
-                preds=torch.tensor(labels),
-                target=torch.tensor(yhat),
-                average="macro",
-                num_classes=len(self.species_label_dict)
-            )
-            
-            self.log("Epoch Micro Accuracy level {}".format(level), epoch_micro)
-            self.log("Epoch Macro Accuracy level {}".format(level), epoch_macro)
-            
-            # Log results by species
-            taxon_accuracy = torchmetrics.functional.accuracy(
-                preds=torch.tensor(yhat),
-                target=torch.tensor(labels), 
-                average="none", 
-                num_classes=len(self.level_label_dicts[level])
-            )
-            taxon_precision = torchmetrics.functional.precision(
-                preds=torch.tensor(yhat),
-                target=torch.tensor(labels), 
-                average="none", 
-                num_classes=len(self.level_label_dicts[level])
-            )
-            species_table = pd.DataFrame(
-                {"taxonID":self.level_label_dicts[level].keys(),
-                 "accuracy":taxon_accuracy,
-                 "precision":taxon_precision
-                 })
-            
-            for key, value in species_table.set_index("taxonID").accuracy.to_dict().items():
-                self.log("Epoch_{}_accuracy".format(key), value)
-    
-            for key, value in species_table.set_index("taxonID").precision.to_dict().items():
-                self.log("Epoch_{}_precision".format(key), value)
-    
-    def gather_predictions(self, predict_df):
-        """Post-process the predict method to create metrics"""
-        individuals = []
-        yhats = []
-        levels = []
-        
-        for output in predict_df:
-            for index, level_results in enumerate(output[1]):
-                batch_individuals = np.stack(output[0])
-                for individual, yhat in zip(batch_individuals, level_results):
-                    individuals.append(individual)                
-                    yhats.append(yhat)
-                    levels.append(index)
-                
-        temporal_average = pd.DataFrame({"individual":individuals,"level":levels,"yhat":yhats})
-                
-        #Argmax and score for each level
-        predicted_label = temporal_average.groupby(["individual","level"]).yhat.apply(
-            lambda x: np.argmax(np.vstack(x))).reset_index().pivot(
-                index=["individual"],columns="level",values="yhat").reset_index()
-        predicted_label.columns = ["individual","pred_label_top1_level_0","pred_label_top1_level_1",
-                                   "pred_label_top1_level_2","pred_label_top1_level_3","pred_label_top1_level_4"]
-        
-        predicted_score = temporal_average.groupby(["individual","level"]).yhat.apply(
-            lambda x: np.vstack(x).max()).reset_index().pivot(
-                index=["individual"],columns="level",values="yhat").reset_index()
-        predicted_score.columns = ["individual","top1_score_level_0","top1_score_level_1",
-                                   "top1_score_level_2","top1_score_level_3","top1_score_level_4"]
-        results = pd.merge(predicted_label,predicted_score)
-        
-        #Label taxa
-        for level, label_dict in enumerate(self.label_to_taxonIDs):
-            results["pred_taxa_top1_level_{}".format(level)] = results["pred_label_top1_level_{}".format(level)].apply(lambda x: label_dict[x])
-        
-        return results
-    
-    def ensemble(self, results):
-        """Given a multi-level model, create a final output prediction and score"""
-        ensemble_taxonID = []
-        ensemble_label = []
-        ensemble_score = []
-        
-        for index,row in results.iterrows():
-            if row["pred_taxa_top1_level_0"] == "PIPA2":
-                ensemble_taxonID.append("PIPA2")
-                ensemble_label.append(self.species_label_dict["PIPA2"])
-                ensemble_score.append(row["top1_score_level_0"])                
+        level1 = [self.level_label_dicts[1]["CONIFER"] if t in CONIFER_TAXA else self.level_label_dicts[1]["BROADLEAF"] for t in taxa]
+        out["level_1"] = torch.tensor(level1, dtype=torch.long, device=device)
+
+        level2 = []
+        for t in taxa:
+            if t in CONIFER_TAXA or t == "PIPA2":
+                level2.append(-100)
+            elif t.startswith("QU"):
+                level2.append(self.level_label_dicts[2]["OAK"])
             else:
-                if row["pred_taxa_top1_level_1"] == "BROADLEAF":
-                    if row["pred_taxa_top1_level_2"] == "OAK":
-                        ensemble_taxonID.append(row["pred_taxa_top1_level_4"])
-                        ensemble_label.append(self.species_label_dict[row["pred_taxa_top1_level_4"]])
-                        ensemble_score.append(row["top1_score_level_4"])
-                    else:
-                        ensemble_taxonID.append(row["pred_taxa_top1_level_2"])
-                        ensemble_label.append(self.species_label_dict[row["pred_taxa_top1_level_2"]])
-                        ensemble_score.append(row["top1_score_level_2"])                     
-                else:
-                    ensemble_taxonID.append(row["pred_taxa_top1_level_3"])
-                    ensemble_label.append(self.species_label_dict[row["pred_taxa_top1_level_3"]])
-                    ensemble_score.append(row["top1_score_level_3"])
-        
-        results["ensembleTaxonID"] = ensemble_taxonID
-        results["ens_score"] = ensemble_score
-        results["ens_label"] = ensemble_label   
-        
-        return results
-            
-    def evaluation_scores(self, ensemble_df, experiment):   
-        ensemble_df = ensemble_df.groupby("individual").apply(lambda x: x.head(1))
-        
-        taxon_accuracy = torchmetrics.functional.accuracy(
-            preds=torch.tensor(ensemble_df.ens_label.values),
-            target=torch.tensor(ensemble_df.label.values),
-            average="none",
-            num_classes=len(self.species_label_dict)
+                level2.append(self.level_label_dicts[2].get(t, -100))
+        out["level_2"] = torch.tensor(level2, dtype=torch.long, device=device)
+
+        level3 = [self.level_label_dicts[3].get(t, -100) for t in taxa]
+        out["level_3"] = torch.tensor(level3, dtype=torch.long, device=device)
+
+        level4 = [self.level_label_dicts[4].get(t, -100) for t in taxa]
+        out["level_4"] = torch.tensor(level4, dtype=torch.long, device=device)
+        return out
+
+    def _species_loss(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+        tau = float(self.config.get("logit_adjustment_tau", 1.0))
+        adjusted = logits + (tau * self.species_log_prior).to(logits.device)
+        return F.cross_entropy(adjusted, labels, weight=self.species_loss_weight.to(logits.device))
+
+    def _aux_losses(self, outputs: dict[str, torch.Tensor], labels: torch.Tensor) -> torch.Tensor:
+        targets = self._hierarchy_targets(labels)
+        total = torch.zeros((), device=labels.device)
+        for idx in range(5):
+            key = f"level_{idx}"
+            logits = outputs[key]
+            if logits.numel() == 0:
+                continue
+            target = targets[key]
+            if not torch.any(target != -100):
+                continue
+            loss = F.cross_entropy(logits, target, ignore_index=-100)
+            weight = float(self.config.get(f"hier_level_{idx}_weight", 1.0))
+            total = total + weight * loss
+        return total
+
+    def training_step(self, batch, batch_idx):
+        _, inputs, labels = batch
+        outputs = self.model(inputs["HSI"], inputs.get("site"))
+        species_loss = self._species_loss(outputs["species"], labels)
+        aux_loss = self._aux_losses(outputs, labels)
+        alpha = float(self.config.get("hier_aux_weight", 0.3))
+        loss = species_loss + alpha * aux_loss
+        self.log("train_species_loss", species_loss, on_step=False, on_epoch=True)
+        self.log("train_aux_loss", aux_loss, on_step=False, on_epoch=True)
+        self.log("train_loss", loss, on_step=False, on_epoch=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        _, inputs, labels = batch
+        outputs = self.model(inputs["HSI"], inputs.get("site"))
+        species_loss = self._species_loss(outputs["species"], labels)
+        aux_loss = self._aux_losses(outputs, labels)
+        alpha = float(self.config.get("hier_aux_weight", 0.3))
+        loss = species_loss + alpha * aux_loss
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+
+        probs = F.softmax(outputs["species"], dim=1)
+        metrics = self.metrics(probs, labels)
+        self.log_dict(metrics, on_step=False, on_epoch=True)
+        self._val_epoch_outputs.append({"probs": probs.detach().cpu(), "labels": labels.detach().cpu()})
+        return loss
+
+    def on_validation_epoch_start(self):
+        self._val_epoch_outputs = []
+
+    def on_validation_epoch_end(self):
+        if not self._val_epoch_outputs:
+            return
+        probs = torch.cat([x["probs"] for x in self._val_epoch_outputs], dim=0)
+        labels = torch.cat([x["labels"] for x in self._val_epoch_outputs], dim=0)
+        preds = torch.argmax(probs, dim=1)
+
+        epoch_micro = torchmetrics.functional.accuracy(
+            preds=preds, target=labels, task="multiclass", num_classes=self.classes, average="micro"
         )
-            
-        taxon_precision = torchmetrics.functional.precision(
-            preds=torch.tensor(ensemble_df.ens_label.values),
-            target=torch.tensor(ensemble_df.label.values),
+        epoch_macro = torchmetrics.functional.accuracy(
+            preds=preds, target=labels, task="multiclass", num_classes=self.classes, average="macro"
+        )
+        self.log("Epoch Micro Accuracy", epoch_micro, on_step=False, on_epoch=True)
+        self.log("Epoch Macro Accuracy", epoch_macro, on_step=False, on_epoch=True)
+        self._val_epoch_outputs = []
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.config.get("lr", 1e-4))
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            mode="min",
+            factor=0.75,
+            patience=8,
+            threshold=0.0001,
+            threshold_mode="rel",
+            cooldown=0,
+            eps=1e-08,
+        )
+        return {"optimizer": optimizer, "lr_scheduler": {"scheduler": scheduler, "monitor": "val_loss"}}
+
+    def predict_step(self, batch, batch_idx):
+        individual, inputs = batch
+        outputs = self.model(inputs["HSI"], inputs.get("site"))
+        return {
+            "individual": np.asarray(individual),
+            "species_probs": F.softmax(outputs["species"], dim=1).detach().cpu().numpy(),
+            "level_0_probs": F.softmax(outputs["level_0"], dim=1).detach().cpu().numpy(),
+            "level_1_probs": F.softmax(outputs["level_1"], dim=1).detach().cpu().numpy(),
+            "level_2_probs": F.softmax(outputs["level_2"], dim=1).detach().cpu().numpy() if outputs["level_2"].numel() else None,
+            "level_3_probs": F.softmax(outputs["level_3"], dim=1).detach().cpu().numpy() if outputs["level_3"].numel() else None,
+            "level_4_probs": F.softmax(outputs["level_4"], dim=1).detach().cpu().numpy() if outputs["level_4"].numel() else None,
+        }
+
+    @classmethod
+    def load_from_checkpoint(cls, checkpoint_path, **kwargs):
+        kwargs.setdefault("weights_only", False)
+        return super(MultiStage, cls).load_from_checkpoint(checkpoint_path, **kwargs)
+
+    def gather_predictions(self, predict_df):
+        """Aggregate predict outputs and expose level columns for compatibility."""
+        individuals = []
+        species_probs = []
+        level_probs = {f"level_{i}": [] for i in range(5)}
+        for output in predict_df:
+            individuals.extend(list(output["individual"]))
+            species_probs.append(output["species_probs"])
+            for i in range(5):
+                p = output[f"level_{i}_probs"]
+                if p is not None:
+                    level_probs[f"level_{i}"].append(p)
+
+        species_probs = np.vstack(species_probs)
+        results = pd.DataFrame(
+            {
+                "individual": np.asarray(individuals),
+                "pred_label_top1": np.argmax(species_probs, axis=1),
+                "top1_score": np.max(species_probs, axis=1),
+            }
+        )
+        results["pred_taxa_top1"] = results["pred_label_top1"].map(self.index_to_label)
+
+        for i in range(5):
+            key = f"level_{i}"
+            if level_probs[key]:
+                probs = np.vstack(level_probs[key])
+                results[f"pred_label_top1_level_{i}"] = np.argmax(probs, axis=1)
+                results[f"top1_score_level_{i}"] = np.max(probs, axis=1)
+                inv = self.label_to_taxonIDs[i]
+                results[f"pred_taxa_top1_level_{i}"] = results[f"pred_label_top1_level_{i}"].map(inv)
+            else:
+                results[f"pred_label_top1_level_{i}"] = np.nan
+                results[f"top1_score_level_{i}"] = np.nan
+                results[f"pred_taxa_top1_level_{i}"] = None
+
+        return results
+
+    def ensemble(self, results):
+        """Single-pass species head output, while keeping legacy column names."""
+        out = results.copy()
+        if "pred_taxa_top1" in out.columns:
+            out["ensembleTaxonID"] = out["pred_taxa_top1"]
+            out["ens_label"] = out["pred_label_top1"]
+            out["ens_score"] = out["top1_score"]
+            return out
+
+        # Fallback for externally-built legacy tables.
+        out["ensembleTaxonID"] = out.get("pred_taxa_top1_level_2")
+        out["ens_score"] = out.get("top1_score_level_2")
+        out["ens_label"] = out["ensembleTaxonID"].map(self.species_label_dict)
+        return out
+
+    def evaluation_scores(self, ensemble_df, experiment):
+        ensemble_df = ensemble_df.drop_duplicates(subset=["individual"], keep="first")
+        n_cls = len(self.species_label_dict)
+        ed = ensemble_df.dropna(subset=["ens_label", "label"])
+        ed = ed[
+            (ed["ens_label"] >= 0)
+            & (ed["ens_label"] < n_cls)
+            & (ed["label"] >= 0)
+            & (ed["label"] < n_cls)
+        ]
+        if ed.empty:
+            return ensemble_df
+
+        preds = torch.tensor(ed["ens_label"].values, dtype=torch.long)
+        target = torch.tensor(ed["label"].values, dtype=torch.long)
+        taxon_accuracy = torchmetrics.functional.accuracy(
+            preds=preds,
+            target=target,
+            task="multiclass",
+            num_classes=n_cls,
             average="none",
-            num_classes=len(self.species_label_dict)
-        )        
-        
-        taxon_labels = list(self.species_label_dict)
-        taxon_labels.sort()
+        )
+        taxon_precision = torchmetrics.functional.precision(
+            preds=preds,
+            target=target,
+            task="multiclass",
+            num_classes=n_cls,
+            average="none",
+        )
+
+        taxon_labels = sorted(self.species_label_dict.keys(), key=lambda t: self.species_label_dict[t])
         species_table = pd.DataFrame(
-            {"taxonID":taxon_labels,
-             "accuracy":taxon_accuracy,
-             "precision":taxon_precision
-             })
-        
+            {"taxonID": taxon_labels, "accuracy": taxon_accuracy, "precision": taxon_precision}
+        )
         if experiment:
-            experiment.log_metrics(species_table.set_index("taxonID").accuracy.to_dict(),prefix="accuracy")
-            experiment.log_metrics(species_table.set_index("taxonID").precision.to_dict(),prefix="precision")
-                
-        # Log result by site
-        if experiment:
-            site_data_frame =[]
-            for name, group in ensemble_df.groupby("siteID"):            
-                site_micro = np.sum(group.ens_label.values == group.label.values)/len(group.ens_label.values)
-                
+            experiment.log_metrics(species_table.set_index("taxonID").accuracy.to_dict(), prefix="accuracy")
+            experiment.log_metrics(species_table.set_index("taxonID").precision.to_dict(), prefix="precision")
+
+        if experiment and "siteID" in ed.columns:
+            site_data_frame = []
+            for name, group in ed.groupby("siteID"):
+                g = group[
+                    (group["ens_label"] >= 0)
+                    & (group["ens_label"] < n_cls)
+                    & (group["label"] >= 0)
+                    & (group["label"] < n_cls)
+                ]
+                if g.empty:
+                    continue
+                site_micro = np.sum(g.ens_label.values == g.label.values) / len(g.ens_label.values)
                 site_macro = torchmetrics.functional.accuracy(
-                    preds=torch.tensor(group.ens_label.values),
-                    target=torch.tensor(group.label.values),
+                    preds=torch.tensor(g["ens_label"].values, dtype=torch.long),
+                    target=torch.tensor(g["label"].values, dtype=torch.long),
+                    task="multiclass",
+                    num_classes=n_cls,
                     average="macro",
-                    num_classes=len(self.species_label_dict))
-                                
+                )
                 experiment.log_metric("{}_macro".format(name), site_macro)
-                experiment.log_metric("{}_micro".format(name), site_micro) 
-                
-                row = pd.DataFrame({"Site":[name], "Micro Recall": [site_micro], "Macro Recall": [site_macro]})
+                experiment.log_metric("{}_micro".format(name), site_micro)
+                row = pd.DataFrame({"Site": [name], "Micro Recall": [site_micro], "Macro Recall": [site_macro]})
                 site_data_frame.append(row)
-            site_data_frame = pd.concat(site_data_frame)
-            experiment.log_table("site_results.csv", site_data_frame)        
-        
+            if site_data_frame:
+                site_data_frame = pd.concat(site_data_frame)
+                experiment.log_table("site_results.csv", site_data_frame)
+
         return ensemble_df

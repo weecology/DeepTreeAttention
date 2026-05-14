@@ -1,0 +1,18 @@
+data_dir: data/processed
+use_data_commit: 4c02ae98bd774aa494fadb3508ae84ba
+processed_train_csv: train_dd0adf605011f67ea3e3626231a9713a04a9e85e_['OSBS'].csv
+processed_test_csv: test_dd0adf605011f67ea3e3626231a9713a04a9e85e_['OSBS'].csv
+
+epochs: 1
+workers: 0
+preload_images: false
+batch_size: 16
+
+limit_train_batches: 2
+limit_val_batches: 2
+limit_predict_batches: 2
+
+use_comet: false
+checkpoint_dir: results/checkpoints
+accelerator: cpu
+devices: 1

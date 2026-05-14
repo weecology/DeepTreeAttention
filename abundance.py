@@ -1,11 +1,11 @@
 #Plot abundance distribution
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from glob import glob
 import os
 import pandas as pd
 import geopandas as gpd
-from src import start_cluster
 
-client = start_cluster.start(cpus=75,mem_size="10GB")
+_IO_WORKERS = min(32, (os.cpu_count() or 4) * 4)
 
 ##Same data
 
@@ -43,9 +43,9 @@ for species_model_path in species_model_paths:
     print(files)
     if len(files) == 0:
         continue
-    counts = []
-    futures = client.map(read_shp,files)
-    counts = [x.result() for x in futures]
+    with ThreadPoolExecutor(max_workers=_IO_WORKERS) as ex:
+        futures = [ex.submit(read_shp, f) for f in files]
+        counts = [f.result() for f in as_completed(futures)]
     total_counts = pd.Series()
     for ser in counts:
         total_counts = total_counts.add(ser, fill_value=0)
@@ -89,9 +89,9 @@ for species_model_path in species_model_paths:
     print(files)
     if len(files) == 0:
         continue
-    counts = []
-    futures = client.map(read_shp,files)
-    counts = [x.result() for x in futures]
+    with ThreadPoolExecutor(max_workers=_IO_WORKERS) as ex:
+        futures = [ex.submit(read_shp, f) for f in files]
+        counts = [f.result() for f in as_completed(futures)]
     total_counts = pd.Series()
     for ser in counts:
         total_counts = total_counts.add(ser, fill_value=0)
