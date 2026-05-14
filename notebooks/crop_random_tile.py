@@ -6,13 +6,12 @@ sys.path.append("/home/b.weinstein/DeepTreeAttention")
 from src.data import read_config
 import os
 from src import neon_paths
-from src.start_cluster import start
 import rasterio
 import random
 import re
 import numpy as np
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from rasterio.windows import Window
-from distributed import wait
 import pandas as pd
 import h5py
 import json
@@ -206,8 +205,7 @@ def random_crop(config, iteration):
             basename="HSI")
 
 if __name__ == "__main__":
-    client = start(cpus=80, mem_size = "25GB")    
-    config = read_config("config.yml")    
+    config = read_config("config.yml")
     rgb_pool = glob.glob("/orange/ewhite/NeonData/*/DP3.30010.001/**/Camera/**/*.tif", recursive=True)
     rgb_pool = [x for x in rgb_pool if not "classified" in x]
     pd.Series(rgb_pool).to_csv("data/rgb_pool.csv")
@@ -222,21 +220,18 @@ if __name__ == "__main__":
     hsi_tif_pool = glob.glob(config["HSI_tif_dir"]+"*")
     pd.Series(hsi_tif_pool).to_csv("data/hsi_tif_pool.csv")
     
-    futures = []
-    
-    for x in range(100000):
-        future = client.submit(random_crop, 
-                               config=config, 
-                               iteration=x)
-        futures.append(future)
-    
-    wait(futures)
-    
-    for x in futures:
-        try:
-            x.result()
-        except Exception as e:
-            print(e)
+    batch_size = 200
+    max_workers = 24
+    total = 100000
+    with ThreadPoolExecutor(max_workers=max_workers) as ex:
+        for start in range(0, total, batch_size):
+            end = min(start + batch_size, total)
+            futures = [ex.submit(random_crop, config=config, iteration=x) for x in range(start, end)]
+            for fut in as_completed(futures):
+                try:
+                    fut.result()
+                except Exception as e:
+                    print(e)
             
     # post process cleanup
     files = glob.glob("/blue/ewhite/b.weinstein/DeepTreeAttention/selfsupervised/**/*.tif",recursive=True)

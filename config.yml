@@ -1,4 +1,32 @@
-#Config
+# Config — paths below default to UF HiPerGator shared storage. For a portable checkout,
+# copy to ``config.local.yml`` (untracked) or override globs to point under ``data/external/neon_aop/``.
+
+# Vegetation structure (stem) table used by ``train.py`` when building a new dataset
+raw_vst_csv: data/raw/neon_vst_data_2022.csv
+
+# When ``use_data_commit`` points at a bundle with split CSVs like ``train_<hash>_[\"OSBS\"].csv``, set these
+# (relative to the commit directory unless absolute). Default null uses ``train.csv`` / ``test.csv``.
+processed_train_csv: /blue/ewhite/b.weinstein/DeepTreeAttention/4c02ae98bd774aa494fadb3508ae84ba/train_dd0adf605011f67ea3e3626231a9713a04a9e85e_['OSBS'].csv
+processed_test_csv: /blue/ewhite/b.weinstein/DeepTreeAttention/4c02ae98bd774aa494fadb3508ae84ba/test_dd0adf605011f67ea3e3626231a9713a04a9e85e_['OSBS'].csv
+
+# Optional layout for reproducible local mirrors (see README and ``data/raw/README.md``)
+data_layout:
+  sensor_download_root: data/external/neon_aop
+  # After running the filter stage, point downloads here:
+  canopy_points_shp: null
+
+# NEON AOP API downloads (``neonutilities.by_tile_aop``). Requires ``NEON_API_TOKEN`` for large pulls.
+neon_download:
+  site: OSBS
+  years: [2021, 2022]
+  buffer_m: 50
+  check_size: false
+  token_env: NEON_API_TOKEN
+  save_root: data/external/neon_aop
+  products:
+    rgb: DP3.30010.001
+    hsi: DP3.30006.001
+    chm: DP3.30015.001
 
 ### Data Generation
 #glob path to sensor data, recursive wildcards allowed
@@ -29,10 +57,10 @@ megaplot_dir: /orange/idtrees-collab/megaplot/
 
 #Crop generation, whether to make a new dataset and customize which parts to recreate
 #Checkout data artifact from comet
-use_data_commit: 67ec871c49cf472c8e1ae70b185addb1
+use_data_commit: 4c02ae98bd774aa494fadb3508ae84ba
 
 #Make new dataset
-data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/
+data_dir: /blue/ewhite/b.weinstein/DeepTreeAttention
 convert_h5: True
 #Overwrite existing crops
 replace: True
@@ -48,13 +76,14 @@ evergreen_ceiling: 70
 # Data loader
 #resized Pixel size of the crowns. Square crops around each pixel of size x are used
 image_size: 11
-preload_images: True
+preload_images: False
 workers: 20
 sampling_ceiling: 200
 #Network Parameters
 pretrain_state_dict:
 
-gpus: 1
+# Lightning 2 Trainer: prefer ``devices`` + ``accelerator`` (``gpus`` still supported as a devices count).
+devices: 1
 batch_size: 128
 bands: 349
 
@@ -70,6 +99,13 @@ accelerator: auto
 epochs: 70
 min_loss_weight: 10
 
+# Optional Lightning caps (null = full run). See config.smoke.example.yml for workflow smoke tests.
+limit_train_batches: null
+limit_val_batches: null
+limit_predict_batches: null
+checkpoint_dir: results/checkpoints
+use_comet: true
+
 #Evaluation config
 #Top k class recall score
 top_k: 4
@@ -79,10 +115,59 @@ plot_n_individuals: 0
 #Predict
 predict_batch_size: 64
 dead_threshold: 0.95
-prediction_crop_dir: /blue/ewhite/b.weinstein/DeepTreeAttention/results/crops/
+prediction_crop_dir: results/prediction_crops/
+# Optional DeepForest CropModel for alive/dead labels at crown-detection time
+deepforest_dead_cropmodel_name: weecology/cropmodel-deadtrees
 
 #Comet dashboard
 comet_workspace: bw4sz
+
+# OSBS RGB inference (all tiles for ``year`` under rgb_sensor_pool that intersect AOI)
+# Run: python -m src.pipelines.osbs_inference --config config.yml
+inference_osbs:
+  site: OSBS
+  year: 2025
+  species_checkpoint: /blue/ewhite/b.weinstein/DeepTreeAttention/snapshots/121d61eefcd848dc97cc52bc82012c3b_OSBS.pt
+  aoi_path: data/raw/OSBSBoundary/OSBS_boundary.shp
+  results_root: /blue/ewhite/b.weinstein/DeepTreeAttention/results/osbs_inference/
+  # Optional: cap tiles for debugging (omit or null for all AOI-intersecting tiles)
+  tile_limit: null
+  # Optional: cap species-model predict batches per tile (Lightning Trainer)
+  predict_limit_batches: null
+  # Optional legacy Lightning alive/dead checkpoint (otherwise DeepForest cropmodel from deepforest_dead_cropmodel_name is used when present)
+  dead_model_path: null
+  filter_dead: true
+
+# OSBS tile-scale mortality comparison.
+# Run: python -m src.pipelines.osbs_mortality --config config.yml
+osbs_mortality:
+  site: OSBS
+  years: [2017, 2025]
+  baseline_year: 2017
+  comparison_year: 2025
+  aoi_path: data/raw/OSBSBoundary/OSBS_boundary.shp
+  results_root: /blue/ewhite/b.weinstein/DeepTreeAttention/results/osbs_mortality/
+  rgb_sensor_pool: /orange/ewhite/NeonData/OSBS/DP3.30010.001/**/Camera/**/*.tif
+  # Download missing AOI-intersecting RGB tiles before inference. For local mirrors,
+  # point save_root under data/external/neon_aop and set rgb_sensor_pool to that tree.
+  download_rgb: true
+  download_years: [2025]
+  save_root: data/external/neon_aop
+  token_env: NEON_API_TOKEN
+  include_provisional: true
+  check_size: false
+  aop_epsg: 32617
+  tile_size_m: 1000
+  # Optional debug caps
+  tile_limit: null
+  predict_limit_batches: null
+  # Reuse the OSBS species checkpoint above unless overridden here.
+  species_checkpoint: null
+  run_species: true
+  dead_model_path: null
+  filter_dead: true
+  dead_threshold: 0.95
+  high_mortality_dead_change: 10
 
 ## Alive Dead Model Training
 dead:

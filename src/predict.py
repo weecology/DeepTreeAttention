@@ -1,9 +1,10 @@
 #Predict
-from deepforest import main
-from deepforest.utilities import annotations_to_shapefile
+from deepforest import main, utilities as df_utilities
 import glob
+import inspect
 import os
 import geopandas as gpd
+import pandas as pd
 import rasterio
 import numpy as np
 from torchvision import transforms
@@ -14,6 +15,8 @@ from src.models import dead
 from src.CHM import postprocess_CHM
 from src.generate import generate_crops
 from src.data import TreeDataset
+from src.utils import trainer_accelerator_devices
+
 
 def RGB_transform(augment):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -27,7 +30,7 @@ def RGB_transform(augment):
     return transforms.Compose(data_transforms)
     
 def find_crowns(rgb_path, config, dead_model_path=None):
-    crowns = predict_crowns(rgb_path)
+    crowns = predict_crowns(rgb_path, config=config)
     if crowns is None:
         return None
     crowns["tile"] = rgb_path
@@ -50,6 +53,12 @@ def find_crowns(rgb_path, config, dead_model_path=None):
         dead_label, dead_score = predict_dead(crowns=filtered_crowns, dead_model_path=dead_model_path, config=config)
         filtered_crowns["dead_label"] = dead_label
         filtered_crowns["dead_score"] = dead_score
+    elif "cropmodel_label" in filtered_crowns.columns:
+        filtered_crowns["dead_label"] = filtered_crowns["cropmodel_label"]
+        filtered_crowns["dead_score"] = filtered_crowns.get("cropmodel_score")
+    else:
+        filtered_crowns["dead_label"] = None
+        filtered_crowns["dead_score"] = None
     
     return filtered_crowns
 
@@ -109,20 +118,65 @@ def predict_tile(crown_annotations,m, trainer, config, savedir, filter_dead=Fals
     
     return trees
 
-def predict_crowns(PATH):
+def _load_dead_cropmodel(config):
+    model_name = config.get("deepforest_dead_cropmodel_name")
+    if not model_name:
+        return None
+
+    cropmodel = main.deepforest()
+    cropmodel.load_model(model_name=model_name)
+    # DeepForest ``predict_tile`` expects a Lightning-style object with ``predict_dataloader``.
+    return cropmodel
+
+
+def predict_crowns(PATH, config=None):
     """Predict a set of tree crowns from RGB data"""
     m = main.deepforest()
+    refresh_trainer = False
     if torch.cuda.is_available():
         print("CUDA detected")
-        m.config["gpus"] = 1
-    m.use_release(check_release=False)
-    boxes = m.predict_tile(PATH)
+        m.config.accelerator = "cuda"
+        m.config.devices = 1
+        refresh_trainer = True
+    elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+        m.config.accelerator = "mps"
+        m.config.devices = 1
+        refresh_trainer = True
+    m.load_model(model_name="weecology/deepforest-tree")
+    if refresh_trainer:
+        m.create_trainer()
+
+    cropmodel = None
+    if config is not None:
+        cropmodel = _load_dead_cropmodel(config)
+
+    predict_signature = inspect.signature(m.predict_tile)
+    if cropmodel is None:
+        boxes = m.predict_tile(PATH)
+    elif "cropmodel" in predict_signature.parameters:
+        boxes = m.predict_tile(PATH, cropmodel=cropmodel)
+    elif "crop_model" in predict_signature.parameters:
+        boxes = m.predict_tile(PATH, crop_model=cropmodel)
+    else:
+        boxes = m.predict_tile(PATH)
     if boxes is None:
         return None
-    r = rasterio.open(PATH)
-    transform = r.transform     
-    crs = r.crs
-    gdf = annotations_to_shapefile(boxes, transform=transform, crs=crs)
+    with rasterio.open(PATH) as r:
+        crs = r.crs
+    if isinstance(boxes, gpd.GeoDataFrame):
+        gdf = boxes.copy()
+        root_dir = getattr(gdf, "root_dir", None) or os.path.dirname(PATH)
+        # DeepForest 2.x predict_tile returns image-space boxes; assign raster CRS only after projecting.
+        if "image_path" in gdf.columns and root_dir:
+            gdf = df_utilities.image_to_geo_coordinates(gdf, root_dir=root_dir)
+        elif gdf.crs is None and crs is not None:
+            gdf.set_crs(crs, inplace=True)
+    elif isinstance(boxes, pd.DataFrame):
+        gdf = df_utilities.__pandas_to_geodataframe__(boxes)
+        root_dir = getattr(gdf, "root_dir", None) or os.path.dirname(PATH)
+        gdf = df_utilities.image_to_geo_coordinates(gdf, root_dir=root_dir)
+    else:
+        raise TypeError("Unexpected prediction type: {}".format(type(boxes)))
     
     #Dummy variables for schema
     basename = os.path.splitext(os.path.basename(PATH))[0]
@@ -146,7 +200,7 @@ def predict_species(crowns, m, trainer, config):
         return None
     results = m.gather_predictions(predictions)
     ensemble_df = m.ensemble(results)
-    ensemble_df = results.merge(crowns, on="individual")
+    ensemble_df = ensemble_df.merge(crowns, on="individual")
             
     return ensemble_df
 
@@ -157,7 +211,12 @@ def predict_dead(crowns, dead_model_path, config):
         
     ds = dead.utm_dataset(crowns=crowns, config=config)
     dead_dataloader = dead_model.predict_dataloader(ds)
-    trainer = Trainer(gpus=config["gpus"], enable_checkpointing=False)
+    acc, dev = trainer_accelerator_devices(config)
+    trainer = Trainer(
+        accelerator=acc,
+        devices=dev,
+        enable_checkpointing=False,
+    )
     outputs = trainer.predict(dead_model, dead_dataloader)
     print("len of predict is {}".format(len(outputs)))
     

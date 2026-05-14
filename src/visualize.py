@@ -59,6 +59,8 @@ def index_to_example(index, test, test_crowns, test_points, rgb_pool, comet_expe
     return {"sample": image_name, "assetId": results["imageId"]}
 
 def confusion_matrix(comet_experiment, results, species_label_dict, test, test_points, test_crowns, rgb_pool):
+    if comet_experiment is None:
+        return
     #Confusion matrix
     comet_experiment.log_confusion_matrix(
         results.label.values,

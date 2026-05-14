@@ -73,14 +73,13 @@ class MetadataModel(main.TreeModel):
         y_hat = self.model.forward(images, metadata)
         loss = F.cross_entropy(y_hat, y)        
         
-        # Log loss and metrics
-        self.log("val_loss", loss, on_epoch=True)
-        
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+
         if not self.training:
-            y_hat = F.softmax(y_hat, dim = 1)
-            
-        output = self.metrics(y_hat, y) 
-        self.log_dict(output)
+            y_hat = F.softmax(y_hat, dim=1)
+
+        output = self.metrics(y_hat, y)
+        self.log_dict(output, on_step=False, on_epoch=True)
         
         return loss
         

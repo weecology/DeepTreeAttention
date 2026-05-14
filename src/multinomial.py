@@ -6,7 +6,7 @@ import geopandas as gpd
 import traceback
 import math
 
-from distributed import wait
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def run(tile, confusion_path="data/processed/confusion_matrix.csv", overlay_bounds="/home/b.weinstein/DeepTreeAttention/data/raw/OSBSBoundary/OSBS_boundary.shp", iteration=0):
     """Load a shapefile and confusion .csv and sample the confidence probabilities"""
@@ -76,23 +76,24 @@ def sample_confusion(taxonID, confusion):
         
         return np.argmax(random_draw)
 
-def wrapper(client, iteration, experiment_key, shp_dir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/", savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results"):  
+def wrapper(
+    iteration,
+    experiment_key,
+    shp_dir="/blue/ewhite/b.weinstein/DeepTreeAttention/results/",
+    savedir="/blue/ewhite/b.weinstein/DeepTreeAttention/results",
+    max_workers=16,
+):
     tiles = glob.glob("{}/{}/*_image.shp".format(shp_dir, experiment_key))
     total_counts = pd.Series()
-    counts = []
-    for tile in tiles:
-        future = client.submit(run, tile=tile, iteration=iteration)
-        counts.append(future)
-    
-    wait(counts)
-    
-    for result in counts:
-        try:
-            ser = result.result()
-        except Exception as e:
-            traceback.print_exc(e)
-            print(e)
-            continue
-        total_counts = total_counts.add(ser, fill_value=0)
+    with ThreadPoolExecutor(max_workers=max_workers) as ex:
+        futures = [ex.submit(run, tile=tile, iteration=iteration) for tile in tiles]
+        for fut in as_completed(futures):
+            try:
+                ser = fut.result()
+            except Exception as e:
+                traceback.print_exc()
+                print(e)
+                continue
+            total_counts = total_counts.add(ser, fill_value=0)
     total_counts.sort_values()
     total_counts.to_csv("{}/{}/multinomial_permutation_{}.csv".format(savedir, experiment_key, iteration))

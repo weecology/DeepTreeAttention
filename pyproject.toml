@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deeptreeattention"
+version = "0.1.0"
+description = "Tree species prediction for National Ecological Observatory Network data."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+license = { text = "MIT" }
+authors = [{ name = "Ben Weinstein" }]
+dependencies = [
+  "comet_ml",
+  "python-dotenv",
+  "deepforest>=2.0.0",
+  "descartes",
+  "geopandas",
+  "h5py",
+  "matplotlib",
+  "neonutilities",
+  "numpy",
+  "packaging>=26.1",
+  "pandas",
+  "pytorch_lightning",
+  "PyYAML",
+  "rasterio",
+  "rasterstats",
+  "scikit-image",
+  "scikit-learn",
+  "Shapely",
+  "torch",
+  "torchmetrics",
+  "torchvision",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+deeptree-infer-osbs = "src.pipelines.osbs_inference:main"
+deeptree-osbs-mortality = "src.pipelines.osbs_mortality:main"
+deeptree-download-aop = "src.pipelines.download_neon_aop:main"
+deeptree-crown-one-plot = "src.pipelines.crown_one_plot:main"
+deeptree-merge-crown-boxes = "src.pipelines.merge_crown_boxes:main"
+deeptree-update-vst = "src.pipelines.update_neon_vst:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src", "src.*"]
+
+# PyTorch + CUDA 12.8 — GPU nodes cap at driver 12080 (CUDA 12.8); cu130 fails.
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cu128", marker = "sys_platform != 'darwin'" },
+]
+torchvision = [
+  { index = "pytorch-cu128", marker = "sys_platform != 'darwin'" },
+]
